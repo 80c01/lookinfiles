@@ -944,35 +944,36 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, con
     t->root = root;
 
     /* Bar (top): run, new cells, clear outputs, JSON; kernel menu, headings */
-    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-    gtk_widget_add_css_class(bar, "ipynb-bar");
-    GtkWidget* kernel_button = ipynb_run_bar(t, bar);
-    gtk_box_append(GTK_BOX(bar), bar_button(t, "cell-add-below", _("Code"), _("Insert Code Cell Below (Alt+Enter)"),
-                                            G_CALLBACK(on_add_code)));
-    gtk_box_append(GTK_BOX(bar), bar_button(t, "cell-add-below", _("Markdown"), _("Insert Markdown Cell Below"),
-                                            G_CALLBACK(on_add_markdown)));
-    gtk_box_append(GTK_BOX(bar), bar_button(t, "edit-clear", _("Clear Outputs"), _("Clear the Outputs of Every Cell"),
-                                            G_CALLBACK(on_clear_outputs)));
-    gtk_box_append(GTK_BOX(bar), bar_button(t, "text-x-generic", _("Edit as JSON"),
-                                            _("Open the File as Text in an Editor Tab"), G_CALLBACK(on_edit_json)));
+    GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    GtkWidget* kernel_button = ipynb_run_bar(t, actions);
+    gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-add-below", _("Code"), _("Insert Code Cell Below (Alt+Enter)"),
+                                                G_CALLBACK(on_add_code)));
+    gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-add-below", _("Markdown"), _("Insert Markdown Cell Below"),
+                                                G_CALLBACK(on_add_markdown)));
+    gtk_box_append(GTK_BOX(actions), bar_button(t, "edit-clear", _("Clear Outputs"),
+                                                _("Clear the Outputs of Every Cell"), G_CALLBACK(on_clear_outputs)));
+    gtk_box_append(GTK_BOX(actions), bar_button(t, "text-x-generic", _("Edit as JSON"),
+                                                _("Open the File as Text in an Editor Tab"), G_CALLBACK(on_edit_json)));
     t->undo_button = bar_button(t, "edit-delete", _("Undo Delete"), _("Put Back the Cell Deleted Last"),
                                 G_CALLBACK(on_undo_delete));
     gtk_widget_set_visible(t->undo_button, FALSE);
-    gtk_box_append(GTK_BOX(bar), t->undo_button);
-    GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_hexpand(spacer, TRUE);
-    gtk_box_append(GTK_BOX(bar), spacer);
+    gtk_box_append(GTK_BOX(actions), t->undo_button);
+    /* In a narrow pane only the actions are cut on the right, instead of
+     * widening the tab past the pane: the kernel menu and the headings
+     * button stay in sight at the right end */
+    GtkWidget* actions_clip = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(actions_clip), GTK_POLICY_EXTERNAL, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(actions_clip), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(actions_clip), actions);
+    gtk_widget_set_hexpand(actions_clip, TRUE);
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_widget_add_css_class(bar, "ipynb-bar");
+    gtk_box_append(GTK_BOX(bar), actions_clip);
     gtk_box_append(GTK_BOX(bar), kernel_button);
     GtkWidget* tagbar = icon_button_new("view-list-bullet", _("Show / Hide the Headings (Ctrl+K Ctrl+O)"));
     g_signal_connect(tagbar, "clicked", G_CALLBACK(on_tagbar), t);
     gtk_box_append(GTK_BOX(bar), tagbar);
-    /* In a narrow pane the bar is cut on the right instead of widening the
-     * tab past the pane (the tagbar would be out of sight) */
-    GtkWidget* bar_clip = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(bar_clip), GTK_POLICY_EXTERNAL, GTK_POLICY_NEVER);
-    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(bar_clip), TRUE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(bar_clip), bar);
-    gtk_box_append(GTK_BOX(root), bar_clip);
+    gtk_box_append(GTK_BOX(root), bar);
     gtk_box_append(GTK_BOX(root), ipynb_run_input_row_new(t));
 
     t->cells_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
