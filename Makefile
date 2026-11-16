@@ -65,11 +65,19 @@ APP_CFLAGS += -DHAVE_LIBJPEG `$(PKG_CONFIG) --cflags libjpeg`
 LIBS += `$(PKG_CONFIG) --libs libjpeg`
 endif
 
-# Optional browser tabs: enabled automatically when webkitgtk-6.0 is installed
+# Optional browser tabs: enabled automatically when webkitgtk-6.0 is installed.
+# WebKit is not linked into the program: src/preview/web_engine_webkit.c is
+# built as a module, build/lookinfiles-webkit.so, opened at the first browser
+# tab (src/preview/web_engine.c; about 30 MB and 30 ms of start-up saved).
 HAVE_WEBKIT != $(PKG_CONFIG) --exists webkitgtk-6.0 2>/dev/null && echo yes || echo no
+MODULE_SRCS = src/preview/web_engine_webkit.c
+WEBKIT_MODULE =
 ifeq ($(HAVE_WEBKIT),yes)
-APP_CFLAGS += -DHAVE_WEBKIT `$(PKG_CONFIG) --cflags webkitgtk-6.0`
-LIBS += `$(PKG_CONFIG) --libs webkitgtk-6.0`
+APP_CFLAGS += -DHAVE_WEBKIT `$(PKG_CONFIG) --cflags gmodule-2.0`
+LIBS += `$(PKG_CONFIG) --libs gmodule-2.0`
+WEBKIT_CFLAGS = `$(PKG_CONFIG) --cflags webkitgtk-6.0`
+WEBKIT_LIBS = `$(PKG_CONFIG) --libs gtk4 webkitgtk-6.0`
+WEBKIT_MODULE = $(BUILD_DIR)/lookinfiles-webkit.so
 endif
 
 # Browser tabs on Windows (no WebKitGTK there): Microsoft WebView2, enabled
@@ -110,6 +118,9 @@ PREFIX ?= /usr/local
 DATADIR = $(PREFIX)/share
 LOCALEDIR = $(DATADIR)/locale
 APP_CFLAGS += -DLOCALEDIR=\"$(LOCALEDIR)\"
+# Modules opened at run time (src/core/module_path.c)
+MODULEDIR = $(PREFIX)/lib/lookinfiles
+APP_CFLAGS += -DMODULEDIR=\"$(MODULEDIR)\"
 
 # Release version: can be overridden via make VERSION=... or environment.
 # Defaults to git tags (e.g. v0.4.2 -> 0.4.2), falling back to src/core/app_paths.h.
@@ -143,7 +154,7 @@ $(shell mkdir -p $(BUILD_DIR); if command -v cmp >/dev/null 2>&1; then printf '%
 # Every .c file in src/<dir>/ is part of the application: adding a module only
 # requires creating src/<dir>/<module>.c and its .h. Module names are unique,
 # so the objects stay flat in build/ (build/<module>.o).
-SRCS = $(sort $(wildcard src/*.c src/*/*.c))
+SRCS = $(filter-out $(MODULE_SRCS),$(sort $(wildcard src/*.c src/*/*.c)))
 OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o))) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o $(BUILD_DIR)/jupyter_resources.o
 
 # Toolbar icons bundled into the binary (icons/, see icons/COPYING and src/theme/icons.c)
@@ -151,13 +162,20 @@ GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.
 ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg icons/sets/*/*.svg))
 DEPS = $(OBJS:.o=.d)
 
-all: $(TARGET) translations
+all: $(TARGET) $(WEBKIT_MODULE) translations
 
 $(TARGET): $(OBJS) $(FLAGS_STAMP)
 	$(CC) $(ALL_LDFLAGS) -o $@ $(OBJS) $(LIBS)
 	@echo "Build succeeded!"
 	@ls -lh $(TARGET)
 	@PKG_CONFIG=$(PKG_CONFIG) WEBVIEW2_DIR=$(WEBVIEW2_DIR) sh tools/check_deps.sh || true
+
+# The WebKit engine module: its own position-independent objects, only the
+# table of web_engine_module.h exported (src/preview/web_engine_module.h)
+WEBKIT_MODULE_SRCS = src/preview/web_engine_webkit.c src/preview/web_address.c
+WEBKIT_MODULE_HDRS = src/preview/web_engine_module.h src/preview/web_engine.h src/preview/web_address.h src/core/i18n.h
+$(BUILD_DIR)/lookinfiles-webkit.so: $(WEBKIT_MODULE_SRCS) $(WEBKIT_MODULE_HDRS) $(FLAGS_STAMP) | $(BUILD_DIR)
+	$(CC) $(ALL_CFLAGS) $(WEBKIT_CFLAGS) -fPIC -fvisibility=hidden -shared -o $@ $(WEBKIT_MODULE_SRCS) $(ALL_LDFLAGS) $(WEBKIT_LIBS)
 
 # Lists the required and optional libraries found (tools/check_deps.sh)
 deps:
@@ -286,7 +304,7 @@ po-update: pot
 # the objects under test. Register new tests in TESTS and TEST_DEPS_<name>.
 TEST_CFLAGS = $(ALL_CFLAGS)
 TEST_LDFLAGS = $(ALL_LDFLAGS) $(LIBS)
-TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_latex_log test_latex_root test_latex_synctex test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_data_tree test_xml_view test_text_outline test_toml_view test_yaml_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_ipynb_outline test_spreadsheet test_odf test_pptx test_slide_render test_odp_reader test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_tex_math test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_web_keys test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state test_sysstat test_sysstat_host test_countdown test_run_time test_jpeg_decode test_profile
+TESTS = test_app_paths test_i18n test_file_types test_file_type_icons test_notebook_icons test_git_utils test_remote_store test_preview_summary test_explorer_row test_layout_store test_line_diff test_latex_log test_latex_root test_latex_synctex test_pane_geometry test_minimap_geometry test_dir_summary test_dir_scan test_file_save test_hex_dump test_elf_info test_zip_reader test_docx test_doc_writer test_preview_doc test_csv test_json_view test_data_tree test_xml_view test_text_outline test_toml_view test_yaml_view test_diff_view test_archive_listing test_archive_extract test_cert_view test_card_view test_log_view test_exif test_font_info test_man_view test_notebook test_ipynb_doc test_ipynb_kernel test_ipynb_outline test_spreadsheet test_odf test_pptx test_slide_render test_odp_reader test_epub test_rtf test_sqlite_view test_gettext_view test_class_info test_wasm_info test_torrent_info test_pyc_info test_tfm_info test_pcap_info test_media_tags test_media_tracks test_text_encoding test_preview_formats test_org_time test_org_doc test_org_table test_dunnet test_vim_engine test_vim_parse test_vim_regex test_vim_ex test_code_scan test_code_outline_tree test_code_index test_code_tags test_jump_list test_lsp_protocol test_lsp_client test_lsp_config test_ole_reader test_office97 test_mail test_gif_decoder test_palette test_image_theme test_fonts test_theme_store test_text_tags test_preview_cache test_path_kind test_nav_keys test_trash_restore test_fuzzy_match test_text_search test_path_globs test_session_store test_tab_tree test_settings_store test_note_types test_html_text test_tex_math test_md_out test_rich_parse test_notes_store test_canvas_doc test_canvas_geometry test_canvas_history test_user_guide test_web_address test_web_keys test_ps_convert test_vt_screen test_vt_pty test_ui_probe test_preview_state test_git_state test_sysstat test_sysstat_host test_countdown test_run_time test_jpeg_decode test_profile test_module_path
 TEST_BINS = $(TESTS:%=$(BUILD_DIR)/tests/%)
 TEST_DEPS_test_app_paths = $(BUILD_DIR)/app_paths.o
 TEST_DEPS_test_i18n = $(BUILD_DIR)/i18n.o
@@ -319,6 +337,7 @@ TEST_DEPS_test_pane_geometry = $(BUILD_DIR)/pane_geometry.o
 TEST_DEPS_test_minimap_geometry = $(BUILD_DIR)/minimap_geometry.o
 TEST_DEPS_test_ui_probe = $(BUILD_DIR)/ui_probe.o
 TEST_DEPS_test_profile = $(BUILD_DIR)/profile.o
+TEST_DEPS_test_module_path = $(BUILD_DIR)/module_path.o
 TEST_DEPS_test_sysstat = $(BUILD_DIR)/sysstat.o
 TEST_DEPS_test_sysstat_host = $(BUILD_DIR)/sysstat_host.o $(BUILD_DIR)/sysstat.o
 TEST_DEPS_test_countdown = $(BUILD_DIR)/countdown.o
@@ -481,7 +500,8 @@ ui-shots: $(TARGET)
 ASAN_DIR = build-asan
 asan:
 	@$(MAKE) --no-print-directory BUILD_DIR=$(ASAN_DIR) TARGET=$(ASAN_DIR)/lookinfiles$(EXE) \
-		CFLAGS="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer" $(ASAN_DIR)/lookinfiles$(EXE)
+		CFLAGS="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer" $(ASAN_DIR)/lookinfiles$(EXE) \
+		$(if $(WEBKIT_MODULE),$(ASAN_DIR)/lookinfiles-webkit.so)
 
 clean:
 	rm -rf $(TARGET) lookinfiles lookinfiles.exe $(BUILD_DIR) $(ASAN_DIR)
@@ -492,8 +512,9 @@ APP_ID = io.github._80c01.LookinFiles
 BINDIR = $(PREFIX)/bin
 INSTALLED_DATA = applications/$(APP_ID).desktop metainfo/$(APP_ID).metainfo.xml icons/hicolor/scalable/apps/$(APP_ID).svg icons/hicolor/256x256/apps/$(APP_ID).png
 
-install: $(TARGET) translations
+install: $(TARGET) $(WEBKIT_MODULE) translations
 	install -Dm755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
+	$(if $(WEBKIT_MODULE),install -Dm755 $(WEBKIT_MODULE) $(DESTDIR)$(MODULEDIR)/lookinfiles-webkit.so)
 	@for mo in $(wildcard $(MO_FILES)); do \
 	  lang=$${mo#$(BUILD_DIR)/locale/}; lang=$${lang%%/*}; \
 	  echo install -Dm644 $$mo $(DESTDIR)$(LOCALEDIR)/$$lang/LC_MESSAGES/$(GETTEXT_DOMAIN).mo; \
@@ -526,6 +547,7 @@ windows-exe:
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET) $(INSTALLED_DATA:%=$(DESTDIR)$(DATADIR)/%)
+	rm -f $(DESTDIR)$(MODULEDIR)/lookinfiles-webkit.so
 	rm -f $(LINGUAS:%=$(DESTDIR)$(LOCALEDIR)/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo)
 
 -include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d $(BUILD_DIR)/bench_tool.d

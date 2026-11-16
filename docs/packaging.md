@@ -30,6 +30,10 @@ makepkg -si
 
 ### Dependencies:
 - **Runtime**: `gtk4`, `vte4`, `gtksourceview5`, `poppler-glib`, `sqlite`, `webkitgtk-6.0`, `libarchive`, `libjpeg-turbo`, `gst-plugins-base`
+- WebKitGTK is used by the module `/usr/lib/lookinfiles/lookinfiles-webkit.so`
+  (`make install` puts it there), opened at the first browser tab: without
+  WebKitGTK installed the program still starts, browser tabs say they cannot
+  load it. Every package must ship that file.
 - **Optional**: `sshfs`
 
 ---

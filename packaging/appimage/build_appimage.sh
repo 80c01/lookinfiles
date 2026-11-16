@@ -110,11 +110,18 @@ else
     ICON_ARG=(--icon-file "${APP_DIR}/usr/share/icons/hicolor/scalable/apps/${APP_ID}.svg")
 fi
 
+# Modules opened at run time (the WebKit engine): bundle their libraries too
+MODULE_ARG=()
+for module in "${APP_DIR}"/usr/lib/lookinfiles/*.so; do
+    [ -f "${module}" ] && MODULE_ARG+=(--deploy-deps-only "${module}")
+done
+
 PATH="${TOOLS_DIR}:${PATH}" "${LINUXDEPLOY}" \
     --appdir "${APP_DIR}" \
     --desktop-file "${APP_DIR}/usr/share/applications/${APP_ID}.desktop" \
     "${ICON_ARG[@]}" \
     --plugin gtk \
+    "${MODULE_ARG[@]}" \
     --output appimage
 
 echo "==> AppImage created successfully: ${LDAI_OUTPUT}"

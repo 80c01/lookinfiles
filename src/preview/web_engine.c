@@ -1,216 +1,122 @@
-/* The web view of a browser tab on WebKitGTK 6.0 (see web_engine.h); the
- * WebView2 engine is in web_engine_win.c */
+/* The web view of a browser tab (see web_engine.h). With WebKitGTK the
+ * engine is a module opened at the first web view (web_engine_module.h,
+ * web_engine_webkit.c): the program does not load WebKit before, about 30 MB
+ * and 30 ms of start-up (docs/performance.md). The WebView2 engine is in
+ * web_engine_win.c. */
 #include "preview/web_engine.h"
 #include "core/i18n.h"
-#include "preview/web_address.h"
 
 #if defined(HAVE_WEBKIT)
-#include <webkit/webkit.h>
+#include "core/app_paths.h"
+#include "core/module_path.h"
+#include "core/profile.h"
+#include "preview/web_engine_module.h"
 
-#define ENGINE_KEY "lookin-web-engine"
+#include <gmodule.h>
 
-typedef struct {
-    const WebEngineCallbacks* cb;
-    gpointer data;
-} Engine;
+static const WebEngineOps* ops = NULL; /* the module's table, once opened */
+static gboolean open_failed = FALSE;
+static gchar* module_file = NULL;      /* found by web_engine_available() */
+static gboolean module_searched = FALSE;
 
-static Engine* engine_of(GtkWidget* view) {
-    return view != NULL ? g_object_get_data(G_OBJECT(view), ENGINE_KEY) : NULL;
-}
-
-static void emit_changed(Engine* e, WebEngineChange what) {
-    if (e->cb->changed != NULL) e->cb->changed(e->data, what);
-}
-
-static void on_title(GObject* obj, GParamSpec* pspec, gpointer data) {
-    (void)obj;
-    (void)pspec;
-    emit_changed(data, WEB_ENGINE_TITLE);
-}
-
-static void on_uri(GObject* obj, GParamSpec* pspec, gpointer data) {
-    (void)obj;
-    (void)pspec;
-    emit_changed(data, WEB_ENGINE_URI | WEB_ENGINE_TITLE);
-}
-
-static void on_progress(GObject* obj, GParamSpec* pspec, gpointer data) {
-    (void)obj;
-    (void)pspec;
-    emit_changed(data, WEB_ENGINE_PROGRESS);
-}
-
-static void on_loading(GObject* obj, GParamSpec* pspec, gpointer data) {
-    (void)obj;
-    (void)pspec;
-    emit_changed(data, WEB_ENGINE_LOADING);
-}
-
-static void on_history_changed(WebKitBackForwardList* list, WebKitBackForwardListItem* added,
-                               gpointer removed, gpointer data) {
-    (void)list;
-    (void)added;
-    (void)removed;
-    emit_changed(data, WEB_ENGINE_LOADING);
-}
-
-static GtkWidget* on_create(WebKitWebView* view, WebKitNavigationAction* action, gpointer data) {
-    Engine* e = data;
-    if (e->cb->create == NULL) return NULL;
-    const gchar* uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
-    return e->cb->create(e->data, GTK_WIDGET(view), uri);
-}
-
-static void on_ready_to_show(WebKitWebView* view, gpointer data) {
-    (void)view;
-    Engine* e = data;
-    if (e->cb->ready_to_show != NULL) e->cb->ready_to_show(e->data);
-}
-
-static void on_view_close(WebKitWebView* view, gpointer data) {
-    (void)view;
-    Engine* e = data;
-    if (e->cb->close != NULL) e->cb->close(e->data);
-}
-
-static void external(Engine* e, const gchar* uri, gboolean not_shown) {
-    if (e->cb->external != NULL) e->cb->external(e->data, uri, not_shown);
-}
-
-static void notice(Engine* e, const gchar* message) {
-    if (e->cb->notice != NULL) e->cb->notice(e->data, message);
-}
-
-static gboolean on_decide_policy(WebKitWebView* view, WebKitPolicyDecision* decision,
-                                 WebKitPolicyDecisionType type, gpointer data) {
-    (void)view;
-    Engine* e = data;
-    if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
-        WebKitNavigationAction* nav =
-            webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
-        const gchar* uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(nav));
-        if (web_address_shown(uri)) return FALSE;
-        gchar* copy = g_strdup(uri);
-        webkit_policy_decision_ignore(decision);
-        external(e, copy, FALSE);
-        g_free(copy);
-        return TRUE;
+/* Where the module is, without opening it (menus ask often) */
+static const gchar* find_module(void) {
+    if (!module_searched) {
+        module_searched = TRUE;
+        gchar* exe_dir = module_path_exe_dir();
+        module_file = module_path_find(exe_dir, MODULEDIR, WEB_ENGINE_MODULE_FILE);
+        g_free(exe_dir);
     }
-    if (type != WEBKIT_POLICY_DECISION_TYPE_RESPONSE) return FALSE;
-    /* A file the page cannot show (archive, package...): the default application */
-    WebKitResponsePolicyDecision* rd = WEBKIT_RESPONSE_POLICY_DECISION(decision);
-    if (webkit_response_policy_decision_is_mime_type_supported(rd) ||
-        !webkit_response_policy_decision_is_main_frame_main_resource(rd)) {
-        return FALSE;
+    return module_file;
+}
+
+/* The module's table, the module opened on the first call; NULL when it
+ * cannot be (WebKitGTK not installed, another version of the module) */
+static const WebEngineOps* engine_ops(void) {
+    if (ops != NULL || open_failed) {
+        return ops;
     }
-    gchar* uri = g_strdup(webkit_uri_request_get_uri(webkit_response_policy_decision_get_request(rd)));
-    webkit_policy_decision_ignore(decision);
-    external(e, uri, TRUE);
-    g_free(uri);
-    return TRUE;
-}
-
-/* Camera, microphone, location, notifications...: denied */
-static gboolean on_permission(WebKitWebView* view, WebKitPermissionRequest* request, gpointer data) {
-    (void)view;
-    (void)data;
-    webkit_permission_request_deny(request);
-    return TRUE;
-}
-
-/* Upload a file: would open a file chooser window */
-static gboolean on_file_chooser(WebKitWebView* view, WebKitFileChooserRequest* request, gpointer data) {
-    (void)view;
-    webkit_file_chooser_request_cancel(request);
-    notice(data, _("Choosing a file to upload is not supported in browser tabs"));
-    return TRUE;
-}
-
-/* Printing would open a print dialog window */
-static gboolean on_print(WebKitWebView* view, WebKitPrintOperation* op, gpointer data) {
-    (void)view;
-    (void)op;
-    notice(data, _("Printing is not supported in browser tabs"));
-    return TRUE;
-}
-
-/* Fullscreen video and the like: the window stays as it is */
-static gboolean on_fullscreen(WebKitWebView* view, gpointer data) {
-    (void)view;
-    (void)data;
-    return TRUE;
+    const gchar* path = find_module();
+    gint64 start = profile_start();
+    GModule* module = path != NULL ? g_module_open(path, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL) : NULL;
+    gpointer symbol = NULL;
+    if (module == NULL || !g_module_symbol(module, WEB_ENGINE_MODULE_SYMBOL, &symbol) ||
+        ((const WebEngineOps*)symbol)->abi != WEB_ENGINE_MODULE_ABI) {
+        g_printerr("%s: browser tabs: cannot use %s: %s\n", APP_DIR_NAME,
+                   path != NULL ? path : WEB_ENGINE_MODULE_FILE,
+                   path == NULL     ? "not found (make builds it next to the program)"
+                   : module == NULL ? g_module_error()
+                                    : "another version of the module");
+        if (module != NULL) {
+            g_module_close(module);
+        }
+        open_failed = TRUE;
+        return NULL;
+    }
+    g_module_make_resident(module); /* WebKit cannot be unloaded */
+    ops = symbol;
+    profile_done(start, "open %s", path);
+    return ops;
 }
 
 gboolean web_engine_available(void) {
-    return TRUE;
+    return !open_failed && (ops != NULL || find_module() != NULL);
 }
 
 GtkWidget* web_engine_new(GtkWidget* related, const WebEngineCallbacks* callbacks, gpointer data) {
-    GtkWidget* view = related != NULL ? g_object_new(WEBKIT_TYPE_WEB_VIEW, "related-view", related, NULL)
-                                      : webkit_web_view_new();
-    Engine* e = g_new0(Engine, 1);
-    e->cb = callbacks;
-    e->data = data;
-    g_object_set_data_full(G_OBJECT(view), ENGINE_KEY, e, g_free);
-    g_signal_connect(view, "notify::title", G_CALLBACK(on_title), e);
-    g_signal_connect(view, "notify::uri", G_CALLBACK(on_uri), e);
-    g_signal_connect(view, "notify::estimated-load-progress", G_CALLBACK(on_progress), e);
-    g_signal_connect(view, "notify::is-loading", G_CALLBACK(on_loading), e);
-    g_signal_connect(webkit_web_view_get_back_forward_list(WEBKIT_WEB_VIEW(view)), "changed",
-                     G_CALLBACK(on_history_changed), e);
-    g_signal_connect(view, "create", G_CALLBACK(on_create), e);
-    g_signal_connect(view, "ready-to-show", G_CALLBACK(on_ready_to_show), e);
-    g_signal_connect(view, "close", G_CALLBACK(on_view_close), e);
-    g_signal_connect(view, "decide-policy", G_CALLBACK(on_decide_policy), e);
-    g_signal_connect(view, "permission-request", G_CALLBACK(on_permission), e);
-    g_signal_connect(view, "run-file-chooser", G_CALLBACK(on_file_chooser), e);
-    g_signal_connect(view, "print", G_CALLBACK(on_print), e);
-    g_signal_connect(view, "enter-fullscreen", G_CALLBACK(on_fullscreen), e);
-    return view;
+    const WebEngineOps* o = engine_ops();
+    if (o == NULL) {
+        GtkWidget* label = gtk_label_new(_("Browser tabs could not load WebKitGTK 6.0 (see the terminal output)"));
+        gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+        return label;
+    }
+    return o->new_view(related, callbacks, data);
 }
 
+/* The other calls get views made by web_engine_new(): web views when the
+ * module is open, a label when it could not be (then nothing to do) */
 void web_engine_load(GtkWidget* view, const gchar* uri) {
-    webkit_web_view_load_uri(WEBKIT_WEB_VIEW(view), uri);
+    if (ops != NULL) ops->load(view, uri);
 }
 
 void web_engine_reload(GtkWidget* view) {
-    webkit_web_view_reload(WEBKIT_WEB_VIEW(view));
+    if (ops != NULL) ops->reload(view);
 }
 
 void web_engine_stop(GtkWidget* view) {
-    webkit_web_view_stop_loading(WEBKIT_WEB_VIEW(view));
+    if (ops != NULL) ops->stop(view);
 }
 
 void web_engine_go_back(GtkWidget* view) {
-    webkit_web_view_go_back(WEBKIT_WEB_VIEW(view));
+    if (ops != NULL) ops->go_back(view);
 }
 
 void web_engine_go_forward(GtkWidget* view) {
-    webkit_web_view_go_forward(WEBKIT_WEB_VIEW(view));
+    if (ops != NULL) ops->go_forward(view);
 }
 
 gboolean web_engine_can_go_back(GtkWidget* view) {
-    return webkit_web_view_can_go_back(WEBKIT_WEB_VIEW(view));
+    return ops != NULL && ops->can_go_back(view);
 }
 
 gboolean web_engine_can_go_forward(GtkWidget* view) {
-    return webkit_web_view_can_go_forward(WEBKIT_WEB_VIEW(view));
+    return ops != NULL && ops->can_go_forward(view);
 }
 
 gboolean web_engine_is_loading(GtkWidget* view) {
-    return webkit_web_view_is_loading(WEBKIT_WEB_VIEW(view));
+    return ops != NULL && ops->is_loading(view);
 }
 
 gdouble web_engine_progress(GtkWidget* view) {
-    return webkit_web_view_get_estimated_load_progress(WEBKIT_WEB_VIEW(view));
+    return ops != NULL ? ops->progress(view) : 0.0;
 }
 
 const gchar* web_engine_uri(GtkWidget* view) {
-    return engine_of(view) != NULL ? webkit_web_view_get_uri(WEBKIT_WEB_VIEW(view)) : NULL;
+    return ops != NULL ? ops->uri(view) : NULL;
 }
 
 const gchar* web_engine_title(GtkWidget* view) {
-    return engine_of(view) != NULL ? webkit_web_view_get_title(WEBKIT_WEB_VIEW(view)) : NULL;
+    return ops != NULL ? ops->title(view) : NULL;
 }
 
 #elif !defined(HAVE_WEBVIEW2)

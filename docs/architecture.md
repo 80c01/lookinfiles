@@ -83,6 +83,10 @@ Layers, from bottom to top
   start-up marks (`profile_mark()`), timed operations (`profile_start()` /
   `profile_done()`, thread-safe), frame counters and the exit report (CPU
   time, resident memory); every call returns at once without the variable.
+- `module_path` — where a module opened at run time is (`module_path_find()`):
+  `$LOOKINFILES_MODULEDIR`, next to the program, `<exe dir>/build` (source
+  tree), `<exe dir>/../lib/lookinfiles` (AppImage), `MODULEDIR` (set from
+  `PREFIX`); `module_path_exe_dir()` from `/proc/self/exe`.
 - `ui_probe` — test hook for `make ui-shots`: with `LOOKIN_UI_PROBE=<file>`,
   each SIGUSR2 writes a new number to the file once the main loop is idle,
   so a screenshot waits for the application instead of a fixed delay
@@ -1082,9 +1086,17 @@ Layers, from bottom to top
   `terminal_attach_tab()` keep a terminal running out of any notebook.
 - `web_engine` — the web view of a browser tab, whatever engine shows it
   (`web_engine_new()` with `WebEngineCallbacks`: changes, new window, close,
-  addresses for the default application, notices); the WebKitGTK 6.0
-  implementation (`HAVE_WEBKIT`): print, file chooser and fullscreen refused,
-  permissions denied. Built with no engine, `web_engine_available()` is FALSE.
+  addresses for the default application, notices). With WebKitGTK 6.0
+  (`HAVE_WEBKIT`) the engine is a module the program is not linked with:
+  `web_engine.c` finds `lookinfiles-webkit.so` (`module_path`; that is all
+  `web_engine_available()` does, menus ask often), opens it at the first web
+  view and calls its `WebEngineOps` table (`web_engine_module.h`, with an ABI
+  number); a module that cannot be opened gives a label instead of a view and
+  a line on stderr. Built with no engine, `web_engine_available()` is FALSE.
+- `web_engine_webkit` — the WebKitGTK implementation, built as the module
+  (`make` puts it in `build/`, `make install` in `$(PREFIX)/lib/lookinfiles`;
+  not part of the program's objects): print, file chooser and fullscreen
+  refused, permissions denied. Links `web_address` in its own copy.
 - `web_engine_win` — `web_engine.h` on Microsoft WebView2 (`HAVE_WEBVIEW2`,
   Windows): `WebView2Loader.dll` loaded at run time, one environment (profile
   in `app_cache_dir()/webview2`), a controller per view whose native window

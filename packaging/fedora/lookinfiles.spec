@@ -52,6 +52,7 @@ appstream-util validate-relax --nonet %{buildroot}%{_datadir}/metainfo/io.github
 %license LICENSE
 %doc README.md CHANGELOG.md
 %{_bindir}/lookinfiles
+%{_prefix}/lib/lookinfiles/
 %{_datadir}/applications/io.github._80c01.LookinFiles.desktop
 %{_datadir}/metainfo/io.github._80c01.LookinFiles.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/io.github._80c01.LookinFiles.svg

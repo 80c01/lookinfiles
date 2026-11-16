@@ -73,6 +73,7 @@ pane_geometry:
 minimap_geometry:
 ui_probe:
 profile:
+module_path:
 sysstat:
 sysstat_host:sysstat
 countdown:
@@ -198,7 +199,9 @@ user_guide:
 fuzzy_match:
 web_address:
 web_keys:
-web_engine:web_address,i18n
+web_engine:i18n,app_paths,module_path,profile,web_engine_module
+web_engine_module:web_engine
+web_engine_webkit:web_engine_module,web_engine,i18n,web_address
 web_engine_win:web_engine,web_keys,web_address,dialog,app_paths,i18n
 path_globs:
 text_search:code_index,i18n
