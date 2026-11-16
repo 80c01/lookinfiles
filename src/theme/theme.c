@@ -234,11 +234,11 @@ void apply_panel_borders(void) {
         "  font-size: @size_normal;\n"
         "}\n"
         /* ---- Window title bar: GTK's default client-side one (title and
-         * window buttons), kept compact; the framed button rule above must
-         * not size its buttons ---- */
+         * window buttons), as high as the top bar (#statusbar below); the
+         * framed button rule above must not size its buttons ---- */
         "headerbar.default-decoration {\n"
-        "  min-height: 0;\n"
-        "  padding: 2px 6px;\n"
+        "  min-height: 28px;\n"
+        "  padding: 3px 8px;\n"
         "  background-color: @bg_bar;\n"
         "  border-bottom: 1px solid @border;\n"
         "  box-shadow: none;\n"
@@ -248,9 +248,9 @@ void apply_panel_borders(void) {
         "  color: @fg_muted;\n"
         "}\n"
         "headerbar.default-decoration windowcontrols > button {\n"
-        "  min-height: 18px;\n"
-        "  min-width: 18px;\n"
-        "  padding: 1px;\n"
+        "  min-height: 22px;\n"
+        "  min-width: 22px;\n"
+        "  padding: 0;\n"
         "  margin: 0 1px;\n"
         "  border: none;\n"
         "  border-radius: 4px;\n"
