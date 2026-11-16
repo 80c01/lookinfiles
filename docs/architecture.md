@@ -859,9 +859,10 @@ Layers, from bottom to top
   (`editor_save_current()` calls `latex_build_saved()`) is compiled in a
   worker: its main document found (`latex_root`), `latexmk`, else Tectonic,
   else the engine, run with `GSubprocess` in the document's folder (SyncTeX
-  on), its log parsed (`latex_log`); then the PDF shown in the preview
-  (`load_file_content()`, or `APP_EVENT_PREVIEW_STALE` when it is shown
-  already) and the messages given to `latex_errors`. One compilation at a
+  on), its log parsed (`latex_log`); then the PDF shown in the preview as
+  a selected file is (`load_file_content()`, then `preview_state_set_file()`
+  and `monitor_file()`, so zoom and reloads are of the PDF), or
+  `APP_EVENT_PREVIEW_STALE` when it is shown already and the messages given to `latex_errors`. One compilation at a
   time: a save meanwhile compiles again when it ends.
 - `latex_errors` — the LaTeX page of the preview notebook (`app->latex_page`,
   after the Git and result tabs): one row per message (kind icon, message,

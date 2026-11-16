@@ -352,7 +352,7 @@ formats:core,preview
 games:core,editor,explorer,theme,widgets
 git:core,theme,widgets
 jupyter:code,core,editor,formats,markup,theme,widgets
-latex:core,editor,git,preview,theme,widgets
+latex:core,editor,explorer,git,preview,theme,widgets
 mail:core,office,preview
 markup:core,media,theme
 media:core,editor,preview,search,theme

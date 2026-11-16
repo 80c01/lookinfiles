@@ -5,6 +5,7 @@
 #include "latex/latex_root.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
+#include "explorer/fs_watch.h"
 #include "preview/preview_state.h"
 #include "preview/viewer.h"
 #include <string.h>
@@ -312,14 +313,22 @@ static void notice(AppData* app, const gchar* format, const gchar* arg) {
     g_free(msg);
 }
 
-/* Show the PDF in the preview: reloaded where it was when already shown */
+/* Show the PDF in the preview: reloaded where it was (page, zoom) when
+ * already shown, else shown as a selected file is, so that the reloads of
+ * the preview (zoom, m, file changed) are of the PDF */
 static void show_pdf(AppData* app, const gchar* pdf) {
     if (g_strcmp0(preview_state_path(app), pdf) == 0) {
         app_emit(app, APP_EVENT_PREVIEW_STALE);
         return;
     }
     gchar* name = g_path_get_basename(pdf);
+    preview_state_set_raw(app, FALSE);
+    preview_state_set_zoom(app, 1.0);
+    app->file_dirty = FALSE;
     load_file_content(app, name, pdf);
+    preview_state_set_file(app, pdf, name);
+    monitor_file(app, pdf);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
     g_free(name);
 }
 
