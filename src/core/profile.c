@@ -18,10 +18,29 @@ static gboolean startup_over = FALSE;
 static gint64 startup_cpu_us = -1; /* CPU time at profile_startup_done() */
 static ProfileFrameStats startup_frames;
 static ProfileFrameStats run_frames;
+static ProfileFrameStats sample_frames; /* since the last sample line */
+static gint64 sample_at_us = 0;         /* time and CPU time of the last sample */
+static gint64 sample_cpu_us = 0;
 static GMutex lock;
 
-static gdouble ms(gint64 us) {
-    return us / 1000.0;
+gchar* profile_ms(gchar* buf, gint64 us, guint decimals) {
+    static const gint64 unit[] = {1000, 100, 10, 1}; /* us per last digit */
+    decimals = MIN(decimals, 3u);
+    gint64 step = unit[decimals];
+    gboolean negative = us < 0;
+    guint64 v = (guint64)(negative ? -us : us);
+    v = (v + (guint64)step / 2) / (guint64)step; /* rounded, in last digits */
+    guint64 scale = 1;
+    for (guint i = 0; i < decimals; i++) {
+        scale *= 10;
+    }
+    if (decimals == 0) {
+        g_snprintf(buf, PROFILE_MS_LEN, "%s%" G_GUINT64_FORMAT, negative && v > 0 ? "-" : "", v);
+    } else {
+        g_snprintf(buf, PROFILE_MS_LEN, "%s%" G_GUINT64_FORMAT ".%0*" G_GUINT64_FORMAT,
+                   negative && v > 0 ? "-" : "", v / scale, (int)decimals, v % scale);
+    }
+    return buf;
 }
 
 void profile_init_file(const gchar* dest) {
@@ -90,7 +109,14 @@ void profile_mark(const gchar* label) {
     gint64 since = now - last_mark_us;
     last_mark_us = now;
     g_mutex_unlock(&lock);
-    write_linef("mark %9.1f ms +%.1f %s", ms(now - origin_us), ms(since), label);
+    gchar total[PROFILE_MS_LEN], delta[PROFILE_MS_LEN];
+    write_linef("mark %9s ms +%s %s", profile_ms(total, now - origin_us, 1), profile_ms(delta, since, 1), label);
+}
+
+static gboolean on_sample_timeout(gpointer data) {
+    (void)data;
+    profile_sample();
+    return G_SOURCE_CONTINUE;
 }
 
 void profile_startup_done(void) {
@@ -99,7 +125,13 @@ void profile_startup_done(void) {
     }
     startup_over = TRUE;
     startup_cpu_us = profile_cpu_us();
+    g_mutex_lock(&lock);
+    sample_frames = (ProfileFrameStats){0};
+    sample_at_us = g_get_monotonic_time();
+    sample_cpu_us = startup_cpu_us;
+    g_mutex_unlock(&lock);
     profile_mark("startup done");
+    g_timeout_add_seconds(PROFILE_SAMPLE_SECONDS, on_sample_timeout, NULL);
 }
 
 gint64 profile_start(void) {
@@ -115,7 +147,8 @@ void profile_done(gint64 start_us, const gchar* format, ...) {
     va_start(args, format);
     gchar* label = g_strdup_vprintf(format, args);
     va_end(args);
-    write_linef("time %8.1f ms %s", ms(elapsed), label);
+    gchar t[PROFILE_MS_LEN];
+    write_linef("time %8s ms %s", profile_ms(t, elapsed, 1), label);
     g_free(label);
 }
 
@@ -140,17 +173,20 @@ void profile_frame(gint64 duration_us, gboolean painted, const ProfileFramePhase
     }
     g_mutex_lock(&lock);
     profile_frame_stats_add(startup_over ? &run_frames : &startup_frames, duration_us, painted);
+    profile_frame_stats_add(&sample_frames, duration_us, painted);
     g_mutex_unlock(&lock);
     gboolean slow = duration_us > PROFILE_SLOW_FRAME_US;
-    gchar detail[96] = "";
+    gchar detail[128] = "";
     if (slow && phases != NULL) {
-        g_snprintf(detail, sizeof(detail), " (update %.1f, layout %.1f, paint %.1f)",
-                   phases->update_us >= 0 ? ms(phases->update_us) : 0.0,
-                   phases->layout_us >= 0 ? ms(phases->layout_us) : 0.0,
-                   phases->paint_us >= 0 ? ms(phases->paint_us) : 0.0);
+        gchar u[PROFILE_MS_LEN], l[PROFILE_MS_LEN], p[PROFILE_MS_LEN];
+        g_snprintf(detail, sizeof(detail), " (update %s, layout %s, paint %s)",
+                   profile_ms(u, MAX(phases->update_us, 0), 1), profile_ms(l, MAX(phases->layout_us, 0), 1),
+                   profile_ms(p, MAX(phases->paint_us, 0), 1));
     }
-    write_linef("frame %6.1f ms at %.1f ms%s%s%s", ms(duration_us), ms(g_get_monotonic_time() - origin_us),
-                slow ? " slow" : "", painted ? "" : " unpainted", detail);
+    gchar d[PROFILE_MS_LEN], at[PROFILE_MS_LEN];
+    write_linef("frame %6s ms at %s ms%s%s%s", profile_ms(d, duration_us, 1),
+                profile_ms(at, g_get_monotonic_time() - origin_us, 1), slow ? " slow" : "",
+                painted ? "" : " unpainted", detail);
 }
 
 /* The number after "key:" at the start of a line of text, in KB; -1 if absent */
@@ -197,9 +233,49 @@ gint64 profile_cpu_us(void) {
     return -1;
 }
 
-static gdouble mean_ms(const ProfileFrameStats* s) {
+static gint64 mean_us(const ProfileFrameStats* s) {
     guint n = s->count + s->unpainted;
-    return n > 0 ? ms(s->total_us) / n : 0.0;
+    return n > 0 ? s->total_us / n : 0;
+}
+
+/* Threads of this process (/proc/self/status), -1 when unknown */
+static gint64 thread_count(void) {
+    gchar* text = NULL;
+    if (!g_file_get_contents("/proc/self/status", &text, NULL, NULL)) {
+        return -1;
+    }
+    gint64 n = status_value(text, "Threads");
+    g_free(text);
+    return n;
+}
+
+void profile_sample(void) {
+    if (out == NULL) {
+        return;
+    }
+    gint64 now = g_get_monotonic_time();
+    gint64 cpu = profile_cpu_us();
+    gint64 rss = -1, peak = -1;
+    profile_memory(&rss, &peak);
+    g_mutex_lock(&lock);
+    ProfileFrameStats f = sample_frames;
+    sample_frames = (ProfileFrameStats){0};
+    gint64 wall = now - sample_at_us;
+    gint64 used = (cpu >= 0 && sample_cpu_us >= 0) ? cpu - sample_cpu_us : -1;
+    sample_at_us = now;
+    sample_cpu_us = cpu;
+    g_mutex_unlock(&lock);
+    /* CPU in % of one core: used / wall * 100, as ms with one decimal */
+    gchar pct[PROFILE_MS_LEN], worst[PROFILE_MS_LEN], at[PROFILE_MS_LEN];
+    if (used >= 0 && wall > 0) {
+        profile_ms(pct, used * 100000 / wall, 1);
+    } else {
+        g_strlcpy(pct, "-1", sizeof(pct));
+    }
+    write_linef("sample at %s s cpu=%s%% rss_mb=%" G_GINT64_FORMAT " threads=%" G_GINT64_FORMAT
+                " frames=%u unpainted=%u slow=%u worst_ms=%s",
+                profile_ms(at, (now - origin_us) / 1000, 0), pct, rss >= 0 ? rss / 1024 : -1, thread_count(),
+                f.count, f.unpainted, f.slow, profile_ms(worst, f.worst_us, 1));
 }
 
 void profile_report(void) {
@@ -213,11 +289,14 @@ void profile_report(void) {
     ProfileFrameStats s = startup_frames;
     ProfileFrameStats r = run_frames;
     g_mutex_unlock(&lock);
-    write_linef("report uptime_ms=%.0f cpu_ms=%.0f startup_cpu_ms=%.0f rss_kb=%" G_GINT64_FORMAT
+    gchar up[PROFILE_MS_LEN], cpu_ms[PROFILE_MS_LEN], scpu[PROFILE_MS_LEN], sworst[PROFILE_MS_LEN];
+    gchar worst[PROFILE_MS_LEN], mean[PROFILE_MS_LEN];
+    write_linef("report uptime_ms=%s cpu_ms=%s startup_cpu_ms=%s rss_kb=%" G_GINT64_FORMAT
                 " peak_kb=%" G_GINT64_FORMAT
-                " startup_frames=%u startup_slow=%u startup_worst_ms=%.1f"
-                " frames=%u unpainted=%u slow=%u worst_ms=%.1f mean_ms=%.2f",
-                ms(g_get_monotonic_time() - origin_us), cpu >= 0 ? ms(cpu) : -1.0,
-                startup_cpu_us >= 0 ? ms(startup_cpu_us) : -1.0, rss, peak,
-                s.count, s.slow, ms(s.worst_us), r.count, r.unpainted, r.slow, ms(r.worst_us), mean_ms(&r));
+                " startup_frames=%u startup_slow=%u startup_worst_ms=%s"
+                " frames=%u unpainted=%u slow=%u worst_ms=%s mean_ms=%s",
+                profile_ms(up, g_get_monotonic_time() - origin_us, 0), cpu >= 0 ? profile_ms(cpu_ms, cpu, 0) : "-1",
+                startup_cpu_us >= 0 ? profile_ms(scpu, startup_cpu_us, 0) : "-1", rss, peak, s.count, s.slow,
+                profile_ms(sworst, s.worst_us, 1), r.count, r.unpainted, r.slow, profile_ms(worst, r.worst_us, 1),
+                profile_ms(mean, mean_us(&r), 2));
 }

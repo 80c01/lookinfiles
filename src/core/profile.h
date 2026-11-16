@@ -6,7 +6,12 @@
  *   profile: time   <ms> <label>                             timed operations
  *   profile: frame  <ms> at <total ms>[ slow][ unpainted]   each frame (a slow
  *                   one with "(update <ms>, layout <ms>, paint <ms>)")
+ *   profile: sample at <s> s key=value...                    each minute after the
+ *                   start-up: CPU %, memory, threads, frames of that minute
  *   profile: report key=value...                             summary at exit
+ *
+ * Numbers are written with a dot whatever the locale (profile_ms()), so that
+ * scripts read the lines the same everywhere.
  *
  * Without the variable every call returns at once (profile_start() gives 0
  * and profile_done(0, ...) does nothing), so the probes stay in release
@@ -36,6 +41,9 @@ void profile_mark(const gchar* label);
  * counts the following frames apart from the start-up ones */
 void profile_startup_done(void);
 
+/* Seconds between two sample lines */
+#define PROFILE_SAMPLE_SECONDS 60
+
 /* Time an operation: start = profile_start(); ...; profile_done(start, ...) */
 gint64 profile_start(void);
 void profile_done(gint64 start_us, const gchar* format, ...) G_GNUC_PRINTF(2, 3);
@@ -55,6 +63,15 @@ typedef struct {
  * painted: something was drawn (else only animations or tick callbacks
  * ran); phases may be NULL */
 void profile_frame(gint64 duration_us, gboolean painted, const ProfileFramePhases* phases);
+
+/* A sample line now (also written each PROFILE_SAMPLE_SECONDS after the
+ * start-up): what happened since the previous one */
+void profile_sample(void);
+
+/* us in milliseconds with that many decimals (0 to 3), a dot as separator
+ * whatever the locale, into buf (PROFILE_MS_LEN bytes); returns buf */
+#define PROFILE_MS_LEN 32
+gchar* profile_ms(gchar* buf, gint64 us, guint decimals);
 
 /* The summary line: frames of the start-up and after it, CPU time (in all,
  * and at the end of the start-up, loading of the libraries included), memory */

@@ -2,6 +2,7 @@
 #include "core/profile.h"
 
 #include <glib/gstdio.h>
+#include <locale.h>
 #include <string.h>
 
 static void test_frame_stats(void) {
@@ -62,6 +63,11 @@ static void test_output(void) {
     g_assert_cmpint(profile_start(), ==, 0); /* off: nothing measured */
     profile_mark("ignored");
 
+    /* A locale with a decimal comma, when installed: the lines keep a dot */
+    const gchar* fr = setlocale(LC_NUMERIC, "fr_FR.UTF-8");
+    if (fr == NULL) {
+        g_test_message("fr_FR.UTF-8 not installed: decimal comma not tested");
+    }
     profile_init_file(path);
     profile_init_file(NULL); /* only the first call counts */
     g_assert_true(profile_enabled());
@@ -78,10 +84,11 @@ static void test_output(void) {
     profile_frame(2000, TRUE, &phases); /* fast: no phases shown */
     profile_frame(500, FALSE, NULL);
     profile_log("note %d", 7);
+    profile_sample();
     profile_report();
 
     gchar** lines = read_lines(path);
-    g_assert_cmpuint(g_strv_length(lines), ==, 10); /* 9 lines + the empty end */
+    g_assert_cmpuint(g_strv_length(lines), ==, 11); /* 10 lines + the empty end */
     g_assert_true(g_str_has_prefix(lines[0], "profile: mark "));
     g_assert_true(g_str_has_suffix(lines[0], " first step"));
     g_assert_true(g_str_has_prefix(lines[1], "profile: time "));
@@ -95,10 +102,15 @@ static void test_output(void) {
     g_assert_true(g_str_has_suffix(lines[6], " ms unpainted"));
     g_assert_nonnull(strstr(lines[6], " ms at "));
     g_assert_cmpstr(lines[7], ==, "profile: note 7");
-    g_assert_true(g_str_has_prefix(lines[8], "profile: report "));
-    g_assert_nonnull(strstr(lines[8], " startup_frames=1 startup_slow=0 "));
-    g_assert_nonnull(strstr(lines[8], " frames=2 unpainted=1 slow=1 "));
-    g_assert_cmpstr(lines[9], ==, "");
+    /* The frames since the start-up (the sample starts there) */
+    g_assert_true(g_str_has_prefix(lines[8], "profile: sample at "));
+    g_assert_nonnull(strstr(lines[8], " frames=2 unpainted=1 slow=1 worst_ms=16.7"));
+    g_assert_nonnull(strstr(lines[8], " cpu="));
+    g_assert_true(g_str_has_prefix(lines[9], "profile: report "));
+    g_assert_nonnull(strstr(lines[9], " startup_frames=1 startup_slow=0 "));
+    g_assert_nonnull(strstr(lines[9], " frames=2 unpainted=1 slow=1 "));
+    g_assert_null(strchr(lines[9], ','));                       /* no decimal comma */
+    g_assert_cmpstr(lines[10], ==, "");
     g_strfreev(lines);
 
     g_remove(path);
@@ -107,8 +119,24 @@ static void test_output(void) {
     g_free(dir);
 }
 
+static void test_ms(void) {
+    gchar buf[PROFILE_MS_LEN];
+    g_assert_cmpstr(profile_ms(buf, 12345, 1), ==, "12.3");
+    g_assert_cmpstr(profile_ms(buf, 0, 1), ==, "0.0");
+    g_assert_cmpstr(profile_ms(buf, 999949, 1), ==, "999.9");
+    g_assert_cmpstr(profile_ms(buf, 999950, 1), ==, "1000.0"); /* rounded up */
+    g_assert_cmpstr(profile_ms(buf, 2860, 2), ==, "2.86");
+    g_assert_cmpstr(profile_ms(buf, 1500, 0), ==, "2");
+    g_assert_cmpstr(profile_ms(buf, 7, 3), ==, "0.007");
+    g_assert_cmpstr(profile_ms(buf, -1500, 1), ==, "-1.5");
+    g_assert_cmpstr(profile_ms(buf, -10, 1), ==, "0.0"); /* no "-0.0" */
+    g_assert_cmpstr(profile_ms(buf, 1234567, 9), ==, "1234.567"); /* at most 3 decimals */
+    g_assert_cmpstr(profile_ms(buf, G_GINT64_CONSTANT(1589379000000), 0), ==, "1589379000");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
+    g_test_add_func("/profile/ms", test_ms);
     g_test_add_func("/profile/frame_stats", test_frame_stats);
     g_test_add_func("/profile/parse_status", test_parse_status);
     g_test_add_func("/profile/cpu_and_memory", test_cpu_and_memory);

@@ -624,10 +624,11 @@ static gboolean finish_text_preview(gpointer data) {
     }
     if (debug_preview_timings()) {
         gint64 end_us = g_get_monotonic_time();
-        preview_timing("preview %s [%s]: %.1f ms (worker %.1f ms, display %.1f ms)", td->name,
-                   file_kind_label(td->kind) != NULL ? file_kind_label(td->kind) : "Text",
-                   (end_us - td->start_us) / 1000.0, (ready_us - td->start_us) / 1000.0,
-                   (end_us - ready_us) / 1000.0);
+        gchar total[PROFILE_MS_LEN], worker[PROFILE_MS_LEN], display[PROFILE_MS_LEN];
+        preview_timing("preview %s [%s]: %s ms (worker %s ms, display %s ms)", td->name,
+                       file_kind_label(td->kind) != NULL ? file_kind_label(td->kind) : "Text",
+                       profile_ms(total, end_us - td->start_us, 1), profile_ms(worker, ready_us - td->start_us, 1),
+                       profile_ms(display, end_us - ready_us, 1));
     }
     cache_text_preview(td);
     return G_SOURCE_REMOVE;
@@ -831,8 +832,9 @@ void load_file_content(AppData* app, const gchar* name, const gchar* full) {
         }
         preview_state_set_detected(app, cached->kind, cached->encoding, cached->content_type);
         if (debug_preview_timings()) {
-            preview_timing("preview %s [cached]: %.1f ms", name,
-                       (g_get_monotonic_time() - td->start_us) / 1000.0);
+            gchar total[PROFILE_MS_LEN];
+            preview_timing("preview %s [cached]: %s ms", name,
+                           profile_ms(total, g_get_monotonic_time() - td->start_us, 1));
         }
     }
 

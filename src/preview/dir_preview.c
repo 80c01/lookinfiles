@@ -414,9 +414,10 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
     }
     if (job->start_us != 0) {
         gint64 end_us = g_get_monotonic_time();
-        profile_log("preview %s [Folder]: %.1f ms (worker %.1f ms, display %.1f ms)", label,
-                    (end_us - job->start_us) / 1000.0, (ready_us - job->start_us) / 1000.0,
-                    (end_us - ready_us) / 1000.0);
+        gchar total[PROFILE_MS_LEN], worker[PROFILE_MS_LEN], display[PROFILE_MS_LEN];
+        profile_log("preview %s [Folder]: %s ms (worker %s ms, display %s ms)", label,
+                    profile_ms(total, end_us - job->start_us, 1), profile_ms(worker, ready_us - job->start_us, 1),
+                    profile_ms(display, end_us - ready_us, 1));
     }
     g_free(label);
 }
