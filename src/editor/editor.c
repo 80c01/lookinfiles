@@ -189,6 +189,7 @@ static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
  * explorer: no tab switch) */
 static void build_view(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     editor_view_build(app, tab, buffer);
+    tab->preview_paused = !app->settings.update_preview; /* Preferences → Editor */
     GtkEventController* focus = gtk_event_controller_focus_new();
     g_signal_connect(focus, "enter", G_CALLBACK(on_view_focus_enter), tab);
     gtk_widget_add_controller(tab->view, focus);
@@ -536,6 +537,7 @@ EditorTab* editor_add_view(AppData* app, EditorTab* tab, GtkNotebook* nb) {
     twin->mode = tab->mode;
     twin->text_mode = tab->text_mode;
     build_view(app, twin, tab->buffer);
+    twin->preview_paused = tab->preview_paused; /* the views of one file share it */
     /* The view looks like the one it was split from */
     diff_gutter_set_line_numbers(twin->view, diff_gutter_get_line_numbers(tab->view) ? 0 : -1);
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(twin->view),
@@ -1092,6 +1094,14 @@ void editor_set_preview_paused(AppData* app, EditorTab* tab, gboolean paused) {
     }
     /* Back to the saved file: what was saved meanwhile is shown */
     if (!paused) update_preview_after_save(app, tab);
+}
+
+void editor_set_all_preview_paused(AppData* app, gboolean paused) {
+    if (app == NULL) return;
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t != NULL) t->preview_paused = paused;
+    }
 }
 
 gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {

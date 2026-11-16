@@ -33,6 +33,7 @@ typedef struct {
     GtkWidget* mode;          /* GtkDropDown: Notepad, Vim, Emacs */
     GtkWidget* line_numbers;  /* GtkCheckButton */
     GtkWidget* wrap;          /* GtkCheckButton */
+    GtkWidget* update_preview; /* GtkCheckButton */
     GtkWidget* tagbar;        /* GtkCheckButton */
     GtkWidget* preview_tagbar; /* GtkCheckButton */
     GtkWidget* minimap;        /* GtkCheckButton */
@@ -154,6 +155,13 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->wrap), p->app->settings.wrap);
     gtk_widget_set_tooltip_text(p->wrap, _("Long lines continue on the next line instead of scrolling sideways"));
     gtk_box_append(GTK_BOX(box), p->wrap);
+
+    p->update_preview = gtk_check_button_new_with_mnemonic(_("_Update the preview from the editor"));
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->update_preview), p->app->settings.update_preview);
+    gtk_widget_set_tooltip_text(p->update_preview, _("Saving a file, selecting its tab or clicking into it shows it in "
+                                                   "the preview, in every tab, the tabs already open too (a tab: "
+                                                   "Don't Update Preview in its right-click menu)"));
+    gtk_box_append(GTK_BOX(box), p->update_preview);
 
     p->tagbar = gtk_check_button_new_with_mnemonic(_("Show the _tagbar"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->tagbar), p->app->settings.tagbar);
@@ -415,6 +423,7 @@ static void save_settings(Preferences* p) {
     s.editor = MODES[selected < G_N_ELEMENTS(MODES) ? selected : 0];
     s.line_numbers = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->line_numbers));
     s.wrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->wrap));
+    s.update_preview = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->update_preview));
     s.tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->tagbar));
     s.preview_tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->preview_tagbar));
     s.minimap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->minimap));
@@ -445,6 +454,9 @@ static void save_settings(Preferences* p) {
     if (s.tagbar != app->settings.tagbar) {
         editor_tagbar_set_shown(app, s.tagbar); /* every tab: only when changed */
         ipynb_tab_set_tagbar_shown(app, s.tagbar);
+    }
+    if (s.update_preview != app->settings.update_preview) {
+        editor_set_all_preview_paused(app, !s.update_preview); /* every tab: only when changed */
     }
     if (s.preview_tagbar != app->settings.preview_tagbar) {
         workspace_set_preview_tagbar(app, s.preview_tagbar); /* every workspace: only when changed */

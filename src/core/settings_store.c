@@ -23,6 +23,7 @@ void settings_defaults(Settings* s) {
     s->tagbar = FALSE;
     s->preview_tagbar = FALSE;
     s->minimap = TRUE;
+    s->update_preview = TRUE;
     s->auto_terminal = SETTINGS_PANEL_KEEP;
     s->auto_preview = SETTINGS_PANEL_KEEP;
     s->auto_tagbar = SETTINGS_PANEL_KEEP;
@@ -154,6 +155,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->tagbar = read_bool(kf, "Editor", "tagbar", s->tagbar);
     s->preview_tagbar = read_bool(kf, "Preview", "tagbar", s->preview_tagbar);
     s->minimap = read_bool(kf, "Editor", "minimap", s->minimap);
+    s->update_preview = read_bool(kf, "Editor", "update-preview", s->update_preview);
     s->auto_terminal = read_panel(kf, "auto-terminal");
     s->auto_preview = read_panel(kf, "auto-preview");
     s->auto_tagbar = read_panel(kf, "auto-tagbar");
@@ -178,6 +180,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_boolean(kf, "Editor", "wrap", s->wrap);
     g_key_file_set_boolean(kf, "Editor", "tagbar", s->tagbar);
     g_key_file_set_boolean(kf, "Editor", "minimap", s->minimap);
+    g_key_file_set_boolean(kf, "Editor", "update-preview", s->update_preview);
     g_key_file_set_boolean(kf, "Preview", "tagbar", s->preview_tagbar);
     g_key_file_set_integer(kf, "Editor", "color-column", s->color_column);
     write_panel(kf, "auto-terminal", s->auto_terminal);

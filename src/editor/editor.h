@@ -86,6 +86,9 @@ gboolean editor_preview_paused(AppData* app, const gchar* path);
 /* Let the saves of tab update the preview again, or not: the preview is
  * brought up to date when they do */
 void editor_set_preview_paused(AppData* app, EditorTab* tab, gboolean paused);
+/* Every open tab updates the preview again (FALSE) or stops (TRUE), without
+ * updating it now (Preferences → Editor) */
+void editor_set_all_preview_paused(AppData* app, gboolean paused);
 
 /* Write the tab's text to path in place (file_save_text()); FALSE with error
  * set when nothing was written */

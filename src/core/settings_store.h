@@ -11,6 +11,9 @@
  *   color-column=81      # vertical line at this column in editors (0: none)
  *   tagbar=false         # code and Markdown editor tabs show the tagbar
  *   minimap=true         # editor tabs, the preview and Help show a minimap
+ *   update-preview=true  # saving, selecting or focusing an editor tab shows
+ *                        # its file in the preview (false: every tab starts
+ *                        # with Don't Update Preview)
  *   [Preview]
  *   tagbar=false         # previews with headings show the tagbar
  *   [Layouts]
@@ -76,6 +79,7 @@ typedef struct {
     gboolean tagbar;       /* code and Markdown editor tabs show the tagbar */
     gboolean preview_tagbar; /* previews with headings show the tagbar */
     gboolean minimap;      /* editor tabs, the preview and Help show a minimap */
+    gboolean update_preview; /* editor tabs update the preview (saves, selection) */
     SettingsPanel auto_terminal; /* terminal panel of the Auto layout */
     SettingsPanel auto_preview;  /* preview panel of the Auto layout */
     SettingsPanel auto_tagbar;   /* editor tagbar of the Auto layout */
@@ -89,7 +93,8 @@ typedef struct {
     gint height;
 } Settings;
 
-/* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap, Auto
+/* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap,
+ * editor tabs updating the preview, Auto
  * keeping the panels, a 24-hour clock without seconds, a 60-minute timer
  * restarting when it expires, 1000 x 600 */
 void settings_defaults(Settings* s);

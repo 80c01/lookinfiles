@@ -6220,6 +6220,20 @@ msgstr ""
 "Les longues lignes continuent sur la ligne suivante au lieu de défiler "
 "horizontalement"
 
+#: src/chrome/preferences.c
+msgid "_Update the preview from the editor"
+msgstr "Mettre à jo_ur l’aperçu depuis l’éditeur"
+
+#: src/chrome/preferences.c
+msgid ""
+"Saving a file, selecting its tab or clicking into it shows it in the "
+"preview, in every tab, the tabs already open too (a tab: Don't Update "
+"Preview in its right-click menu)"
+msgstr ""
+"Enregistrer un fichier, sélectionner son onglet ou cliquer dedans "
+"l’affiche dans l’aperçu, dans chaque onglet, les onglets déjà ouverts aussi "
+"(un onglet : Ne pas mettre à jour l’aperçu dans son menu contextuel)"
+
 #: src/chrome/preferences.c:139
 msgid "Show the _tagbar"
 msgstr "Afficher la _barre de symboles"

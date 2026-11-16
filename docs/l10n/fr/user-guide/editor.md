@@ -169,7 +169,9 @@ numéros de ligne et renvoient les longues lignes à la ligne (`-e` sur la
 ligne de commande l’emporte pour un lancement), et si les onglets de code
 et Markdown affichent la barre de symboles (les onglets ouverts aussi), et
 si les onglets d’édition (les onglets ouverts aussi), l’aperçu et l’aide
-affichent la minicarte.
+affichent la minicarte. **Mettre à jour l’aperçu depuis l’éditeur**
+décoché fait démarrer chaque onglet, les onglets ouverts aussi, avec **Ne
+pas mettre à jour l’aperçu**.
 
 En mode Emacs, `M-x org-mode` active l’édition Org-mode pour n’importe quel
 fichier, et `M-x text-mode` la désactive.

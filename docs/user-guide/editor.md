@@ -147,6 +147,8 @@ kept for the next launches, whether new tabs show line numbers and wrap
 long lines (`-e` on the command line wins for one launch), and whether the
 code and Markdown tabs show the tagbar (the open tabs too), and whether the
 editor tabs (the open tabs too), the preview and Help show the minimap.
+**Update the preview from the editor** turned off starts every tab, the
+open tabs too, with **Don't Update Preview**.
 
 In Emacs mode, `M-x org-mode` turns on Org-mode editing for any file, and
 `M-x text-mode` turns it off.
