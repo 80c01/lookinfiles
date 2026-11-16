@@ -91,8 +91,10 @@ static void show_cell_menu(IpynbTab* t, guint index, GtkWidget* widget, gdouble 
     GtkWidget* popover = gtk_popover_new();
     gtk_widget_set_parent(popover, t->root);
     gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
-    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
-    gtk_widget_set_halign(popover, GTK_ALIGN_START);
+    /* Beside the pointer: a menu taller than the room above and below it
+     * slides up or down to stay on the screen (above or below, it would
+     * not show at all) */
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_RIGHT);
     GdkRectangle rect = { (gint)at.x, (gint)at.y, 1, 1 };
     gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
