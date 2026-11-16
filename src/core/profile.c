@@ -8,6 +8,7 @@
 
 #ifdef G_OS_UNIX
 #include <sys/resource.h>
+#include <unistd.h>
 #endif
 #if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33))
 #include <malloc.h>
@@ -237,6 +238,84 @@ gint64 profile_cpu_us(void) {
     return -1;
 }
 
+gchar* profile_thread_group(const gchar* comm, gboolean is_main, gchar* out, gsize size) {
+    if (is_main || comm == NULL || comm[0] == '\0') {
+        g_strlcpy(out, "main", size);
+        return out;
+    }
+    g_strlcpy(out, comm, size);
+    gsize len = strlen(out);
+    while (len > 1 && g_ascii_isdigit(out[len - 1])) {
+        out[--len] = '\0';
+    }
+    return out;
+}
+
+typedef struct {
+    gchar* group;
+    gint64 ticks;
+} ThreadGroup;
+
+static gint compare_groups(gconstpointer a, gconstpointer b) {
+    gint64 x = ((const ThreadGroup*)a)->ticks, y = ((const ThreadGroup*)b)->ticks;
+    return (x < y) - (x > y);
+}
+
+/* "profile: threads main=812 pool-=403...": CPU ms per group of the threads
+ * alive now (/proc/self/task, Linux) */
+static void write_thread_groups(void) {
+#ifdef G_OS_UNIX
+    GDir* dir = g_dir_open("/proc/self/task", 0, NULL);
+    if (dir == NULL) {
+        return;
+    }
+    glong tick = sysconf(_SC_CLK_TCK);
+    gchar* self = g_strdup_printf("%d", (int)getpid());
+    GArray* groups = g_array_new(FALSE, TRUE, sizeof(ThreadGroup));
+    const gchar* tid;
+    while ((tid = g_dir_read_name(dir)) != NULL) {
+        gchar* path = g_build_filename("/proc/self/task", tid, "stat", NULL);
+        gchar* text = NULL;
+        if (g_file_get_contents(path, &text, NULL, NULL)) {
+            /* pid (comm) state ... : comm may hold spaces, the fields follow its ')' */
+            gchar* open = strchr(text, '(');
+            gchar* close = strrchr(text, ')');
+            if (open != NULL && close != NULL && close > open) {
+                *close = '\0';
+                gchar** f = g_strsplit(close + 2, " ", 16);
+                if (g_strv_length(f) >= 13) {
+                    gint64 ticks = g_ascii_strtoll(f[11], NULL, 10) + g_ascii_strtoll(f[12], NULL, 10);
+                    gchar name[64];
+                    profile_thread_group(open + 1, strcmp(tid, self) == 0, name, sizeof(name));
+                    guint i = 0;
+                    while (i < groups->len && strcmp(g_array_index(groups, ThreadGroup, i).group, name) != 0) i++;
+                    if (i == groups->len) {
+                        ThreadGroup g = {g_strdup(name), 0};
+                        g_array_append_val(groups, g);
+                    }
+                    g_array_index(groups, ThreadGroup, i).ticks += ticks;
+                }
+                g_strfreev(f);
+            }
+            g_free(text);
+        }
+        g_free(path);
+    }
+    g_dir_close(dir);
+    g_array_sort(groups, compare_groups);
+    GString* line = g_string_new("threads");
+    for (guint i = 0; i < groups->len && i < 8; i++) {
+        const ThreadGroup* g = &g_array_index(groups, ThreadGroup, i);
+        g_string_append_printf(line, " %s=%" G_GINT64_FORMAT, g->group, tick > 0 ? g->ticks * 1000 / tick : g->ticks);
+    }
+    for (guint i = 0; i < groups->len; i++) g_free(g_array_index(groups, ThreadGroup, i).group);
+    g_array_free(groups, TRUE);
+    write_linef("%s", line->str);
+    g_string_free(line, TRUE);
+    g_free(self);
+#endif
+}
+
 static gint64 mean_us(const ProfileFrameStats* s) {
     guint n = s->count + s->unpainted;
     return n > 0 ? s->total_us / n : 0;
@@ -313,6 +392,7 @@ void profile_report(void) {
     gchar up[PROFILE_MS_LEN], cpu_ms[PROFILE_MS_LEN], scpu[PROFILE_MS_LEN], sworst[PROFILE_MS_LEN];
     gchar worst[PROFILE_MS_LEN], mean[PROFILE_MS_LEN], heap[128];
     malloc_fields(heap, sizeof(heap));
+    write_thread_groups();
     write_linef("report uptime_ms=%s cpu_ms=%s startup_cpu_ms=%s rss_kb=%" G_GINT64_FORMAT
                 " peak_kb=%" G_GINT64_FORMAT
                 " startup_frames=%u startup_slow=%u startup_worst_ms=%s"

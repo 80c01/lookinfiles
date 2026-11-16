@@ -88,6 +88,12 @@ static void test_output(void) {
     profile_report();
 
     gchar** lines = read_lines(path);
+#ifdef G_OS_UNIX
+    /* The threads line comes before the report: drop it to keep the indices */
+    g_assert_true(g_str_has_prefix(lines[9], "profile: threads main="));
+    g_free(lines[9]);
+    memmove(lines + 9, lines + 10, (g_strv_length(lines) - 9) * sizeof(gchar*));
+#endif
     g_assert_cmpuint(g_strv_length(lines), ==, 11); /* 10 lines + the empty end */
     g_assert_true(g_str_has_prefix(lines[0], "profile: mark "));
     g_assert_true(g_str_has_suffix(lines[0], " first step"));
@@ -141,9 +147,20 @@ static void test_ms(void) {
     g_assert_cmpstr(profile_ms(buf, G_GINT64_CONSTANT(1589379000000), 0), ==, "1589379000");
 }
 
+static void test_thread_group(void) {
+    gchar buf[64];
+    g_assert_cmpstr(profile_thread_group("lookinfiles", TRUE, buf, sizeof(buf)), ==, "main");
+    g_assert_cmpstr(profile_thread_group("llvmpipe-3", FALSE, buf, sizeof(buf)), ==, "llvmpipe-");
+    g_assert_cmpstr(profile_thread_group("pool-12", FALSE, buf, sizeof(buf)), ==, "pool-");
+    g_assert_cmpstr(profile_thread_group("gmain", FALSE, buf, sizeof(buf)), ==, "gmain");
+    g_assert_cmpstr(profile_thread_group("7", FALSE, buf, sizeof(buf)), ==, "7"); /* never empty */
+    g_assert_cmpstr(profile_thread_group("", FALSE, buf, sizeof(buf)), ==, "main");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/profile/ms", test_ms);
+    g_test_add_func("/profile/thread_group", test_thread_group);
     g_test_add_func("/profile/frame_stats", test_frame_stats);
     g_test_add_func("/profile/parse_status", test_parse_status);
     g_test_add_func("/profile/cpu_and_memory", test_cpu_and_memory);

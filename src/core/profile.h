@@ -9,6 +9,9 @@
  *   profile: sample at <s> s key=value...                    each minute after the
  *                   start-up: CPU %, memory, threads, frames of that minute,
  *                   and (glibc) what malloc holds: in use, large blocks, free
+ *   profile: threads <group>=<ms>...                         at exit, before the
+ *                   report: CPU time per group of threads still alive
+ *                   ("main", "pool-" for "pool-12"...), largest first
  *   profile: report key=value...                             summary at exit
  *
  * Numbers are written with a dot whatever the locale (profile_ms()), so that
@@ -68,6 +71,11 @@ void profile_frame(gint64 duration_us, gboolean painted, const ProfileFramePhase
 /* A sample line now (also written each PROFILE_SAMPLE_SECONDS after the
  * start-up): what happened since the previous one */
 void profile_sample(void);
+
+/* The group of a thread name: "main" for the program's own thread
+ * (is_main), else the name without its trailing digits ("llvmpipe-3" ->
+ * "llvmpipe-"), into out (size bytes); returns out */
+gchar* profile_thread_group(const gchar* comm, gboolean is_main, gchar* out, gsize size);
 
 /* us in milliseconds with that many decimals (0 to 3), a dot as separator
  * whatever the locale, into buf (PROFILE_MS_LEN bytes); returns buf */
