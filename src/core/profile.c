@@ -15,6 +15,7 @@ static gboolean initialized = FALSE;
 static gint64 origin_us = 0;  /* profile_init() */
 static gint64 last_mark_us = 0;
 static gboolean startup_over = FALSE;
+static gint64 startup_cpu_us = -1; /* CPU time at profile_startup_done() */
 static ProfileFrameStats startup_frames;
 static ProfileFrameStats run_frames;
 static GMutex lock;
@@ -97,6 +98,7 @@ void profile_startup_done(void) {
         return;
     }
     startup_over = TRUE;
+    startup_cpu_us = profile_cpu_us();
     profile_mark("startup done");
 }
 
@@ -139,10 +141,8 @@ void profile_frame(gint64 duration_us, gboolean painted) {
     g_mutex_lock(&lock);
     profile_frame_stats_add(startup_over ? &run_frames : &startup_frames, duration_us, painted);
     g_mutex_unlock(&lock);
-    if (duration_us > PROFILE_SLOW_FRAME_US) {
-        write_linef("frame %6.1f ms slow at %.1f ms", ms(duration_us),
-                    ms(g_get_monotonic_time() - origin_us));
-    }
+    write_linef("frame %6.1f ms at %.1f ms%s%s", ms(duration_us), ms(g_get_monotonic_time() - origin_us),
+                duration_us > PROFILE_SLOW_FRAME_US ? " slow" : "", painted ? "" : " unpainted");
 }
 
 /* The number after "key:" at the start of a line of text, in KB; -1 if absent */
@@ -205,10 +205,11 @@ void profile_report(void) {
     ProfileFrameStats s = startup_frames;
     ProfileFrameStats r = run_frames;
     g_mutex_unlock(&lock);
-    write_linef("report uptime_ms=%.0f cpu_ms=%.0f rss_kb=%" G_GINT64_FORMAT
+    write_linef("report uptime_ms=%.0f cpu_ms=%.0f startup_cpu_ms=%.0f rss_kb=%" G_GINT64_FORMAT
                 " peak_kb=%" G_GINT64_FORMAT
                 " startup_frames=%u startup_slow=%u startup_worst_ms=%.1f"
                 " frames=%u unpainted=%u slow=%u worst_ms=%.1f mean_ms=%.2f",
-                ms(g_get_monotonic_time() - origin_us), cpu >= 0 ? ms(cpu) : -1.0, rss, peak,
+                ms(g_get_monotonic_time() - origin_us), cpu >= 0 ? ms(cpu) : -1.0,
+                startup_cpu_us >= 0 ? ms(startup_cpu_us) : -1.0, rss, peak,
                 s.count, s.slow, ms(s.worst_us), r.count, r.unpainted, r.slow, ms(r.worst_us), mean_ms(&r));
 }

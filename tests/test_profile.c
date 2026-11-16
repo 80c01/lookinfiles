@@ -80,19 +80,23 @@ static void test_output(void) {
     profile_report();
 
     gchar** lines = read_lines(path);
-    g_assert_cmpuint(g_strv_length(lines), ==, 7); /* 6 lines + the empty end */
+    g_assert_cmpuint(g_strv_length(lines), ==, 10); /* 9 lines + the empty end */
     g_assert_true(g_str_has_prefix(lines[0], "profile: mark "));
     g_assert_true(g_str_has_suffix(lines[0], " first step"));
     g_assert_true(g_str_has_prefix(lines[1], "profile: time "));
     g_assert_true(g_str_has_suffix(lines[1], " ms scan dir"));
-    g_assert_true(g_str_has_suffix(lines[2], " startup done"));
-    g_assert_true(g_str_has_prefix(lines[3], "profile: frame "));
-    g_assert_nonnull(strstr(lines[3], " slow at "));
-    g_assert_cmpstr(lines[4], ==, "profile: note 7");
-    g_assert_true(g_str_has_prefix(lines[5], "profile: report "));
-    g_assert_nonnull(strstr(lines[5], " startup_frames=1 startup_slow=0 "));
-    g_assert_nonnull(strstr(lines[5], " frames=2 unpainted=1 slow=1 "));
-    g_assert_cmpstr(lines[6], ==, "");
+    g_assert_true(g_str_has_prefix(lines[2], "profile: frame "));
+    g_assert_true(g_str_has_suffix(lines[2], " ms"));                   /* fast, painted */
+    g_assert_true(g_str_has_suffix(lines[3], " startup done"));
+    g_assert_true(g_str_has_suffix(lines[4], " ms slow"));
+    g_assert_true(g_str_has_prefix(lines[5], "profile: frame "));
+    g_assert_true(g_str_has_suffix(lines[6], " ms unpainted"));
+    g_assert_nonnull(strstr(lines[6], " ms at "));
+    g_assert_cmpstr(lines[7], ==, "profile: note 7");
+    g_assert_true(g_str_has_prefix(lines[8], "profile: report "));
+    g_assert_nonnull(strstr(lines[8], " startup_frames=1 startup_slow=0 "));
+    g_assert_nonnull(strstr(lines[8], " frames=2 unpainted=1 slow=1 "));
+    g_assert_cmpstr(lines[9], ==, "");
     g_strfreev(lines);
 
     g_remove(path);

@@ -1,4 +1,5 @@
 #include "preview/dir_preview.h"
+#include "core/profile.h"
 #include "git/git_state.h"
 #include "search/search.h"
 #include "core/i18n.h"
@@ -41,6 +42,7 @@ typedef struct {
     gint64 readme_size;
     PreviewDoc* mail;      /* Maildir / MH folder: its message table instead */
     gboolean cached_shown; /* the cached overview was shown at the selection */
+    gint64 start_us;       /* profile_start() at the selection */
 } DirPreviewJob;
 
 static void job_free(gpointer data) {
@@ -396,18 +398,27 @@ static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_d
         job->cancellable != app->preview_cancellable || job->summary == NULL) {
         return;
     }
+    gint64 ready_us = profile_start();
+    gchar* label = (job->start_us != 0) ? g_strdup(job->full) : NULL; /* cache_job() moves it */
     if (job->mail != NULL) {
         render_job(app, job);
-        return;
+    } else {
+        gchar* key = dir_cache_key(job);
+        DirPreviewJob* cached = preview_cache_lookup(dir_cache(), key, NULL);
+        g_free(key);
+        /* Nothing changed since the cached overview shown: leave it (and its scroll) */
+        if (!(job->cached_shown && cached != NULL && jobs_equal(cached, job))) {
+            render_job(app, job);
+        }
+        cache_job(job);
     }
-    gchar* key = dir_cache_key(job);
-    DirPreviewJob* cached = preview_cache_lookup(dir_cache(), key, NULL);
-    g_free(key);
-    /* Nothing changed since the cached overview shown: leave it (and its scroll) */
-    if (!(job->cached_shown && cached != NULL && jobs_equal(cached, job))) {
-        render_job(app, job);
+    if (job->start_us != 0) {
+        gint64 end_us = g_get_monotonic_time();
+        profile_log("preview %s [Folder]: %.1f ms (worker %.1f ms, display %.1f ms)", label,
+                    (end_us - job->start_us) / 1000.0, (ready_us - job->start_us) / 1000.0,
+                    (end_us - ready_us) / 1000.0);
     }
-    cache_job(job);
+    g_free(label);
 }
 
 static void render_job(AppData* app, const DirPreviewJob* job) {
@@ -515,6 +526,7 @@ void dir_preview_show(AppData* app, const gchar* name, const gchar* full) {
     job->full = g_strdup(full);
     job->show_hidden = app->show_hidden;
     job->sort = summary_sort(app->sort_mode);
+    job->start_us = profile_start();
 
     gchar* key = dir_cache_key(job);
     DirPreviewJob* cached = preview_cache_lookup(dir_cache(), key, NULL);

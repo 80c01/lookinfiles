@@ -4,7 +4,7 @@
  *
  *   profile: mark   <total ms> +<since last mark> <label>    start-up steps
  *   profile: time   <ms> <label>                             timed operations
- *   profile: frame  <ms> slow at <total ms>                  frames over 16.7 ms
+ *   profile: frame  <ms> at <total ms>[ slow][ unpainted]   each frame
  *   profile: report key=value...                             summary at exit
  *
  * Without the variable every call returns at once (profile_start() gives 0
@@ -46,7 +46,8 @@ void profile_log(const gchar* format, ...) G_GNUC_PRINTF(1, 2);
  * painted: something was drawn (else only animations or tick callbacks ran) */
 void profile_frame(gint64 duration_us, gboolean painted);
 
-/* The summary line: frames of the start-up and after it, CPU time, memory */
+/* The summary line: frames of the start-up and after it, CPU time (in all,
+ * and at the end of the start-up, loading of the libraries included), memory */
 void profile_report(void);
 
 /* Frame counters (exposed for the unit test) */

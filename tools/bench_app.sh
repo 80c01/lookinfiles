@@ -3,8 +3,10 @@
 # application on a virtual X display with LOOKIN_PROFILE and measures
 #   - the start-up: launch to the window drawn and idle (BENCH_RUNS runs,
 #     median), and the costliest start-up steps,
+#   - the end of the loading: CPU and frames in the BENCH_SETTLE seconds
+#     after the start-up (previews, git status, results of workers),
 #   - the idle cost: CPU, resident memory and frames drawn while nobody
-#     touches the window (BENCH_IDLE seconds),
+#     touches the window, after that (BENCH_IDLE seconds),
 #   - browsing: the preview time of each file while going down the list, the
 #     slow frames (over 16.7 ms) and the memory afterwards.
 # Fails when a result exceeds its budget (BENCH_* variables below).
@@ -21,13 +23,16 @@ OUT=${BENCH_OUT:-$ROOT/build/bench}
 case "$OUT" in /*) ;; *) OUT=$(pwd)/$OUT ;; esac
 FIX=${TMPDIR:-/tmp}/lookin-bench
 RUNS=${BENCH_RUNS:-3}
+SETTLE=${BENCH_SETTLE:-2}
 IDLE=${BENCH_IDLE:-5}
 
 # Budgets
 MAX_STARTUP_MS=${BENCH_STARTUP_MS:-600}      # LOOKIN_PROFILE origin to "startup done"
-MAX_IDLE_CPU=${BENCH_IDLE_CPU:-1.0}          # % of one core while idle
+MAX_SETTLE_CPU_MS=${BENCH_SETTLE_CPU_MS:-100} # CPU after "startup done", while it settles
+MAX_IDLE_CPU=${BENCH_IDLE_CPU:-0.5}          # % of one core while idle
 MAX_IDLE_RSS_MB=${BENCH_IDLE_RSS_MB:-150}    # resident memory when idle
-MAX_IDLE_FPS=${BENCH_IDLE_FPS:-1.5}          # frames per second drawn while idle
+MAX_IDLE_FPS=${BENCH_IDLE_FPS:-2.0}          # frames per second painted while idle (default
+                                             # top bar: timer 1/s, CPU chart 0.5/s)
 MAX_PREVIEW_MS=${BENCH_PREVIEW_MS:-100}      # slowest preview while browsing
 MAX_BROWSE_RSS_MB=${BENCH_BROWSE_RSS_MB:-200} # resident memory after browsing
 
@@ -95,6 +100,8 @@ cpu_ticks() { awk '{ print $14 + $15 }' "/proc/$APP/stat"; }
 rss_kb() { awk '/^VmRSS:/ { print $2 }' "/proc/$APP/status"; }
 # The value of key=... in the report line of a log
 report() { sed -n "s/.*profile: report .*\b$2=\([-0-9.]*\).*/\1/p" "$1"; }
+# Painted frames of a log between $2 and $3 ms (profile time)
+frames_between() { awk -v a="$2" -v b="$3" '/^profile: frame / && !/unpainted/ { t = $6 + 0; if (t >= a && t < b) n++ } END { print n + 0 }' "$1"; }
 # The total ms of a mark of a log
 mark_ms() { sed -n "s/^profile: mark *\([0-9.]*\) ms +[0-9.]* $2\$/\1/p" "$1" | head -1; }
 
@@ -112,7 +119,7 @@ quit() {
 }
 
 # --- Start-up and idle
-echo "bench-app: $RUNS start-ups, then $IDLE s idle each"
+echo "bench-app: $RUNS start-ups, each followed by $SETTLE s settling and $IDLE s idle"
 : > "$OUT/startup.txt"
 for r in $(seq 1 "$RUNS"); do
     LOG=$OUT/run$r.log
@@ -121,28 +128,35 @@ for r in $(seq 1 "$RUNS"); do
     wall=$(( $(date +%s%3N) - t0 ))
     echo "$(mark_ms "$LOG" 'startup done') $(mark_ms "$LOG" 'first frame') $wall" >> "$OUT/startup.txt"
     c0=$(cpu_ticks)
-    sleep "$IDLE"
+    sleep "$SETTLE"
     c1=$(cpu_ticks)
+    sleep "$IDLE"
+    c2=$(cpu_ticks)
     rss=$(rss_kb)
     quit
-    echo "$c0 $c1 $rss $(report "$LOG" frames) $(report "$LOG" unpainted)" >> "$OUT/idle.txt"
+    sd=$(mark_ms "$LOG" 'startup done')
+    a=$(awk -v s="$sd" -v d="$SETTLE" 'BEGIN { print s + d * 1000 }')
+    b=$(awk -v s="$a" -v d="$IDLE" 'BEGIN { print s + d * 1000 }')
+    echo "$c0 $c1 $c2 $rss $(frames_between "$LOG" "$sd" "$a") $(frames_between "$LOG" "$a" "$b")" >> "$OUT/idle.txt"
 done
 med() { sort -n | awk '{ v[NR] = $1 } END { print v[int((NR + 1) / 2)] }'; }
 startup=$(awk '{ print $1 }' "$OUT/startup.txt" | med)
 first=$(awk '{ print $2 }' "$OUT/startup.txt" | med)
 wall=$(awk '{ print $3 }' "$OUT/startup.txt" | med)
-idle_cpu=$(awk -v t="$TICK" -v s="$IDLE" '{ print ($2 - $1) * 100 / t / s }' "$OUT/idle.txt" | med)
-idle_rss=$(awk '{ print $3 }' "$OUT/idle.txt" | med)
-idle_fps=$(awk -v s="$IDLE" '{ print $4 / s }' "$OUT/idle.txt" | med)
-idle_ups=$(awk -v s="$IDLE" '{ print $5 / s }' "$OUT/idle.txt" | med)
+settle_cpu=$(awk -v t="$TICK" '{ print ($2 - $1) * 1000 / t }' "$OUT/idle.txt" | med)
+settle_frames=$(awk '{ print $5 }' "$OUT/idle.txt" | med)
+idle_cpu=$(awk -v t="$TICK" -v s="$IDLE" '{ print ($3 - $2) * 100 / t / s }' "$OUT/idle.txt" | med)
+idle_rss=$(awk '{ print $4 }' "$OUT/idle.txt" | med)
+idle_fps=$(awk -v s="$IDLE" '{ print $6 / s }' "$OUT/idle.txt" | med)
 
 printf '  start-up            %6.0f ms to idle (first frame %.0f ms, launch to idle %s ms incl. exec)\n' "$startup" "$first" "$wall"
 echo "  costliest steps (run 1):"
 awk '/^profile: mark/ { sub(/^\+/, "", $5); d = $5 + 0; $1 = $2 = $3 = $4 = $5 = ""; sub(/^ +/, ""); print d, $0 }' "$OUT/run1.log" \
     | sort -rn | head -5 | awk '{ d = $1; $1 = ""; printf "      %7.1f ms %s\n", d, $0 }'
+printf '  settling            %6.0f ms CPU, %s frames painted in %s s\n' "$settle_cpu" "$settle_frames" "$SETTLE"
 printf '  idle CPU            %6.2f %% of a core\n' "$idle_cpu"
 printf '  idle memory         %6.1f MB resident\n' "$(awk -v k="$idle_rss" 'BEGIN { print k / 1024 }')"
-printf '  idle frames         %6.2f per second painted, %.2f without drawing\n' "$idle_fps" "$idle_ups"
+printf '  idle frames         %6.2f painted per second\n' "$idle_fps"
 
 # --- Browsing: down the list, one preview per file
 LOG=$OUT/browse.log
@@ -166,6 +180,7 @@ printf '  memory after        %6.1f MB resident\n' "$(awk -v k="$rss" 'BEGIN { p
 
 # --- Budgets
 gt "$startup" "$MAX_STARTUP_MS" && fail "start-up $startup ms > $MAX_STARTUP_MS ms"
+gt "$settle_cpu" "$MAX_SETTLE_CPU_MS" && fail "settling $settle_cpu ms CPU > $MAX_SETTLE_CPU_MS ms"
 gt "$idle_cpu" "$MAX_IDLE_CPU" && fail "idle CPU $idle_cpu % > $MAX_IDLE_CPU %"
 gt "$((idle_rss / 1024))" "$MAX_IDLE_RSS_MB" && fail "idle memory $((idle_rss / 1024)) MB > $MAX_IDLE_RSS_MB MB"
 gt "$idle_fps" "$MAX_IDLE_FPS" && fail "idle frames $idle_fps/s > $MAX_IDLE_FPS/s"
