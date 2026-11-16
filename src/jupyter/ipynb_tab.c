@@ -954,7 +954,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, con
                                                 _("Clear the Outputs of Every Cell"), G_CALLBACK(on_clear_outputs)));
     gtk_box_append(GTK_BOX(actions), bar_button(t, "text-x-generic", _("Edit as JSON"),
                                                 _("Open the File as Text in an Editor Tab"), G_CALLBACK(on_edit_json)));
-    t->undo_button = bar_button(t, "edit-delete", _("Undo Delete"), _("Put Back the Cell Deleted Last"),
+    t->undo_button = bar_button(t, "edit-undo", _("Undo Delete"), _("Put Back the Cell Deleted Last"),
                                 G_CALLBACK(on_undo_delete));
     gtk_widget_set_visible(t->undo_button, FALSE);
     gtk_box_append(GTK_BOX(actions), t->undo_button);

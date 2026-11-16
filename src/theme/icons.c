@@ -38,6 +38,7 @@ static const IconFallback FALLBACKS[] = {
     {"go-previous", {"pan-start", "pan-up", NULL}},
     {"go-home", {"user-home", "folder", NULL}},
     {"process-stop", {"window-close", NULL}},
+    {"edit-undo", {"pan-start", NULL}},
     {"input-keyboard", {"preferences-desktop-keyboard", "text-x-generic", NULL}},
     {"alarm", {"preferences-system-time", "document-open-recent", NULL}},
     /* Canvas tools and text formatting */
