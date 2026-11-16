@@ -67,6 +67,15 @@ November 2026: start-up about 80 ms, idle 0 % CPU and 74 MB resident, 99 MB
 after browsing. Lower a budget once the code is below it, never raise it to
 make a change pass.
 
+## Compiler options
+
+Measured in November 2026 (GCC 14, `make bench`): `-flto=auto` and `-O3
+-flto=auto` change nothing beyond the noise between runs (start-up, scan,
+previews, browsing within 2 %), and enlarge the code by 3 % and 19 %. The
+time goes to GTK, the libraries, the kernel and drawing, not to the
+program's own code; profile-guided optimization would not help either. The
+default stays `-O2 -g`. Measure again before changing it.
+
 ## Rules that keep it light
 
 - **Nothing hidden works**: a tab or view not on screen must not load its
