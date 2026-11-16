@@ -19,6 +19,7 @@ struct GitTab {
     gchar* current_root;        /* repository shown, or NULL */
     gchar* selected_hash;       /* selected commit, or NULL */
     GCancellable* cancellable;  /* log and show tasks */
+    gboolean log_stale;         /* current_root's history is read when the tab is shown */
 };
 
 /* One row of the commit list (item of GitTab.store) */
@@ -344,6 +345,8 @@ void git_tab_reload(AppData* app) {
     git_tab_update(app, app->base_dir);
 }
 
+static void start_log_read(AppData* app);
+
 void git_tab_update(AppData* app, const gchar* dir) {
     GitTab* g = app != NULL ? app->git : NULL;
     if (g == NULL) return;
@@ -372,6 +375,21 @@ void git_tab_update(AppData* app, const gchar* dir) {
     g_free(g->current_root);
     g->current_root = root;
 
+    if (g->cancellable != NULL) {
+        g_cancellable_cancel(g->cancellable);
+        g_clear_object(&g->cancellable);
+    }
+    /* A tab not on screen reads the history when it is shown (on_page_map):
+     * nothing to do at start-up or on each commit while nobody looks at it */
+    g->log_stale = !gtk_widget_get_mapped(g->page);
+    if (!g->log_stale) {
+        start_log_read(app);
+    }
+}
+
+/* Read the history of g->current_root on a worker thread */
+static void start_log_read(AppData* app) {
+    GitTab* g = app->git;
     if (g->cancellable != NULL) {
         g_cancellable_cancel(g->cancellable);
         g_clear_object(&g->cancellable);
@@ -420,6 +438,17 @@ static void git_add_column(GtkWidget* view, const gchar* title, gsize field_offs
     gtk_column_view_column_set_expand(column, expand);
     gtk_column_view_append_column(GTK_COLUMN_VIEW(view), column);
     g_object_unref(column);
+}
+
+/* The tab comes on screen: read the history it waits for */
+static void on_page_map(GtkWidget* page, gpointer data) {
+    (void)page;
+    AppData* app = data;
+    GitTab* g = app->git;
+    if (g != NULL && g->log_stale && g->current_root != NULL) {
+        g->log_stale = FALSE;
+        start_log_read(app);
+    }
 }
 
 void git_tab_init(AppData* app) {
@@ -504,6 +533,7 @@ void git_tab_init(AppData* app) {
     gtk_widget_set_vexpand(tab_box, TRUE);
     gtk_box_append(GTK_BOX(tab_box), paned);
     g->page = tab_box;
+    g_signal_connect(tab_box, "map", G_CALLBACK(on_page_map), app);
 
     GtkWidget* tab_label = icon_label_new("document-open-recent", _("Git Commits"));
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, tab_label);

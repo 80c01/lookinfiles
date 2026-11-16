@@ -908,6 +908,8 @@ Layers, from bottom to top
   A folder seen before is shown at once from a `preview_cache`, and drawn
   again only if the worker reads something different.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
+  `git_tab` reads the history only when its tab is on screen (`map`); while
+  hidden, a new repository or a change in `.git` only marks it stale.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
   `org_fold` keeps the folding of the Org preview (headings folded by hand,
   the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with
