@@ -11,6 +11,14 @@
 
 typedef struct IpynbTagbar IpynbTagbar;
 
+typedef enum {
+    IPYNB_RUN_NONE,    /* not run since the tab opened (or skipped after an error) */
+    IPYNB_RUN_WAITING, /* queued: another cell runs first */
+    IPYNB_RUN_RUNNING,
+    IPYNB_RUN_OK,
+    IPYNB_RUN_ERROR,   /* ended with an error, interrupted, or the kernel stopped */
+} IpynbRunState;
+
 #define IPYNB_TAB_MAX_CHARS 24 /* of the name in the tab label */
 
 typedef struct {
@@ -75,7 +83,8 @@ void ipynb_tab_focus_cell(IpynbTab* t, guint index);
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type);
 /* Show the prompt and outputs of one cell again */
 void ipynb_tab_refresh_cell(IpynbTab* t, guint index);
-/* Show the run time of the code cell at index again */
+/* Show the run state of the code cell at index again (its prompt's colour,
+ * the time in its head) */
 void ipynb_tab_refresh_time(IpynbTab* t, guint index);
 /* Show the Markdown cell at index rendered (it was run) */
 void ipynb_tab_render_cell(IpynbTab* t, guint index);
@@ -109,10 +118,11 @@ void ipynb_run_cell(IpynbTab* t, guint index);
 /* Run the current cell and go to the next one (a new code cell after the
  * last) */
 void ipynb_run_advance(IpynbTab* t);
-/* The time the last run of the code cell at index took, or the time
- * since it started while it runs; NULL when it has not run since the tab
- * opened (or waits for its turn). Caller frees. */
-gchar* ipynb_run_time_text(IpynbTab* t, guint index);
+/* Where the code cell at index is in its last run since the tab opened,
+ * and the text shown in its head (NULL for IPYNB_RUN_NONE, caller frees):
+ * "waiting", the time since it started while it runs ("● 3.2s"), the time
+ * it took ("✓ 1.4s", "✗ 0.3s") */
+IpynbRunState ipynb_run_state(IpynbTab* t, guint index, gchar** text);
 /* Stop the kernel (tab closed) */
 void ipynb_run_stop(IpynbTab* t);
 

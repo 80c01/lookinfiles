@@ -60,8 +60,11 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   in the notebook and starts it. **Run All**, the stop and restart buttons
   of the bar run every cell, interrupt and restart the kernel; when the
   code asks for a line (`input()`), type it in the row under the bar.
-  The head of a code cell shows the time its last run took (counting while
-  it runs), for the cells run since the tab opened.
+  The head of a code cell shows how its last run since the tab opened went,
+  in its prompt's colour and the time after it: *waiting* (grey) while
+  another cell runs first, `● 3.2s` (amber) counting while it runs,
+  `✓ 1.4s` (green) once done, `✗ 0.3s` (red) after an error, an interrupt
+  or a stopped kernel. A cell skipped after an error shows no time.
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
   `Alt+Down` move the cell, `Alt+Enter` / `Alt+Shift+Enter` insert a code cell below / above,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).

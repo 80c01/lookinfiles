@@ -8843,6 +8843,9 @@ msgstr "Autres actions"
 msgid "Time the Last Run Took"
 msgstr "Durée de la dernière exécution"
 
+msgid "waiting"
+msgstr "en attente"
+
 msgid "Show / Hide the Headings (Ctrl+K Ctrl+O)"
 msgstr "Afficher / masquer les titres (Ctrl+K Ctrl+O)"
 

@@ -17,6 +17,7 @@
 typedef struct {
     gint64 start; /* monotonic, microseconds */
     gint64 took;  /* microseconds, or -1 while it runs */
+    gboolean failed; /* ended with an error (or the kernel stopped) */
 } IpynbTiming;
 
 /* --- Run times --- */
@@ -51,19 +52,39 @@ static void timing_start(IpynbTab* t, guint key) {
     }
     timing->start = g_get_monotonic_time();
     timing->took = -1;
+    timing->failed = FALSE;
     if (t->timing_source == 0) t->timing_source = g_timeout_add(TIMING_TICK_MS, on_timing_tick, t);
 }
 
-/* The cell with key ended (or the kernel stopped): keeps the time it took */
-static void timing_stop(IpynbTab* t, guint key) {
+/* The cell with key ended, with status "ok", "error" or "aborted" (skipped
+ * after an error: shown as not run), or NULL when the kernel stopped (an
+ * error): keeps the time it took */
+static void timing_stop(IpynbTab* t, guint key, const gchar* status) {
     IpynbTiming* timing = timing_of(t, key);
-    if (timing != NULL && timing->took < 0) timing->took = g_get_monotonic_time() - timing->start;
+    if (timing == NULL || timing->took >= 0) return;
+    if (g_strcmp0(status, "aborted") == 0) {
+        g_hash_table_remove(t->timings, GUINT_TO_POINTER(key));
+        return;
+    }
+    timing->took = g_get_monotonic_time() - timing->start;
+    timing->failed = g_strcmp0(status, "ok") != 0;
 }
 
-gchar* ipynb_run_time_text(IpynbTab* t, guint index) {
-    IpynbTiming* timing = timing_of(t, ipynb_doc_cell_key(t->doc, index));
-    if (timing == NULL) return NULL;
-    return run_time_format(timing->took >= 0 ? timing->took : g_get_monotonic_time() - timing->start);
+IpynbRunState ipynb_run_state(IpynbTab* t, guint index, gchar** text) {
+    guint key = ipynb_doc_cell_key(t->doc, index);
+    IpynbTiming* timing = timing_of(t, key);
+    *text = NULL;
+    if (timing == NULL) {
+        if (!g_hash_table_contains(t->running, GUINT_TO_POINTER(key))) return IPYNB_RUN_NONE;
+        *text = g_strdup(_("waiting"));
+        return IPYNB_RUN_WAITING;
+    }
+    gchar* took = run_time_format(timing->took >= 0 ? timing->took : g_get_monotonic_time() - timing->start);
+    IpynbRunState state = timing->took < 0 ? IPYNB_RUN_RUNNING : timing->failed ? IPYNB_RUN_ERROR : IPYNB_RUN_OK;
+    const gchar* mark = state == IPYNB_RUN_RUNNING ? "●" : state == IPYNB_RUN_OK ? "✓" : "✗";
+    *text = g_strdup_printf("%s %s", mark, took);
+    g_free(took);
+    return state;
 }
 
 /* --- Showing what the kernel does --- */
@@ -109,7 +130,7 @@ static void forget_running(IpynbTab* t) {
     gpointer key;
     g_hash_table_iter_init(&it, t->running);
     while (g_hash_table_iter_next(&it, &key, NULL)) {
-        timing_stop(t, GPOINTER_TO_UINT(key));
+        timing_stop(t, GPOINTER_TO_UINT(key), NULL);
         queue_refresh(t, GPOINTER_TO_UINT(key));
     }
     g_hash_table_remove_all(t->running);
@@ -196,10 +217,9 @@ static void on_clear_output(guint key, gboolean wait, gpointer data) {
 }
 
 static void on_done(guint key, const gchar* status, gpointer data) {
-    (void)status;
     IpynbTab* t = data;
     g_hash_table_remove(t->running, GUINT_TO_POINTER(key));
-    timing_stop(t, key);
+    timing_stop(t, key, status);
     if (t->clear_wait == key) t->clear_wait = 0;
     queue_refresh(t, key);
 }

@@ -69,9 +69,13 @@ cellule Markdown nouvelle ou vide reste en source.
   d’arrêt et de redémarrage de la barre exécutent toutes les cellules,
   interrompent et redémarrent le noyau ; quand le code demande une ligne
   (`input()`), tapez-la dans la ligne sous la barre.
-  L’en-tête d’une cellule de code affiche la durée de sa dernière exécution
-  (qui défile pendant qu’elle tourne), pour les cellules exécutées depuis
-  l’ouverture de l’onglet.
+  L’en-tête d’une cellule de code montre comment s’est passée sa dernière
+  exécution depuis l’ouverture de l’onglet, par la couleur de son prompt et
+  la durée qui suit : *en attente* (gris) quand une autre cellule passe
+  avant, `● 3.2s` (ambre) qui défile pendant qu’elle tourne, `✓ 1.4s` (vert)
+  une fois terminée, `✗ 0.3s` (rouge) après une erreur, une interruption ou
+  un noyau arrêté. Une cellule sautée après une erreur n’affiche pas de
+  durée.
 - `Ctrl+Up` / `Ctrl+Down` passent à la cellule précédente / suivante,
   `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` /
   `Alt+Shift+Enter` insèrent une cellule de code en dessous / au-dessus, `Alt+Delete` supprime la cellule

@@ -50,6 +50,10 @@ static void ensure_css(void) {
                   ".ipynb-tab .ipynb-cell-head button { padding: 0 6px; border: none; min-height: 23px; }"
                   ".ipynb-tab .ipynb-cell-head label.ipynb-time { color: @fg_muted; font-family: @font_ui;"
                   " font-size: @size_bar; }"
+                  ".ipynb-tab .ipynb-cell-head label.ipynb-run-waiting { color: @fg_faint; }"
+                  ".ipynb-tab .ipynb-cell-head label.ipynb-run-running { color: @warning; }"
+                  ".ipynb-tab .ipynb-cell-head label.ipynb-run-ok { color: @success; }"
+                  ".ipynb-tab .ipynb-cell-head label.ipynb-run-error { color: @error; }"
                   ".ipynb-tab .ipynb-cell-actions button { padding: 0 3px; margin: 0 1px; min-width: 18px; }"
                   ".ipynb-tab .ipynb-cell-head menubutton label { color: @fg_muted; font-family: @font_ui;"
                   " font-size: @size_bar; }"
@@ -580,14 +584,30 @@ static void set_prompt(IpynbTab* t, guint index, GtkWidget* label) {
     g_free(prompt);
 }
 
+/* The colour of each run state (IpynbRunState order) */
+static const gchar* const RUN_CLASSES[] = { NULL, "ipynb-run-waiting", "ipynb-run-running", "ipynb-run-ok",
+                                            "ipynb-run-error" };
+
+static void set_run_class(GtkWidget* label, IpynbRunState state) {
+    for (guint i = 1; i < G_N_ELEMENTS(RUN_CLASSES); i++) {
+        if (i == state) gtk_widget_add_css_class(label, RUN_CLASSES[i]);
+        else gtk_widget_remove_css_class(label, RUN_CLASSES[i]);
+    }
+}
+
 void ipynb_tab_refresh_time(IpynbTab* t, guint index) {
     if (index >= t->views->len) return;
-    GtkWidget* label = g_object_get_data(G_OBJECT(g_ptr_array_index(t->views, index)), CELL_TIME_KEY);
+    GtkWidget* view = g_ptr_array_index(t->views, index);
+    GtkWidget* label = g_object_get_data(G_OBJECT(view), CELL_TIME_KEY);
     if (label == NULL) return;
-    gchar* text = ipynb_run_time_text(t, index);
+    gchar* text = NULL;
+    IpynbRunState state = ipynb_run_state(t, index, &text);
     gtk_label_set_text(GTK_LABEL(label), text != NULL ? text : "");
     gtk_widget_set_visible(label, text != NULL);
     g_free(text);
+    set_run_class(label, state);
+    GtkWidget* prompt = g_object_get_data(G_OBJECT(view), CELL_PROMPT_KEY);
+    if (prompt != NULL) set_run_class(prompt, state);
 }
 
 /* Show the prompt and outputs of the cell at index again (after a run),
