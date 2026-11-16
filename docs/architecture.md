@@ -740,6 +740,13 @@ Layers, from bottom to top
   `ipynb_tab_focus_cell()` unfolds
   the sections hiding the cell it goes to, `Ctrl+Up` / `Ctrl+Down` and
   `Shift+Enter` step over them (`ipynb_fold_step()`).
+  `ipynb_select.c` (also on `ipynb_tab_private.h`) selects a run of cells:
+  an anchor (a cell key, `t->anchor`) to the current cell, extended by
+  `Ctrl+Shift+Up` / `Ctrl+Shift+Down` and `Shift`+click on a head;
+  `ipynb_select_range()` gives the cells an action on a cell takes (the
+  run when the cell is in it), used by moving, deleting (Undo Delete puts
+  the whole run back), running and setting the type; focusing another
+  cell, otherwise than to extend, drops it.
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
   beside the cells (the editor tagbar's width), filled by `ipynb_outline`
   600 ms after the last change (`ipynb_tab_mark_changed()`), set again only

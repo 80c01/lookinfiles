@@ -4,7 +4,8 @@
 /* Shared by the files of the Jupyter notebook tab: ipynb_tab.c (the tab,
  * its cells), ipynb_save.c (saving), ipynb_run.c (running cells in a
  * kernel), ipynb_bar.c (the bar at the top), ipynb_tagbar.c (the
- * tagbar) and ipynb_fold.c (folding). The public API is ipynb_tab.h. */
+ * tagbar), ipynb_fold.c (folding) and ipynb_select.c (cells selected
+ * together). The public API is ipynb_tab.h. */
 #include "core/app_types.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
@@ -38,9 +39,11 @@ typedef struct {
     gchar* path;            /* NULL: made in memory, no file yet */
     gchar* name;
     gchar* dir;             /* the notebook's folder (kernel, Save As) */
-    IpynbCell* deleted;     /* the cell deleted last, and where it was */
+    GPtrArray* deleted;     /* IpynbCell*: the cells deleted last (owned), and where they were */
     guint deleted_at;
     guint current;          /* the cell with the focus, or used last */
+    guint anchor;           /* key of the cell where the selected run starts (it ends at current), 0: none */
+    gboolean extending;     /* moving the focus to extend the selection */
     guint save_source;
     guint rebuild_source;
     guint focus_after;      /* cell focused once rebuilt */
@@ -92,8 +95,9 @@ void ipynb_tab_refresh_time(IpynbTab* t, guint index);
 void ipynb_tab_render_cell(IpynbTab* t, guint index);
 /* Build every cell again (the kernel's language changed) */
 void ipynb_tab_rebuild_cells(IpynbTab* t);
-/* Put back the cell deleted last (and hide t->undo_button) */
-void ipynb_tab_undo_delete(IpynbTab* t);
+/* Build the cells again once the signal being handled is over (after a
+ * change of their number, order or type), then focus the cell at focus */
+void ipynb_tab_queue_rebuild(IpynbTab* t, guint focus);
 
 /* ipynb_save.c */
 /* The notebook changed: saved shortly */
@@ -117,10 +121,12 @@ GtkWidget* ipynb_run_input_row_new(IpynbTab* t);
 /* Run the cell at index: a code cell in the kernel (started first if
  * needed); a Markdown cell is rendered */
 void ipynb_run_cell(IpynbTab* t, guint index);
+/* Run the cells of index's range (ipynb_select_range()) */
+void ipynb_run_range(IpynbTab* t, guint index);
 /* Run the cell at index and every cell after it, in order (folded ones too) */
 void ipynb_run_from(IpynbTab* t, guint index);
-/* Run the current cell and go to the next one (a new code cell after the
- * last) */
+/* Run the current cell (the selected run) and go to the next one (a new
+ * code cell after the last) */
 void ipynb_run_advance(IpynbTab* t);
 /* Where the code cell at index is in its last run since the tab opened,
  * and the text shown in its head (NULL for IPYNB_RUN_NONE, caller frees):
@@ -189,5 +195,33 @@ gboolean ipynb_fold_reveal(IpynbTab* t, guint index);
 /* The next cell shown after index (step 1) or before it (step -1), or
  * index when there is none */
 guint ipynb_fold_step(IpynbTab* t, guint index, gint step);
+
+/* ipynb_select.c */
+/* The cells an action on the cell at index takes: the selected run when
+ * the cell is in it, else that cell alone (the selection dropped) */
+void ipynb_select_range(IpynbTab* t, guint index, guint* first, guint* last);
+/* How many cells are selected (1 without a selection) */
+guint ipynb_select_count(IpynbTab* t);
+/* Show which cells are selected (and their count in the status bar) */
+void ipynb_select_show(IpynbTab* t);
+void ipynb_select_clear(IpynbTab* t);
+/* Select from the current cell (or the start of the selected run) to the
+ * next cell shown after it (step 1) or before it (step -1) / to index; the
+ * focus goes there */
+void ipynb_select_extend(IpynbTab* t, gint step);
+void ipynb_select_extend_to(IpynbTab* t, guint index);
+/* A click on head (of the cell at index) focuses its cell, Shift+click
+ * selects up to it */
+void ipynb_select_add_head(IpynbTab* t, guint index, GtkWidget* head);
+/* Move the cells of index's range up (by -1) or down (1) */
+void ipynb_select_move(IpynbTab* t, guint index, gint by);
+/* Delete the cells of index's range, kept for ipynb_select_undo_delete()
+ * (which puts them back and hides t->undo_button) */
+void ipynb_select_delete(IpynbTab* t, guint index);
+void ipynb_select_undo_delete(IpynbTab* t);
+/* Free the cells kept by the last delete */
+void ipynb_select_drop_deleted(IpynbTab* t);
+/* Give the cells of index's range that type */
+void ipynb_select_set_type(IpynbTab* t, guint index, IpynbCellType type);
 
 #endif /* IPYNB_TAB_PRIVATE_H */

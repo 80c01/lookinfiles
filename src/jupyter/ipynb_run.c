@@ -398,12 +398,20 @@ void ipynb_run_cell(IpynbTab* t, guint index) {
     g_free(source);
 }
 
+void ipynb_run_range(IpynbTab* t, guint index) {
+    guint first, last;
+    ipynb_select_range(t, index, &first, &last);
+    for (guint i = first; i <= last; i++) ipynb_run_cell(t, i);
+}
+
 void ipynb_run_advance(IpynbTab* t) {
-    guint index = t->current;
-    ipynb_run_cell(t, index);
+    guint first, last;
+    ipynb_select_range(t, t->current, &first, &last);
+    for (guint i = first; i <= last; i++) ipynb_run_cell(t, i);
+    ipynb_select_clear(t);
     /* The next cell shown: past a folded section */
-    guint next = ipynb_fold_step(t, index, 1);
-    if (next == index) {
+    guint next = ipynb_fold_step(t, last, 1);
+    if (next == last) {
         ipynb_tab_insert_cell(t, ipynb_doc_n_cells(t->doc), IPYNB_CELL_CODE);
     } else {
         ipynb_tab_focus_cell(t, next);

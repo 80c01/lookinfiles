@@ -69,7 +69,13 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
 - `Ctrl+Up` / `Ctrl+Down` go to the previous / next cell, `Alt+Up` /
   `Alt+Down` move the cell, `Alt+Enter` / `Alt+Shift+Enter` insert a code cell below / above,
   `Alt+Delete` deletes the cell (**Undo Delete** in the bar puts it back).
-  The buttons of each cell do the same. **Split Cell** in the right-click
+  The buttons of each cell do the same.
+- `Ctrl+Shift+Up` / `Ctrl+Shift+Down`, or `Shift`+click on a cell's head,
+  select several cells in a row (their heads highlighted, their count in
+  the status bar); moving, deleting, running and the cell type then take
+  them all, from the keys or from the buttons of a selected cell. `Esc`,
+  `Ctrl+Up` / `Ctrl+Down` or going to another cell drop the selection. A
+  click on a cell's head goes to that cell. **Split Cell** in the right-click
   menu of a cell's source splits it at the cursor (or before and after the
   selection), as in JupyterLab: the outputs stay with the last part.
 - A Markdown cell with headings opens a **section**: the cells after it up

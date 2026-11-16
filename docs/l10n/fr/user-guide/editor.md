@@ -81,7 +81,14 @@ cellule Markdown nouvelle ou vide reste en source.
   `Alt+Up` / `Alt+Down` déplacent la cellule, `Alt+Enter` /
   `Alt+Shift+Enter` insèrent une cellule de code en dessous / au-dessus, `Alt+Delete` supprime la cellule
   (**Annuler la suppression** dans la barre la remet). Les boutons de
-  chaque cellule font de même. **Scinder la cellule**, dans le menu du clic
+  chaque cellule font de même.
+- `Ctrl+Shift+Up` / `Ctrl+Shift+Down`, ou `Shift`+clic sur l’en-tête
+  d’une cellule, sélectionnent plusieurs cellules qui se suivent (leurs
+  en-têtes en surbrillance, leur nombre dans la barre d’état) ; déplacer,
+  supprimer, exécuter et le type de cellule s’appliquent alors à toutes,
+  par les touches ou par les boutons d’une cellule sélectionnée. `Esc`,
+  `Ctrl+Up` / `Ctrl+Down` ou passer à une autre cellule abandonnent la
+  sélection. Un clic sur l’en-tête d’une cellule y va. **Scinder la cellule**, dans le menu du clic
   droit sur le source d'une cellule, la coupe au curseur (ou avant et après
   la sélection), comme dans JupyterLab : les sorties restent avec la
   dernière partie.

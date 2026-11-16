@@ -8745,6 +8745,9 @@ msgstr "Onglet notebook Jupyter"
 msgid "Previous / next cell"
 msgstr "Cellule précédente / suivante"
 
+msgid "Select the cells up / down (also Shift+click on a cell's head; moving, deleting, running and the type take them all; Esc drops the selection)"
+msgstr "Sélectionner les cellules vers le haut / le bas (aussi Shift+clic sur l’en-tête d’une cellule ; déplacer, supprimer, exécuter et le type s’appliquent à toutes ; Esc abandonne la sélection)"
+
 msgid ""
 "Show / hide the tagbar: headings of the Markdown cells beside the cells "
 "(Enter goes, c collapses / expands all, Esc back, q hides)"
@@ -8834,8 +8837,8 @@ msgstr "Ouvrir le fichier en texte dans un onglet d’édition"
 msgid "Undo Delete"
 msgstr "Annuler la suppression"
 
-msgid "Put Back the Cell Deleted Last"
-msgstr "Remettre la dernière cellule supprimée"
+msgid "Put Back the Cells Deleted Last"
+msgstr "Remettre les dernières cellules supprimées"
 
 msgid "More Actions"
 msgstr "Autres actions"
@@ -8849,12 +8852,18 @@ msgstr "en attente"
 msgid "Show / Hide the Headings (Ctrl+K Ctrl+O)"
 msgstr "Afficher / masquer les titres (Ctrl+K Ctrl+O)"
 
-msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Double-click or Enter: edit a rendered Markdown cell; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"
-msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; double-clic ou Enter : éditer une cellule Markdown rendue ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule"
+msgid "Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; Double-click or Enter: edit a rendered Markdown cell; Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the cell; Alt+Enter: new code cell; Alt+Delete: delete the cell; Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+click on a cell's head: select cells"
+msgstr "Shift+Enter : exécuter la cellule et passer à la suivante ; Ctrl+Enter : l’exécuter ; double-clic ou Enter : éditer une cellule Markdown rendue ; Ctrl+Up / Ctrl+Down : cellule précédente / suivante ; Alt+Up / Alt+Down : déplacer la cellule ; Alt+Enter : nouvelle cellule de code ; Alt+Delete : supprimer la cellule ; Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+clic sur l’en-tête d’une cellule : sélectionner des cellules"
 
 #, c-format
 msgid "Not saved: %s"
 msgstr "Non enregistré : %s"
+
+#, c-format
+msgid "%s, %u selected"
+msgid_plural "%s, %u selected"
+msgstr[0] "%s, %u sélectionnée"
+msgstr[1] "%s, %u sélectionnées"
 
 #, c-format
 msgid "%u cell"

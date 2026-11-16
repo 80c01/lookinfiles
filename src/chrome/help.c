@@ -112,6 +112,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Jupyter notebook tab"), "Ctrl+Enter", N_("Run the cell (in the notebook's Jupyter kernel; a Markdown cell is rendered)"), 0},
     {N_("Jupyter notebook tab"), NC_("key", "Enter / Double-click"), N_("Edit a rendered Markdown cell"), 0},
     {N_("Jupyter notebook tab"), "Ctrl+Up / Ctrl+Down", N_("Previous / next cell"), 0},
+    {N_("Jupyter notebook tab"), "Ctrl+Shift+Up / Ctrl+Shift+Down", N_("Select the cells up / down (also Shift+click on a cell's head; moving, deleting, running and the type take them all; Esc drops the selection)"), 0},
     {N_("Jupyter notebook tab"), "Tab / Shift+Tab", N_("On a rendered Markdown cell with headings: fold or unfold its section / fold every section, or unfold them all"), 0},
     {N_("Jupyter notebook tab"), "Ctrl+K Ctrl+O", N_("Show / hide the tagbar: headings of the Markdown cells beside the cells (Enter goes, c collapses / expands all, Esc back, q hides)"), 0},
     {N_("Jupyter notebook tab"), "Alt+Up / Alt+Down", N_("Move the cell up / down"), 0},

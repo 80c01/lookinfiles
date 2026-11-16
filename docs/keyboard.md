@@ -203,11 +203,12 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Ctrl+Enter` | Run the cell (a Markdown cell: render it) |
 | `Enter` / double click | Edit a rendered Markdown cell (its source) |
 | `Ctrl+Up` / `Ctrl+Down` | Previous / next cell (the cells of a folded section are skipped) |
+| `Ctrl+Shift+Up` / `Ctrl+Shift+Down`, `Shift`+click on a cell's head | Select the cells from the current one up / down (moving, deleting, running and the cell type take them all; `Esc` drops the selection) |
 | `Tab` / `Shift+Tab` (on a rendered Markdown cell with headings), click on the arrow of its head | Fold or unfold the section under the cell's headings / fold every section, or unfold them all when all are folded |
 | `Ctrl+K Ctrl+O`, the list button of the bar | Show / hide the tagbar: the headings of the Markdown cells, beside the cells (it follows the current cell; `Enter` or a click goes to the heading's cell, `Esc` back, `q` hides; in it, the moving and search keys of the global mode; `Alt+Right` / `Alt+Left` go in and out). A new notebook tab follows Preferences → Editor, as an editor tab |
-| `Alt+Up` / `Alt+Down` | Move the cell up / down |
+| `Alt+Up` / `Alt+Down` | Move the cell (the selected cells) up / down |
 | `Alt+Enter` / `Alt+Shift+Enter` | Insert a code cell below / above (also the two insert buttons of each cell) |
-| `Alt+Delete` | Delete the cell (**Undo Delete** in the bar puts it back) |
+| `Alt+Delete` | Delete the cell (the selected cells; **Undo Delete** in the bar puts them back) |
 | `Ctrl+S` | Save now |
 | `Ctrl+W`, middle click on the tab | Close the notebook tab (saved first) |
 | `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the notebook tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |

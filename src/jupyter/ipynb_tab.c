@@ -116,7 +116,13 @@ void ipynb_tab_set_status(IpynbTab* t, const gchar* text, gboolean error) {
 
 void ipynb_tab_update_info(IpynbTab* t) {
     guint n = ipynb_doc_n_cells(t->doc);
+    guint selected = ipynb_select_count(t);
     gchar* cells = g_strdup_printf(ngettext("%u cell", "%u cells", n), n);
+    if (selected > 1) {
+        gchar* both = g_strdup_printf(ngettext("%s, %u selected", "%s, %u selected", selected), cells, selected);
+        g_free(cells);
+        cells = both;
+    }
     gtk_label_set_text(GTK_LABEL(t->info), cells);
     g_free(cells);
     const gchar* kernel = ipynb_doc_kernel(t->doc);
@@ -134,15 +140,13 @@ static gboolean on_rebuild_idle(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-/* Build the cells again (after a change of their number, order or type),
- * once the signal being handled is over; then focus the cell focus */
-static void queue_rebuild(IpynbTab* t, guint focus) {
+void ipynb_tab_queue_rebuild(IpynbTab* t, guint focus) {
     t->focus_after = focus;
     if (t->rebuild_source == 0) t->rebuild_source = g_idle_add(on_rebuild_idle, t);
 }
 
 void ipynb_tab_rebuild_cells(IpynbTab* t) {
-    queue_rebuild(t, t->current);
+    ipynb_tab_queue_rebuild(t, t->current);
 }
 
 /* The rendered view of the Markdown cell at index when it is shown, else NULL */
@@ -243,38 +247,7 @@ static gboolean on_rendered_key(GtkEventControllerKey* ctrl, guint keyval, guint
 void ipynb_tab_insert_cell(IpynbTab* t, guint at, IpynbCellType type) {
     guint index = ipynb_doc_insert_cell(t->doc, at, type);
     ipynb_tab_mark_changed(t);
-    queue_rebuild(t, index);
-}
-
-static void move_cell(IpynbTab* t, guint index, gint by) {
-    guint n = ipynb_doc_n_cells(t->doc);
-    if (index >= n || (by < 0 && index == 0) || (by > 0 && index + 1 >= n)) return;
-    guint to = by < 0 ? index - 1 : index + 1;
-    ipynb_doc_move_cell(t->doc, index, to);
-    ipynb_tab_mark_changed(t);
-    queue_rebuild(t, to);
-}
-
-static void delete_cell(IpynbTab* t, guint index) {
-    IpynbCell* cell = ipynb_doc_take_cell(t->doc, index);
-    if (cell == NULL) return;
-    if (t->deleted != NULL) ipynb_cell_free(t->deleted);
-    t->deleted = cell;
-    t->deleted_at = index;
-    gtk_widget_set_visible(t->undo_button, TRUE);
-    /* A notebook keeps one cell to type in */
-    if (ipynb_doc_n_cells(t->doc) == 0) ipynb_doc_insert_cell(t->doc, 0, IPYNB_CELL_CODE);
-    ipynb_tab_mark_changed(t);
-    queue_rebuild(t, index > 0 && index >= ipynb_doc_n_cells(t->doc) ? index - 1 : index);
-}
-
-void ipynb_tab_undo_delete(IpynbTab* t) {
-    if (t->deleted == NULL) return;
-    guint index = ipynb_doc_put_cell(t->doc, t->deleted_at, t->deleted);
-    t->deleted = NULL;
-    gtk_widget_set_visible(t->undo_button, FALSE);
-    ipynb_tab_mark_changed(t);
-    queue_rebuild(t, index);
+    ipynb_tab_queue_rebuild(t, index);
 }
 
 static void on_source_changed(GtkTextBuffer* buffer, gpointer data) {
@@ -290,6 +263,7 @@ static void on_source_changed(GtkTextBuffer* buffer, gpointer data) {
 
 static void set_current(IpynbTab* t, guint index) {
     t->current = index;
+    ipynb_select_show(t);
     for (guint i = 0; i < t->views->len; i++) {
         GtkWidget* cell = gtk_widget_get_parent(g_ptr_array_index(t->views, i));
         if (i == index) {
@@ -303,7 +277,10 @@ static void set_current(IpynbTab* t, guint index) {
 
 static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) {
     IpynbTab* t = data;
-    set_current(t, cell_index(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl))));
+    guint index = cell_index(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl)));
+    /* Another cell focused, not to extend the selection: it is dropped */
+    if (!t->extending && index != t->current) t->anchor = 0;
+    set_current(t, index);
 }
 
 static void track_focus(IpynbTab* t, GtkWidget* view) {
@@ -384,13 +361,7 @@ static void on_type_chosen(GtkButton* item, gpointer data) {
     GtkWidget* popover = gtk_widget_get_ancestor(GTK_WIDGET(item), GTK_TYPE_POPOVER);
     if (popover != NULL) gtk_popover_popdown(GTK_POPOVER(popover));
     guint index = cell_index(item);
-    IpynbCellType type = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), CELL_TYPE_KEY));
-    if (type == ipynb_doc_cell_type(t->doc, index)) return;
-    ipynb_doc_set_type(t->doc, index, type);
-    /* Made Markdown: still edited until run */
-    g_hash_table_add(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)));
-    ipynb_tab_mark_changed(t);
-    queue_rebuild(t, index);
+    ipynb_select_set_type(t, index, GPOINTER_TO_INT(g_object_get_data(G_OBJECT(item), CELL_TYPE_KEY)));
 }
 
 /* The type of a cell: a menu button like the kernel one of the bar */
@@ -423,7 +394,7 @@ static GtkWidget* type_menu_new(IpynbTab* t, guint index, IpynbCellType current)
 }
 
 static void on_cell_run(GtkButton* button, gpointer data) {
-    ipynb_run_cell(data, cell_index(button));
+    ipynb_run_range(data, cell_index(button));
 }
 
 static void on_cell_run_below(GtkButton* button, gpointer data) {
@@ -431,11 +402,11 @@ static void on_cell_run_below(GtkButton* button, gpointer data) {
 }
 
 static void on_cell_up(GtkButton* button, gpointer data) {
-    move_cell(data, cell_index(button), -1);
+    ipynb_select_move(data, cell_index(button), -1);
 }
 
 static void on_cell_down(GtkButton* button, gpointer data) {
-    move_cell(data, cell_index(button), 1);
+    ipynb_select_move(data, cell_index(button), 1);
 }
 
 static void on_cell_add_above(GtkButton* button, gpointer data) {
@@ -447,7 +418,7 @@ static void on_cell_add_below(GtkButton* button, gpointer data) {
 }
 
 static void on_cell_delete(GtkButton* button, gpointer data) {
-    delete_cell(data, cell_index(button));
+    ipynb_select_delete(data, cell_index(button));
 }
 
 /* --- Context menu of the source --- */
@@ -480,7 +451,7 @@ static void on_split_cell(GSimpleAction* action, GVariant* param, gpointer data)
     guint index = ipynb_doc_split_cell(t->doc, cell_index(view), parts);
     g_strfreev(parts);
     ipynb_tab_mark_changed(t);
-    queue_rebuild(t, index);
+    ipynb_tab_queue_rebuild(t, index);
 }
 
 static void attach_source_menu(IpynbTab* t, GtkWidget* view) {
@@ -691,6 +662,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     gtk_box_append(GTK_BOX(actions),
                    cell_button(t, index, "user-trash", _("Delete Cell (Alt+Delete)"), G_CALLBACK(on_cell_delete)));
     gtk_box_append(GTK_BOX(head), actions);
+    ipynb_select_add_head(t, index, head);
     gtk_box_append(GTK_BOX(cell), head);
 
     /* Source */
@@ -805,7 +777,16 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     /* The tagbar takes its other keys (Alt+Up would move a cell) */
     if (ipynb_tagbar_has_focus(t)) return FALSE;
     if (mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down)) {
+        ipynb_select_clear(t);
         ipynb_tab_focus_cell(t, ipynb_fold_step(t, t->current, keyval == GDK_KEY_Up ? -1 : 1));
+        return TRUE;
+    }
+    if (mods == (GDK_CONTROL_MASK | GDK_SHIFT_MASK) && (keyval == GDK_KEY_Up || keyval == GDK_KEY_Down)) {
+        ipynb_select_extend(t, keyval == GDK_KEY_Up ? -1 : 1);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_Escape && mods == 0 && ipynb_select_count(t) > 1) {
+        ipynb_select_clear(t);
         return TRUE;
     }
     if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) &&
@@ -813,7 +794,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         if (mods == GDK_SHIFT_MASK) {
             ipynb_run_advance(t);
         } else {
-            ipynb_run_cell(t, t->current);
+            ipynb_run_range(t, t->current);
         }
         return TRUE;
     }
@@ -824,10 +805,10 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
     if (mods != GDK_ALT_MASK) return FALSE;
     switch (keyval) {
     case GDK_KEY_Up:
-        move_cell(t, t->current, -1);
+        ipynb_select_move(t, t->current, -1);
         return TRUE;
     case GDK_KEY_Down:
-        move_cell(t, t->current, 1);
+        ipynb_select_move(t, t->current, 1);
         return TRUE;
     case GDK_KEY_Return:
     case GDK_KEY_KP_Enter:
@@ -835,7 +816,7 @@ static gboolean on_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
         return TRUE;
     case GDK_KEY_Delete:
     case GDK_KEY_KP_Delete:
-        delete_cell(t, t->current);
+        ipynb_select_delete(t, t->current);
         return TRUE;
     default:
         return FALSE;
@@ -912,7 +893,8 @@ static void tab_free(gpointer data) {
     if (t->save_source != 0) g_source_remove(t->save_source);
     if (t->rebuild_source != 0) g_source_remove(t->rebuild_source);
     g_clear_object(&t->tab_label);
-    if (t->deleted != NULL) ipynb_cell_free(t->deleted);
+    ipynb_select_drop_deleted(t);
+    g_ptr_array_unref(t->deleted);
     ipynb_doc_free(t->doc);
     g_ptr_array_unref(t->views);
     g_hash_table_unref(t->running);
@@ -961,6 +943,7 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, con
     t->dir = path != NULL ? g_path_get_dirname(path) : g_strdup(dir);
     t->doc = doc;
     t->views = g_ptr_array_new();
+    t->deleted = g_ptr_array_new();
     t->running = g_hash_table_new(NULL, NULL);
     t->editing = g_hash_table_new(NULL, NULL);
 
@@ -999,7 +982,9 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, con
     gtk_widget_set_tooltip_text(t->info, _("Shift+Enter: run the cell and go to the next; Ctrl+Enter: run it; "
                                            "Double-click or Enter: edit a rendered Markdown cell; "
                                            "Ctrl+Up / Ctrl+Down: previous / next cell; Alt+Up / Alt+Down: move the "
-                                           "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell"));
+                                           "cell; Alt+Enter: new code cell; Alt+Delete: delete the cell; "
+                                           "Ctrl+Shift+Up / Ctrl+Shift+Down, Shift+click on a cell's head: "
+                                           "select cells"));
     gtk_box_append(GTK_BOX(status_bar), t->info);
     gtk_box_append(GTK_BOX(root), status_bar);
 

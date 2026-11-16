@@ -23,7 +23,7 @@ static void on_add_markdown(GtkButton* button, gpointer data) {
 
 static void on_undo_delete(GtkButton* button, gpointer data) {
     (void)button;
-    ipynb_tab_undo_delete(data);
+    ipynb_select_undo_delete(data);
 }
 
 static void on_clear_outputs(GtkButton* button, gpointer data) {
@@ -97,7 +97,7 @@ GtkWidget* ipynb_bar_new(IpynbTab* t) {
                                                 G_CALLBACK(on_add_code)));
     gtk_box_append(GTK_BOX(actions), bar_button(t, "cell-markdown", NULL, _("Insert Markdown Cell Below"),
                                                 G_CALLBACK(on_add_markdown)));
-    t->undo_button = bar_button(t, "edit-undo", _("Undo Delete"), _("Put Back the Cell Deleted Last"),
+    t->undo_button = bar_button(t, "edit-undo", _("Undo Delete"), _("Put Back the Cells Deleted Last"),
                                 G_CALLBACK(on_undo_delete));
     gtk_widget_set_visible(t->undo_button, FALSE);
     gtk_box_append(GTK_BOX(actions), t->undo_button);
