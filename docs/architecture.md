@@ -726,9 +726,10 @@ Layers, from bottom to top
   cut on the right in a narrow pane; the kernel menu, the headings button
   and a `view-more` menu (Clear Outputs, Edit as JSON) always in sight at
   the right end.
-  `ipynb_fold.c` (also on `ipynb_tab_private.h`) folds: a ▾ / ▸ arrow in
-  the head of each Markdown cell with headings and a "n cells hidden" note
-  under it, the cells of folded sections hidden (`ipynb_fold_apply()`,
+  `ipynb_fold.c` (also on `ipynb_tab_private.h`) folds: an arrow in the
+  head of each Markdown cell with headings (the `pan-end` / `pan-down`
+  icons of GTK's tree expanders, as in the explorer) and a "n cells
+  hidden" note under it, the cells of folded sections hidden (`ipynb_fold_apply()`,
   after each rebuild and each render of a Markdown cell), an arrow and a
   note around each code cell's outputs; `ipynb_tab_focus_cell()` unfolds
   the sections hiding the cell it goes to, `Ctrl+Up` / `Ctrl+Down` and

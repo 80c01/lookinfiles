@@ -86,10 +86,10 @@ cellule Markdown nouvelle ou vide reste en source.
   dernière partie.
 - Une cellule Markdown avec des titres ouvre une **section** : les
   cellules qui la suivent jusqu’au prochain titre de même niveau ou plus
-  haut. La flèche ▾ à gauche de son en-tête (ou `Tab` sur la cellule
+  haut. La flèche à gauche de son en-tête (celle de l’explorateur) (ou `Tab` sur la cellule
   rendue) la replie : ses cellules sont masquées et une note dit combien,
   un clic sur la note la déplie. `Shift+Tab` replie toutes les sections,
-  ou les déplie toutes quand elles sont toutes repliées. La flèche ▾ à
+  ou les déplie toutes quand elles sont toutes repliées. La flèche à
   gauche des sorties d’une cellule de code les masque de la même façon.
   Les deux sont gardés dans le notebook comme JupyterLab les garde : un
   notebook replié ici s’ouvre replié dans JupyterLab. Les cellules

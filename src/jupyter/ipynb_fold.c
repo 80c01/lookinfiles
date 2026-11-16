@@ -21,9 +21,10 @@ static void ensure_css(void) {
     static gboolean done = FALSE;
     if (done) return;
     done = TRUE;
-    theme_add_css(".ipynb-tab button.ipynb-fold { padding: 0 2px; min-width: 16px; min-height: 18px; border: none;"
-                  " background: none; box-shadow: none; color: @fg_muted; }"
-                  ".ipynb-tab button.ipynb-fold:hover { color: @fg_text; }"
+    /* The arrows: the icons and colour of the explorer's tree expanders */
+    theme_add_css(".ipynb-tab button.ipynb-fold { padding: 0; min-width: 16px; min-height: 16px; border: none;"
+                  " background: none; box-shadow: none; color: @fg; }"
+                  ".ipynb-tab button.ipynb-fold:hover { color: @fg_bright; }"
                   ".ipynb-tab button.ipynb-fold-note { padding: 2px 10px 4px 10px; border: none; background: none;"
                   " box-shadow: none; color: @fg_muted; font-style: italic; }"
                   ".ipynb-tab button.ipynb-fold-note:hover { color: @fg_text; }"
@@ -38,14 +39,23 @@ static guint fold_index(GtkWidget* widget) {
     return GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(widget), FOLD_INDEX_KEY));
 }
 
-/* A flat button showing text, for the cell at index */
+/* A flat button for the cell at index: a note (text), or an arrow when
+ * text is NULL */
 static GtkWidget* fold_button(guint index, const gchar* text, const gchar* css_class) {
-    GtkWidget* b = gtk_button_new_with_label(text);
+    GtkWidget* b = text != NULL ? gtk_button_new_with_label(text) : gtk_button_new();
+    if (text == NULL) gtk_button_set_child(GTK_BUTTON(b), gtk_image_new());
     gtk_widget_add_css_class(b, css_class);
     gtk_widget_set_focus_on_click(b, FALSE);
     gtk_widget_set_valign(b, GTK_ALIGN_START);
     g_object_set_data(G_OBJECT(b), FOLD_INDEX_KEY, GUINT_TO_POINTER(index));
     return b;
+}
+
+/* Point an arrow right (folded) or down, with the icons GTK's tree
+ * expanders use (built into GTK; the right one mirrored right to left) */
+static void set_arrow(GtkWidget* arrow, gboolean folded) {
+    gtk_image_set_from_icon_name(GTK_IMAGE(gtk_button_get_child(GTK_BUTTON(arrow))),
+                                 folded ? "pan-end-symbolic" : "pan-down-symbolic");
 }
 
 /* --- Sections --- */
@@ -79,7 +89,7 @@ void ipynb_fold_apply(IpynbTab* t) {
         if (arrow == NULL || note == NULL) continue;
         gboolean folded = levels[i] > 0 && ipynb_doc_cell_flag(t->doc, i, IPYNB_FLAG_HEADING_COLLAPSED);
         gtk_widget_set_visible(arrow, levels[i] > 0);
-        gtk_button_set_label(GTK_BUTTON(arrow), folded ? "▸" : "▾");
+        set_arrow(arrow, folded);
         gtk_widget_set_tooltip_text(arrow, folded ? _("Unfold Section (Tab)") : _("Fold Section (Tab)"));
         guint count = folded ? ipynb_outline_section_end(levels, n, i) - i - 1 : 0;
         gtk_widget_set_visible(note, count > 0);
@@ -159,7 +169,7 @@ static void on_section_clicked(GtkButton* button, gpointer data) {
 
 void ipynb_fold_add_heading(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* head, GtkWidget* cell) {
     ensure_css();
-    GtkWidget* arrow = fold_button(index, "▾", "ipynb-fold");
+    GtkWidget* arrow = fold_button(index, NULL, "ipynb-fold");
     gtk_widget_set_valign(arrow, GTK_ALIGN_CENTER);
     gtk_widget_set_visible(arrow, FALSE);
     g_signal_connect(arrow, "clicked", G_CALLBACK(on_section_clicked), t);
@@ -187,7 +197,7 @@ void ipynb_fold_refresh_outputs(IpynbTab* t, guint index, guint n_outputs) {
     gtk_widget_set_visible(area, n_outputs > 0);
     gtk_widget_set_visible(box, !folded);
     gtk_widget_set_visible(note, folded);
-    gtk_button_set_label(GTK_BUTTON(arrow), folded ? "▸" : "▾");
+    set_arrow(arrow, folded);
     gtk_widget_set_tooltip_text(arrow, folded ? _("Show Outputs") : _("Hide Outputs"));
     if (folded) {
         gchar* text = g_strdup_printf(ngettext("%u output hidden", "%u outputs hidden", n_outputs), n_outputs);
@@ -211,7 +221,7 @@ GtkWidget* ipynb_fold_outputs_wrap(IpynbTab* t, guint index, GtkWidget* view, Gt
     ensure_css();
     GtkWidget* area = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
     gtk_widget_add_css_class(area, "ipynb-outputs");
-    GtkWidget* arrow = fold_button(index, "▾", "ipynb-fold");
+    GtkWidget* arrow = fold_button(index, NULL, "ipynb-fold");
     g_signal_connect(arrow, "clicked", G_CALLBACK(on_outputs_clicked), t);
     gtk_box_append(GTK_BOX(area), arrow);
     GtkWidget* column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
