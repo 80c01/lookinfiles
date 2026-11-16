@@ -554,25 +554,17 @@ static GtkWidget* output_math(IpynbTab* t, const IpynbOutput* o) {
     return picture;
 }
 
-/* Fill box (emptied first) with the outputs of the code cell at index;
- * hidden without outputs, or when folded */
+/* Fill box (emptied first) with the outputs of the code cell at index,
+ * under their Out [n] head (ipynb_fold.c); hidden without outputs, or
+ * when folded */
 static void fill_outputs(IpynbTab* t, guint index, GtkWidget* box) {
     GtkWidget* child;
     while ((child = gtk_widget_get_first_child(box)) != NULL) {
         gtk_box_remove(GTK_BOX(box), child);
     }
     GPtrArray* outputs = ipynb_doc_cell_outputs(t->doc, index, MAX_OUTPUT_LINES);
-    gint count = ipynb_doc_cell_execution_count(t->doc, index);
     for (guint i = 0; i < outputs->len; i++) {
         const IpynbOutput* o = g_ptr_array_index(outputs, i);
-        if (o->result) {
-            gchar* prompt = count >= 0 ? g_strdup_printf("Out [%d]:", count) : g_strdup("Out:");
-            GtkWidget* label = gtk_label_new(prompt);
-            gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
-            gtk_widget_add_css_class(label, "ipynb-out-prompt");
-            gtk_box_append(GTK_BOX(box), label);
-            g_free(prompt);
-        }
         GtkWidget* shown = o->kind == IPYNB_OUTPUT_IMAGE  ? output_image(o)
                            : o->kind == IPYNB_OUTPUT_MATH ? output_math(t, o)
                                                           : output_label(o->text, o->kind == IPYNB_OUTPUT_ERROR);

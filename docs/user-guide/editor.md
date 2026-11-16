@@ -73,11 +73,12 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   selection), as in JupyterLab: the outputs stay with the last part.
 - A Markdown cell with headings opens a **section**: the cells after it up
   to the next heading of the same level or higher. The arrow at the left of
-  its head (the explorer's) (or `Tab` on the rendered cell) folds it: its cells are
-  hidden and a note says how many, a click on the note unfolds it.
-  `Shift+Tab` folds every section, or unfolds them all when all are
-  folded. The arrow left of a code cell's outputs hides them the same
-  way. Both are kept in the notebook as JupyterLab keeps them, so a
+  its head (the explorer's), or `Tab` on the rendered cell, folds it: its
+  cells are hidden and a note says how many, a click on the note unfolds
+  it. `Shift+Tab` folds every section, or unfolds them all when all are
+  folded. The outputs of a code cell come under an `Out [n]:` head (`n`:
+  the run that gave them); a click on it hides them, the head then says
+  how many are hidden. Both are kept in the notebook as JupyterLab keeps them, so a
   notebook folded here opens folded in JupyterLab. Folded cells still run
   with **Run All**; `Ctrl+Up` / `Ctrl+Down` and `Shift+Enter` skip them,
   and going to a hidden cell (from the tagbar, or a new cell inserted in a

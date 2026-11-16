@@ -27,7 +27,7 @@ typedef enum {
 
 typedef struct {
     IpynbOutputKind kind;
-    gboolean result;     /* an execute_result (shown "Out [n]") */
+    gboolean result;     /* an execute_result: the value of the cell's last line */
     gchar* text;         /* TEXT and ERROR (ANSI colours removed); MATH: TeX without its delimiters */
     GBytes* image;       /* IMAGE: the decoded data */
     gchar* mime;         /* IMAGE: "image/png"... */

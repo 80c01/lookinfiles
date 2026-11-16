@@ -11,9 +11,11 @@
 #define FOLD_INDEX_KEY "lookin-ipynb-fold-index" /* on an arrow or a note: its cell */
 #define FOLD_ARROW_KEY "lookin-ipynb-fold-arrow" /* on a Markdown cell's view: its section arrow */
 #define FOLD_NOTE_KEY "lookin-ipynb-fold-note"   /* on a Markdown cell's view: "n cells hidden" */
-#define OUT_ARROW_KEY "lookin-ipynb-out-arrow"   /* on a code cell's view: its outputs arrow */
-#define OUT_NOTE_KEY "lookin-ipynb-out-note"     /* on a code cell's view: "n outputs hidden" */
-#define OUT_AREA_KEY "lookin-ipynb-out-area"     /* on a code cell's view: arrow, outputs and note */
+#define OUT_HEAD_KEY "lookin-ipynb-out-head"     /* on a code cell's view: the head of its outputs */
+#define OUT_ARROW_KEY "lookin-ipynb-out-arrow"   /* on a code cell's view: the arrow of that head */
+#define OUT_PROMPT_KEY "lookin-ipynb-out-prompt" /* on a code cell's view: Out [n] in that head */
+#define OUT_NOTE_KEY "lookin-ipynb-out-note"     /* on a code cell's view: "n outputs hidden" in it */
+#define OUT_AREA_KEY "lookin-ipynb-out-area"     /* on a code cell's view: the head and the outputs */
 #define OUT_BOX_KEY "lookin-ipynb-out-box"       /* on a code cell's view: the outputs */
 #define OUT_COUNT_KEY "lookin-ipynb-out-count"   /* on a code cell's view: how many outputs it shows */
 
@@ -28,7 +30,12 @@ static void ensure_css(void) {
                   ".ipynb-tab button.ipynb-fold-note { padding: 2px 10px 4px 10px; border: none; background: none;"
                   " box-shadow: none; color: @fg_muted; font-style: italic; }"
                   ".ipynb-tab button.ipynb-fold-note:hover { color: @fg_text; }"
-                  ".ipynb-tab .ipynb-out-box { padding: 0 4px; }");
+                  ".ipynb-tab button.ipynb-out-head { padding: 0; min-height: 16px; border: none;"
+                  " background: none; box-shadow: none; }"
+                  ".ipynb-tab .ipynb-fold-arrow { color: @fg; }"
+                  ".ipynb-tab button.ipynb-out-head:hover .ipynb-fold-arrow,"
+                  " .ipynb-tab button.ipynb-out-head:hover .ipynb-out-prompt { color: @fg_bright; }"
+                  ".ipynb-tab .ipynb-out-note { color: @fg_muted; font-style: italic; }");
 }
 
 static GtkWidget* view_at(IpynbTab* t, guint index) {
@@ -51,11 +58,12 @@ static GtkWidget* fold_button(guint index, const gchar* text, const gchar* css_c
     return b;
 }
 
-/* Point an arrow right (folded) or down, with the icons GTK's tree
- * expanders use (built into GTK; the right one mirrored right to left) */
+/* Point an arrow (a GtkImage, or a button showing one) right (folded) or
+ * down, with the icons GTK's tree expanders use (built into GTK; the right
+ * one mirrored right to left) */
 static void set_arrow(GtkWidget* arrow, gboolean folded) {
-    gtk_image_set_from_icon_name(GTK_IMAGE(gtk_button_get_child(GTK_BUTTON(arrow))),
-                                 folded ? "pan-end-symbolic" : "pan-down-symbolic");
+    GtkWidget* image = GTK_IS_BUTTON(arrow) ? gtk_button_get_child(GTK_BUTTON(arrow)) : arrow;
+    gtk_image_set_from_icon_name(GTK_IMAGE(image), folded ? "pan-end-symbolic" : "pan-down-symbolic");
 }
 
 /* --- Sections --- */
@@ -184,13 +192,17 @@ void ipynb_fold_add_heading(IpynbTab* t, guint index, GtkWidget* view, GtkWidget
     g_object_set_data(G_OBJECT(view), FOLD_NOTE_KEY, note);
 }
 
-/* --- Outputs --- */
+/* --- Outputs ---
+ * A head over the outputs of a code cell, "▾ Out [n]:", folds them: then
+ * it reads "▸ Out [n]: 3 outputs hidden" and the outputs are hidden. */
 
 void ipynb_fold_refresh_outputs(IpynbTab* t, guint index, guint n_outputs) {
     GtkWidget* view = view_at(t, index);
     GtkWidget* area = view != NULL ? g_object_get_data(G_OBJECT(view), OUT_AREA_KEY) : NULL;
     if (area == NULL) return;
+    GtkWidget* head = g_object_get_data(G_OBJECT(view), OUT_HEAD_KEY);
     GtkWidget* arrow = g_object_get_data(G_OBJECT(view), OUT_ARROW_KEY);
+    GtkWidget* prompt = g_object_get_data(G_OBJECT(view), OUT_PROMPT_KEY);
     GtkWidget* box = g_object_get_data(G_OBJECT(view), OUT_BOX_KEY);
     GtkWidget* note = g_object_get_data(G_OBJECT(view), OUT_NOTE_KEY);
     gboolean folded = ipynb_doc_cell_flag(t->doc, index, IPYNB_FLAG_OUTPUTS_HIDDEN);
@@ -198,10 +210,14 @@ void ipynb_fold_refresh_outputs(IpynbTab* t, guint index, guint n_outputs) {
     gtk_widget_set_visible(box, !folded);
     gtk_widget_set_visible(note, folded);
     set_arrow(arrow, folded);
-    gtk_widget_set_tooltip_text(arrow, folded ? _("Show Outputs") : _("Hide Outputs"));
+    gtk_widget_set_tooltip_text(head, folded ? _("Show Outputs") : _("Hide Outputs"));
+    gint count = ipynb_doc_cell_execution_count(t->doc, index);
+    gchar* text = count >= 0 ? g_strdup_printf("Out [%d]:", count) : g_strdup("Out:");
+    gtk_label_set_text(GTK_LABEL(prompt), text);
+    g_free(text);
     if (folded) {
-        gchar* text = g_strdup_printf(ngettext("%u output hidden", "%u outputs hidden", n_outputs), n_outputs);
-        gtk_button_set_label(GTK_BUTTON(note), text);
+        text = g_strdup_printf(ngettext("%u output hidden", "%u outputs hidden", n_outputs), n_outputs);
+        gtk_label_set_text(GTK_LABEL(note), text);
         g_free(text);
     }
     g_object_set_data(G_OBJECT(view), OUT_COUNT_KEY, GUINT_TO_POINTER(n_outputs));
@@ -219,23 +235,28 @@ static void on_outputs_clicked(GtkButton* button, gpointer data) {
 
 GtkWidget* ipynb_fold_outputs_wrap(IpynbTab* t, guint index, GtkWidget* view, GtkWidget* outputs) {
     ensure_css();
-    GtkWidget* area = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+    GtkWidget* area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_add_css_class(area, "ipynb-outputs");
-    GtkWidget* arrow = fold_button(index, NULL, "ipynb-fold");
-    g_signal_connect(arrow, "clicked", G_CALLBACK(on_outputs_clicked), t);
-    gtk_box_append(GTK_BOX(area), arrow);
-    GtkWidget* column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_hexpand(column, TRUE);
-    gtk_widget_add_css_class(outputs, "ipynb-out-box");
-    gtk_box_append(GTK_BOX(column), outputs);
-    GtkWidget* note = fold_button(index, "", "ipynb-fold-note");
-    gtk_widget_set_halign(note, GTK_ALIGN_START);
-    gtk_widget_set_tooltip_text(note, _("Show Outputs"));
-    g_signal_connect(note, "clicked", G_CALLBACK(on_outputs_clicked), t);
-    gtk_box_append(GTK_BOX(column), note);
-    gtk_box_append(GTK_BOX(area), column);
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    GtkWidget* arrow = gtk_image_new();
+    gtk_widget_add_css_class(arrow, "ipynb-fold-arrow");
+    gtk_box_append(GTK_BOX(row), arrow);
+    GtkWidget* prompt = gtk_label_new(NULL);
+    gtk_widget_add_css_class(prompt, "ipynb-out-prompt");
+    gtk_box_append(GTK_BOX(row), prompt);
+    GtkWidget* note = gtk_label_new(NULL);
+    gtk_widget_add_css_class(note, "ipynb-out-note");
+    gtk_box_append(GTK_BOX(row), note);
+    GtkWidget* head = fold_button(index, NULL, "ipynb-out-head");
+    gtk_button_set_child(GTK_BUTTON(head), row);
+    gtk_widget_set_halign(head, GTK_ALIGN_START);
+    g_signal_connect(head, "clicked", G_CALLBACK(on_outputs_clicked), t);
+    gtk_box_append(GTK_BOX(area), head);
+    gtk_box_append(GTK_BOX(area), outputs);
     g_object_set_data(G_OBJECT(view), OUT_AREA_KEY, area);
+    g_object_set_data(G_OBJECT(view), OUT_HEAD_KEY, head);
     g_object_set_data(G_OBJECT(view), OUT_ARROW_KEY, arrow);
+    g_object_set_data(G_OBJECT(view), OUT_PROMPT_KEY, prompt);
     g_object_set_data(G_OBJECT(view), OUT_BOX_KEY, outputs);
     g_object_set_data(G_OBJECT(view), OUT_NOTE_KEY, note);
     return area;

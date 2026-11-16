@@ -730,8 +730,9 @@ Layers, from bottom to top
   head of each Markdown cell with headings (the `pan-end` / `pan-down`
   icons of GTK's tree expanders, as in the explorer) and a "n cells
   hidden" note under it, the cells of folded sections hidden (`ipynb_fold_apply()`,
-  after each rebuild and each render of a Markdown cell), an arrow and a
-  note around each code cell's outputs; `ipynb_tab_focus_cell()` unfolds
+  after each rebuild and each render of a Markdown cell), the
+  arrow and `Out [n]:` head over each code cell's outputs (all of them, not only
+  the execute_result) that folds them; `ipynb_tab_focus_cell()` unfolds
   the sections hiding the cell it goes to, `Ctrl+Up` / `Ctrl+Down` and
   `Shift+Enter` step over them (`ipynb_fold_step()`).
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
