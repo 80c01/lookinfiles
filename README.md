@@ -5,11 +5,13 @@
 [![Release](https://img.shields.io/github/v/release/80c01/lookinfiles)](https://github.com/80c01/lookinfiles/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A file explorer that shows what is inside your files. Select a file and see it
-rendered right away: code, Markdown, PDF, images, office documents (Word,
-Excel, PowerPoint), archives, databases and many more. Also play videos. Edit
-text files and run commands next to it, without leaving the window. Written in
-C and GTK 4 for Linux and Windows, with a VS Code look and a keyboard-first design.
+LookinFiles is a keyboard-driven file explorer for people who want to see
+inside their files without opening another program. Select a file and it
+appears at once, rendered: source code, Markdown, PDF, Office documents,
+archives, databases, certificates, binaries and many more. When a look is not
+enough, edit it beside the preview in Notepad, Emacs or Vim mode, or run
+commands in the built-in terminal. A native C and GTK 4 application for Linux
+and Windows, with a VS Code look.
 
 ![LookinFiles showing a Markdown preview](docs/screenshot.png)
 
