@@ -1,7 +1,7 @@
 /* The cells selected together in a Jupyter notebook tab (see
  * ipynb_tab_private.h): a run of cells from an anchor to the current cell,
  * and the actions that take the whole run (move, delete, set the type,
- * copy, cut, paste, merge), from the keys and the source's context menu */
+ * copy, cut, paste, merge) and their keys */
 #include "core/i18n.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_tab_private.h"
@@ -28,6 +28,11 @@ static gboolean selected_run(IpynbTab* t, guint* first, guint* last) {
     *first = MIN((guint)anchor, t->current);
     *last = MAX((guint)anchor, t->current);
     return TRUE;
+}
+
+guint ipynb_select_count_at(IpynbTab* t, guint index) {
+    guint first, last;
+    return selected_run(t, &first, &last) && index >= first && index <= last ? last - first + 1 : 1;
 }
 
 guint ipynb_select_count(IpynbTab* t) {
@@ -268,96 +273,4 @@ gboolean ipynb_select_key(IpynbTab* t, guint keyval, GdkModifierType mods) {
     default:
         return FALSE;
     }
-}
-
-/* --- Context menu of the source --- */
-
-#define MENU_TAB_KEY "lookin-ipynb-menu-tab"
-#define MENU_INDEX_KEY "lookin-ipynb-menu-cell"
-
-static guint menu_cell(GtkWidget* view, IpynbTab** t) {
-    *t = g_object_get_data(G_OBJECT(view), MENU_TAB_KEY);
-    return GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(view), MENU_INDEX_KEY));
-}
-
-/* Split Cell: at the cursor, or around the selection, as in JupyterLab */
-static void on_split_cell(GSimpleAction* action, GVariant* param, gpointer data) {
-    (void)action;
-    (void)param;
-    IpynbTab* t;
-    guint index = menu_cell(data, &t);
-    if (t == NULL || t->closed) return;
-    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(data));
-    GtkTextIter start, end;
-    gtk_text_buffer_get_selection_bounds(buffer, &start, &end);
-    glong from = gtk_text_iter_get_offset(&start);
-    glong to = gtk_text_iter_get_offset(&end);
-    gtk_text_buffer_get_bounds(buffer, &start, &end);
-    gchar* text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
-    gchar** parts = ipynb_split_source(text, from, to);
-    g_free(text);
-    if (parts == NULL) {
-        ipynb_tab_set_status(t, _("Nothing to split here"), FALSE);
-        return;
-    }
-    /* Every part shows the same: the split ends the edit of a Markdown cell
-     * (the parts inserted above are rendered, the cell kept is the last) */
-    g_hash_table_remove(t->editing, GUINT_TO_POINTER(ipynb_doc_cell_key(t->doc, index)));
-    index = ipynb_doc_split_cell(t->doc, index, parts);
-    g_strfreev(parts);
-    ipynb_tab_mark_changed(t);
-    ipynb_tab_queue_rebuild(t, index);
-}
-
-typedef void (*CellAction)(IpynbTab* t, guint index);
-
-static void on_cell_action(GSimpleAction* action, GVariant* param, gpointer data) {
-    (void)param;
-    IpynbTab* t;
-    guint index = menu_cell(data, &t);
-    CellAction run = g_object_get_data(G_OBJECT(action), "lookin-ipynb-action");
-    if (t != NULL && !t->closed && run != NULL) run(t, index);
-}
-
-void ipynb_select_add_menu(IpynbTab* t, guint index, GtkWidget* view) {
-    static const struct {
-        const gchar* name;
-        const gchar* label;
-        const gchar* accel;
-        CellAction run;
-    } ITEMS[] = {
-        { "copy", N_("Copy Cells"), "<Control><Shift>c", ipynb_select_copy },
-        { "cut", N_("Cut Cells"), "<Control><Shift>x", ipynb_select_cut },
-        { "paste", N_("Paste Cells Below"), "<Control><Shift>v", ipynb_select_paste },
-        { "merge", N_("Merge Cells"), "<Control><Shift>m", ipynb_select_merge },
-    };
-    g_object_set_data(G_OBJECT(view), MENU_TAB_KEY, t);
-    g_object_set_data(G_OBJECT(view), MENU_INDEX_KEY, GUINT_TO_POINTER(index));
-    GSimpleActionGroup* group = g_simple_action_group_new();
-    GMenu* menu = g_menu_new();
-    GSimpleAction* split = g_simple_action_new("split", NULL);
-    g_signal_connect(split, "activate", G_CALLBACK(on_split_cell), view);
-    g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(split));
-    g_object_unref(split);
-    g_menu_append(menu, _("Split Cell"), "cell.split");
-    GMenu* cells = g_menu_new();
-    for (gsize i = 0; i < G_N_ELEMENTS(ITEMS); i++) {
-        GSimpleAction* action = g_simple_action_new(ITEMS[i].name, NULL);
-        g_object_set_data(G_OBJECT(action), "lookin-ipynb-action", (gpointer)ITEMS[i].run);
-        g_signal_connect(action, "activate", G_CALLBACK(on_cell_action), view);
-        g_action_map_add_action(G_ACTION_MAP(group), G_ACTION(action));
-        g_object_unref(action);
-        gchar* detailed = g_strconcat("cell.", ITEMS[i].name, NULL);
-        GMenuItem* item = g_menu_item_new(_(ITEMS[i].label), detailed);
-        g_menu_item_set_attribute(item, "accel", "s", ITEMS[i].accel);
-        g_menu_append_item(cells, item);
-        g_object_unref(item);
-        g_free(detailed);
-    }
-    g_menu_append_section(menu, NULL, G_MENU_MODEL(cells));
-    g_object_unref(cells);
-    gtk_widget_insert_action_group(view, "cell", G_ACTION_GROUP(group));
-    g_object_unref(group);
-    gtk_text_view_set_extra_menu(GTK_TEXT_VIEW(view), G_MENU_MODEL(menu));
-    g_object_unref(menu);
 }

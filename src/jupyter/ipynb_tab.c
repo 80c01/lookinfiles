@@ -614,6 +614,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
                    cell_button(t, index, "user-trash", _("Delete Cell (Alt+Delete)"), G_CALLBACK(on_cell_delete)));
     gtk_box_append(GTK_BOX(head), actions);
     ipynb_select_add_head(t, index, head);
+    ipynb_menu_attach(t, index, head);
     gtk_box_append(GTK_BOX(cell), head);
 
     /* Source */
@@ -656,7 +657,7 @@ static GtkWidget* build_cell(IpynbTab* t, guint index) {
     set_view_monospace(view, TRUE);
     g_object_set_data(G_OBJECT(view), CELL_INDEX_KEY, GUINT_TO_POINTER(index));
     track_focus(t, view);
-    ipynb_select_add_menu(t, index, view);
+    ipynb_menu_add_text(t, index, view);
     gtk_box_append(GTK_BOX(cell), view);
     g_ptr_array_add(t->views, view);
 

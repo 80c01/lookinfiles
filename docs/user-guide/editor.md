@@ -83,9 +83,13 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   notebook tab, outputs included; the pasted cells are selected).
   `Ctrl+Shift+M` merges the selected cells into the first, or the cell
   with the next one, as in JupyterLab: their sources joined by a blank
-  line, the first one's type, the outputs dropped. The right-click menu of
-  a cell's source has the same four commands; **Undo** in the bar puts back
-  the cells deleted, cut or merged last.
+  line, the first one's type, the outputs dropped. **Undo** in the bar
+  puts back the cells deleted, cut or merged last.
+- A right click on a cell's head, its `Out` head or its folded code opens
+  the **cell menu**: run, copy, cut, paste, merge, insert, move and delete
+  (the selected cells when the cell is one of them). A right click in the
+  text of a cell opens the text menu (cut, copy and paste text), with
+  **Split Cell**.
 - A Markdown cell with headings opens a **section**: the cells after it up
   to the next heading of the same level or higher. The arrow at the left of
   its head (the explorer's), or `Tab` on the rendered cell, folds it: its

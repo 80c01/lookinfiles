@@ -750,9 +750,12 @@ Layers, from bottom to top
   tabs, pasted with `ipynb_doc_paste_cell()`: new keys and ids) and merging
   (`ipynb_doc_merge_cells()`; Undo puts copies of the cells back in place
   of the merged one, found by its key); focusing another cell, otherwise
-  than to extend, drops it. It also holds the context menu of the source
-  views (Split Cell, then the four cell commands) and their keys
-  (`ipynb_select_key()`).
+  than to extend, drops it; `ipynb_select_key()` holds their keys.
+  `ipynb_menu.c` (also on `ipynb_tab_private.h`) holds the cell menu, a
+  popover on the tab's root (the commands rebuild the cells) opened by a
+  right click on a cell's head, `Out` head or folded-code note
+  (`ipynb_menu_attach()`), and the Split Cell entry of the source views'
+  text menu (`ipynb_menu_add_text()`).
   `ipynb_tagbar.c` (also on `ipynb_tab_private.h`) puts an `outline_pane`
   beside the cells (the editor tagbar's width), filled by `ipynb_outline`
   600 ms after the last change (`ipynb_tab_mark_changed()`), set again only

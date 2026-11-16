@@ -209,7 +209,7 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Alt+Up` / `Alt+Down` | Move the cell (the selected cells) up / down |
 | `Alt+Enter` / `Alt+Shift+Enter` | Insert a code cell below / above (also the two insert buttons of each cell) |
 | `Alt+Delete` | Delete the cell (the selected cells; **Undo** in the bar puts them back) |
-| `Ctrl+Shift+C` / `Ctrl+Shift+X` / `Ctrl+Shift+V` | Copy / cut the cell (the selected cells) / paste the cells copied below it (also in the right-click menu of a cell's source) |
+| `Ctrl+Shift+C` / `Ctrl+Shift+X` / `Ctrl+Shift+V` | Copy / cut the cell (the selected cells) / paste the cells copied below it (also in the cell menu: right click on a cell's head) |
 | `Ctrl+Shift+M` | Merge the selected cells into the first, or the cell with the next one (sources joined by a blank line, outputs dropped; **Undo** in the bar splits them again) |
 | `Ctrl+S` | Save now |
 | `Ctrl+W`, middle click on the tab | Close the notebook tab (saved first) |

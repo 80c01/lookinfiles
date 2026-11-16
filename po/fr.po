@@ -8822,6 +8822,45 @@ msgstr "Copier les cellules"
 msgid "Cut Cells"
 msgstr "Couper les cellules"
 
+msgid "Copy Cell"
+msgstr "Copier la cellule"
+
+msgid "Cut Cell"
+msgstr "Couper la cellule"
+
+msgid "Merge with the Next Cell"
+msgstr "Fusionner avec la cellule suivante"
+
+msgid "Run Cell"
+msgstr "Exécuter la cellule"
+
+msgid "Run Cells"
+msgstr "Exécuter les cellules"
+
+msgid "Insert Code Cell Above"
+msgstr "Insérer une cellule de code au-dessus"
+
+msgid "Insert Code Cell Below"
+msgstr "Insérer une cellule de code en dessous"
+
+msgid "Move Cell Up"
+msgstr "Monter la cellule"
+
+msgid "Move Cell Down"
+msgstr "Descendre la cellule"
+
+msgid "Move Cells Up"
+msgstr "Monter les cellules"
+
+msgid "Move Cells Down"
+msgstr "Descendre les cellules"
+
+msgid "Delete Cell"
+msgstr "Supprimer la cellule"
+
+msgid "Delete Cells"
+msgstr "Supprimer les cellules"
+
 msgid "Paste Cells Below"
 msgstr "Coller les cellules en dessous"
 

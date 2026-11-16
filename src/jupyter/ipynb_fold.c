@@ -293,6 +293,7 @@ void ipynb_fold_add_source(IpynbTab* t, guint index, GtkWidget* view, GtkWidget*
     g_signal_connect(note, "clicked", G_CALLBACK(on_source_clicked), t);
     gtk_box_insert_child_after(GTK_BOX(cell), note, view);
     ipynb_tab_track_focus(t, note, index);
+    ipynb_menu_attach(t, index, note);
     g_object_set_data(G_OBJECT(view), SRC_ARROW_KEY, arrow);
     g_object_set_data(G_OBJECT(view), SRC_NOTE_KEY, note);
     g_object_set_data(G_OBJECT(view), SRC_FIRST_KEY, first);
@@ -367,6 +368,7 @@ GtkWidget* ipynb_fold_outputs_wrap(IpynbTab* t, guint index, GtkWidget* view, Gt
     gtk_box_append(GTK_BOX(area), outputs);
     g_object_set_data(G_OBJECT(view), OUT_AREA_KEY, area);
     g_object_set_data(G_OBJECT(view), OUT_HEAD_KEY, head);
+    ipynb_menu_attach(t, index, head);
     g_object_set_data(G_OBJECT(view), OUT_ARROW_KEY, arrow);
     g_object_set_data(G_OBJECT(view), OUT_PROMPT_KEY, prompt);
     g_object_set_data(G_OBJECT(view), OUT_BOX_KEY, outputs);

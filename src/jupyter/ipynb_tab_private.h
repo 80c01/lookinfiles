@@ -4,8 +4,8 @@
 /* Shared by the files of the Jupyter notebook tab: ipynb_tab.c (the tab,
  * its cells), ipynb_save.c (saving), ipynb_run.c (running cells in a
  * kernel), ipynb_bar.c (the bar at the top), ipynb_tagbar.c (the
- * tagbar), ipynb_fold.c (folding) and ipynb_select.c (cells selected
- * together). The public API is ipynb_tab.h. */
+ * tagbar), ipynb_fold.c (folding), ipynb_select.c (cells selected
+ * together) and ipynb_menu.c (the cells' menus). The public API is ipynb_tab.h. */
 #include "core/app_types.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
@@ -201,8 +201,10 @@ guint ipynb_fold_step(IpynbTab* t, guint index, gint step);
 /* The cells an action on the cell at index takes: the selected run when
  * the cell is in it, else that cell alone (the selection dropped) */
 void ipynb_select_range(IpynbTab* t, guint index, guint* first, guint* last);
-/* How many cells are selected (1 without a selection) */
+/* How many cells are selected (1 without a selection) / how many an action
+ * on the cell at index takes */
 guint ipynb_select_count(IpynbTab* t);
+guint ipynb_select_count_at(IpynbTab* t, guint index);
 /* Show which cells are selected (and their count in the status bar) */
 void ipynb_select_show(IpynbTab* t);
 void ipynb_select_clear(IpynbTab* t);
@@ -236,8 +238,13 @@ void ipynb_select_merge(IpynbTab* t, guint index);
 /* The selection keys (Ctrl+Shift+Up / Down, Esc) and those of the actions
  * above (Ctrl+Shift+C / X / V / M); TRUE when key is one of them */
 gboolean ipynb_select_key(IpynbTab* t, guint keyval, GdkModifierType mods);
-/* The context menu of the source view of the cell at index: Split Cell,
- * then copy, cut, paste and merge */
-void ipynb_select_add_menu(IpynbTab* t, guint index, GtkWidget* view);
+
+/* ipynb_menu.c */
+/* A right click on widget (of the cell at index) opens the cell menu: run,
+ * copy, cut, paste, merge, insert, move, delete (the selected cells when
+ * the cell is one of them) */
+void ipynb_menu_attach(IpynbTab* t, guint index, GtkWidget* widget);
+/* The text menu of the source view of the cell at index gets Split Cell */
+void ipynb_menu_add_text(IpynbTab* t, guint index, GtkWidget* view);
 
 #endif /* IPYNB_TAB_PRIVATE_H */

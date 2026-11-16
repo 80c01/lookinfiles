@@ -98,9 +98,14 @@ cellule Markdown nouvelle ou vide reste en source.
   cellules collées sont sélectionnées). `Ctrl+Shift+M` fusionne les
   cellules sélectionnées dans la première, ou la cellule avec la suivante,
   comme dans JupyterLab : leurs sources jointes par une ligne vide, le type
-  de la première, les sorties abandonnées. Le menu du clic droit sur le
-  source d’une cellule a les mêmes quatre commandes ; **Annuler** dans la
-  barre remet les cellules supprimées, coupées ou fusionnées en dernier.
+  de la première, les sorties abandonnées. **Annuler** dans la barre remet
+  les cellules supprimées, coupées ou fusionnées en dernier.
+- Un clic droit sur l’en-tête d’une cellule, son en-tête `Out` ou son
+  code replié ouvre le **menu de la cellule** : exécuter, copier, couper,
+  coller, fusionner, insérer, déplacer et supprimer (les cellules
+  sélectionnées quand la cellule en fait partie). Un clic droit dans le
+  texte d’une cellule ouvre le menu du texte (couper, copier et coller du
+  texte), avec **Scinder la cellule**.
 - Une cellule Markdown avec des titres ouvre une **section** : les
   cellules qui la suivent jusqu’au prochain titre de même niveau ou plus
   haut. La flèche à gauche de son en-tête (celle de l’explorateur), ou
