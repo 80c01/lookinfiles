@@ -339,8 +339,14 @@ static const gchar* error_text(guint8 code) {
     }
 }
 
+/* A row of the grid: NULL for an empty row (GLib calls the free function on
+ * NULL elements too) */
+static void row_free(gpointer row) {
+    if (row != NULL) g_ptr_array_unref(row);
+}
+
 static void read_sheet(const Book* b, gsize pos, Sheet* sheet, guint max_rows) {
-    Grid g = {g_ptr_array_new_with_free_func((GDestroyNotify)g_ptr_array_unref), 0, max_rows, FALSE};
+    Grid g = {g_ptr_array_new_with_free_func(row_free), 0, max_rows, FALSE};
     guint16 type, len;
     const guint8* d;
     gint string_row = -1, string_col = -1; /* a FORMULA waiting for its STRING */

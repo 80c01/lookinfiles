@@ -651,6 +651,8 @@ static GBytes* biff8_workbook(gboolean encrypted, gboolean date1904) {
     guint8 str[16];
     ob_put16(str, 4); str[2] = 0; memcpy(str + 3, "calc", 4);
     rec(g, 0x0207, str, 7);
+    /* LABEL in A5 after an empty row 4: sheets have gaps (empty rows) */
+    k = cell_head(c, 4, 0, 0); ob_put16(c + k, 3); c[k + 2] = 0; memcpy(c + k + 3, "gap", 3); rec(g, 0x0204, c, k + 6);
     /* LABEL in row 500: beyond max_rows */
     k = cell_head(c, 500, 0, 0); ob_put16(c + k, 3); c[k + 2] = 0; memcpy(c + k + 3, "far", 3); rec(g, 0x0204, c, k + 6);
     rec(g, 0x000A, "", 0);
@@ -681,6 +683,7 @@ static void test_excel_synthetic(void) {
     g_assert_nonnull(strstr(t, "TRUE"));
     g_assert_nonnull(strstr(t, "#DIV/0!"));
     g_assert_nonnull(strstr(t, "calc"));
+    g_assert_nonnull(strstr(t, "gap"));
     g_assert_null(strstr(t, "far"));
     g_assert_nonnull(strstr(t, "Showing the first 300 rows."));
     preview_doc_free(doc);
