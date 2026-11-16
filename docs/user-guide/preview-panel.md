@@ -74,6 +74,11 @@ workspace). **Show / Hide Tagbar** in the right-click menu of the Preview
 tab does it for the current workspace only, not kept. In a large file, only
 the part first shown is listed.
 
+The right-click menu of the Preview tab copies the previewed file's name
+(**Copy Name**), its path from the root of its git repository (**Copy
+Relative Path**, only inside a repository) or its absolute path (**Copy
+Path**).
+
 `e` opens the previewed text file in an editor tab; `t` (Vim) or `C-o`
 (Emacs) opens it in the dedicated editor panel.
 
@@ -157,7 +162,7 @@ fits. The folds of each file are kept until LookinFiles quits.
 The bar at the bottom shows the path of the value at the cursor, such as
 `$.servers[2].host` in JSON, `/feed/entry[2]/title` in XML,
 `servers.alpha.ip` in TOML or `jobs.build.steps[1].run` in YAML (`[1].kind`
-in the second document of a file of several); `y` (or **Copy Path** in the
+in the second document of a file of several); `y` (or **Copy Value Path** in the
 right-click menu of the Preview tab) copies it. A file over 512 KB shows its first 64 KB, the
 values open there ending with `…`; **Load Whole File** shows all of it. A
 file that is not valid JSON, XML or TOML, or YAML with tabs in its

@@ -82,6 +82,28 @@ gchar* find_git_root(const gchar* start_dir) {
     return NULL;
 }
 
+gchar* git_relative_path(const gchar* path) {
+    if (path == NULL || !g_path_is_absolute(path)) {
+        return NULL;
+    }
+    gchar* full = g_canonicalize_filename(path, NULL);
+    gchar* start = g_file_test(full, G_FILE_TEST_IS_DIR) ? g_strdup(full) : g_path_get_dirname(full);
+    gchar* root = find_git_root(start);
+    g_free(start);
+    gchar* rel = NULL;
+    if (root != NULL) {
+        gsize len = strlen(root);
+        if (g_strcmp0(full, root) == 0) {
+            rel = g_strdup(".");
+        } else if (strncmp(full, root, len) == 0 && full[len] == '/') {
+            rel = g_strdup(full + len + 1);
+        }
+    }
+    g_free(root);
+    g_free(full);
+    return rel;
+}
+
 /* Explorer badge: the status letter in bold, in the role's colour */
 static gchar* badge_markup(PaletteRole role, const gchar* letter) {
     return g_strdup_printf("<span foreground=\"%s\" weight=\"bold\">%s</span>", palette_color(role), letter);

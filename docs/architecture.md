@@ -107,7 +107,7 @@ Layers, from bottom to top
   tree, editor tabs, bookmarks, Quick Open, references; the other explorer
   rows get a matching glyph from `glyph_image_set()`), and by
   `file_type_paintable()` inside text (directory preview).
-- `git_utils` — `find_git_root()`, `git_resolve_dir()` (worktrees/submodules),
+- `git_utils` — `find_git_root()`, `git_relative_path()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()` (plain file reads); through libgit2, never the git
   program (worker thread only): `scan_git_statuses()`, `git_read_head_blob()`,
   `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
@@ -474,6 +474,10 @@ Layers, from bottom to top
   (`app_dialog_is_open()`).
 - `app_events` — event bus (`app_emit()`), see "Notifying the chrome" below;
   `app_notice()` shows a short message in the explorer bar (with Undo when asked).
+- `path_copy` — Copy Name / Copy Relative Path (from the git root,
+  `git_relative_path()`) / Copy Path, the items of `files_menu`,
+  `editor_tab_menu` and `preview_menu`: `path_copy()` puts the text in the
+  clipboard with an `app_notice()`.
 - `panels` — fullscreen, focused-panel highlight, workspace width, split-handle
   drag feedback and fractions (`wire_paned_controllers()`). Every new
   `GtkPaned` must go through `wire_paned_controllers()` or at least
@@ -610,7 +614,7 @@ Layers, from bottom to top
   the view actions, the same in every mode.
 - `file_actions` — new file / new folder, rename and trash prompts.
 - `files_menu` — right-click menu of the files view (the key actions,
-  plus Copy Path, Open With Default App through `GtkFileLauncher`, Open in
+  plus Copy Name / Relative Path / Path (`path_copy`), Open With Default App through `GtkFileLauncher`, Open in
   Browser Tab for HTML files through `browser_open()`, and Open Terminal
   Here through `terminal_open()`).
 - `file_moves` — renames and moves to the trash with editor tabs and
@@ -756,7 +760,7 @@ Layers, from bottom to top
   that record value paths (JSON, `PreviewDoc.paths`), followed on the
   buffer's cursor (`APP_EVENT_PREVIEW_LOCATION` when it changes, shown by
   `status_bar` in the preview bar); `y` (`preview_location_key()`) and
-  **Copy Path** in `preview_menu` copy it.
+  **Copy Value Path** in `preview_menu` copy it.
 - `preview_sync` — the preview kept on the line being edited: a file shown
   again (saved, changed on disk, re-rendered) goes back to the line at the
   top of the view (`preview_sync_loading()` from `load_file_content()`,

@@ -2768,8 +2768,17 @@ msgid "Move to Trash…"
 msgstr "Mettre à la corbeille…"
 
 #: src/explorer/files_menu.c:182 src/explorer/files_menu.c:191
+msgid "Copy Name"
+msgstr "Copier le nom"
+
+msgid "Copy Relative Path"
+msgstr "Copier le chemin relatif"
+
 msgid "Copy Path"
 msgstr "Copier le chemin"
+
+msgid "Copy Value Path"
+msgstr "Copier le chemin de la valeur"
 
 #: src/explorer/files_menu.c:183 src/explorer/files_menu.c:192
 msgid "Bookmark…"
@@ -3679,10 +3688,10 @@ msgstr ""
 #: src/chrome/help.c:134
 msgid ""
 "Context menu: open, side panel, default app, terminal here, rename, trash, "
-"copy path, bookmark"
+"copy name or path, bookmark"
 msgstr ""
 "Menu contextuel : ouvrir, panneau latéral, application par défaut, terminal "
-"ici, renommer, corbeille, copier le chemin, signet"
+"ici, renommer, corbeille, copier le nom ou le chemin, signet"
 
 #: src/chrome/help.c:135
 msgid ""

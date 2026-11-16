@@ -85,6 +85,44 @@ static void test_root_from_subdir(Fixture* fx, gconstpointer data) {
     g_free(sub);
 }
 
+static void test_relative_path(Fixture* fx, gconstpointer data) {
+    (void)data;
+    g_free(make_path(fx, "repo/.git", NULL));
+    gchar* file = make_path(fx, "repo/src/main.c", "int main;\n");
+    gchar* rel = git_relative_path(file);
+    g_assert_cmpstr(rel, ==, "src/main.c");
+    g_free(rel);
+
+    gchar* dir = g_build_filename(fx->dir, "repo", "src", NULL);
+    rel = git_relative_path(dir);
+    g_assert_cmpstr(rel, ==, "src");
+    g_free(rel);
+    g_free(dir);
+
+    gchar* root = g_build_filename(fx->dir, "repo", NULL);
+    rel = git_relative_path(root);
+    g_assert_cmpstr(rel, ==, ".");
+    g_free(rel);
+    g_free(root);
+
+    /* A file not saved yet: its folder decides */
+    gchar* unsaved = g_build_filename(fx->dir, "repo", "src", "new.c", NULL);
+    rel = git_relative_path(unsaved);
+    g_assert_cmpstr(rel, ==, "src/new.c");
+    g_free(rel);
+    g_free(unsaved);
+
+    gchar* outside = make_path(fx, "plain/notes.txt", "x\n");
+    rel = git_relative_path(outside);
+    g_assert_true(rel == NULL || !g_str_has_prefix(rel, "plain"));
+    g_free(rel);
+    g_free(outside);
+
+    g_assert_null(git_relative_path(NULL));
+    g_assert_null(git_relative_path("relative/path.c"));
+    g_free(file);
+}
+
 static void test_resolve_dir(Fixture* fx, gconstpointer data) {
     (void)data;
     gchar* repo = make_path(fx, "repo", NULL);
@@ -549,6 +587,7 @@ int main(int argc, char** argv) {
     git_libgit2_init();
     g_test_add("/git_utils/root_outside_repo", Fixture, NULL, fixture_setup, test_root_outside_repo, fixture_teardown);
     g_test_add("/git_utils/root_from_subdir", Fixture, NULL, fixture_setup, test_root_from_subdir, fixture_teardown);
+    g_test_add("/git_utils/relative_path", Fixture, NULL, fixture_setup, test_relative_path, fixture_teardown);
     g_test_add("/git_utils/resolve_dir", Fixture, NULL, fixture_setup, test_resolve_dir, fixture_teardown);
     g_test_add("/git_utils/read_branch", Fixture, NULL, fixture_setup, test_read_branch, fixture_teardown);
     g_test_add("/git_utils/read_ahead_behind", Fixture, NULL, fixture_setup, test_read_ahead_behind, fixture_teardown);

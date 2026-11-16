@@ -222,6 +222,7 @@ minimap:app_types,diff_gutter,line_diff,minimap_geometry,palette,preview_state
 preview_doc_view:preview_doc,html,html_tags,markdown,image_utils,text_style,app_types,palette,fonts,text_tags
 tree_nav:app_types
 app_events:app_types
+path_copy:app_types,app_events,git_utils,i18n
 panels:app_types,app_events,nav_keys
 outline_pane:code_outline_tree,code_symbol,icons,panels,i18n,nav_keys
 focus_route:app_types,app_events,nav_keys,panels

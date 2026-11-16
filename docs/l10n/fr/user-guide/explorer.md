@@ -126,8 +126,9 @@ fonctions git.
 Sur un fichier ou un dossier : ouvrir, ouvrir dans le panneau latéral
 (fichiers texte) ou avec l’application par défaut (autres fichiers), ouvrir
 un terminal dans un dossier, renommer, mettre à la corbeille, copier le
-chemin, ajouter un signet, annuler. Sur une zone vide : nouveau fichier,
-nouveau dossier, terminal.
+nom, le chemin relatif au dépôt git (dans un dépôt) ou le chemin absolu,
+ajouter un signet, annuler. Sur une zone vide : nouveau fichier, nouveau
+dossier, terminal, et les trois mêmes copies pour le dossier courant.
 
 ## Autres touches
 

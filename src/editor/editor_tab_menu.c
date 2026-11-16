@@ -5,6 +5,7 @@
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
 #include "core/i18n.h"
+#include "core/path_copy.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/minimap.h"
 
@@ -59,6 +60,15 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
         break;
     case TAB_ACTION_CLOSE:
         editor_close_tab(app, tab);
+        break;
+    case TAB_ACTION_COPY_NAME:
+        path_copy(app, tab->path, PATH_COPY_NAME);
+        break;
+    case TAB_ACTION_COPY_RELATIVE:
+        path_copy(app, tab->path, PATH_COPY_RELATIVE);
+        break;
+    case TAB_ACTION_COPY_PATH:
+        path_copy(app, tab->path, PATH_COPY_ABSOLUTE);
         break;
     case TAB_ACTION_MODE_NOTEPAD:
         editor_set_tab_mode(app, tab, EDITOR_MODE_NOTEPAD);
@@ -224,6 +234,19 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
                   TAB_ACTION_SPLIT_RIGHT);
     tab_menu_item(box, popover, app, tab, _("Split Down"), vim ? "Ctrl+W s" : emacs ? "C-x 2" : NULL,
                   TAB_ACTION_SPLIT_DOWN);
+
+    /* The file's name and paths (not for a buffer without a file) */
+    if (tab->path != NULL && !tab->is_buffer) {
+        GtkWidget* sep_copy = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_widget_set_margin_top(sep_copy, 4);
+        gtk_widget_set_margin_bottom(sep_copy, 4);
+        gtk_box_append(GTK_BOX(box), sep_copy);
+        tab_menu_item(box, popover, app, tab, _("Copy Name"), NULL, TAB_ACTION_COPY_NAME);
+        if (path_copy_has_relative(tab->path)) {
+            tab_menu_item(box, popover, app, tab, _("Copy Relative Path"), NULL, TAB_ACTION_COPY_RELATIVE);
+        }
+        tab_menu_item(box, popover, app, tab, _("Copy Path"), NULL, TAB_ACTION_COPY_PATH);
+    }
 
     GtkWidget* sep4 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_widget_set_margin_top(sep4, 4);

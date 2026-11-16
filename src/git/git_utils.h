@@ -7,6 +7,10 @@
  * or if start_dir is inside a .git directory. Caller frees. */
 gchar* find_git_root(const gchar* start_dir);
 
+/* path relative to the root of its repository ("src/main.c", "." for the
+ * root itself), NULL if path is not in a repository. Caller frees. */
+gchar* git_relative_path(const gchar* path);
+
 /* Git directory of a repository root ("<root>/.git" or the "gitdir:" target
  * for worktrees and submodules), NULL if none. Caller frees. */
 gchar* git_resolve_dir(const gchar* git_root);

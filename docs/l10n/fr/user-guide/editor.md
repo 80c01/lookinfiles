@@ -140,6 +140,11 @@ modifications non enregistrées avec ; Emacs `C-x 1`, Vim `Ctrl+W o` /
 `:only` ferment les autres vues du fichier. En mode Vim, les vues partagent
 un seul Vim : mode, registres et historique d’annulation.
 
+Le menu du clic droit sur le titre d’un onglet copie aussi le nom du
+fichier (**Copier le nom**), son chemin depuis la racine de son dépôt git
+(**Copier le chemin relatif**, seulement dans un dépôt) ou son chemin
+absolu (**Copier le chemin**).
+
 ## Choisir le mode d’un onglet
 
 Un nouvel onglet prend le **mode global** affiché dans la barre du haut.

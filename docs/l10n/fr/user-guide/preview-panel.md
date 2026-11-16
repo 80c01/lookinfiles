@@ -80,6 +80,11 @@ le menu du clic droit de l’onglet Aperçu le fait pour l’espace de travail c
 seulement, sans le garder. Dans un gros fichier, seule la partie affichée
 en premier est listée.
 
+Le menu du clic droit de l’onglet Aperçu copie le nom du fichier affiché
+(**Copier le nom**), son chemin depuis la racine de son dépôt git
+(**Copier le chemin relatif**, seulement dans un dépôt) ou son chemin
+absolu (**Copier le chemin**).
+
 `e` ouvre le fichier texte affiché dans un onglet d’édition ; `t` (Vim) ou
 `C-o` (Emacs) l’ouvre dans le panneau d’édition dédié.
 
@@ -172,7 +177,7 @@ La barre du bas affiche le chemin de la valeur sous le curseur, par exemple
 `$.servers[2].host` en JSON, `/feed/entry[2]/title` en XML,
 `servers.alpha.ip` en TOML ou `jobs.build.steps[1].run` en YAML
 (`[1].kind` dans le deuxième document d’un fichier qui en a plusieurs) ;
-`y` (ou **Copier le chemin** dans le menu du clic droit de
+`y` (ou **Copier le chemin de la valeur** dans le menu du clic droit de
 l’onglet Aperçu) le copie. Un
 fichier de plus de 512 Ko affiche ses 64 premiers Ko, les valeurs ouvertes
 à cet endroit se terminant par `…` ; **Charger tout le fichier** l’affiche

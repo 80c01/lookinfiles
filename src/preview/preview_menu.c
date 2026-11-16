@@ -3,9 +3,14 @@
 #include "preview/preview_tagbar.h"
 #include "preview/preview_location.h"
 #include "widgets/minimap.h"
+#include "preview/preview_state.h"
+#include "core/path_copy.h"
 #include "core/i18n.h"
 
 typedef enum {
+    PREVIEW_ACTION_COPY_VALUE_PATH,
+    PREVIEW_ACTION_COPY_NAME,
+    PREVIEW_ACTION_COPY_RELATIVE,
     PREVIEW_ACTION_COPY_PATH,
     PREVIEW_ACTION_TAGBAR,
     PREVIEW_ACTION_MINIMAP,
@@ -17,8 +22,17 @@ static void on_item_clicked(GtkButton* button, gpointer data) {
     GtkWidget* popover = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_POPOVER);
     if (popover != NULL) gtk_popover_popdown(GTK_POPOVER(popover));
     switch (action) {
-    case PREVIEW_ACTION_COPY_PATH:
+    case PREVIEW_ACTION_COPY_VALUE_PATH:
         preview_location_copy(app);
+        break;
+    case PREVIEW_ACTION_COPY_NAME:
+        path_copy(app, preview_state_path(app), PATH_COPY_NAME);
+        break;
+    case PREVIEW_ACTION_COPY_RELATIVE:
+        path_copy(app, preview_state_path(app), PATH_COPY_RELATIVE);
+        break;
+    case PREVIEW_ACTION_COPY_PATH:
+        path_copy(app, preview_state_path(app), PATH_COPY_ABSOLUTE);
         break;
     case PREVIEW_ACTION_TAGBAR:
         preview_tagbar_toggle(app);
@@ -66,7 +80,15 @@ static void on_tab_right_click(GtkGestureClick* gesture, gint n_press, gdouble x
     gtk_widget_set_margin_end(box, 4);
     gtk_widget_set_margin_top(box, 4);
     gtk_widget_set_margin_bottom(box, 4);
-    if (preview_location_current(app) != NULL) menu_item(box, app, _("Copy Path"), "y", PREVIEW_ACTION_COPY_PATH);
+    const gchar* file = preview_state_path(app);
+    if (file != NULL) {
+        menu_item(box, app, _("Copy Name"), NULL, PREVIEW_ACTION_COPY_NAME);
+        if (path_copy_has_relative(file)) menu_item(box, app, _("Copy Relative Path"), NULL, PREVIEW_ACTION_COPY_RELATIVE);
+        menu_item(box, app, _("Copy Path"), NULL, PREVIEW_ACTION_COPY_PATH);
+    }
+    if (preview_location_current(app) != NULL) {
+        menu_item(box, app, _("Copy Value Path"), "y", PREVIEW_ACTION_COPY_VALUE_PATH);
+    }
     if (preview_tagbar_available(app)) {
         menu_item(box, app, preview_tagbar_shown(app) ? _("Hide Tagbar") : _("Show Tagbar"), "o",
                   PREVIEW_ACTION_TAGBAR);

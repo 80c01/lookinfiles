@@ -114,8 +114,10 @@ new ones. See [Git](git.md) for the rest of the git features.
 
 On a file or folder: open, open in the side panel (text files) or with the
 default application (other files), open a terminal in a folder, rename,
-move to the trash, copy the path, bookmark, undo. On an empty area: new
-file, new folder, terminal.
+move to the trash, copy the name, the path relative to the git repository
+(inside one) or the absolute path, bookmark, undo. On an empty area: new
+file, new folder, terminal, and the same three copies for the current
+folder.
 
 ## Other keys
 

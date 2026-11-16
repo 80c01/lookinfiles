@@ -4,6 +4,7 @@
 #include "preview/preview_state.h"
 #include "core/i18n.h"
 #include "core/app_events.h"
+#include "core/path_copy.h"
 #include "explorer/bookmarks.h"
 #include "preview/browser.h"
 #include "editor/editor.h"
@@ -22,6 +23,8 @@ typedef enum {
     FM_OPEN_BROWSER,
     FM_RENAME,
     FM_TRASH,
+    FM_COPY_NAME,
+    FM_COPY_RELATIVE,
     FM_COPY_PATH,
     FM_BOOKMARK,
     FM_TERMINAL,
@@ -57,14 +60,6 @@ static void open_default_app(AppData* app, const gchar* path) {
     g_object_unref(file);
 }
 
-static void copy_path(AppData* app, const gchar* path) {
-    GdkClipboard* clip = gtk_widget_get_clipboard(GTK_WIDGET(app->window));
-    gdk_clipboard_set_text(clip, path);
-    gchar* msg = g_strdup_printf(_("Copied “%s”"), path);
-    app_notice(app, msg, FALSE);
-    g_free(msg);
-}
-
 static void open_side(AppData* app, const gchar* path) {
     gchar* name = g_path_get_basename(path);
     editor_open_dedicated(app, name, path, NULL);
@@ -87,7 +82,9 @@ static gboolean run_action(gpointer data) {
     case FM_OPEN_BROWSER:     open_browser(app, r->path); break;
     case FM_RENAME:           rename_selected_in_tree(app); break;
     case FM_TRASH:            trash_selected_in_tree(app); break;
-    case FM_COPY_PATH:        copy_path(app, r->path); break;
+    case FM_COPY_NAME:        path_copy(app, r->path, PATH_COPY_NAME); break;
+    case FM_COPY_RELATIVE:    path_copy(app, r->path, PATH_COPY_RELATIVE); break;
+    case FM_COPY_PATH:        path_copy(app, r->path, PATH_COPY_ABSOLUTE); break;
     case FM_BOOKMARK:         bookmarks_add_from_context(app); break;
     case FM_TERMINAL:         terminal_open(app, FALSE, r->path); break;
     case FM_NEW_FILE:         create_new_file_in_tree(app); break;
@@ -158,6 +155,15 @@ static const gchar* side_panel_key(AppData* app) {
     }
 }
 
+/* Copy Name, Copy Relative Path (in a git repository) and Copy Path */
+static void copy_items(GtkWidget* box, GtkWidget* popover, AppData* app, const gchar* path) {
+    menu_item(box, popover, app, _("Copy Name"), NULL, FM_COPY_NAME);
+    if (path_copy_has_relative(path)) {
+        menu_item(box, popover, app, _("Copy Relative Path"), NULL, FM_COPY_RELATIVE);
+    }
+    menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
+}
+
 static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, ExplorerRow* row) {
     gboolean is_dir = explorer_row_is(row, "dir");
     menu_item(box, popover, app, _("Open"), "Enter", FM_OPEN);
@@ -180,7 +186,8 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
     menu_item(box, popover, app, _("Rename…"), "F2", FM_RENAME);
     menu_item(box, popover, app, _("Move to Trash…"), "Delete", FM_TRASH);
     menu_separator(box);
-    menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
+    copy_items(box, popover, app, row->path);
+    menu_separator(box);
     menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);
 }
 
@@ -189,8 +196,9 @@ static void fill_folder_menu(GtkWidget* box, GtkWidget* popover, AppData* app) {
     menu_item(box, popover, app, _("New Folder…"), "Shift+A", FM_NEW_FOLDER);
     menu_separator(box);
     menu_item(box, popover, app, _("Open Terminal Here"), NULL, FM_TERMINAL);
-    menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
     menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);
+    menu_separator(box);
+    copy_items(box, popover, app, app->base_dir);
 }
 
 static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {

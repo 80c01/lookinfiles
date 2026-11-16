@@ -122,6 +122,10 @@ keeps its own cursor and selection. Closing one (Emacs `C-x 0`, Vim
 Emacs `C-x 1`, Vim `Ctrl+W o` / `:only` close the other views of the file.
 In Vim mode the views share one Vim: mode, registers and undo history.
 
+The right-click menu of a tab title also copies the file's name (**Copy
+Name**), its path from the root of its git repository (**Copy Relative
+Path**, only inside a repository) or its absolute path (**Copy Path**).
+
 ## Choosing the mode of a tab
 
 A new tab takes the **global mode** shown in the top bar. To change the
