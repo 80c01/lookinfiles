@@ -160,7 +160,16 @@ jobs:
             mingw-w64-ucrt-x86_64-libarchive
             diffutils
             make
+            unzip
             zip
+
+      # Browser tabs: the WebView2 SDK (WebView2.h to build, WebView2Loader.dll
+      # copied into the zip); the build fails if the SDK is not found
+      - name: Fetch WebView2 SDK
+        shell: msys2 {0}
+        run: |
+          sh packaging/windows/fetch_webview2.sh
+          make deps | grep 'Browser tabs.*yes'
 
       # The single-file .exe embeds the portable zip, which it builds first
       - name: Build Windows packages
@@ -168,6 +177,7 @@ jobs:
         run: |
           ./packaging/windows/build_windows_exe.sh artifacts/
           cp build/lookinfiles-*-windows-x86_64.zip artifacts/
+          unzip -l artifacts/lookinfiles-*-windows-x86_64.zip | grep WebView2Loader.dll
 
       - name: Upload Windows packages
         uses: actions/upload-artifact@v7
