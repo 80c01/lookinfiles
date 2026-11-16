@@ -400,11 +400,6 @@ static void on_reload_clicked(GtkButton* button, gpointer data) {
     reload_or_stop(data);
 }
 
-static void on_close_clicked(GtkButton* button, gpointer data) {
-    (void)button;
-    close_tab(data);
-}
-
 static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
@@ -546,7 +541,6 @@ static BrowserTab* tab_new(AppData* app, WebKitWebView* related) {
     gtk_widget_set_hexpand(bt->entry, TRUE);
     g_signal_connect(bt->entry, "activate", G_CALLBACK(on_entry_activate), bt);
     gtk_box_append(GTK_BOX(bar), bt->entry);
-    bar_button(bar, "window-close", _("Close Tab (Ctrl+W)"), G_CALLBACK(on_close_clicked), bt);
     gtk_box_append(GTK_BOX(page), bar);
 
     GtkWidget* view = related != NULL ? g_object_new(WEBKIT_TYPE_WEB_VIEW, "related-view", related, NULL)

@@ -535,10 +535,6 @@ msgstr "Adresse, chemin de fichier ou recherche"
 msgid "Address or words to search (Ctrl+L)"
 msgstr "Adresse ou mots à rechercher (Ctrl+L)"
 
-#: src/preview/browser.c:461
-msgid "Close Tab (Ctrl+W)"
-msgstr "Fermer l’onglet (Ctrl+W)"
-
 #: src/preview/browser.c:577
 msgid ""
 "Browser tabs need WebKitGTK 6.0 (install libwebkitgtk-6.0-dev and rebuild)"
