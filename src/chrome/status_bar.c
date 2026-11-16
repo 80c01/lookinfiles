@@ -628,6 +628,22 @@ void update_status_bar(AppData* app) {
         type = g_strdup(row->type);
         full = g_strdup(row->path);
     }
+    /* A file shown by the save of its editor tab, not selected in the
+     * explorer: the bar is the file's */
+    const gchar* shown = preview_state_path(app);
+    if (shown != NULL && g_strcmp0(shown, full) != 0) {
+        for (GList* l = app->editors; l != NULL; l = l->next) {
+            EditorTab* t = (EditorTab*)l->data;
+            if (t == NULL || g_strcmp0(t->path, shown) != 0) continue;
+            g_free(name);
+            g_free(type);
+            g_free(full);
+            name = g_strdup(preview_state_name(app) != NULL ? preview_state_name(app) : t->name);
+            type = g_strdup("file");
+            full = g_strdup(shown);
+            break;
+        }
+    }
 
     gboolean has_sel = (name != NULL && type != NULL && g_strcmp0(type, "-") != 0);
     gboolean has_size = FALSE;
