@@ -208,7 +208,8 @@ Layers, from bottom to top
   limit. Tests build archives with `tests/zip_builder.h`.
 - `slide_render` — slides as a model (`SlideDeck`: shapes with position,
   rotation, geometry, fill, outline, picture, text, tables) drawn with cairo
-  and Pango into a PNG per slide (`slide_render_png()`, written fast by
+  and Pango into pixels (`slide_render_pixels()`: cairo ARGB32, what the deck
+  preview hands to the view) or a PNG (`slide_render_png()`, written fast by
   `png_encode`), and the deck preview (`slide_deck_preview()`: one picture
   per slide, notes below). Pictures are decoded at the size they are drawn
   (JPEG scales while decoding) and, during a deck preview, once each per

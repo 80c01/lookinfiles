@@ -147,10 +147,15 @@ static void test_preview(void) {
     g_assert_true(g_str_has_prefix(doc->text->str, "deck.pptx\nPowerPoint presentation · 3 slides · 8 kB\n"));
     g_assert_nonnull(strstr(doc->text->str, "Slide 2 · What changed\n" PREVIEW_DOC_IMAGE_CHAR "\nMention the colour fixes."));
     g_assert_cmpuint(doc->images->len, ==, 3);
+    /* Slides come as pixels, opaque, the size of the drawn width */
+    const PreviewImage* image = &g_array_index(doc->images, PreviewImage, 0);
+    g_assert_cmpint(image->width, ==, image->max_width);
+    g_assert_cmpint(image->height, >, 0);
+    g_assert_cmpint(image->stride, >=, image->width * 4);
     gsize len = 0;
-    const guchar* png = g_bytes_get_data(g_array_index(doc->images, PreviewImage, 0).data, &len);
-    g_assert_cmpuint(len, >, 8);
-    g_assert_cmpint(memcmp(png, "\x89PNG", 4), ==, 0);
+    const guint32* px = g_bytes_get_data(image->data, &len);
+    g_assert_cmpuint(len, >=, (gsize)image->stride * image->height);
+    g_assert_cmphex(px[0] >> 24, ==, 0xFF);
 }
 
 static void test_not_a_presentation(void) {

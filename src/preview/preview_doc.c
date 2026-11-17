@@ -415,7 +415,17 @@ void preview_doc_add_image(PreviewDoc* doc, GBytes* data, gint max_width) {
     if (data == NULL) {
         return;
     }
-    PreviewImage image = { doc->n_chars, g_bytes_ref(data), max_width };
+    PreviewImage image = { doc->n_chars, g_bytes_ref(data), max_width, 0, 0, 0 };
+    g_array_append_val(doc->images, image);
+    preview_doc_append_len(doc, PREVIEW_DOC_IMAGE_CHAR, -1);
+}
+
+void preview_doc_add_pixels(PreviewDoc* doc, GBytes* pixels, gint width, gint height, gint stride, gint max_width) {
+    if (pixels == NULL || width <= 0 || height <= 0 || stride < width * 4 ||
+        g_bytes_get_size(pixels) < (gsize)stride * (gsize)height) {
+        return;
+    }
+    PreviewImage image = { doc->n_chars, g_bytes_ref(pixels), max_width, width, height, stride };
     g_array_append_val(doc->images, image);
     preview_doc_append_len(doc, PREVIEW_DOC_IMAGE_CHAR, -1);
 }

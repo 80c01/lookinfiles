@@ -167,6 +167,11 @@ gchar* slide_shape_text(const SlideShape* shape);
 /* The slide as a PNG width pixels wide; NULL if it cannot be drawn */
 GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width);
 
+/* The slide drawn width pixels wide, as pixels in cairo's ARGB32 layout
+ * (opaque; see PreviewImage), and their size; NULL if it cannot be drawn */
+GBytes* slide_render_pixels(const SlideDeck* deck, const Slide* slide, gint width, gint* out_width,
+                            gint* out_height, gint* out_stride);
+
 /* Preview of a deck: title and subtitle, then each slide as a picture with
  * its number, title and speaker notes; slides after max_drawn are listed by
  * title only. The pictures are drawn at zoom times their fitted size

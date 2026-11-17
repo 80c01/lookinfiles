@@ -747,11 +747,13 @@ static void draw_shape(cairo_t* cr, const SlideDeck* deck, const SlideShape* s, 
     cairo_restore(cr);
 }
 
-GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) {
+/* The slide drawn width pixels wide on an opaque ARGB32 surface (the
+ * background covers it), NULL if it cannot be */
+static cairo_surface_t* draw_slide(const SlideDeck* deck, const Slide* slide, gint width) {
     width = CLAMP(width, 16, 4096);
     gdouble scale = width / deck->width;
     gint height = MAX((gint)(deck->height * scale + 0.5), 1);
-    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, width, height);
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
         cairo_surface_destroy(surface);
         return NULL;
@@ -772,12 +774,34 @@ GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) 
     }
     cairo_destroy(cr);
     cairo_surface_flush(surface);
-    /* Shown once then dropped: compressed fast (cairo's PNG writer took two
-     * thirds of a presentation's preview) */
-    GBytes* png = png_encode_xrgb32(cairo_image_surface_get_data(surface), width, height,
-                                    cairo_image_surface_get_stride(surface), PNG_ENCODE_FAST);
+    return surface;
+}
+
+GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) {
+    cairo_surface_t* surface = draw_slide(deck, slide, width);
+    if (surface == NULL) {
+        return NULL;
+    }
+    GBytes* png = png_encode_xrgb32(cairo_image_surface_get_data(surface), cairo_image_surface_get_width(surface),
+                                    cairo_image_surface_get_height(surface), cairo_image_surface_get_stride(surface),
+                                    PNG_ENCODE_FAST);
     cairo_surface_destroy(surface);
     return png;
+}
+
+GBytes* slide_render_pixels(const SlideDeck* deck, const Slide* slide, gint width, gint* out_width,
+                            gint* out_height, gint* out_stride) {
+    cairo_surface_t* surface = draw_slide(deck, slide, width);
+    if (surface == NULL) {
+        return NULL;
+    }
+    *out_width = cairo_image_surface_get_width(surface);
+    *out_height = cairo_image_surface_get_height(surface);
+    *out_stride = cairo_image_surface_get_stride(surface);
+    /* The surface's own memory, freed with the bytes: no copy */
+    return g_bytes_new_with_free_func(cairo_image_surface_get_data(surface),
+                                      (gsize)*out_stride * (gsize)*out_height,
+                                      (GDestroyNotify)cairo_surface_destroy, surface);
 }
 
 /* ---- Preview ---- */
@@ -815,11 +839,14 @@ PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const 
         if (i >= max_drawn) {
             continue;
         }
-        GBytes* png = slide_render_png(deck, s, width);
-        if (png != NULL) {
-            preview_doc_add_image(doc, png, width);
+        /* Pixels, not PNG: nothing to compress here or to decode in the
+         * view (on the main thread, through glycin on GTK 4.20+) */
+        gint pw = 0, ph = 0, stride = 0;
+        GBytes* pixels = slide_render_pixels(deck, s, width, &pw, &ph, &stride);
+        if (pixels != NULL) {
+            preview_doc_add_pixels(doc, pixels, pw, ph, stride, width);
             preview_doc_append_len(doc, "\n", 1);
-            g_bytes_unref(png);
+            g_bytes_unref(pixels);
         }
         if (s->notes != NULL && s->notes[0] != '\0') {
             gint start = preview_doc_offset(doc);

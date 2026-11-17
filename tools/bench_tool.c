@@ -38,7 +38,7 @@
 #define BUDGET_SCAN_MS 300.0
 #define BUDGET_ROWS_MS 100.0
 #define BUDGET_ROW_BYTES 700.0
-#define BUDGET_SLIDES_MS 1500.0
+#define BUDGET_SLIDES_MS 700.0
 
 static const gchar* const exts[] = {".c", ".h", ".txt", ".md", ".png", ".json", "", ".tar.gz"};
 

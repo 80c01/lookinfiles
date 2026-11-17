@@ -87,8 +87,12 @@ typedef struct {
 /* An image at a character offset (its placeholder is one U+FFFC character) */
 typedef struct {
     gint offset;
-    GBytes* data;         /* encoded image (PNG, JPEG...) */
+    GBytes* data;         /* encoded image (PNG, JPEG...), or pixels when width > 0 */
     gint max_width;       /* scaled down to this width, in pixels */
+    /* > 0: data holds width x height pixels, stride bytes per row, in cairo's
+     * ARGB32 layout (premultiplied, native-endian: GDK_MEMORY_DEFAULT), which
+     * the view shows without decoding (pictures drawn by the preview) */
+    gint width, height, stride;
 } PreviewImage;
 
 typedef struct {
@@ -189,6 +193,8 @@ void preview_doc_add_font_file(PreviewDoc* doc, const gchar* path);
 
 /* Inline image at the current position (keeps a reference to data) */
 void preview_doc_add_image(PreviewDoc* doc, GBytes* data, gint max_width);
+/* An image drawn by the preview, as pixels (see PreviewImage) */
+void preview_doc_add_pixels(PreviewDoc* doc, GBytes* pixels, gint width, gint height, gint stride, gint max_width);
 
 /* --- Summary card --- */
 

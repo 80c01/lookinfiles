@@ -232,6 +232,35 @@ static GdkTexture* decode_image(GBytes* data, gint max_width) {
     return texture;
 }
 
+/* Texture of an image drawn as pixels (PreviewImage.width > 0), scaled down
+ * to max_width when wider: no decoding, the pixels are GTK's own format */
+static GdkTexture* pixels_texture(const PreviewImage* image, gint max_width) {
+    if (max_width <= 0 || image->width <= max_width) {
+        return gdk_memory_texture_new(image->width, image->height, GDK_MEMORY_DEFAULT, image->data,
+                                      (gsize)image->stride);
+    }
+    gint w = max_width;
+    gint h = MAX(1, (gint)((gdouble)image->height * w / image->width + 0.5));
+    cairo_surface_t* src = cairo_image_surface_create_for_data((guchar*)g_bytes_get_data(image->data, NULL),
+                                                               CAIRO_FORMAT_ARGB32, image->width, image->height,
+                                                               image->stride);
+    cairo_surface_t* dst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    cairo_t* cr = cairo_create(dst);
+    cairo_scale(cr, (gdouble)w / image->width, (gdouble)h / image->height);
+    cairo_set_source_surface(cr, src, 0, 0);
+    cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_GOOD);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+    cairo_surface_flush(dst);
+    gint stride = cairo_image_surface_get_stride(dst);
+    GBytes* bytes = g_bytes_new(cairo_image_surface_get_data(dst), (gsize)stride * h);
+    GdkTexture* texture = gdk_memory_texture_new(w, h, GDK_MEMORY_DEFAULT, bytes, (gsize)stride);
+    g_bytes_unref(bytes);
+    cairo_surface_destroy(dst);
+    cairo_surface_destroy(src);
+    return texture;
+}
+
 /* Insert the document; images are never wider than max_image_width (0: no limit) */
 static void insert_doc(GtkTextBuffer* buffer, const PreviewDoc* doc, gint max_image_width) {
     ensure_tags(buffer);
@@ -262,7 +291,7 @@ static void insert_doc(GtkTextBuffer* buffer, const PreviewDoc* doc, gint max_im
         if (max_image_width > 0 && (width <= 0 || width > max_image_width)) {
             width = max_image_width;
         }
-        GdkTexture* texture = decode_image(image->data, width);
+        GdkTexture* texture = image->width > 0 ? pixels_texture(image, width) : decode_image(image->data, width);
         if (texture == NULL) {
             continue;
         }

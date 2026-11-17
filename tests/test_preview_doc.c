@@ -83,6 +83,28 @@ static void test_image_placeholder(void) {
     g_assert_cmpstr(doc->text->str, ==, "ab" PREVIEW_DOC_IMAGE_CHAR);
 }
 
+static void test_pixels(void) {
+    g_autoptr(PreviewDoc) doc = preview_doc_new();
+    guint32 px[2 * 3] = {0};
+    GBytes* data = g_bytes_new(px, sizeof(px));
+    preview_doc_add_pixels(doc, data, 2, 3, 8, 50);
+    preview_doc_add_pixels(doc, data, 2, 4, 8, 50); /* more rows than the bytes: dropped */
+    preview_doc_add_pixels(doc, data, 3, 3, 8, 50); /* stride below the width: dropped */
+    g_bytes_unref(data);
+    g_assert_cmpuint(doc->images->len, ==, 1);
+    const PreviewImage* image = &g_array_index(doc->images, PreviewImage, 0);
+    g_assert_cmpint(image->width, ==, 2);
+    g_assert_cmpint(image->height, ==, 3);
+    g_assert_cmpint(image->stride, ==, 8);
+    g_assert_cmpint(image->max_width, ==, 50);
+    g_assert_cmpstr(doc->text->str, ==, PREVIEW_DOC_IMAGE_CHAR);
+    /* Encoded images keep width 0 */
+    GBytes* png = g_bytes_new_static("PNG", 3);
+    preview_doc_add_image(doc, png, 10);
+    g_bytes_unref(png);
+    g_assert_cmpint(g_array_index(doc->images, PreviewImage, 1).width, ==, 0);
+}
+
 static void test_font_span(void) {
     g_autoptr(PreviewDoc) doc = preview_doc_new();
     preview_doc_append(doc, PREVIEW_STYLE_PLAIN, "Sample");
@@ -313,6 +335,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_doc/append_offsets", test_append_offsets);
     g_test_add_func("/preview_doc/card", test_card);
     g_test_add_func("/preview_doc/image_placeholder", test_image_placeholder);
+    g_test_add_func("/preview_doc/pixels", test_pixels);
     g_test_add_func("/preview_doc/font_span", test_font_span);
     g_test_add_func("/preview_doc/text_width", test_text_width);
     g_test_add_func("/preview_doc/numbers", test_numbers);
