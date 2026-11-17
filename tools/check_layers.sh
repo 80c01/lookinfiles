@@ -135,7 +135,8 @@ odp_text:odp_styles,slide_render
 pptx:zip_reader,zip_xml,preview_doc,pptx_shapes,slide_render,i18n
 pptx_shapes:pptx_shapes_private,zip_reader,zip_xml,preview_doc,slide_render
 pptx_build:pptx_shapes,pptx_shapes_private,preview_doc,slide_render
-slide_render:preview_doc,i18n
+slide_render:preview_doc,i18n,png_encode
+png_encode:
 epub:zip_reader,zip_xml,i18n
 rtf:i18n
 sqlite_view:preview_doc,i18n

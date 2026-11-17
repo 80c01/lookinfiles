@@ -1,6 +1,7 @@
 /* Slides drawn like PowerPoint (see slide_render.h) */
 #include "office/slide_render.h"
 #include "core/i18n.h"
+#include "formats/png_encode.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <math.h>
@@ -195,10 +196,40 @@ static void set_gradient(cairo_t* cr, guint32 from, guint32 to, gdouble angle, g
     cairo_pattern_destroy(pat);
 }
 
-/* Cairo surface of an encoded picture (premultiplied ARGB), NULL if the
- * format cannot be decoded */
-static cairo_surface_t* picture_surface(GBytes* data) {
+/* The pictures decoded while slide_deck_preview() draws a deck, per thread
+ * ("<GBytes*> <w> <h>" -> cairo_surface_t*): a background or a logo on every
+ * slide is decoded once. NULL outside slide_deck_preview(). */
+static GPrivate picture_cache = G_PRIVATE_INIT(NULL);
+
+typedef struct {
+    gint w, h; /* pixels the picture is drawn at, 0: its own size */
+} WantSize;
+
+/* Decode at most at the size drawn: JPEG then scales while decoding (much
+ * faster), and fewer pixels are converted */
+static void on_size_prepared(GdkPixbufLoader* loader, gint w, gint h, gpointer data) {
+    const WantSize* want = data;
+    gint nw = (want->w > 0 && want->w < w) ? want->w : w;
+    gint nh = (want->h > 0 && want->h < h) ? want->h : h;
+    if (nw != w || nh != h) {
+        gdk_pixbuf_loader_set_size(loader, nw, nh);
+    }
+}
+
+/* Cairo surface of an encoded picture (premultiplied ARGB) for drawing it
+ * want_w x want_h pixels (decoded no larger; 0: its own size), NULL if the
+ * format cannot be decoded. New reference. */
+static cairo_surface_t* picture_surface(GBytes* data, gint want_w, gint want_h) {
+    GHashTable* cache = g_private_get(&picture_cache);
+    gchar key[64];
+    g_snprintf(key, sizeof(key), "%p %d %d", (void*)data, want_w, want_h);
+    cairo_surface_t* cached = cache != NULL ? g_hash_table_lookup(cache, key) : NULL;
+    if (cached != NULL) {
+        return cairo_surface_reference(cached);
+    }
+    WantSize want = {want_w, want_h};
     GdkPixbufLoader* loader = gdk_pixbuf_loader_new();
+    g_signal_connect(loader, "size-prepared", G_CALLBACK(on_size_prepared), &want);
     gsize len = 0;
     const guchar* bytes = g_bytes_get_data(data, &len);
     gboolean ok = gdk_pixbuf_loader_write(loader, bytes, len, NULL);
@@ -225,14 +256,27 @@ static cairo_surface_t* picture_surface(GBytes* data) {
         cairo_surface_mark_dirty(surface);
     }
     g_object_unref(loader);
+    if (cache != NULL && surface != NULL) {
+        g_hash_table_insert(cache, g_strdup(key), cairo_surface_reference(surface));
+    }
     return surface;
+}
+
+/* Device pixels of a user-space length along x, and along y */
+static gint device_length(cairo_t* cr, gdouble dx, gdouble dy) {
+    cairo_user_to_device_distance(cr, &dx, &dy);
+    return (gint)ceil(hypot(dx, dy));
 }
 
 /* A picture stretched over the box, or repeated at tile_w x tile_h pixels
  * when they are positive, with an opacity */
 static void draw_picture(cairo_t* cr, GBytes* data, gdouble x, gdouble y, gdouble w, gdouble h, gdouble tile_w,
                          gdouble tile_h, gdouble alpha) {
-    cairo_surface_t* surface = picture_surface(data);
+    gboolean tiled_box = tile_w > 0 && tile_h > 0;
+    gdouble box_w = tiled_box ? tile_w : w, box_h = tiled_box ? tile_h : h;
+    cairo_surface_t* surface = (w > 0 && h > 0) ? picture_surface(data, device_length(cr, box_w, 0),
+                                                                  device_length(cr, 0, box_h))
+                                                : NULL;
     if (surface == NULL || w <= 0 || h <= 0) {
         if (surface != NULL) {
             cairo_surface_destroy(surface);
@@ -703,11 +747,6 @@ static void draw_shape(cairo_t* cr, const SlideDeck* deck, const SlideShape* s, 
     cairo_restore(cr);
 }
 
-static cairo_status_t write_png(void* closure, const unsigned char* data, unsigned int length) {
-    g_byte_array_append(closure, data, length);
-    return CAIRO_STATUS_SUCCESS;
-}
-
 GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) {
     width = CLAMP(width, 16, 4096);
     gdouble scale = width / deck->width;
@@ -732,20 +771,23 @@ GBytes* slide_render_png(const SlideDeck* deck, const Slide* slide, gint width) 
         draw_shape(cr, deck, g_ptr_array_index(slide->shapes, i), scale);
     }
     cairo_destroy(cr);
-    GByteArray* png = g_byte_array_new();
-    cairo_status_t status = cairo_surface_write_to_png_stream(surface, write_png, png);
+    cairo_surface_flush(surface);
+    /* Shown once then dropped: compressed fast (cairo's PNG writer took two
+     * thirds of a presentation's preview) */
+    GBytes* png = png_encode_xrgb32(cairo_image_surface_get_data(surface), width, height,
+                                    cairo_image_surface_get_stride(surface), PNG_ENCODE_FAST);
     cairo_surface_destroy(surface);
-    if (status != CAIRO_STATUS_SUCCESS) {
-        g_byte_array_free(png, TRUE);
-        return NULL;
-    }
-    return g_byte_array_free_to_bytes(png);
+    return png;
 }
 
 /* ---- Preview ---- */
 
 PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const gchar* subtitle, guint max_drawn,
                                gdouble zoom) {
+    GHashTable* outer = g_private_get(&picture_cache);
+    GHashTable* cache = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
+                                              (GDestroyNotify)cairo_surface_destroy);
+    g_private_set(&picture_cache, cache);
     PreviewDoc* doc = preview_doc_new();
     doc->paged = TRUE;
     doc->image_zoom = zoom > 0 ? MIN(zoom, PREVIEW_DOC_IMAGE_ZOOM_MAX) : 1.0;
@@ -790,5 +832,7 @@ PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const 
     if (n == 0) {
         preview_doc_note(doc, _("(no slides)"));
     }
+    g_private_set(&picture_cache, outer);
+    g_hash_table_destroy(cache);
     return doc;
 }

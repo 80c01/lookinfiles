@@ -9,6 +9,7 @@ them are in [AGENTS.md](../AGENTS.md) (hard rule 8) and
 ```bash
 make bench           # the three benchmarks below, in turn
 make bench-scan      # explorer: listing and rows of a folder of 100 000 entries (headless)
+make bench-slides    # preview of a presentation of 20 slides of photos (headless)
 make bench-preview   # every structured preview on the fixtures (headless, docs/previews.md)
 make bench-app       # the application under Xvfb: start-up, idle cost, browsing
 LOOKIN_PROFILE=1 ./lookinfiles          # timings on stderr
@@ -60,6 +61,7 @@ To time something new: `gint64 t = profile_start(); ...; profile_done(t,
 | Rows of 100 000 entries | 100 ms | `bench-scan` (`BENCH_ROWS_MS`) |
 | Memory per explorer entry (listing + row) | 700 B | `bench-scan` (`BENCH_ROW_BYTES`) |
 | Text preview / binary or rendered preview (worker) | 50 ms / 150 ms | `bench-preview` |
+| Presentation of 20 slides of photos | 1.5 s | `bench-slides` (`BENCH_SLIDES_MS`) |
 | Start-up to idle | 300 ms | `bench-app` (`BENCH_STARTUP_MS`) |
 | CPU in the 2 s after the start-up (end of the loading) | 100 ms | `bench-app` (`BENCH_SETTLE_CPU_MS`) |
 | CPU while idle | 0.5 % of a core | `bench-app` (`BENCH_IDLE_CPU`) |
@@ -110,6 +112,12 @@ default stays `-O2 -g`. Measure again before changing it.
   threshold), and with glycin (GTK 4.20+ decodes in a sandbox, at full size)
   a real session reached 1.1 GB. `tools/mem_report.sh` shows it as
   "anonymous" memory.
+- **Work done once, at the size used**: a presentation preview drew each
+  slide's pictures from a full-size decode, the shared background again on
+  every slide, then compressed each slide PNG at zlib's default level (69 %
+  of the time). Pictures are now decoded at the drawn size, once per deck,
+  and the PNG written at level 1 (`png_encode`): 2.8 s to 0.83 s for 20
+  slides of photos (`make bench-slides`), same picture (PSNR 46 dB).
 - **Work for what is passed over is dropped**: image decodings wait in a
   queue (`image_decode.c`, two at a time, the shown image before the ones
   decoded ahead, newest first); one nobody wants any more is dropped before

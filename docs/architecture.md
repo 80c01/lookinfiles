@@ -208,9 +208,15 @@ Layers, from bottom to top
   limit. Tests build archives with `tests/zip_builder.h`.
 - `slide_render` — slides as a model (`SlideDeck`: shapes with position,
   rotation, geometry, fill, outline, picture, text, tables) drawn with cairo
-  and Pango into a PNG per slide (`slide_render_png()`), and the deck preview
-  (`slide_deck_preview()`: one picture per slide, notes below). Shared by
-  `pptx`, `ppt_reader` and `odp_reader`.
+  and Pango into a PNG per slide (`slide_render_png()`, written fast by
+  `png_encode`), and the deck preview (`slide_deck_preview()`: one picture
+  per slide, notes below). Pictures are decoded at the size they are drawn
+  (JPEG scales while decoding) and, during a deck preview, once each per
+  size (a per-thread cache: backgrounds and logos repeat on every slide).
+  Shared by `pptx`, `ppt_reader` and `odp_reader`.
+- `png_encode` — PNG of a cairo RGB24 picture at a zlib level of choice
+  (`PNG_ENCODE_FAST` for pictures shown once), with GIO's
+  `GZlibCompressor`: cairo's own writer compresses at the default level.
 - `pptx`, `pptx_shapes`, `pptx_build` (internal `pptx_shapes_private.h`) — PowerPoint `.pptx` read into a `SlideDeck`
   (`pptx_read_deck()`): theme colours and fonts, colour modifiers, slide
   masters, layouts and placeholders (inheritance of positions, body and list

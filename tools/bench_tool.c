@@ -6,9 +6,14 @@
  *                             makes of it and the memory they take; fails
  *                             when a result exceeds its budget.
  *
+ *   bench_tool slides         time the preview of a presentation full of
+ *                             photos (slide_render): 20 slides, each with a
+ *                             3000 x 2000 photo over the same 1920 x 1080
+ *                             background picture, like a .ppt of a few MB.
+ *
  * Budgets (environment, to tighten or loosen): BENCH_SCAN_MS (listing sorted
  * by name), BENCH_ROWS_MS (rows of the listing), BENCH_ROW_BYTES (heap per
- * row, listing included). */
+ * row, listing included), BENCH_SLIDES_MS (preview of the presentation). */
 #include <glib/gstdio.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +26,10 @@
 #include "core/profile.h"
 #include "explorer/dir_scan.h"
 #include "explorer/explorer_row.h"
+#include "office/slide_render.h"
+#include "preview/preview_doc.h"
+
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #define DEFAULT_ENTRIES 100000
 #define RUNS 3
@@ -29,6 +38,7 @@
 #define BUDGET_SCAN_MS 300.0
 #define BUDGET_ROWS_MS 100.0
 #define BUDGET_ROW_BYTES 700.0
+#define BUDGET_SLIDES_MS 1500.0
 
 static const gchar* const exts[] = {".c", ".h", ".txt", ".md", ".png", ".json", "", ".tar.gz"};
 
@@ -202,11 +212,98 @@ static int bench_scan(const gchar* dir, guint n) {
     return status;
 }
 
+/* A JPEG of w x h with a gradient and noise (seed varies it), as a photo */
+static GBytes* photo_jpeg(gint w, gint h, guint seed) {
+    GdkPixbuf* pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, w, h);
+    guchar* px = gdk_pixbuf_get_pixels(pix);
+    gint stride = gdk_pixbuf_get_rowstride(pix);
+    GRand* rnd = g_rand_new_with_seed(seed);
+    for (gint y = 0; y < h; y++) {
+        for (gint x = 0; x < w; x++) {
+            guchar* p = px + (gsize)y * stride + x * 3;
+            gint n = g_rand_int_range(rnd, -24, 24);
+            p[0] = (guchar)CLAMP(x * 255 / w + n, 0, 255);
+            p[1] = (guchar)CLAMP(y * 255 / h + n, 0, 255);
+            p[2] = (guchar)CLAMP((gint)(seed * 37 % 256) + n, 0, 255);
+        }
+    }
+    g_rand_free(rnd);
+    gchar* buf = NULL;
+    gsize len = 0;
+    gdk_pixbuf_save_to_buffer(pix, &buf, &len, "jpeg", NULL, "quality", "85", NULL);
+    g_object_unref(pix);
+    return g_bytes_new_take(buf, len);
+}
+
+static gdouble since_ms(gint64 start) {
+    return (g_get_monotonic_time() - start) / 1000.0;
+}
+
+static int bench_slides(void) {
+    const guint n = 20;
+    GBytes* background = photo_jpeg(1920, 1080, 1);
+    SlideDeck* deck = slide_deck_new(720, 405);
+    gsize bytes = g_bytes_get_size(background);
+    for (guint i = 0; i < n; i++) {
+        Slide* slide = slide_new();
+        slide->background_picture = g_bytes_ref(background);
+        SlideShape* shape = slide_shape_new();
+        shape->x = 60;
+        shape->y = 60;
+        shape->w = 600;
+        shape->h = 400 * 600 / 600.0 * 0.66;
+        shape->picture = photo_jpeg(3000, 2000, i + 2);
+        bytes += g_bytes_get_size(shape->picture);
+        g_ptr_array_add(slide->shapes, shape);
+        g_ptr_array_add(deck->slides, slide);
+    }
+    printf("  presentation       %u slides, %.1f MB of pictures\n", n, bytes / 1048576.0);
+
+    /* One picture decoded alone, for scale */
+    gint64 start = g_get_monotonic_time();
+    const Slide* first = g_ptr_array_index(deck->slides, 0);
+    const SlideShape* shape = g_ptr_array_index(first->shapes, 0);
+    GdkPixbufLoader* loader = gdk_pixbuf_loader_new();
+    gdk_pixbuf_loader_write_bytes(loader, shape->picture, NULL);
+    gdk_pixbuf_loader_close(loader, NULL);
+    g_object_unref(loader);
+    printf("  one photo decoded  %8.1f ms  (3000 x 2000 JPEG)\n", since_ms(start));
+
+    /* BENCH_SLIDES_DUMP=<file>: the first slide as drawn, to compare renders */
+    const gchar* dump = g_getenv("BENCH_SLIDES_DUMP");
+    if (dump != NULL && dump[0] != '\0') {
+        GBytes* png = slide_render_png(deck, first, 960);
+        if (png != NULL) {
+            g_file_set_contents(dump, g_bytes_get_data(png, NULL), (gssize)g_bytes_get_size(png), NULL);
+            g_bytes_unref(png);
+        }
+    }
+
+    start = g_get_monotonic_time();
+    PreviewDoc* doc = slide_deck_preview(deck, "Bench", "", n, 1.0);
+    gdouble total = since_ms(start);
+    printf("  preview            %8.1f ms  (%.1f ms per slide, %u pictures)\n", total, total / n, doc->images->len);
+    preview_doc_free(doc);
+    slide_deck_free(deck);
+    g_bytes_unref(background);
+
+    gdouble max_ms = budget("BENCH_SLIDES_MS", BUDGET_SLIDES_MS);
+    if (total > max_ms) {
+        printf("bench: FAIL - presentation preview %.1f ms > budget %.1f ms\n", total, max_ms);
+        return 1;
+    }
+    printf("bench-slides: OK (budget %.0f ms)\n", max_ms);
+    return 0;
+}
+
 int main(int argc, char** argv) {
     if (argc >= 3 && strcmp(argv[1], "scan") == 0) {
         guint n = (argc >= 4) ? (guint)g_ascii_strtoull(argv[3], NULL, 10) : DEFAULT_ENTRIES;
         return bench_scan(argv[2], n > 0 ? n : DEFAULT_ENTRIES);
     }
-    fprintf(stderr, "usage: %s scan DIR [ENTRIES]\n", argv[0]);
+    if (argc >= 2 && strcmp(argv[1], "slides") == 0) {
+        return bench_slides();
+    }
+    fprintf(stderr, "usage: %s scan DIR [ENTRIES] | slides\n", argv[0]);
     return 2;
 }
