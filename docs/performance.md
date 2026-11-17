@@ -111,7 +111,8 @@ default stays `-O2 -g`. Measure again before changing it.
   arenas: browsing 30 photos of 3000 × 2000 kept 218 MB (99 MB with the
   threshold), and with glycin (GTK 4.20+ decodes in a sandbox, at full size)
   a real session reached 1.1 GB. `tools/mem_report.sh` shows it as
-  "anonymous" memory.
+  "anonymous" memory. `MALLOC_MMAP_THRESHOLD_=<bytes> ./lookinfiles` (glibc's
+  variable) replaces the threshold, to measure another one.
 - **Work done once, at the size used**: a presentation preview drew each
   slide's pictures from a full-size decode, the shared background again on
   every slide, then compressed each slide PNG at zlib's default level (69 %

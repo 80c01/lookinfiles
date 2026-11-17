@@ -236,7 +236,10 @@ static void on_preferences_clicked(GtkButton* button, gpointer data) {
  * were free (docs/performance.md). A fixed threshold also stops that raise. */
 static void tune_malloc(void) {
 #if defined(__GLIBC__)
-    mallopt(M_MMAP_THRESHOLD, 4 * 1024 * 1024);
+    /* glibc's own variable, when set, wins (to measure another threshold) */
+    if (g_getenv("MALLOC_MMAP_THRESHOLD_") == NULL) {
+        mallopt(M_MMAP_THRESHOLD, 4 * 1024 * 1024);
+    }
 #endif
 }
 
