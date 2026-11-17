@@ -26,11 +26,13 @@
 #include "media/image_preview.h"
 #include "preview/text_chunks.h"
 #include "media/video.h"
+#include "media/video_tab.h"
 #include "media/audio.h"
 #include "widgets/minimap.h"
 #include "search/search.h"
 #include "chrome/ui.h"
 #include "editor/editor.h"
+#include "editor/editor_session.h"
 #include "git/git_tab.h"
 #include "explorer/bookmarks.h"
 #include "notes/notes.h"
@@ -585,6 +587,7 @@ int main(int argc, char** argv) {
     git_tab_init(app);
     profile_mark("media and git");
     editor_set_open_hook(ipynb_tab_open); /* Jupyter notebooks: a tab of their own */
+    editor_session_set_page_hook(video_tab_open_in); /* videos: restored as Video tabs */
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
     g_signal_connect(editor_notebook, "switch-page",

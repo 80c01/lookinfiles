@@ -768,7 +768,10 @@ Layers, from bottom to top
   one per file, with its own `media_player` stream (cleared on close: GStreamer frees
   its pipeline only then); separate from the preview player (`video`). Opened
   with `editor_add_page()`, movable like a Canvas tab, kept with its workspace
-  through `video_tab_workspace_hidden()` / `_shown()` / `_removed()`.
+  through `video_tab_workspace_hidden()` / `_shown()` / `_removed()`. Its
+  file is the page's `editor_page_file()`, saved with the session and
+  workspace bookmarks; `video_tab_open_in()` (the `editor_session` page
+  hook, wired in `main.c`) reopens it paused.
 - `ipynb_tab` — the Jupyter notebook tabs (`app->ipynb_pages`, every
   workspace): `ipynb_tab_open()` is the `EditorOpenHook` of `editor`
   (`editor_set_open_hook()`, set in `main.c`), so a `.ipynb` file opened as
@@ -963,8 +966,8 @@ Layers, from bottom to top
   focused) as `tab_tree` text (the files of the tabs, notes included, the
   directories of the Canvas tabs and the addresses of the browser tabs,
   `browser_page_uri()`), `editor_session_restore()` reopens the files,
-  Canvas notes (`canvas_view_open()`) and browser tabs (`browser_open_in()`)
-  at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
+  Canvas notes (`canvas_view_open()`), browser tabs (`browser_open_in()`)
+  and Video tabs (`editor_session_set_page_hook()`) at the same place (`editor_notebook_split()`, `editor_move_tab_to()`,
   `editor_add_view()` for split views) and starts a new shell for each
   terminal tab there (`terminal_add_tab()`).
 - `editor_layout` — the shape of the dedicated panel for saved layouts:

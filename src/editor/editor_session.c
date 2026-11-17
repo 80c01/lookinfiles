@@ -181,6 +181,10 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
         for (guint i = 0; webs != NULL && i < webs->len; i++) {
             add_path(&c, preview, browser_page_uri(g_ptr_array_index(webs, i)), FALSE, FALSE);
         }
+        GPtrArray* videos = app->workspaces[ws].video_pages; /* Video tabs, set aside too */
+        for (guint i = 0; videos != NULL && i < videos->len; i++) {
+            add_path(&c, preview, editor_page_file(g_ptr_array_index(videos, i)), FALSE, FALSE);
+        }
         GPtrArray* notebooks = app->workspaces[ws].ipynb_pages; /* Jupyter tabs, set aside too */
         for (guint i = 0; notebooks != NULL && i < notebooks->len; i++) {
             add_path(&c, preview, editor_page_file(g_ptr_array_index(notebooks, i)), FALSE, FALSE);
@@ -203,6 +207,12 @@ void editor_session_capture(AppData* app, gint ws, GPtrArray* files, gchar** pre
 /* ------------------------------------------------------------------------- */
 /* Restore                                                                   */
 /* ------------------------------------------------------------------------- */
+
+static EditorSessionPageHook page_hook = NULL;
+
+void editor_session_set_page_hook(EditorSessionPageHook hook) {
+    page_hook = hook;
+}
 
 /* The directory of a Canvas note (canvas_doc.h: "<title>.canvas/") */
 static gboolean is_canvas_dir(const gchar* path) {
@@ -309,6 +319,13 @@ static void restore_notebook(Restore* r, const TabTreeNode* node, GtkNotebook* n
             GtkWidget* page = place_canvas(r->app, r->files[index], nb);
             if (page != NULL && (gint)i == node->current) {
                 current = page;
+            }
+            continue;
+        }
+        GtkWidget* own = page_hook != NULL ? page_hook(r->app, r->files[index], nb) : NULL;
+        if (own != NULL) {
+            if ((gint)i == node->current) {
+                current = own;
             }
             continue;
         }

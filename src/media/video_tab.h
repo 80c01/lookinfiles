@@ -19,6 +19,11 @@
  * moves to this one */
 void video_tab_open(AppData* app, const gchar* name, const gchar* path);
 
+/* The tab of the video at path as a page of nb, paused (a workspace
+ * restored from the session or a bookmark); a tab of another workspace
+ * moves to this one. NULL when path is not a video. */
+GtkWidget* video_tab_open_in(AppData* app, const gchar* path, GtkNotebook* nb);
+
 /* Close the Video tab with the focus, else the one shown as the current
  * page of the preview notebook (Ctrl+W). Returns TRUE if one was closed. */
 gboolean video_tab_close_shown(AppData* app);

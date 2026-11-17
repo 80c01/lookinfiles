@@ -1,5 +1,6 @@
 /* Video tabs of the editor area (see video_tab.h) */
 #include "media/video_tab.h"
+#include "core/file_types.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
 #include "theme/icons.h"
@@ -293,6 +294,7 @@ static VideoTab* tab_new(AppData* app, const gchar* name, const gchar* path) {
 
     vt->tab_label = tab_label_new(vt, name);
     g_object_set_data_full(G_OBJECT(root), VIDEO_TAB_KEY, vt, tab_free);
+    editor_page_set_file(root, path); /* kept by the session and workspace bookmarks */
     g_signal_connect(root, "destroy", G_CALLBACK(on_root_destroy), vt);
     g_signal_connect(root, "unmap", G_CALLBACK(on_root_unmap), vt);
     if (app->video_pages == NULL) app->video_pages = g_ptr_array_new();
@@ -322,6 +324,21 @@ void video_tab_open(AppData* app, const gchar* name, const gchar* path) {
         on_prepared(vt->stream, NULL, vt);
     }
     gtk_widget_grab_focus(vt->video);
+}
+
+GtkWidget* video_tab_open_in(AppData* app, const gchar* path, GtkNotebook* nb) {
+    if (app == NULL || path == NULL || nb == NULL || !is_video_file(path)) return NULL;
+    VideoTab* vt = find_tab(app, path);
+    if (vt != NULL && tab_shown(vt)) {
+        if (notebook_of(vt->root) != nb) editor_move_page_to(app, vt->root, nb, -1);
+        return vt->root;
+    }
+    if (vt != NULL) close_tab(vt); /* open in another workspace: it moves to this one */
+    gchar* name = g_path_get_basename(path);
+    vt = tab_new(app, name, path);
+    g_free(name);
+    editor_add_page_to(app, nb, vt->root, vt->tab_label);
+    return vt->root;
 }
 
 gboolean video_tab_close_shown(AppData* app) {
