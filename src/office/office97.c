@@ -95,9 +95,10 @@ PreviewDoc* office97_summary(OleReader* ole, const gchar* name, gint64 size, con
 }
 
 PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, gdouble zoom,
-                             GError** error) {
+                             gboolean raw, GError** error) {
     g_autoptr(OleReader) ole = ole_reader_open(path, error);
     if (ole == NULL) return NULL;
+    if (raw && office97_format(ole) != OFFICE97_WORD) return NULL; /* the hex dump */
     /* Encrypted documents: only their properties can be read */
     if (ole_reader_has(ole, "EncryptedSummary") || ole_reader_has(ole, "EncryptionInfo")) {
         return office97_summary(ole, name, size, _("Encrypted: the content needs the password."));
@@ -133,7 +134,7 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
         gboolean encrypted = FALSE;
         GError* err = NULL;
         PreviewDoc* text = doc_reader_preview(ole, props != NULL && props->title != NULL ? props->title : name,
-                                              subtitle, max_text, &encrypted, &err);
+                                              subtitle, max_text, !raw, zoom, &encrypted, &err);
         g_free(subtitle);
         if (text != NULL) return text;
         gchar* reason = encrypted ? g_strdup(_("Encrypted: the content needs the password."))

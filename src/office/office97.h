@@ -28,9 +28,11 @@ const gchar* office97_format_label(Office97Format format);
 
 /* Preview of the compound file at path (NULL with error set when it is not
  * a readable compound file: the viewer then shows the hex dump); slides
- * are drawn at zoom (slide_deck_preview()) */
+ * and the pages of Word documents are drawn at zoom (slide_deck_preview(),
+ * doc_pages.h). raw: the raw view (m), the text of a Word document; NULL
+ * without error for the other formats (their raw view is the hex dump). */
 PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, gdouble zoom,
-                             GError** error);
+                             gboolean raw, GError** error);
 
 /* The fallback: title, property card, a note (reason, may be NULL) and the
  * stream list */

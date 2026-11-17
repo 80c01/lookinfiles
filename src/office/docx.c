@@ -3,8 +3,10 @@
 #include "core/i18n.h"
 
 #include <gio/gio.h>
+#include <math.h>
 #include <string.h>
 
+#include "office/doc_pages.h"
 #include "office/doc_writer.h"
 #include "office/docx_styles.h"
 #include "formats/zip_xml.h"
@@ -165,6 +167,8 @@ typedef struct {
     gboolean header_default;
     gchar* footer_rid;
     gboolean footer_default;
+    guint sections;           /* w:sectPr seen */
+    DocPageSetup page;        /* of the first section */
 } DocParse;
 
 static void doc_parse_init(DocParse* d, ZipReader* zip, const gchar* part, DocxStyles* styles,
@@ -178,6 +182,7 @@ static void doc_parse_init(DocParse* d, ZipReader* zip, const gchar* part, DocxS
     d->w = w;
     d->max_text = MAX(max_text, 1);
     d->image_bytes = image_bytes;
+    doc_page_setup_init(&d->page);
     docx_run_props_clear(&d->r_direct);
     docx_run_props_clear(&d->r_eff);
 }
@@ -337,8 +342,29 @@ static void start_picture_element(DocParse* d, const gchar* name, const gchar** 
     }
 }
 
-/* Section properties: the first default header and footer */
+/* Twips (1/20 point) of an attribute, unsigned; fallback when missing */
+static gdouble twips_attr(const gchar** names, const gchar** values, const gchar* key, gdouble fallback) {
+    const gchar* v = attr(names, values, key);
+    return v != NULL ? fabs(g_ascii_strtod(v, NULL)) / 20.0 : fallback;
+}
+
+/* Section properties: the page of the first section, the first default
+ * header and footer */
 static void start_section_element(DocParse* d, const gchar* name, const gchar** names, const gchar** values) {
+    if (d->sections == 1 && strcmp(name, "w:pgSz") == 0) {
+        d->page.width = twips_attr(names, values, "w:w", d->page.width);
+        d->page.height = twips_attr(names, values, "w:h", d->page.height);
+        return;
+    }
+    if (d->sections == 1 && strcmp(name, "w:pgMar") == 0) {
+        d->page.top = twips_attr(names, values, "w:top", d->page.top);
+        d->page.bottom = twips_attr(names, values, "w:bottom", d->page.bottom);
+        d->page.left = twips_attr(names, values, "w:left", d->page.left);
+        d->page.right = twips_attr(names, values, "w:right", d->page.right);
+        d->page.header = twips_attr(names, values, "w:header", d->page.header);
+        d->page.footer = twips_attr(names, values, "w:footer", d->page.footer);
+        return;
+    }
     gboolean header = strcmp(name, "w:headerReference") == 0;
     if (!header && strcmp(name, "w:footerReference") != 0) {
         return;
@@ -422,6 +448,7 @@ static void doc_start(GMarkupParseContext* ctx, const gchar* name, const gchar**
     }
     if (strcmp(name, "w:sectPr") == 0) {
         d->in_sect = TRUE;
+        d->sections++;
         return;
     }
     if (d->in_ppr && d->ppr_skip > 0) {
@@ -585,15 +612,15 @@ static gboolean parse_story(DocParse* d, const gchar* part, gsize max_size, gboo
     return zip_xml_parse(d->zip, part, max_size, optional, &parser, d, error);
 }
 
-/* The text of a header or footer part (NULL if it has none) */
-static PreviewDoc* read_story(ZipReader* zip, const gchar* part, DocxStyles* styles, DocxNumbering* num,
+/* The text of a header or footer part */
+static DocModel* read_story(ZipReader* zip, const gchar* part, DocxStyles* styles, DocxNumbering* num,
                               gdouble size, const gchar* font, gsize* image_bytes) {
     DocWriter* w = doc_writer_new(font, size);
     DocParse d;
     doc_parse_init(&d, zip, part, styles, num, w, MAX_HEADER_TEXT, image_bytes);
     parse_story(&d, part, MAX_PART, TRUE, NULL);
     doc_parse_clear(&d);
-    return doc_writer_finish(w);
+    return doc_writer_finish_model(w);
 }
 
 /* ---- Document properties (docProps/core.xml) ---------------------------- */
@@ -642,7 +669,7 @@ static gchar* stripped_or_null(GString* s) {
 /* ---- Entry points ------------------------------------------------------- */
 
 PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size_text, gsize max_text,
-                            GError** error) {
+                            gboolean pages, gdouble zoom, GError** error) {
     g_return_val_if_fail(zip != NULL, NULL);
     gchar* main = main_part_name(zip);
     if (main == NULL) {
@@ -675,10 +702,10 @@ PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size
     PreviewDoc* doc = NULL;
     GError* err = NULL;
     if (parse_story(&d, main, DOCX_MAX_XML, FALSE, &err)) {
-        PreviewDoc* body = doc_writer_finish(w);
+        DocModel* body = doc_writer_finish_model(w);
         w = NULL;
-        PreviewDoc* header = NULL;
-        PreviewDoc* footer = NULL;
+        DocModel* header = NULL;
+        DocModel* footer = NULL;
         const Rel* hr = d.header_rid != NULL ? g_hash_table_lookup(d.rels, d.header_rid) : NULL;
         const Rel* fr = d.footer_rid != NULL ? g_hash_table_lookup(d.rels, d.footer_rid) : NULL;
         if (hr != NULL && !hr->external) {
@@ -704,18 +731,15 @@ PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size
         if (size_text != NULL) {
             g_string_append_printf(subtitle, " · %s", size_text);
         }
-        doc = doc_writer_page(title != NULL ? title : (name != NULL ? name : ""), subtitle->str, header, body,
-                              footer, d.truncated ? _("Document truncated: only the beginning is shown.") : NULL);
+        doc = doc_pages_or_text(pages, title != NULL ? title : (name != NULL ? name : ""), subtitle->str, &d.page,
+                                header, body, footer,
+                                d.truncated ? _("Document truncated: only the beginning is shown.") : NULL, zoom);
         g_string_free(subtitle, TRUE);
         g_free(title);
         g_free(author);
-        preview_doc_free(body);
-        if (header != NULL) {
-            preview_doc_free(header);
-        }
-        if (footer != NULL) {
-            preview_doc_free(footer);
-        }
+        doc_model_free(body);
+        doc_model_free(header);
+        doc_model_free(footer);
     } else {
         g_propagate_error(error, err);
     }
@@ -736,12 +760,12 @@ PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size
 }
 
 PreviewDoc* docx_file_preview(const gchar* path, const gchar* name, const gchar* size_text, gsize max_text,
-                              GError** error) {
+                              gboolean pages, gdouble zoom, GError** error) {
     ZipReader* zip = zip_reader_open(path, error);
     if (zip == NULL) {
         return NULL;
     }
-    PreviewDoc* doc = docx_to_preview(zip, name, size_text, max_text, error);
+    PreviewDoc* doc = docx_to_preview(zip, name, size_text, max_text, pages, zoom, error);
     zip_reader_free(zip);
     return doc;
 }

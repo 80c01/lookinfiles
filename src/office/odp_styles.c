@@ -496,9 +496,14 @@ static void add_entry(OdpStyles* styles, const OdpNode* n) {
         gdouble w = odp_length(odp_node_attr(p, "fo:page-width"), 0);
         gdouble h = odp_length(odp_node_attr(p, "fo:page-height"), 0);
         if (name != NULL && w > 0 && h > 0) {
-            gdouble* size = g_new(gdouble, 2);
+            /* Width, height, then the margins: top, bottom, left, right */
+            gdouble* size = g_new(gdouble, 6);
             size[0] = w;
             size[1] = h;
+            size[2] = odp_length(odp_node_attr(p, "fo:margin-top"), 56.7);
+            size[3] = odp_length(odp_node_attr(p, "fo:margin-bottom"), 56.7);
+            size[4] = odp_length(odp_node_attr(p, "fo:margin-left"), 56.7);
+            size[5] = odp_length(odp_node_attr(p, "fo:margin-right"), 56.7);
             g_hash_table_replace(styles->layouts, g_strdup(name), size);
         }
     } else if (odp_node_is(n, "style:master-page")) {
@@ -573,6 +578,58 @@ gboolean odp_styles_page_size(const OdpStyles* styles, const gchar* master, gdou
     *width = size[0];
     *height = size[1];
     return TRUE;
+}
+
+gboolean odp_styles_page_margins(const OdpStyles* styles, const gchar* master, gdouble margins[4]) {
+    const OdpNode* m = master != NULL ? g_hash_table_lookup(styles->masters, master) : NULL;
+    const gchar* layout = odp_node_attr(m, "style:page-layout-name");
+    const gdouble* size = layout != NULL ? g_hash_table_lookup(styles->layouts, layout) : NULL;
+    if (size == NULL) {
+        return FALSE;
+    }
+    memcpy(margins, size + 2, 4 * sizeof(gdouble));
+    return TRUE;
+}
+
+static gchar* to_roman(gint n, gboolean upper) {
+    static const gint VALUES[] = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
+    static const gchar* const DIGITS[] = { "m", "cm", "d", "cd", "c", "xc", "l", "xl", "x", "ix", "v", "iv", "i" };
+    GString* s = g_string_new(NULL);
+    n = CLAMP(n, 1, 3999);
+    for (gsize i = 0; i < G_N_ELEMENTS(VALUES); i++) {
+        while (n >= VALUES[i]) {
+            g_string_append(s, DIGITS[i]);
+            n -= VALUES[i];
+        }
+    }
+    if (upper) {
+        gchar* u = g_ascii_strup(s->str, -1);
+        g_string_free(s, TRUE);
+        return u;
+    }
+    return g_string_free(s, FALSE);
+}
+
+gchar* odp_list_label(const OdpListLevel* l, gint n) {
+    const gchar* f = l->num_format != NULL ? l->num_format : "1";
+    gchar* num;
+    if (f[0] == 'a' || f[0] == 'A') {
+        GString* s = g_string_new(NULL);
+        for (gint k = n; k > 0; k = (k - 1) / 26) {
+            g_string_prepend_c(s, (gchar)((f[0] == 'a' ? 'a' : 'A') + (k - 1) % 26));
+        }
+        num = g_string_free(s, FALSE);
+    } else if (f[0] == 'i' || f[0] == 'I') {
+        num = to_roman(n, f[0] == 'I');
+    } else if (f[0] == '\0') {
+        num = g_strdup("");
+    } else {
+        num = g_strdup_printf("%d", n);
+    }
+    gchar* label = g_strconcat(l->num_prefix != NULL ? l->num_prefix : "", num,
+                               l->num_suffix != NULL ? l->num_suffix : "", NULL);
+    g_free(num);
+    return label;
 }
 
 const gchar* odp_styles_template_part(const OdpStyles* styles, const gchar* name, const gchar* part) {

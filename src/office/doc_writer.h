@@ -44,6 +44,76 @@ typedef struct {
 void doc_run_init(DocRun* run);
 void doc_para_init(DocPara* para);
 
+/* ---- The document as written ----
+ *
+ * What the writer keeps: paragraphs (their list label first), tables of
+ * cells holding paragraphs, and page breaks, in order. The text view
+ * (doc_model_preview()) and the page view (doc_pages.h) are drawn from it. */
+
+typedef struct {
+    gchar* text;            /* NULL for a picture */
+    DocRun run;             /* run.font is owned */
+    GBytes* image;          /* encoded picture; NULL: a format not shown (image_name instead) */
+    gdouble image_width;    /* points, 0: its own size */
+    gchar* image_name;
+} DocSeg;
+
+typedef struct {
+    GPtrArray* segs;        /* DocSeg* */
+    DocPara layout;
+} DocParagraph;
+
+typedef struct {
+    GPtrArray* paras;       /* DocParagraph* */
+    guint span;             /* columns */
+} DocCell;
+
+typedef struct {
+    GPtrArray* cells;       /* DocCell* */
+    gboolean header;
+} DocRow;
+
+typedef struct {
+    GPtrArray* rows;        /* DocRow* */
+} DocTable;
+
+typedef enum {
+    DOC_BLOCK_PARAGRAPH,
+    DOC_BLOCK_TABLE,
+    DOC_BLOCK_PAGE_BREAK
+} DocBlockKind;
+
+typedef struct {
+    DocBlockKind kind;
+    DocParagraph* para;     /* DOC_BLOCK_PARAGRAPH */
+    DocTable* table;        /* DOC_BLOCK_TABLE */
+} DocBlock;
+
+typedef struct {
+    GPtrArray* blocks;      /* DocBlock* */
+    gchar* default_font;    /* may be NULL */
+    gdouble default_size;   /* points */
+} DocModel;
+
+void doc_model_free(DocModel* model);
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(DocModel, doc_model_free)
+/* TRUE if the model holds some text or a picture */
+gboolean doc_model_has_content(const DocModel* model);
+
+/* Page size and margins, in points; header: from the top edge to the
+ * header, footer: from the bottom edge to the footer */
+typedef struct {
+    gdouble width, height;
+    gdouble top, bottom, left, right;
+    gdouble header, footer;
+} DocPageSetup;
+
+/* A4 with 2.5 cm margins, the header and footer 1.25 cm from the edges */
+void doc_page_setup_init(DocPageSetup* setup);
+/* Values out of range (a page smaller than its margins...) put back to
+ * usable ones */
+void doc_page_setup_fix(DocPageSetup* setup);
+
 typedef struct DocWriter DocWriter;
 
 /* Writer of a document whose default font and size are these (size in
@@ -78,6 +148,10 @@ gsize doc_writer_length(const DocWriter* w);
 /* The document written (open paragraphs and tables are ended); the
  * writer is freed */
 PreviewDoc* doc_writer_finish(DocWriter* w);
+/* The same as a model (caller frees); the writer is freed */
+DocModel* doc_writer_finish_model(DocWriter* w);
+/* The text view of a model (what doc_writer_finish() gives) */
+PreviewDoc* doc_model_preview(const DocModel* model);
 
 /* The preview: title, dimmed subtitle, the header (dimmed, may be NULL),
  * the body, the footer (dimmed, may be NULL) and a note (truncation, may be

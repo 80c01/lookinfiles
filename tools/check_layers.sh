@@ -90,7 +90,7 @@ gif_decoder:i18n
 jpeg_decode:
 ole_reader:i18n
 ole_props:ole_reader,preview_doc,i18n
-doc_reader:ole_reader,preview_doc,doc_writer,i18n
+doc_reader:ole_reader,preview_doc,doc_writer,doc_pages,i18n
 xls_reader:ole_reader,spreadsheet,i18n
 ppt_reader:ole_reader,preview_doc,slide_render,i18n
 mail_message:
@@ -101,10 +101,12 @@ mail_msg:mail_message,ole_reader,rtf,i18n
 mail_tnef:mail_message,mail_msg,i18n
 mail_store:preview_doc,i18n
 office97:ole_reader,ole_props,preview_doc,doc_reader,xls_reader,spreadsheet,ppt_reader,slide_render,mail_msg,mail_view,mail_message,i18n
-docx:zip_reader,zip_xml,preview_doc,doc_writer,docx_styles,i18n
+docx:zip_reader,zip_xml,preview_doc,doc_writer,doc_pages,docx_styles,i18n
 docx_styles:zip_reader,zip_xml,preview_doc,doc_writer
 preview_doc:
 doc_writer:preview_doc
+doc_pages:doc_writer,preview_doc,i18n
+odt_reader:zip_reader,zip_xml,doc_pages,doc_writer,odp_styles,preview_doc,i18n
 csv:preview_doc,i18n
 json_view:preview_doc,data_tree,i18n
 data_tree:preview_doc,i18n
@@ -155,7 +157,7 @@ text_encoding:
 vt_screen:
 vt_pty:i18n
 term_widget:vt_screen,vt_pty
-preview_formats:i18n,odp_reader,mail_box,mail_message,mail_store,mail_tnef,mail_view,office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,xml_view,toml_view,yaml_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view,class_info,wasm_info,torrent_info,pyc_info,tfm_info,pcap_info
+preview_formats:i18n,odp_reader,odt_reader,mail_box,mail_message,mail_store,mail_tnef,mail_view,office97,file_types,text_encoding,preview_doc,docx,zip_reader,elf_info,hex_dump,csv,json_view,xml_view,toml_view,yaml_view,diff_view,archive_listing,cert_view,card_view,log_view,font_info,man_view,notebook,zip_xml,spreadsheet,odf,pptx,epub,rtf,sqlite_view,gettext_view,class_info,wasm_info,torrent_info,pyc_info,tfm_info,pcap_info
 org_time:
 org_doc:org_doc_private,org_time
 org_list:org_doc,org_doc_private

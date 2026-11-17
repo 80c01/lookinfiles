@@ -78,7 +78,7 @@ static int run_bench(GPtrArray* files) {
         }
         GError* error = NULL;
         gint64 t0 = g_get_monotonic_time();
-        PreviewDoc* doc = preview_format_build_file(path, name, TEXT_LIMIT, NULL, &kind, &error);
+        PreviewDoc* doc = preview_format_build_file(path, name, TEXT_LIMIT, FALSE, NULL, &kind, &error);
         gdouble ms = (gdouble)(g_get_monotonic_time() - t0) / 1000.0;
         gdouble budget = file_kind_is_text(kind) ? BUDGET_TEXT_MS : BUDGET_BINARY_MS;
         g_array_append_val(times[kind], ms);

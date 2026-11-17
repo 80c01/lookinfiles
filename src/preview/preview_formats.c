@@ -26,6 +26,7 @@
 #include "formats/man_view.h"
 #include "formats/notebook.h"
 #include "office/odf.h"
+#include "office/odt_reader.h"
 #include "office/odp_reader.h"
 #include "mail/mail_box.h"
 #include "mail/mail_message.h"
@@ -986,7 +987,7 @@ static PreviewDoc* build_mail(const PreviewInput* in, GCancellable* cancellable,
 
 static PreviewDoc* build_ole(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
-    return office97_preview(in->path, in->name, in->size, PREVIEW_FORMAT_MAX_TEXT, in->zoom, error);
+    return office97_preview(in->path, in->name, in->size, PREVIEW_FORMAT_MAX_TEXT, in->zoom, in->raw, error);
 }
 
 static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancellable,
@@ -994,10 +995,17 @@ static PreviewDoc* build_document(const PreviewInput* in, GCancellable* cancella
     (void)cancellable;
     if (!is_opendocument(in)) {
         gchar* size = preview_format_size(in->size);
-        PreviewDoc* doc = docx_file_preview(in->path, in->name, size, PREVIEW_FORMAT_MAX_TEXT, error);
+        PreviewDoc* doc = docx_file_preview(in->path, in->name, size, PREVIEW_FORMAT_MAX_TEXT, !in->raw, in->zoom, error);
         g_free(size);
         return doc;
     }
+    if (!in->raw) {
+        gchar* size = preview_format_size(in->size);
+        PreviewDoc* doc = odt_file_pages(in->path, in->name, size, PREVIEW_FORMAT_MAX_TEXT, in->zoom, error);
+        g_free(size);
+        return doc;
+    }
+    /* The text view (m) */
     gchar* html = odf_file_to_html(in->path, PREVIEW_FORMAT_MAX_TEXT, error);
     return html != NULL ? preview_doc_new_source(PREVIEW_DOC_HTML, html) : NULL;
 }
@@ -1090,7 +1098,8 @@ gboolean preview_format_has_builder(FileKind kind) {
 }
 
 gboolean preview_format_has_raw_builder(FileKind kind) {
-    return data_tree_builder_for(kind) != NULL;
+    /* Word and OpenDocument text: pages / text */
+    return data_tree_builder_for(kind) != NULL || kind == FILE_KIND_DOCUMENT || kind == FILE_KIND_OLE;
 }
 
 PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancellable,
@@ -1104,7 +1113,7 @@ PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancel
     return build(input, cancellable, error);
 }
 
-PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsize text_limit,
+PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsize text_limit, gboolean raw,
                                       GCancellable* cancellable, FileKind* kind, GError** error) {
     GFile* file = g_file_new_for_path(path);
     GFileInputStream* stream = g_file_read(file, cancellable, error);
@@ -1119,7 +1128,7 @@ PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsiz
     gsize len = 0;
     gboolean ok = g_input_stream_read_all(G_INPUT_STREAM(stream), data, FILE_SNIFF_BYTES, &len,
                                           cancellable, error);
-    PreviewInput in = { .path = path, .name = name, .size = size };
+    PreviewInput in = { .path = path, .name = name, .size = size, .raw = raw };
     gboolean is_text = FALSE;
     if (ok) {
         in.kind = file_kind_detect(name, (const guchar*)data, len);

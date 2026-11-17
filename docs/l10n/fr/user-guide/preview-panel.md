@@ -20,7 +20,8 @@ comment se servir du panneau.
 | Images | Ajustées au panneau, avec l’appareil, l’exposition, la date et la position GPS |
 | PDF | Les pages |
 | Vidéo et audio | Un lecteur |
-| Word, OpenDocument, RTF | Le document, avec ses polices, couleurs, listes, tableaux et images |
+| Word, texte OpenDocument | Les pages, comme imprimées : format et marges, en-tête et pied de page, polices, couleurs, listes, tableaux et images (zoom `+` / `-`) |
+| RTF | Le document, avec ses polices, couleurs, listes et tableaux |
 | Tableurs (`.xlsx`, `.ods`, `.xls`), CSV | Une grille avec les lettres des colonnes |
 | Présentations (`.pptx`, `.ppt`, `.odp`) | Les diapositives, une par une, avec les notes de l’orateur |
 | Courrier (`.eml`, `.msg`) et boîtes aux lettres | Les en-têtes, le texte, les pièces jointes ; les images distantes ne sont jamais chargées |
@@ -46,7 +47,7 @@ l’encodage de texte détecté.
 - TOML, YAML : arbre ↔ tel qu’il est écrit ;
 - Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, journaux : rendu ↔ texte source ;
 - images : ajustée ↔ taille réelle ;
-- PDF : pages ↔ texte extrait ;
+- PDF, Word, texte OpenDocument : pages ↔ texte ;
 - vidéo et audio : lecteur ↔ détails du fichier ;
 - documents, archives, certificats, programmes : résumé ↔ vidage
   hexadécimal.
@@ -65,7 +66,7 @@ Ensuite :
 
 `o` (ou `Ctrl+K Ctrl+O`, comme dans l’éditeur) affiche la **barre de
 symboles** : les titres d’un fichier Markdown, HTML, Org, Word (`.docx`,
-`.doc`), OpenDocument ou EPUB, ou les signets d’un PDF (pour les pages
+`.doc` : dans leur vue texte, `m`), OpenDocument ou EPUB, ou les signets d’un PDF (pour les pages
 affichées), à côté du texte, imbriqués par niveau ; pour du code source,
 ses fonctions, types… trouvés par l’analyseur intégré (sans serveur de
 langage), regroupés par sorte (`s` : ordre du fichier). Elle suit le

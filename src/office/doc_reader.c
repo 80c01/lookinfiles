@@ -1,8 +1,10 @@
 /* Word 97-2003 documents shown like Word (see doc_reader.h) */
 #include "office/doc_reader.h"
 #include "core/i18n.h"
+#include "office/doc_pages.h"
 #include "office/doc_writer.h"
 #include <gio/gio.h>
+#include <math.h>
 #include <string.h>
 
 #define WORD_MAX_STREAM (64 * 1024 * 1024)
@@ -700,8 +702,46 @@ typedef struct {
     GArray* runs;
 } Doc;
 
+/* Section properties (SEP) of the page */
+static void sep_sprm(guint16 sprm, const guint8* op, gint size, gpointer data) {
+    DocPageSetup* page = data;
+    if (size < 2) return;
+    gdouble v = (gint16)u16(op) / 20.0; /* twips */
+    switch (sprm) {
+    case 0xB01F: page->width = fabs((gdouble)u16(op) / 20.0); break;  /* sprmSXaPage */
+    case 0xB020: page->height = fabs((gdouble)u16(op) / 20.0); break; /* sprmSYaPage */
+    case 0xB021: page->left = fabs((gdouble)u16(op) / 20.0); break;   /* sprmSDxaLeft */
+    case 0xB022: page->right = fabs((gdouble)u16(op) / 20.0); break;  /* sprmSDxaRight */
+    case 0x9023: page->top = fabs(v); break;                         /* sprmSDyaTop */
+    case 0x9024: page->bottom = fabs(v); break;                      /* sprmSDyaBottom */
+    case 0xB017: page->header = fabs((gdouble)u16(op) / 20.0); break; /* sprmSDyaHdrTop */
+    case 0xB018: page->footer = fabs((gdouble)u16(op) / 20.0); break; /* sprmSDyaHdrBottom */
+    default: break;
+    }
+}
+
+/* The page of the first section (PlcfSed: its SED points to a SEPX in the
+ * WordDocument stream); Word's defaults (Letter, 1 and 1.25 inch margins)
+ * for what it does not set */
+static void read_page_setup(const guint8* word, gsize word_len, const guint8* table, gsize table_len, guint32 fc,
+                            guint32 lcb, DocPageSetup* page) {
+    page->width = 612;
+    page->height = 792;
+    page->top = page->bottom = 72;
+    page->left = page->right = 90;
+    page->header = page->footer = 36;
+    if (lcb < 4 + 4 + 12 || (guint64)fc + lcb > table_len) return;
+    guint n = (lcb - 4) / 16;
+    const guint8* sed = table + fc + 4 * (n + 1);
+    guint32 fc_sepx = u32(sed + 2);
+    if (fc_sepx == 0xFFFFFFFFu || (guint64)fc_sepx + 2 > word_len) return;
+    guint16 cb = u16(word + fc_sepx);
+    if ((guint64)fc_sepx + 2 + cb > word_len) return;
+    each_sprm(word + fc_sepx + 2, cb, sep_sprm, page);
+}
+
 /* A story (header, footer) written alone; NULL when it is empty */
-static PreviewDoc* render_story(Doc* doc, guint32 cp_from, guint32 cp_to, const gchar* font, gdouble size) {
+static DocModel* render_story(Doc* doc, guint32 cp_from, guint32 cp_to, const gchar* font, gdouble size) {
     if (cp_to <= cp_from + 1) return NULL;
     GArray* chars = g_array_new(FALSE, FALSE, sizeof(DocChar));
     read_pieces(doc->word, doc->word_len, doc->table + doc->fc_clx, doc->lcb_clx, cp_from, cp_to, MAX_HEADER_CHARS,
@@ -711,11 +751,11 @@ static PreviewDoc* render_story(Doc* doc, guint32 cp_from, guint32 cp_to, const 
     render(&o, chars);
     g_string_free(o.pending, TRUE);
     g_array_free(chars, TRUE);
-    return doc_writer_finish(o.w);
+    return doc_writer_finish_model(o.w);
 }
 
 PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* subtitle, gsize max_text,
-                               gboolean* encrypted, GError** error) {
+                               gboolean pages, gdouble zoom, gboolean* encrypted, GError** error) {
     if (encrypted != NULL) *encrypted = FALSE;
     GBytes* wb = ole_reader_read(ole, "WordDocument", WORD_MAX_STREAM, error);
     if (wb == NULL) return NULL;
@@ -749,6 +789,8 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
     GBytes* tb = NULL;
     gboolean ok = FALSE;
     guint32 ccp_text = 0, ccp_ftn = 0, ccp_hdd = 0, fc_hdd = 0, lcb_hdd = 0;
+    DocPageSetup page;
+    doc_page_setup_init(&page);
     if (nfib < 0xC0) {
         /* Word 6 / 95: one 8-bit piece from fcMin to fcMac */
         guint32 fc_min = u32(word + 0x18), fc_mac = u32(word + 0x1C);
@@ -801,6 +843,7 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
                 read_fonts(&doc.sheet, doc.table, doc.table_len, FCLCB(30), FCLCB(31));
                 fc_hdd = FCLCB(22);
                 lcb_hdd = FCLCB(23);
+                read_page_setup(word, doc.word_len, doc.table, doc.table_len, FCLCB(12), FCLCB(13), &page);
             }
 #undef FCLCB
         } else {
@@ -819,11 +862,11 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
                   FALSE, FALSE, FALSE, FALSE, g_string_new(NULL), { 0 }, FALSE, NULL, NULL, { 0 }, FALSE };
         render(&o, chars);
         g_string_free(o.pending, TRUE);
-        PreviewDoc* body = doc_writer_finish(o.w);
+        DocModel* body = doc_writer_finish_model(o.w);
         /* Header and footer stories: 6 separators, then even / odd header,
          * even / odd footer, first header / footer of the first section */
-        PreviewDoc* header = NULL;
-        PreviewDoc* footer = NULL;
+        DocModel* header = NULL;
+        DocModel* footer = NULL;
         guint32 n_hdd = lcb_hdd >= 4 ? lcb_hdd / 4 : 0;
         if (doc.lcb_clx > 0 && ccp_hdd > 0 && n_hdd >= 11 && (guint64)fc_hdd + lcb_hdd <= doc.table_len) {
             const guint8* plc = doc.table + fc_hdd;
@@ -834,11 +877,11 @@ PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* 
             footer = render_story(&doc, STORY(9), font, size);
 #undef STORY
         }
-        result = doc_writer_page(title, subtitle, header, body, footer,
-                                 o.truncated ? _("The document continues; the preview stops here.") : NULL);
-        preview_doc_free(body);
-        if (header != NULL) preview_doc_free(header);
-        if (footer != NULL) preview_doc_free(footer);
+        result = doc_pages_or_text(pages, title, subtitle, &page, header, body, footer,
+                                   o.truncated ? _("The document continues; the preview stops here.") : NULL, zoom);
+        doc_model_free(body);
+        doc_model_free(header);
+        doc_model_free(footer);
     } else if (error != NULL && *error == NULL) {
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, _("the text of the document cannot be found"));
     }

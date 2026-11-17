@@ -19,7 +19,8 @@ panel.
 | Images | Fitted to the panel, with camera, exposure, date and GPS details |
 | PDF | Pages |
 | Video and audio | A player |
-| Word, OpenDocument, RTF | The document, with its fonts, colours, lists, tables and pictures |
+| Word, OpenDocument text | The pages, as printed: page size and margins, header and footer, fonts, colours, lists, tables and pictures (`+` / `-` zoom) |
+| RTF | The document, with its fonts, colours, lists and tables |
 | Spreadsheets (`.xlsx`, `.ods`, `.xls`), CSV | A grid with column letters |
 | Presentations (`.pptx`, `.ppt`, `.odp`) | The slides, one by one, with speaker notes |
 | Mail (`.eml`, `.msg`) and mailboxes | The headers, the text, the attachments; remote images are never loaded |
@@ -45,7 +46,7 @@ size and the detected text encoding.
 - TOML, YAML: tree ↔ as written;
 - Markdown, HTML, Org, CSV, XML, TOML, YAML, diffs, logs: rendered ↔ source text;
 - images: fitted ↔ actual size;
-- PDF: pages ↔ extracted text;
+- PDF, Word, OpenDocument text: pages ↔ text;
 - video and audio: player ↔ file details;
 - documents, archives, certificates, programs: summary ↔ hex dump.
 
@@ -61,8 +62,8 @@ Click in the preview or press `Alt+Right` to give it the focus. Then:
 | Search in the content | `Ctrl+F` (Notepad) | `/`, `n` / `N` | `C-s` / `C-r` |
 
 `o` (or `Ctrl+K Ctrl+O`, as in the editor) shows the **tagbar**: the
-headings of a Markdown, HTML, Org, Word (`.docx`, `.doc`), OpenDocument or
-EPUB file, or the bookmarks of a PDF (for the pages shown), beside the text,
+headings of a Markdown, HTML, Org, Word (`.docx`, `.doc`: in their text
+view, `m`), OpenDocument or EPUB file, or the bookmarks of a PDF (for the pages shown), beside the text,
 nested by level; for source code, its functions, types... found by the
 built-in scanner (no language server), grouped by kind (`s`: file order).
 It follows the scrolling; a click or `Enter` scrolls to a heading or symbol,

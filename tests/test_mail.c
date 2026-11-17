@@ -118,7 +118,7 @@ static PreviewDoc* fixture(const gchar* name) {
     gchar* path = g_build_filename("tests", "fixtures", "mail", name, NULL);
     GError* err = NULL;
     FileKind kind = FILE_KIND_TEXT;
-    PreviewDoc* doc = preview_format_build_file(path, name, 1 << 20, NULL, &kind, &err);
+    PreviewDoc* doc = preview_format_build_file(path, name, 1 << 20, FALSE, NULL, &kind, &err);
     g_assert_no_error(err);
     g_assert_cmpint(kind, ==, FILE_KIND_MAIL);
     g_free(path);
@@ -454,7 +454,7 @@ static void test_msg_damaged(void) {
     gchar* path = g_build_filename("tests", "fixtures", "mail", "sample.msg", NULL);
     FileKind kind = FILE_KIND_TEXT;
     GError* err = NULL;
-    PreviewDoc* doc = preview_format_build_file(path, "sample.msg", 1 << 20, NULL, &kind, &err);
+    PreviewDoc* doc = preview_format_build_file(path, "sample.msg", 1 << 20, FALSE, NULL, &kind, &err);
     g_assert_no_error(err);
     g_assert_cmpint(kind, ==, FILE_KIND_OLE);
     g_free(path);

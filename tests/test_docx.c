@@ -129,7 +129,7 @@ static PreviewDoc* convert_full(const gchar* body, gboolean with_parts, gsize ma
     ZipReader* zip = zip_reader_new_from_bytes(bytes, &err);
     g_assert_no_error(err);
     g_assert_true(docx_is_document(zip));
-    PreviewDoc* doc = docx_to_preview(zip, "test.docx", "4 kB", max_text, &err);
+    PreviewDoc* doc = docx_to_preview(zip, "test.docx", "4 kB", max_text, FALSE, 0, &err);
     g_assert_no_error(err);
     g_assert_nonnull(doc);
     zip_reader_free(zip);
@@ -460,13 +460,13 @@ static void test_not_a_document(void) {
     g_assert_nonnull(zip);
     g_assert_false(docx_is_document(zip));
     GError* err = NULL;
-    g_assert_null(docx_to_preview(zip, "x", NULL, 1000, &err));
+    g_assert_null(docx_to_preview(zip, "x", NULL, 1000, FALSE, 0, &err));
     g_assert_error(err, G_IO_ERROR, G_IO_ERROR_INVALID_DATA);
     g_clear_error(&err);
     zip_reader_free(zip);
     g_bytes_unref(bytes);
 
-    g_assert_null(docx_file_preview("/nonexistent.docx", "x", NULL, 1000, &err));
+    g_assert_null(docx_file_preview("/nonexistent.docx", "x", NULL, 1000, FALSE, 0, &err));
     g_assert_nonnull(err);
     g_clear_error(&err);
 }
@@ -475,9 +475,40 @@ static void test_malformed_xml(void) {
     GBytes* bytes = make_docx("<w:p><w:r><w:t>unclosed</w:r></w:p>", FALSE);
     ZipReader* zip = zip_reader_new_from_bytes(bytes, NULL);
     GError* err = NULL;
-    g_assert_null(docx_to_preview(zip, "x", NULL, 1000, &err));
+    g_assert_null(docx_to_preview(zip, "x", NULL, 1000, FALSE, 0, &err));
     g_assert_error(err, G_MARKUP_ERROR, G_MARKUP_ERROR_PARSE);
     g_clear_error(&err);
+    zip_reader_free(zip);
+    g_bytes_unref(bytes);
+}
+
+/* Pages: the size and margins of the section, a page break */
+static void test_pages(void) {
+    const gchar* xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                       "<w:document " W_NS "><w:body>"
+                       "<w:p><w:r><w:t>First page</w:t></w:r></w:p>"
+                       "<w:p><w:r><w:br w:type=\"page\"/><w:t>Second page</w:t></w:r></w:p>"
+                       "<w:sectPr><w:pgSz w:w=\"8391\" w:h=\"11906\"/>"
+                       "<w:pgMar w:top=\"1440\" w:right=\"1440\" w:bottom=\"1440\" w:left=\"1440\" "
+                       "w:header=\"708\" w:footer=\"708\" w:gutter=\"0\"/></w:sectPr></w:body></w:document>";
+    ZipBuilder* zb = zip_builder_new(FALSE);
+    zip_builder_add(zb, "[Content_Types].xml", "<Types/>", TRUE);
+    zip_builder_add(zb, "_rels/.rels", PACKAGE_RELS, TRUE);
+    zip_builder_add(zb, "word/document.xml", xml, TRUE);
+    GBytes* bytes = zip_builder_finish(zb);
+    GError* err = NULL;
+    ZipReader* zip = zip_reader_new_from_bytes(bytes, &err);
+    g_assert_no_error(err);
+    PreviewDoc* doc = docx_to_preview(zip, "a5.docx", NULL, 100000, TRUE, 1.0, &err);
+    g_assert_no_error(err);
+    g_assert_true(doc->paged);
+    g_assert_nonnull(strstr(doc->text->str, "Word document · 2 pages"));
+    g_assert_cmpuint(doc->images->len, ==, 2);
+    /* A5: 419.55 x 595.3 pt at 1.6 pixels per point */
+    const PreviewImage* img = &g_array_index(doc->images, PreviewImage, 0);
+    g_assert_cmpint(img->width, ==, 671);
+    g_assert_cmpint(img->height, ==, 952);
+    preview_doc_free(doc);
     zip_reader_free(zip);
     g_bytes_unref(bytes);
 }
@@ -501,5 +532,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/docx/truncation", test_truncation);
     g_test_add_func("/docx/not_a_document", test_not_a_document);
     g_test_add_func("/docx/malformed_xml", test_malformed_xml);
+    g_test_add_func("/docx/pages", test_pages);
     return g_test_run();
 }

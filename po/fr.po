@@ -2052,6 +2052,31 @@ msgstr "Document Word"
 msgid "Document truncated: only the beginning is shown."
 msgstr "Document tronqué : seul le début est affiché."
 
+#: src/office/doc_pages.c
+#, c-format
+msgid "%u page"
+msgid_plural "%u pages"
+msgstr[0] "%u page"
+msgstr[1] "%u pages"
+
+#: src/office/doc_pages.c
+#, c-format
+msgid "Page %1$u of %2$u"
+msgstr "Page %1$u sur %2$u"
+
+#: src/office/doc_pages.c
+#, c-format
+msgid ""
+"The first %1$u of %2$u pages are drawn; the text view (m) shows the whole "
+"document."
+msgstr ""
+"Les %1$u premières des %2$u pages sont dessinées ; la vue texte (m) "
+"montre tout le document."
+
+#: src/office/odt_reader.c
+msgid "OpenDocument text"
+msgstr "Texte OpenDocument"
+
 #: src/editor/editor.c:526
 msgctxt "editor tab"
 msgid "Move Right"

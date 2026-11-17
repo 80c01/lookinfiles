@@ -25,20 +25,13 @@ void doc_para_init(DocPara* para) {
     para->align = PREVIEW_ALIGN_LEFT;
 }
 
-/* ---- Paragraph contents ---- */
+/* ---- Model ---- */
 
-typedef struct {
-    gchar* text;       /* NULL for a picture */
-    DocRun run;        /* run.font is owned (copy) */
-    GBytes* image;
-    gint image_width;  /* pixels, 0: its own */
-    gchar* image_name;
-} Seg;
-
-typedef struct {
-    GPtrArray* segs;   /* Seg* */
-    PreviewAlign align;
-} Para;
+typedef DocSeg Seg;
+typedef DocParagraph Para;
+typedef DocCell Cell;
+typedef DocRow Row;
+typedef DocTable Table;
 
 static void seg_free(gpointer data) {
     Seg* s = data;
@@ -54,6 +47,7 @@ static void seg_free(gpointer data) {
 static Para* para_new(void) {
     Para* p = g_new0(Para, 1);
     p->segs = g_ptr_array_new_with_free_func(seg_free);
+    doc_para_init(&p->layout);
     return p;
 }
 
@@ -92,22 +86,6 @@ static gboolean para_is_empty(const Para* p) {
     return p == NULL || p->segs->len == 0;
 }
 
-/* ---- Tables ---- */
-
-typedef struct {
-    GPtrArray* paras;  /* Para* */
-    guint span;
-} Cell;
-
-typedef struct {
-    GPtrArray* cells;  /* Cell* */
-    gboolean header;
-} Row;
-
-typedef struct {
-    GPtrArray* rows;   /* Row* */
-} Table;
-
 static void cell_free(gpointer data) {
     Cell* c = data;
     g_ptr_array_free(c->paras, TRUE);
@@ -120,12 +98,103 @@ static void row_free(gpointer data) {
     g_free(r);
 }
 
+static void table_free(Table* t) {
+    if (t != NULL) {
+        g_ptr_array_free(t->rows, TRUE);
+        g_free(t);
+    }
+}
+
+static void block_free(gpointer data) {
+    DocBlock* b = data;
+    para_free(b->para);
+    table_free(b->table);
+    g_free(b);
+}
+
+void doc_model_free(DocModel* model) {
+    if (model == NULL) {
+        return;
+    }
+    g_ptr_array_free(model->blocks, TRUE);
+    g_free(model->default_font);
+    g_free(model);
+}
+
+static gboolean para_has_content(const Para* p) {
+    for (guint i = 0; i < p->segs->len; i++) {
+        const Seg* s = g_ptr_array_index(p->segs, i);
+        if (s->text == NULL) {
+            return TRUE;
+        }
+        for (const gchar* c = s->text; *c != '\0'; c++) {
+            if (!g_ascii_isspace(*c)) {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+static gboolean table_has_content(const Table* t) {
+    for (guint r = 0; r < t->rows->len; r++) {
+        const Row* row = g_ptr_array_index(t->rows, r);
+        for (guint c = 0; c < row->cells->len; c++) {
+            const Cell* cell = g_ptr_array_index(row->cells, c);
+            for (guint k = 0; k < cell->paras->len; k++) {
+                if (para_has_content(g_ptr_array_index(cell->paras, k))) {
+                    return TRUE;
+                }
+            }
+        }
+    }
+    return FALSE;
+}
+
+gboolean doc_model_has_content(const DocModel* model) {
+    for (guint i = 0; model != NULL && i < model->blocks->len; i++) {
+        const DocBlock* b = g_ptr_array_index(model->blocks, i);
+        if ((b->para != NULL && para_has_content(b->para)) || (b->table != NULL && table_has_content(b->table))) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+void doc_page_setup_init(DocPageSetup* setup) {
+    setup->width = 595.3;
+    setup->height = 841.9;
+    setup->top = setup->bottom = setup->left = setup->right = 70.9;
+    setup->header = setup->footer = 35.4;
+}
+
+void doc_page_setup_fix(DocPageSetup* setup) {
+    DocPageSetup d;
+    doc_page_setup_init(&d);
+    if (!(setup->width >= 72 && setup->width <= 4000) || !(setup->height >= 72 && setup->height <= 4000)) {
+        setup->width = d.width;
+        setup->height = d.height;
+    }
+    gdouble* m[] = { &setup->top, &setup->bottom, &setup->left, &setup->right, &setup->header, &setup->footer };
+    for (gsize i = 0; i < G_N_ELEMENTS(m); i++) {
+        if (!(*m[i] >= 0 && *m[i] <= 1000)) {
+            *m[i] = i < 4 ? 72 : 36;
+        }
+    }
+    if (setup->left + setup->right > setup->width - 72) {
+        setup->left = setup->right = MIN(72, setup->width / 8);
+    }
+    if (setup->top + setup->bottom > setup->height - 72) {
+        setup->top = setup->bottom = MIN(72, setup->height / 8);
+    }
+    setup->header = MIN(setup->header, setup->top);
+    setup->footer = MIN(setup->footer, setup->bottom);
+}
+
 /* ---- Writer ---- */
 
 struct DocWriter {
-    PreviewDoc* doc;
-    gchar* default_font;
-    gdouble default_size;
+    DocModel* model;
     Para* cur;           /* paragraph being written */
     gsize length;        /* characters written */
     gint table_depth;
@@ -136,27 +205,19 @@ struct DocWriter {
 
 DocWriter* doc_writer_new(const gchar* default_font, gdouble default_size) {
     DocWriter* w = g_new0(DocWriter, 1);
-    w->doc = preview_doc_new();
-    w->default_font = g_strdup(default_font);
-    w->default_size = default_size > 0 ? default_size : 11.0;
+    w->model = g_new0(DocModel, 1);
+    w->model->blocks = g_ptr_array_new_with_free_func(block_free);
+    w->model->default_font = g_strdup(default_font);
+    w->model->default_size = default_size > 0 ? default_size : 11.0;
     w->cur = para_new();
     return w;
-}
-
-static void table_free(Table* t) {
-    if (t != NULL) {
-        g_ptr_array_free(t->rows, TRUE);
-        g_free(t);
-    }
 }
 
 void doc_writer_free(DocWriter* w) {
     if (w == NULL) {
         return;
     }
-    if (w->doc != NULL) {
-        preview_doc_free(w->doc);
-    }
+    doc_model_free(w->model);
     para_free(w->cur);
     if (w->cell != NULL) {
         cell_free(w->cell);
@@ -165,8 +226,15 @@ void doc_writer_free(DocWriter* w) {
         row_free(w->row);
     }
     table_free(w->table);
-    g_free(w->default_font);
     g_free(w);
+}
+
+static void add_block(DocWriter* w, DocBlockKind kind, Para* para, Table* table) {
+    DocBlock* b = g_new0(DocBlock, 1);
+    b->kind = kind;
+    b->para = para;
+    b->table = table;
+    g_ptr_array_add(w->model->blocks, b);
 }
 
 gsize doc_writer_length(const DocWriter* w) {
@@ -204,14 +272,67 @@ void doc_writer_image(DocWriter* w, GBytes* data, gdouble width_pt, const gchar*
     Seg* s = g_new0(Seg, 1);
     doc_run_init(&s->run);
     s->image = data != NULL ? g_bytes_ref(data) : NULL;
-    s->image_width = width_pt > 0 ? (gint)MIN(width_pt * PX_PER_PT, MAX_IMAGE_PX) : 0;
+    s->image_width = width_pt > 0 ? width_pt : 0;
     s->image_name = g_strdup(name != NULL ? name : "picture");
     g_ptr_array_add(w->cur->segs, s);
     w->length++;
 }
 
+/* Paragraph with its label first */
+static void prepend_label(Para* p, const gchar* label, const DocRun* label_run) {
+    if (label == NULL || label[0] == '\0') {
+        return;
+    }
+    DocRun plain;
+    doc_run_init(&plain);
+    const DocRun* r = label_run != NULL ? label_run : &plain;
+    Seg* s = g_new0(Seg, 1);
+    s->text = g_strconcat(label, LABEL_GAP, NULL);
+    s->run = *r;
+    s->run.font = g_strdup(r->font);
+    s->run.link = FALSE;
+    g_ptr_array_insert(p->segs, 0, s);
+}
+
+void doc_writer_end_paragraph(DocWriter* w, const DocPara* para, const gchar* label, const DocRun* label_run) {
+    Para* p = w->cur;
+    w->cur = para_new();
+    prepend_label(p, label, label_run);
+    if (para != NULL) {
+        p->layout = *para;
+    }
+    if (w->table_depth > 0) {
+        if (w->cell != NULL && !para_is_empty(p)) {
+            g_ptr_array_add(w->cell->paras, p);
+        } else {
+            para_free(p);
+        }
+        return;
+    }
+    add_block(w, DOC_BLOCK_PARAGRAPH, p, NULL);
+}
+
+void doc_writer_page_break(DocWriter* w) {
+    if (w->table_depth > 0) {
+        return;
+    }
+    if (!para_is_empty(w->cur)) {
+        doc_writer_end_paragraph(w, NULL, NULL, NULL);
+    }
+    add_block(w, DOC_BLOCK_PAGE_BREAK, NULL, NULL);
+}
+
+/* ---- Text view ---- */
+
+/* What the text view is written with */
+typedef struct {
+    PreviewDoc* doc;
+    const gchar* default_font;
+    gdouble default_size;
+} Emit;
+
 /* Spans of a run over [start, end); tables keep the grid font and size */
-static void add_run_spans(DocWriter* w, gint start, gint end, const DocRun* r, gboolean in_table) {
+static void add_run_spans(Emit* w, gint start, gint end, const DocRun* r, gboolean in_table) {
     PreviewDoc* doc = w->doc;
     if (end <= start) {
         return;
@@ -253,24 +374,8 @@ static gint px(gdouble pt, gint lo, gint hi) {
     return (gint)CLAMP(pt * PX_PER_PT + (pt >= 0 ? 0.5 : -0.5), lo, hi);
 }
 
-/* Paragraph with its label first */
-static void prepend_label(Para* p, const gchar* label, const DocRun* label_run) {
-    if (label == NULL || label[0] == '\0') {
-        return;
-    }
-    DocRun plain;
-    doc_run_init(&plain);
-    const DocRun* r = label_run != NULL ? label_run : &plain;
-    Seg* s = g_new0(Seg, 1);
-    s->text = g_strconcat(label, LABEL_GAP, NULL);
-    s->run = *r;
-    s->run.font = g_strdup(r->font);
-    s->run.link = FALSE;
-    g_ptr_array_insert(p->segs, 0, s);
-}
-
 /* Write the segments of a paragraph (outside tables) */
-static void emit_segments(DocWriter* w, const Para* p) {
+static void emit_segments(Emit* w, const Para* p) {
     for (guint i = 0; i < p->segs->len; i++) {
         const Seg* s = g_ptr_array_index(p->segs, i);
         gint start = preview_doc_offset(w->doc);
@@ -278,7 +383,8 @@ static void emit_segments(DocWriter* w, const Para* p) {
             preview_doc_append_len(w->doc, s->text, -1);
             add_run_spans(w, start, preview_doc_offset(w->doc), &s->run, FALSE);
         } else if (s->image != NULL) {
-            preview_doc_add_image(w->doc, s->image, s->image_width);
+            preview_doc_add_image(w->doc, s->image,
+                                  s->image_width > 0 ? (gint)MIN(s->image_width * PX_PER_PT, MAX_IMAGE_PX) : 0);
         } else {
             preview_doc_append(w->doc, PREVIEW_STYLE_DIM, "[");
             preview_doc_append(w->doc, PREVIEW_STYLE_DIM, s->image_name);
@@ -287,22 +393,8 @@ static void emit_segments(DocWriter* w, const Para* p) {
     }
 }
 
-void doc_writer_end_paragraph(DocWriter* w, const DocPara* para, const gchar* label, const DocRun* label_run) {
-    DocPara plain;
-    doc_para_init(&plain);
-    const DocPara* pp = para != NULL ? para : &plain;
-    Para* p = w->cur;
-    w->cur = para_new();
-    prepend_label(p, label, label_run);
-    p->align = pp->align;
-    if (w->table_depth > 0) {
-        if (w->cell != NULL && !para_is_empty(p)) {
-            g_ptr_array_add(w->cell->paras, p);
-        } else {
-            para_free(p);
-        }
-        return;
-    }
+static void emit_paragraph(Emit* w, const Para* p) {
+    const DocPara* pp = &p->layout;
     gint start = preview_doc_offset(w->doc);
     emit_segments(w, p);
     preview_doc_append_len(w->doc, "\n", 1);
@@ -318,7 +410,6 @@ void doc_writer_end_paragraph(DocWriter* w, const DocPara* para, const gchar* la
         preview_doc_add_span(w->doc, start, preview_doc_offset(w->doc),
                              PREVIEW_STYLE_OUTLINE1 + MIN(pp->outline, 6) - 1);
     }
-    para_free(p);
 }
 
 /* Centred short rule */
@@ -328,18 +419,6 @@ static void emit_rule(PreviewDoc* doc) {
     preview_doc_append_len(doc, "\n", 1);
     PreviewParagraph layout = { PREVIEW_ALIGN_CENTER, 0, 0, 0, 8, 8 };
     preview_doc_add_paragraph_span(doc, start, preview_doc_offset(doc), &layout);
-}
-
-void doc_writer_page_break(DocWriter* w) {
-    if (w->table_depth > 0) {
-        return;
-    }
-    if (!para_is_empty(w->cur)) {
-        doc_writer_end_paragraph(w, NULL, NULL, NULL);
-    }
-    if (preview_doc_offset(w->doc) > 0) {
-        emit_rule(w->doc);
-    }
 }
 
 /* ---- Table layout ---- */
@@ -551,13 +630,13 @@ static void cell_lines_free(GArray* lines) {
     g_array_free(lines, TRUE);
 }
 
-static void emit_cell_line(DocWriter* w, const CellLine* cl, gint width, gboolean header) {
+static void emit_cell_line(Emit* w, const CellLine* cl, gint width, gboolean header) {
     PreviewDoc* doc = w->doc;
     gint used = cl != NULL ? flat_width(&cl->flat, cl->start, cl->end) : 0;
     gint pad = MAX(width - used, 0), before = 0;
-    if (cl != NULL && cl->para->align == PREVIEW_ALIGN_CENTER) {
+    if (cl != NULL && cl->para->layout.align == PREVIEW_ALIGN_CENTER) {
         before = pad / 2;
-    } else if (cl != NULL && cl->para->align == PREVIEW_ALIGN_RIGHT) {
+    } else if (cl != NULL && cl->para->layout.align == PREVIEW_ALIGN_RIGHT) {
         before = pad;
     }
     GString* spaces = g_string_new(NULL);
@@ -590,7 +669,7 @@ static void emit_cell_line(DocWriter* w, const CellLine* cl, gint width, gboolea
     preview_doc_append(doc, PREVIEW_STYLE_GRID, "│");
 }
 
-static void emit_table(DocWriter* w, Table* t) {
+static void emit_table(Emit* w, const Table* t) {
     guint ncols = 0;
     for (guint r = 0; r < t->rows->len; r++) {
         ncols = MAX(ncols, row_columns(g_ptr_array_index(t->rows, r)));
@@ -723,21 +802,42 @@ void doc_writer_table_end(DocWriter* w) {
     w->table_depth = 0;
     para_free(w->cur);
     w->cur = para_new();
-    emit_table(w, w->table);
-    table_free(w->table);
+    add_block(w, DOC_BLOCK_TABLE, NULL, w->table);
     w->table = NULL;
 }
 
-PreviewDoc* doc_writer_finish(DocWriter* w) {
+DocModel* doc_writer_finish_model(DocWriter* w) {
     while (w->table_depth > 0) {
         doc_writer_table_end(w);
     }
     if (!para_is_empty(w->cur)) {
         doc_writer_end_paragraph(w, NULL, NULL, NULL);
     }
-    PreviewDoc* doc = w->doc;
-    w->doc = NULL;
+    DocModel* model = w->model;
+    w->model = NULL;
     doc_writer_free(w);
+    return model;
+}
+
+PreviewDoc* doc_model_preview(const DocModel* model) {
+    Emit e = { preview_doc_new(), model->default_font, model->default_size };
+    for (guint i = 0; i < model->blocks->len; i++) {
+        const DocBlock* b = g_ptr_array_index(model->blocks, i);
+        if (b->kind == DOC_BLOCK_PARAGRAPH) {
+            emit_paragraph(&e, b->para);
+        } else if (b->kind == DOC_BLOCK_TABLE) {
+            emit_table(&e, b->table);
+        } else if (preview_doc_offset(e.doc) > 0) {
+            emit_rule(e.doc);
+        }
+    }
+    return e.doc;
+}
+
+PreviewDoc* doc_writer_finish(DocWriter* w) {
+    DocModel* model = doc_writer_finish_model(w);
+    PreviewDoc* doc = doc_model_preview(model);
+    doc_model_free(model);
     return doc;
 }
 

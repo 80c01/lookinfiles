@@ -16,7 +16,8 @@ format.
   badges in links, `file:` URIs; remote pictures are never fetched).
 - HTML and interactive Org-mode (folding, TODO cycling, checkboxes, links).
 - A tagbar of the headings beside Markdown, HTML, Org, Word (`.docx`,
-  `.doc`: Heading N styles and outline levels), OpenDocument and EPUB
+  `.doc`: Heading N styles and outline levels; in their text view),
+  OpenDocument and EPUB
   previews, the bookmarks of PDF documents, and the symbols of source code
   (built-in scanner: C family, Python, Shell, JavaScript / TypeScript, Go,
   Rust, Lua, Ruby, Makefile) (`o` or `Ctrl+K Ctrl+O`).
@@ -25,7 +26,12 @@ format.
   `+` / `-` / `0` or `Ctrl+wheel`), PDF documents (poppler), PostScript and TeX DVI (converted to PDF), video and audio
   with player controls.
 - Office documents, read without any external tool: Word `.docx` and
-  `.doc` (97-2003) as Word shows them (fonts, sizes, colours, highlights,
+  `.doc` (97-2003) and OpenDocument text (`.odt`) drawn page by page like
+  their print layout (`doc_pages`: the page size and margins of the first
+  section or master page, header and footer on every page, paragraphs
+  split across pages, table rows kept whole, pictures inline; zoom with
+  `+` / `-`; the first 20 pages drawn, fewer when zoomed), `m` showing
+  their text: Word as Word shows it (fonts, sizes, colours, highlights,
   alignment, indents, spacing, list labels, tables as grids, pictures (not
   in `.doc`), page breaks, header and footer; colours adjusted to stay
   readable on the theme; Word 6 / 95: the text); OpenDocument text (`.odt`)
@@ -37,9 +43,9 @@ format.
   theme; speaker notes below; the first 20 slides drawn), `.odp` drawn the
   same way like Impress (master page shapes and background, custom shapes,
   paths, opacity, shadows, repeated bitmaps, lists and tables from the
-  styles); RTF. The exact page
-  layout (page size, columns, floating positions) is not reproduced; long
-  documents stop after 256 KB of text. Other OLE2
+  styles); RTF. Line spacing, columns, floating positions, page number
+  fields and the column widths of tables are not reproduced (tables fill
+  the text column); long documents stop after 256 KB of text. Other OLE2
   compound files (`.msi`, `.vsd`, Works...) show their properties (title,
   author, dates, counts) and streams.
 - Mail messages (`.eml`, `.emlx`, or any file starting with mail headers):
@@ -235,9 +241,10 @@ every common format to L3 and never leave one below L1.
 | Spreadsheets `.xlsx` / `.ods` | L3 | `spreadsheet` |
 | SQLite (libsqlite3, optional) | L3 | `sqlite_view` |
 | Fonts | L3 | `font_info` |
-| Word `.docx`: fonts, colours, paragraph layout, lists, tables, header / footer | L3 | `docx`, `docx_styles`, `doc_writer` |
-| OpenDocument `.odt`, RTF | L2 | `odf`, `rtf` |
-| Word 97-2003 `.doc`: same as `.docx` but pictures (Word 6 / 95: text, L2) | L3 | `doc_reader`, `doc_writer` |
+| Word `.docx`: pages (size, margins, header / footer on each page); `m`: text with fonts, colours, paragraph layout, lists, tables, header / footer | L3 | `docx`, `docx_styles`, `doc_writer`, `doc_pages` |
+| OpenDocument `.odt`: pages from the styles (fonts, colours, spacing, lists, tables, pictures, master page); `m`: text (HTML) | L3 | `odt_reader`, `odp_styles`, `doc_pages`, `odf` |
+| RTF | L2 | `rtf` |
+| Word 97-2003 `.doc`: same as `.docx` but pictures; page of the first section (SEPX) (Word 6 / 95: text, L2) | L3 | `doc_reader`, `doc_writer`, `doc_pages` |
 | Excel 97-2003 / 5.0 `.xls` | L3 | `xls_reader`, `spreadsheet` |
 | PowerPoint `.pptx`: slides drawn with their layout, master and theme | L3 | `pptx`, `pptx_shapes`, `pptx_build`, `slide_render` |
 | PowerPoint 97-2003 `.ppt` / `.pps`: slides drawn from their drawings | L3 | `ppt_reader`, `slide_render` |

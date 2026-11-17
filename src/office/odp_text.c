@@ -131,47 +131,6 @@ typedef struct {
     gint counters[ODP_LIST_LEVELS];
 } ListState;
 
-static gchar* to_roman(gint n, gboolean upper) {
-    static const gint VALUES[] = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
-    static const gchar* const DIGITS[] = { "m", "cm", "d", "cd", "c", "xc", "l", "xl", "x", "ix", "v", "iv", "i" };
-    GString* s = g_string_new(NULL);
-    n = CLAMP(n, 1, 3999);
-    for (gsize i = 0; i < G_N_ELEMENTS(VALUES); i++) {
-        while (n >= VALUES[i]) {
-            g_string_append(s, DIGITS[i]);
-            n -= VALUES[i];
-        }
-    }
-    if (upper) {
-        gchar* u = g_ascii_strup(s->str, -1);
-        g_string_free(s, TRUE);
-        return u;
-    }
-    return g_string_free(s, FALSE);
-}
-
-static gchar* number_label(const OdpListLevel* l, gint n) {
-    const gchar* f = l->num_format != NULL ? l->num_format : "1";
-    gchar* num;
-    if (f[0] == 'a' || f[0] == 'A') {
-        GString* s = g_string_new(NULL);
-        for (gint k = n; k > 0; k = (k - 1) / 26) {
-            g_string_prepend_c(s, (gchar)((f[0] == 'a' ? 'a' : 'A') + (k - 1) % 26));
-        }
-        num = g_string_free(s, FALSE);
-    } else if (f[0] == 'i' || f[0] == 'I') {
-        num = to_roman(n, f[0] == 'I');
-    } else if (f[0] == '\0') {
-        num = g_strdup("");
-    } else {
-        num = g_strdup_printf("%d", n);
-    }
-    gchar* label = g_strconcat(l->num_prefix != NULL ? l->num_prefix : "", num,
-                               l->num_suffix != NULL ? l->num_suffix : "", NULL);
-    g_free(num);
-    return label;
-}
-
 static SlideAlign parse_align(const gchar* a) {
     if (a == NULL) return SLIDE_ALIGN_LEFT;
     if (strcmp(a, "center") == 0) return SLIDE_ALIGN_CENTER;
@@ -215,7 +174,7 @@ static void add_paragraph(const OdpTextContext* ctx, const OdpNode* node, ListSt
                 } else {
                     ls->counters[lv]++;
                 }
-                p->bullet = number_label(l, ls->counters[lv]);
+                p->bullet = odp_list_label(l, ls->counters[lv]);
             } else {
                 p->bullet = g_strdup(l != NULL ? l->bullet : "•");
             }

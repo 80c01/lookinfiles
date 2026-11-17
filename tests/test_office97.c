@@ -155,7 +155,7 @@ static void test_unknown_compound_file(void) {
     GBytes* file = ole_builder_finish(ob);
     gchar* path = temp_file(file, "drawing.vsd");
     GError* err = NULL;
-    PreviewDoc* doc = office97_preview(path, "drawing.vsd", (gint64)g_bytes_get_size(file), 65536, 1.0, &err);
+    PreviewDoc* doc = office97_preview(path, "drawing.vsd", (gint64)g_bytes_get_size(file), 65536, 1.0, FALSE, &err);
     g_assert_no_error(err);
     const gchar* t = doc->text->str;
     g_assert_nonnull(strstr(t, "Compound file"));
@@ -175,7 +175,7 @@ static void test_encrypted(void) {
     ole_builder_add(ob, "EncryptedPackage", "....", 4);
     GBytes* file = ole_builder_finish(ob);
     gchar* path = temp_file(file, "secret.doc");
-    PreviewDoc* doc = office97_preview(path, "secret.doc", 1024, 65536, 1.0, NULL);
+    PreviewDoc* doc = office97_preview(path, "secret.doc", 1024, 65536, 1.0, FALSE, NULL);
     g_assert_nonnull(strstr(doc->text->str, "Encrypted"));
     preview_doc_free(doc);
     remove_temp(path);
@@ -186,7 +186,7 @@ static void test_not_compound(void) {
     GBytes* junk = g_bytes_new_static("\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1 but truncated", 23);
     gchar* path = temp_file(junk, "broken.doc");
     GError* err = NULL;
-    g_assert_null(office97_preview(path, "broken.doc", 23, 65536, 1.0, &err));
+    g_assert_null(office97_preview(path, "broken.doc", 23, 65536, 1.0, FALSE, &err));
     g_assert_nonnull(err);
     g_error_free(err);
     remove_temp(path);
@@ -198,7 +198,8 @@ static PreviewDoc* fixture(const gchar* name) {
     gchar* path = g_build_filename("tests", "fixtures", "preview", name, NULL);
     GError* err = NULL;
     FileKind kind = FILE_KIND_TEXT;
-    PreviewDoc* doc = preview_format_build_file(path, name, 65536, NULL, &kind, &err);
+    /* Word documents: their text view (m), which the tests read */
+    PreviewDoc* doc = preview_format_build_file(path, name, 65536, g_str_has_suffix(name, ".doc"), NULL, &kind, &err);
     g_assert_no_error(err);
     g_assert_cmpint(kind, ==, FILE_KIND_OLE);
     g_free(path);
@@ -254,7 +255,9 @@ static GBytes* word97_stream(const gchar* ansi, const gchar* utf8, guint16 flags
 static PreviewDoc* preview_of(GBytes* file, const gchar* name) {
     gchar* path = temp_file(file, name);
     GError* err = NULL;
-    PreviewDoc* doc = office97_preview(path, name, (gint64)g_bytes_get_size(file), 65536, 1.0, &err);
+    /* Word documents: their text (the raw view), which the tests read */
+    PreviewDoc* doc = office97_preview(path, name, (gint64)g_bytes_get_size(file), 65536, 1.0, g_str_has_suffix(name, ".doc"),
+                                       &err);
     g_assert_no_error(err);
     remove_temp(path);
     return doc;
@@ -495,6 +498,25 @@ static void test_word6(void) {
     g_assert_nonnull(strstr(doc->text->str, "\n\nOld document\nSecond – paragraph\n"));
     preview_doc_free(doc);
     g_bytes_unref(file);
+}
+
+/* The default view of a Word document: its pages (Letter in this file) */
+static void test_word_fixture_pages(void) {
+    gchar* path = g_build_filename("tests", "fixtures", "preview", "report.doc", NULL);
+    GError* err = NULL;
+    PreviewDoc* doc = preview_format_build_file(path, "report.doc", 65536, FALSE, NULL, NULL, &err);
+    g_assert_no_error(err);
+    g_assert_true(doc->paged);
+    g_assert_true(g_str_has_prefix(doc->text->str, "Quarterly Report\nWord 97-2003 document · Lookin UI test · "));
+    g_assert_nonnull(strstr(doc->text->str, "Page 1 of "));
+    g_assert_cmpuint(doc->images->len, >=, 1);
+    preview_doc_free(doc);
+    /* Other compound files have no text view: the viewer shows their bytes */
+    gchar* xls = g_build_filename("tests", "fixtures", "preview", "budget.xls", NULL);
+    g_assert_null(preview_format_build_file(xls, "budget.xls", 65536, TRUE, NULL, NULL, &err));
+    g_assert_no_error(err);
+    g_free(xls);
+    g_free(path);
 }
 
 static void test_word_fixture(void) {
@@ -1084,6 +1106,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/office97/word97_encrypted", test_word97_encrypted);
     g_test_add_func("/office97/word6", test_word6);
     g_test_add_func("/office97/word_fixture", test_word_fixture);
+    g_test_add_func("/office97/word_fixture_pages", test_word_fixture_pages);
     g_test_add_func("/office97/word_truncated", test_word_truncated);
     g_test_add_func("/office97/excel_synthetic", test_excel_synthetic);
     g_test_add_func("/office97/excel_encrypted", test_excel_encrypted);

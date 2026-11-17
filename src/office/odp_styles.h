@@ -116,6 +116,11 @@ const OdpList* odp_styles_list(const OdpStyles* styles, const gchar* name);
 const OdpList* odp_styles_style_list(const OdpStyles* styles, const gchar* family, const gchar* name);
 /* Size of the page layout of a master page (points); FALSE if unknown */
 gboolean odp_styles_page_size(const OdpStyles* styles, const gchar* master, gdouble* width, gdouble* height);
+/* Margins of the page layout of a master page (points: top, bottom, left,
+ * right); FALSE if unknown */
+gboolean odp_styles_page_margins(const OdpStyles* styles, const gchar* master, gdouble margins[4]);
+/* Label of item n (from 1) of a numbered list level ("3.", "c)", "iv") */
+gchar* odp_list_label(const OdpListLevel* level, gint n);
 /* Style name of a part ("first-row", "body"...) of a table template, or NULL */
 const gchar* odp_styles_template_part(const OdpStyles* styles, const gchar* name, const gchar* part);
 

@@ -56,8 +56,9 @@ PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancel
 /* Whole pipeline on a file, as the viewer runs it: detect the kind, read the
  * text of text kinds (up to text_limit bytes), build. NULL with error set if
  * the file cannot be read or the kind has no builder (or it failed).
- * *kind (optional) receives the detected kind. Used by tests and tools. */
-PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsize text_limit,
+ * *kind (optional) receives the detected kind; raw asks for the raw view
+ * (m). Used by tests and tools. */
+PreviewDoc* preview_format_build_file(const gchar* path, const gchar* name, gsize text_limit, gboolean raw,
                                       GCancellable* cancellable, FileKind* kind, GError** error);
 
 /* Hex dump preview of the first bytes of a binary file: a dimmed header

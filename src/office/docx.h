@@ -22,14 +22,16 @@
 gboolean docx_is_document(ZipReader* zip);
 
 /* The preview: title (the document's title, else name), subtitle ("Word
- * document · author · size_text"; size_text may be NULL), the document.
- * Stops after about max_text characters with a note. NULL with error set if
- * the archive is not a readable Word document. */
+ * document · author · size_text"; size_text may be NULL), the document:
+ * its pages drawn at zoom (pages, doc_pages.h: size and margins of the
+ * first section) or its text. Stops after about max_text characters with a
+ * note. NULL with error set if the archive is not a readable Word
+ * document. */
 PreviewDoc* docx_to_preview(ZipReader* zip, const gchar* name, const gchar* size_text, gsize max_text,
-                            GError** error);
+                            gboolean pages, gdouble zoom, GError** error);
 
 /* Same, for a file on disk */
 PreviewDoc* docx_file_preview(const gchar* path, const gchar* name, const gchar* size_text, gsize max_text,
-                              GError** error);
+                              gboolean pages, gdouble zoom, GError** error);
 
 #endif /* DOCX_H */

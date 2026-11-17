@@ -9,17 +9,20 @@
  * the styles (STSH, with their base styles) and the direct formatting (PAPX
  * / CHPX FKPs); list items (bullets), tables (cell and row marks),
  * hyperlink fields, page breaks; the first header and footer. Other field
- * codes, pictures and footnote marks are skipped. Word 6 / 95 files: the
+ * codes, pictures and footnote marks are skipped. The page size and
+ * margins of the first section (SEPX). Word 6 / 95 files: the
  * text of their single 8-bit piece, as paragraphs. Pure GLib, unit-tested. */
 #include <glib.h>
 
 #include "office/ole_reader.h"
 #include "preview/preview_doc.h"
 
-/* The document under a title and subtitle. NULL with error set when it
- * cannot be read; *encrypted (may be NULL) tells when it is
- * password-protected. Stops after max_text characters of text. */
+/* The document under a title and subtitle: its pages drawn at zoom
+ * (pages, doc_pages.h: size and margins of the first section) or its text.
+ * NULL with error set when it cannot be read; *encrypted (may be NULL)
+ * tells when it is password-protected. Stops after max_text characters of
+ * text. */
 PreviewDoc* doc_reader_preview(OleReader* ole, const gchar* title, const gchar* subtitle, gsize max_text,
-                               gboolean* encrypted, GError** error);
+                               gboolean pages, gdouble zoom, gboolean* encrypted, GError** error);
 
 #endif /* DOC_READER_H */

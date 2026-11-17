@@ -42,7 +42,7 @@ static void test_elf(void) {
     }
     FileKind kind = FILE_KIND_TEXT;
     GError* error = NULL;
-    g_autoptr(PreviewDoc) doc = preview_format_build_file("/bin/true", "true", 0, NULL, &kind, &error);
+    g_autoptr(PreviewDoc) doc = preview_format_build_file("/bin/true", "true", 0, FALSE, NULL, &kind, &error);
     g_assert_no_error(error);
     g_assert_cmpint(kind, ==, FILE_KIND_EXECUTABLE);
     g_assert_true(g_str_has_prefix(doc->text->str, "true\n"));
@@ -53,13 +53,34 @@ static void test_word_document(void) {
     const gchar* path = "tests/ui/fixtures/report.docx";
     FileKind kind = FILE_KIND_TEXT;
     GError* error = NULL;
-    g_autoptr(PreviewDoc) doc = preview_format_build_file(path, "report.docx", 0, NULL, &kind, &error);
+    /* The text view (m) */
+    g_autoptr(PreviewDoc) doc = preview_format_build_file(path, "report.docx", 0, TRUE, NULL, &kind, &error);
     g_assert_no_error(error);
     g_assert_cmpint(kind, ==, FILE_KIND_DOCUMENT);
     g_assert_cmpint(doc->format, ==, PREVIEW_DOC_TEXT);
+    g_assert_false(doc->paged);
     g_assert_true(g_str_has_prefix(doc->text->str, "Quarterly Report\nWord document · Lookin UI test · "));
     g_assert_nonnull(strstr(doc->text->str, "│ Q1      │ 1 204 │ 3.2 GB │"));
     g_assert_cmpuint(doc->images->len, ==, 1);
+    g_assert_true(preview_format_has_raw_builder(FILE_KIND_DOCUMENT));
+    /* The default view: its pages */
+    g_autoptr(PreviewDoc) pages = preview_format_build_file(path, "report.docx", 0, FALSE, NULL, NULL, &error);
+    g_assert_no_error(error);
+    g_assert_true(pages->paged);
+    g_assert_true(g_str_has_prefix(pages->text->str, "Quarterly Report\nWord document · Lookin UI test · "));
+    g_assert_nonnull(strstr(pages->text->str, "Page 1 of "));
+    g_assert_null(strstr(pages->text->str, "Q1"));
+    g_assert_cmpuint(pages->images->len, >=, 1);
+    /* OpenDocument text: pages, and its HTML as text view */
+    g_autoptr(PreviewDoc) odt = preview_format_build_file("tests/fixtures/preview/report.odt", "report.odt", 0, FALSE,
+                                                          NULL, NULL, &error);
+    g_assert_no_error(error);
+    g_assert_true(odt->paged);
+    g_autoptr(PreviewDoc) odt_text = preview_format_build_file("tests/fixtures/preview/report.odt", "report.odt", 0,
+                                                               TRUE, NULL, NULL, &error);
+    g_assert_no_error(error);
+    g_assert_cmpint(odt_text->format, ==, PREVIEW_DOC_HTML);
+    g_assert_nonnull(strstr(odt_text->text->str, "<h1>Quarterly report</h1>"));
 }
 
 /* Built preview of a fixture of tests/fixtures/preview */
@@ -67,7 +88,7 @@ static PreviewDoc* build_fixture(const gchar* name, FileKind expected) {
     gchar* path = g_build_filename("tests", "fixtures", "preview", name, NULL);
     FileKind kind = FILE_KIND_TEXT;
     GError* error = NULL;
-    PreviewDoc* doc = preview_format_build_file(path, name, 512 * 1024, NULL, &kind, &error);
+    PreviewDoc* doc = preview_format_build_file(path, name, 512 * 1024, FALSE, NULL, &kind, &error);
     g_assert_no_error(error);
     g_assert_cmpint(kind, ==, expected);
     g_assert_nonnull(doc);
@@ -126,7 +147,7 @@ static void test_json(void) {
     }
     g_string_append(text, "]}");
     g_assert_true(g_file_set_contents(path, text->str, (gssize)text->len, NULL));
-    g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.json", 64 * 1024, NULL, NULL, NULL);
+    g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.json", 64 * 1024, FALSE, NULL, NULL, NULL);
     g_assert_nonnull(big);
     g_assert_true(g_str_has_prefix(big->text->str, "Object · 1 key\nOnly the first "));
     g_assert_nonnull(strstr(big->text->str, "\n      id    100\n"));
@@ -186,7 +207,7 @@ static void test_log(void) {
         g_string_append_printf(text, "2026-10-29 10:00:00 INFO line %u\n", i);
     }
     g_assert_true(g_file_set_contents(path, text->str, (gssize)text->len, NULL));
-    g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.log", 64 * 1024, NULL, NULL, NULL);
+    g_autoptr(PreviewDoc) big = preview_format_build_file(path, "big.log", 64 * 1024, FALSE, NULL, NULL, NULL);
     g_assert_nonnull(big);
     g_assert_true(g_str_has_prefix(big->text->str, "last 5,000 lines\nShowing the end of the file"));
     g_assert_true(g_str_has_suffix(big->text->str, "INFO line 20000\n"));
@@ -220,8 +241,8 @@ static void test_spreadsheets(void) {
 
 static void test_office(void) {
     g_autoptr(PreviewDoc) odt = build_fixture("report.odt", FILE_KIND_DOCUMENT);
-    g_assert_cmpint(odt->format, ==, PREVIEW_DOC_HTML);
-    g_assert_nonnull(strstr(odt->text->str, "<h1>Quarterly report</h1>"));
+    g_assert_true(odt->paged); /* its pages; the HTML is its text view (test_word_document) */
+    g_assert_nonnull(strstr(odt->text->str, "Q3 report\nOpenDocument text · Ada Lovelace"));
     g_autoptr(PreviewDoc) pptx = build_fixture("roadmap.pptx", FILE_KIND_PRESENTATION);
     g_assert_nonnull(strstr(pptx->text->str, "PowerPoint presentation · 2 slides"));
     g_assert_cmpuint(pptx->images->len, ==, 2);
@@ -251,7 +272,7 @@ static void test_damaged_document(void) {
     gchar* path = g_build_filename(dir, "broken.docx", NULL);
     g_assert_true(g_file_set_contents(path, "PK\x03\x04garbage", 11, NULL));
     GError* error = NULL;
-    PreviewDoc* doc = preview_format_build_file(path, "broken.docx", 0, NULL, NULL, &error);
+    PreviewDoc* doc = preview_format_build_file(path, "broken.docx", 0, FALSE, NULL, NULL, &error);
     g_assert_null(doc);
     g_assert_nonnull(error);
     g_error_free(error);

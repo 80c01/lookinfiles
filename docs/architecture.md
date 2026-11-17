@@ -233,13 +233,29 @@ Layers, from bottom to top
   equations) into slide paths; `odp_text` builds paragraphs, list labels
   and tables; `odp_reader` places the master's and the page's shapes
   (transforms, fills, outlines, shadows, fields) and reads the notes.
-  `odf` keeps the `.odt` text documents (HTML).
+  `odp_styles` also gives the page margins of a master page and the
+  labels of numbered list levels (`odp_list_label()`).
+  `odf` keeps the `.odt` text documents as HTML (their text view);
+  `odt_reader` reads them for the page view: the tree and styles of
+  `odp_styles` written with `doc_writer` (`odt_reader_read()`: body, header
+  and footer of the master page, page size and margins).
 - `doc_writer` — Word processing documents written as a `PreviewDoc` that
   looks like the document (`DocWriter`: runs with fonts, sizes relative to
   the default size, colours, highlights; paragraph alignment, indents,
   spacing, list labels; tables as grids with wrapped cells; pictures, page
   breaks; header and footer around the body), shared by `docx` and
-  `doc_reader`.
+  `doc_reader`. What it writes is kept as a `DocModel` (paragraphs with
+  their runs and layout, tables, page breaks; `doc_writer_finish_model()`)
+  from which the text view is drawn (`doc_model_preview()`) and the pages.
+- `doc_pages` — the page view of `.docx`, `.doc` and `.odt`: a `DocModel`
+  laid out with Pango on pages of a `DocPageSetup` (size and margins in
+  points; header and footer distances), drawn with cairo into pixels like
+  slides (`PreviewDoc.paged`, zoom); paragraphs split line by line, table
+  rows kept whole (columns between their longest word and their unwrapped
+  text, filling the text column), pictures inline (shape attributes,
+  decoded at the size drawn). Draws at most `DOC_PAGES_MAX_DRAWN` pages
+  within a pixel budget and counts the rest. `doc_pages_or_text()` picks
+  the page or text view (`m`: `PreviewInput.raw`).
 - `preview_doc` — `PreviewDoc`, a preview built in a worker thread: styled
   text (spans of `PreviewStyle`, inline images) or HTML / Markdown source for
   the existing renderers; summary card helpers (`preview_doc_title()`,

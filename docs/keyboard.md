@@ -260,7 +260,7 @@ mode move in the process list)
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `t` (Vim), `C-o` (Emacs) | Open the previewed file in the dedicated editor panel (in an Org-mode preview, `t` cycles the TODO keyword) |
 | `e` | Open the file in the editor (text files) |
-| `m` | Rendered / raw view: JSON, XML (tree / indented text), TOML, YAML (tree / as written), Markdown, HTML, Org, CSV, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
+| `m` | Rendered / raw view: JSON, XML (tree / indented text), TOML, YAML (tree / as written), Markdown, HTML, Org, CSV, diffs, logs, calendars, contacts (rendered / text); fitted / 1:1 (images); pages / text (PDF, Word `.docx` / `.doc`, OpenDocument text); player / file details (video, audio); document, archive listing, certificate, ELF summary / hex dump |
 | `o`, `Ctrl+K Ctrl+O` | Tagbar: the headings of a Markdown, HTML, Org, Word, OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of source code, beside the text (`Enter` / click scrolls to one, `s` sorts symbols, `c` collapses / expands all, `Esc` back, `q` hides; the moving and search keys of the global mode, see [Code navigation](#code-navigation)) |
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image, PDF or the slides of a presentation in / out / back to the fitted size |
 | Right click on an image | Context menu: **Copy Image** copies the whole image to the clipboard |
