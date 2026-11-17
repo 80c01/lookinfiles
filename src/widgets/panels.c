@@ -101,10 +101,14 @@ static GtkWidget* focused_notebook(AppData* app, GtkWidget* panel, GtkWidget* fo
             return w;
         }
     }
+    /* The notebook holding the tab now, not last->nb, which can still name a
+     * notebook destroyed since (a crash in gtk_widget_is_ancestor) */
     EditorTab* last = app->last_focused_editor;
-    if (last != NULL && g_list_find(app->editors, last) != NULL && last->nb != NULL &&
-        gtk_widget_is_ancestor(last->nb, panel)) {
-        return last->nb;
+    GtkWidget* last_nb = last != NULL && g_list_find(app->editors, last) != NULL && last->container != NULL
+                             ? gtk_widget_get_ancestor(last->container, GTK_TYPE_NOTEBOOK)
+                             : NULL;
+    if (last_nb != NULL && gtk_widget_is_ancestor(last_nb, panel)) {
+        return last_nb;
     }
     return first_notebook(panel);
 }
