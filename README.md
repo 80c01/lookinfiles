@@ -125,6 +125,19 @@ make install PREFIX=/usr DESTDIR=pkgroot   # staging directory for packages
 make dist             # lookinfiles-<version>.tar.gz of the last commit
 ```
 
+### Windows Download
+
+Each [release](../../releases) ships a portable `.zip` and a single-file
+`lookinfiles-<version>-windows-x86_64.exe`. The executable is not code-signed
+yet, so Microsoft SmartScreen may warn that it "isn't commonly downloaded" or
+that "Windows protected your PC". To run it anyway:
+
+1. In Edge, open the download's `…` menu, choose **Keep**, then
+   **Show more** → **Keep anyway**.
+2. When starting the `.exe`, click **More info** → **Run anyway**.
+
+Only do this for files downloaded from this repository's releases page.
+
 ### Windows Build
 
 LookinFiles builds natively on Windows using MSYS2 UCRT64:
