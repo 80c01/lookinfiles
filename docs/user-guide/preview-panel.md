@@ -5,6 +5,11 @@ looking as close as possible to what the program made for that format would
 show. Nothing to install: the formats are read by LookinFiles itself (PDF
 pages need poppler, see [Getting started](getting-started.md#installing)).
 
+Selecting a file, or clicking the one already selected, always brings the
+**Preview** tab back in front, whatever tab was shown (an editor tab, Git,
+Disk Usage, System Monitor...). To edit the file, double-click it or press
+`Enter`.
+
 The full list of formats and their limits is in
 [Supported previews](../previews.md). This page explains how to use the
 panel.

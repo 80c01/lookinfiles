@@ -15,8 +15,8 @@ void on_selection_changed(ExplorerTree* tree, gpointer user_data);
 /* The explorer got the focus: a preview put there by an editor tab gives
  * way to the selected row's */
 void viewer_explorer_focused(AppData* app);
-/* The selected row was clicked again: the preview comes back in front of a
- * page that is not an editor's (Disk Usage, System Monitor, Git...) */
+/* The selected row was clicked again: the preview comes back in front, as
+ * for a new selection (docs/previews.md, "Which tab is in front") */
 void viewer_show_preview_page(AppData* app);
 
 #endif /* VIEWER_H */

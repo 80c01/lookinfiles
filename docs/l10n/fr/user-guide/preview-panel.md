@@ -6,6 +6,11 @@ conçu pour ce format. Rien à installer : LookinFiles lit les formats
 lui-même (les pages PDF demandent poppler, voir
 [Prise en main](getting-started.md#installation)).
 
+Sélectionner un fichier, ou cliquer sur celui déjà sélectionné, ramène
+toujours l’onglet **Aperçu** au premier plan, quel que soit l’onglet affiché
+(un onglet d’édition, Git, Espace disque, Moniteur système…). Pour modifier
+le fichier, double-cliquez dessus ou appuyez sur `Enter`.
+
 La liste complète des formats et de leurs limites est dans
 [Aperçus pris en charge](../previews.md) (en anglais). Cette page explique
 comment se servir du panneau.

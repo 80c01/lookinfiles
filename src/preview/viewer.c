@@ -1019,25 +1019,19 @@ void viewer_explorer_focused(AppData* app) {
     reloading_selection = FALSE;
 }
 
-/* Whether the preview notebook shows an editor page (a file tab, a canvas,
- * a terminal): the other pages (Disk Usage, System Monitor, Git...) give way
- * to the preview when a row is selected */
-static gboolean notebook_shows_editor(AppData* app) {
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint p = gtk_notebook_get_current_page(nb);
-    if (p <= 0) return FALSE; /* the preview itself */
-    GtkWidget* child = gtk_notebook_get_nth_page(nb, p);
-    if (editor_page_is_movable(child)) return TRUE;
-    for (GList* l = app->editors; l != NULL; l = l->next) {
-        EditorTab* t = (EditorTab*)l->data;
-        if (t != NULL && t->container == child) return TRUE;
+/* Which page is in front (docs/previews.md, "Which tab is in front"):
+ * the user selecting a row, or clicking the selected one, brings the
+ * Preview tab back in front of any page of its notebook (editor tab, Disk
+ * Usage, System Monitor, Git...); a refresh (reloading_selection, blocked
+ * handler, reveal_row_quietly) leaves the current page alone */
+static void bring_preview_forward(AppData* app) {
+    if (!reloading_selection && app->notebook != NULL) {
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
     }
-    return FALSE;
 }
 
 void viewer_show_preview_page(AppData* app) {
-    if (app == NULL || app->notebook == NULL || notebook_shows_editor(app)) return;
-    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+    if (app != NULL) bring_preview_forward(app);
 }
 
 /* Preview the selected row now */
@@ -1046,6 +1040,7 @@ static void show_selected_row(AppData* app) {
     if (row == NULL) {
         return;
     }
+    bring_preview_forward(app);
     if (g_strcmp0(row->path, preview_state_path(app)) != 0) {
         text_chunks_stop(app); /* another entry: no more chunks of the previous file */
         preview_full_reset(app, row->path);
@@ -1098,10 +1093,6 @@ static void show_selected_row(AppData* app) {
         summary = g_strdup_printf(_("%s\n%s\n\n(waiting for the file system…)\n"), name, full);
     }
     if (is_remote || summary != NULL || summary_lines != NULL) {
-        if (!reloading_selection && app->notebook != NULL &&
-            (!app->editor_dedicated || !notebook_shows_editor(app))) {
-            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
-        }
         /* Leave the player page before stopping it (its controls must not be
          * redrawn unallocated) */
         if (app->preview_stack != NULL) {
@@ -1166,20 +1157,6 @@ static void show_selected_row(AppData* app) {
         /* Detect the file type from its real name */
         g_free(name);
         name = g_path_get_basename(full);
-    }
-
-    if (!reloading_selection && app->notebook != NULL && !notebook_shows_editor(app)) {
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
-    } else if (!reloading_selection && !app->editor_dedicated && app->notebook != NULL) {
-        /* Do not return to preview tab if the user is currently editing in an editor tab,
-         * unless the tree view has focus (e.g. user navigating or clicking in the tree view)
-         * or a different file/note was selected in the explorer panel. */
-        EditorTab* cur = editor_current_tab(app);
-        gboolean is_diff_file = (cur != NULL && full != NULL && g_strcmp0(full, cur->path) != 0);
-        gboolean tree_focused = (app->tree_view != NULL && gtk_widget_has_focus(GTK_WIDGET(app->tree_view)));
-        if (cur == NULL || is_diff_file || tree_focused) {
-            gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
-        }
     }
 
     if (as_dir) {

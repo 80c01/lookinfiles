@@ -139,6 +139,33 @@ format.
   thread; the cost per KB of each kind of display is learnt from the
   previous ones, timed up to their frame on screen, layout included) shows the notice first and starts once it is on screen.
 
+## Which tab is in front
+
+The Preview tab shares its notebook with editor tabs (docked mode), Git,
+Disk Usage, System Monitor, search results, references and help. One rule
+decides which page is shown, by the **cause** of the selection, never by the
+file or by the page in front:
+
+1. **The user selects a row** in the explorer (click, keys, search jump,
+   bookmark, notes...) or **clicks the row already selected**: the Preview
+   tab comes in front, whatever page was shown, editor tab of that very
+   file included.
+2. **A refresh selects a row again** (saving, a directory rescan, the file
+   system watcher, `APP_EVENT_PREVIEW_STALE`, the explorer getting the focus
+   back, a workspace switch): the page in front stays. Such code paths must
+   say so: block the selection handler (`tree_nav_block_selection_handler()`),
+   use `reveal_row_quietly()`, or re-render through `viewer_reload_preview()`
+   (which sets `reloading_selection`); a workspace switch puts its own page
+   back after selecting.
+3. **Opening is explicit**: a double click or Enter opens the editor tab
+   (focused); a video opens its own tab; the file picker shows the preview.
+
+The rule lives in one place, `bring_preview_forward()` in `viewer.c` (the
+click on the selected row goes through `viewer_show_preview_page()`). Do not
+add exceptions based on the file or the page shown: if the preview comes in
+front when it should not, the selection was a refresh that does not say so
+(rule 2).
+
 ## Rules every preview follows
 
 1. **In a blink.** Something useful is on screen within **50 ms** of the
