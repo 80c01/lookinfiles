@@ -1,0 +1,144 @@
+#ifndef DISK_SCAN_H
+#define DISK_SCAN_H
+
+/* Disk usage of a folder: the whole tree below it is read in a worker
+ * thread (disk_scan_run()), into a tree of its folders (DiskNode: sizes
+ * rolled up, the largest files of each folder) and statistics of the whole
+ * scan (DiskStats). Symbolic links are never followed, hard links are
+ * counted once, and other mounted filesystems are skipped unless asked.
+ * While it runs, any thread can take a snapshot of the progress
+ * (disk_scan_snapshot()). No widgets, no AppData. */
+#include <gio/gio.h>
+
+/* Largest files kept per folder (the others are summed up) */
+#define DISK_SCAN_DIR_FILES 20
+/* Largest files kept for the whole scan */
+#define DISK_SCAN_TOP_FILES 50
+/* Unreadable entries whose path is kept */
+#define DISK_SCAN_MAX_ERRORS 100
+
+typedef struct {
+    gchar* name;
+    guint64 size;  /* apparent size in bytes */
+    gint64 mtime;  /* seconds since the epoch */
+} DiskFile;
+
+typedef struct DiskNode DiskNode;
+struct DiskNode {
+    gchar* name;          /* entry name; the root: its full path */
+    DiskNode* parent;     /* NULL for the root */
+    GPtrArray* children;  /* DiskNode*, largest first (NULL when it has no folder) */
+    GArray* files;        /* DiskFile, the largest files directly inside, largest
+                             first (DISK_SCAN_DIR_FILES at most; NULL if none) */
+    guint64 size;         /* apparent bytes of the whole subtree */
+    guint64 disk;         /* bytes allocated on disk, whole subtree */
+    guint64 files_size;   /* apparent bytes of the files directly inside */
+    guint64 files_count;  /* files directly inside */
+    guint64 n_files;      /* files of the whole subtree */
+    guint64 n_dirs;       /* folders of the whole subtree, itself not counted */
+    gint64 mtime;         /* newest file modification of the subtree, 0 if none */
+    gboolean unreadable;  /* could not be listed (its size is unknown) */
+};
+
+/* Size and number of files of a group (an age, an extension, a kind) */
+typedef struct {
+    guint64 size;
+    guint64 count;
+} DiskTally;
+
+/* Age of a file, by its last modification */
+typedef enum {
+    DISK_AGE_DAY = 0,  /* less than a day */
+    DISK_AGE_WEEK,
+    DISK_AGE_MONTH,
+    DISK_AGE_YEAR,
+    DISK_AGE_3_YEARS,
+    DISK_AGE_OLDER,
+    DISK_AGE_COUNT
+} DiskAge;
+
+typedef struct {
+    gchar* path;   /* full path */
+    guint64 size;
+    gint64 mtime;
+} DiskBigFile;
+
+typedef struct {
+    gchar* path;
+    gchar* message;
+} DiskError;
+
+typedef struct {
+    guint64 size;          /* apparent bytes */
+    guint64 disk;          /* bytes allocated on disk */
+    guint64 n_files;       /* regular files (a hard-linked one once) */
+    guint64 n_dirs;        /* folders below the root */
+    guint64 n_symlinks;    /* symbolic links (not followed, their own size counted) */
+    guint64 n_special;     /* devices, pipes, sockets */
+    guint64 n_hardlinks;   /* more links to a file already counted (left out) */
+    guint64 n_empty_files;
+    guint64 n_empty_dirs;
+    guint64 n_mounts;      /* other filesystems mounted below (skipped) */
+    guint64 n_errors;      /* entries that could not be read */
+    GArray* errors;        /* DiskError, the first DISK_SCAN_MAX_ERRORS */
+    GArray* largest;       /* DiskBigFile, largest first, DISK_SCAN_TOP_FILES at most */
+    GHashTable* extensions;/* lower-case extension ("" for none) -> DiskTally* */
+    DiskTally ages[DISK_AGE_COUNT];
+    gint64 oldest;         /* oldest / newest file modification, 0 if no file */
+    gint64 newest;
+    guint max_depth;       /* depth of the deepest folder (1: directly in the root) */
+    gchar* deepest;        /* its path, NULL if the root has no folder */
+    gint64 now;            /* time of the scan (seconds), the reference of the ages */
+} DiskStats;
+
+/* What a running scan has done so far */
+typedef struct {
+    guint64 files;
+    guint64 dirs;
+    guint64 size;
+    guint64 disk;
+    guint top_done;     /* folders directly in the root read in full */
+    guint top_total;    /* folders directly in the root, 0 until it is listed */
+    guint64 fs_used;    /* bytes used on the root's filesystem when the root is
+                           its mount point, else 0 (a progress reference) */
+    gchar* current;     /* folder being read (owned), NULL once done */
+    GPtrArray* top;     /* DiskNode* copies (no children, no files) of the
+                           folders of the root done so far, in the order read */
+    guint64 root_files_size;  /* files directly in the root, once listed */
+    guint64 root_files_count;
+    gboolean done;
+} DiskScanSnapshot;
+
+typedef struct DiskScan DiskScan;
+
+/* A scan of root (not started); one_filesystem: skip other filesystems
+ * mounted below it */
+DiskScan* disk_scan_new(const gchar* root, gboolean one_filesystem);
+void disk_scan_free(DiskScan* scan);
+
+/* Read the tree: blocks until it is read or cancel is triggered (a cancelled
+ * scan keeps what it read). Call it once, in a worker thread. */
+void disk_scan_run(DiskScan* scan, GCancellable* cancel);
+
+/* Progress so far (any thread, also during disk_scan_run()); free with
+ * disk_scan_snapshot_clear() */
+void disk_scan_snapshot(DiskScan* scan, DiskScanSnapshot* out);
+void disk_scan_snapshot_clear(DiskScanSnapshot* snap);
+
+/* The results, once disk_scan_run() returned (owned by the scan) */
+const gchar* disk_scan_root_path(const DiskScan* scan);
+DiskNode* disk_scan_root(DiskScan* scan);
+const DiskStats* disk_scan_stats(const DiskScan* scan);
+/* TRUE when the scan was cancelled before the end */
+gboolean disk_scan_cancelled(const DiskScan* scan);
+
+/* Full path of a node (from the root's path) */
+gchar* disk_node_path(const DiskNode* node);
+/* Bytes and count of the files of node not among its listed files */
+guint64 disk_node_other_files_size(const DiskNode* node);
+guint64 disk_node_other_files_count(const DiskNode* node);
+
+/* Age group of a modification time, now being the reference (seconds) */
+DiskAge disk_age_of(gint64 mtime, gint64 now);
+
+#endif /* DISK_SCAN_H */

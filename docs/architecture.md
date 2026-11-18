@@ -79,6 +79,17 @@ Layers, from bottom to top
   (`countdown_parse_time()`).
 - `run_time` — the time a notebook cell run took, as shown in its head
   (`0.4s`, `1m 05s`, `2h 03m`).
+- `disk_scan` — disk usage of a folder (the Disk Usage tab): the whole tree
+  read in a worker thread (`disk_scan_run()`, cancellable; names read
+  first, so a deep tree keeps no descriptor per level) into `DiskNode`
+  folders (sizes rolled up, apparent and on disk, the 20 largest files of
+  each) and `DiskStats` (counts, the 50 largest files, sizes by extension
+  and age, deepest folder, unreadable entries); symbolic links not
+  followed, hard links counted once, other filesystems skipped. Any thread
+  reads the progress with `disk_scan_snapshot()` (counters, the folders of
+  the root done so far). `disk_stats` groups the statistics for display:
+  broad kinds from the extensions (`file_kind_from_name()`), the largest
+  extensions, age names, percentages.
 - `profile` — the performance probe (`LOOKIN_PROFILE`, docs/performance.md):
   start-up marks (`profile_mark()`), timed operations (`profile_start()` /
   `profile_done()`, thread-safe), frame counters and the exit report (CPU

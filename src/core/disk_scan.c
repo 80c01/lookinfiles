@@ -1,0 +1,492 @@
+/* Disk usage of a folder, read in a worker thread (see disk_scan.h) */
+#include "core/disk_scan.h"
+
+#include <errno.h>
+#include <glib/gstdio.h>
+#include <string.h>
+
+/* Longest extension counted as one ("tar.gz" counts as "gz"); longer: none */
+#define EXT_MAX 12
+
+/* A file seen through one of its hard links */
+typedef struct {
+    guint64 dev;
+    guint64 ino;
+} InodeKey;
+
+struct DiskScan {
+    gchar* root_path;
+    gboolean one_filesystem;
+    DiskNode* root;
+    DiskStats stats;
+    GString* path;          /* path of the folder being read (worker only) */
+    GHashTable* inodes;     /* InodeKey of the files with several links (worker only) */
+    guint64 root_dev;
+    GCancellable* cancel;   /* borrowed during disk_scan_run() */
+    gboolean cancelled;
+
+    /* Progress, read by disk_scan_snapshot() from any thread */
+    GMutex lock;
+    DiskScanSnapshot progress; /* top holds DiskNode copies */
+};
+
+static guint inode_hash(gconstpointer p) {
+    const InodeKey* k = p;
+    return (guint)(k->ino ^ (k->ino >> 32) ^ (k->dev * 31u));
+}
+
+static gboolean inode_equal(gconstpointer a, gconstpointer b) {
+    const InodeKey* x = a;
+    const InodeKey* y = b;
+    return x->dev == y->dev && x->ino == y->ino;
+}
+
+static DiskNode* node_new(const gchar* name, DiskNode* parent) {
+    DiskNode* n = g_new0(DiskNode, 1);
+    n->name = g_strdup(name);
+    n->parent = parent;
+    return n;
+}
+
+static void node_free(gpointer data) {
+    DiskNode* n = data;
+    if (n == NULL) return;
+    if (n->children != NULL) g_ptr_array_unref(n->children);
+    if (n->files != NULL) {
+        for (guint i = 0; i < n->files->len; i++) g_free(g_array_index(n->files, DiskFile, i).name);
+        g_array_unref(n->files);
+    }
+    g_free(n->name);
+    g_free(n);
+}
+
+/* A copy of a node's own values, without its children and files */
+static DiskNode* node_copy_flat(const DiskNode* n) {
+    DiskNode* c = g_new(DiskNode, 1);
+    *c = *n;
+    c->name = g_strdup(n->name);
+    c->parent = NULL;
+    c->children = NULL;
+    c->files = NULL;
+    return c;
+}
+
+DiskScan* disk_scan_new(const gchar* root, gboolean one_filesystem) {
+    DiskScan* s = g_new0(DiskScan, 1);
+    gchar* path = g_strdup(root != NULL && root[0] != '\0' ? root : ".");
+    /* No trailing separator, but a filesystem root keeps its own */
+    gsize len = strlen(path);
+    while (len > 1 && G_IS_DIR_SEPARATOR(path[len - 1]) && g_path_skip_root(path) != path + len) {
+        path[--len] = '\0';
+    }
+    s->root_path = path;
+    s->one_filesystem = one_filesystem;
+    s->root = node_new(path, NULL);
+    s->path = g_string_new(path);
+    s->inodes = g_hash_table_new_full(inode_hash, inode_equal, g_free, NULL);
+    s->stats.errors = g_array_new(FALSE, FALSE, sizeof(DiskError));
+    s->stats.largest = g_array_new(FALSE, FALSE, sizeof(DiskBigFile));
+    s->stats.extensions = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    g_mutex_init(&s->lock);
+    s->progress.top = g_ptr_array_new_with_free_func(node_free);
+    return s;
+}
+
+void disk_scan_free(DiskScan* s) {
+    if (s == NULL) return;
+    node_free(s->root);
+    for (guint i = 0; i < s->stats.errors->len; i++) {
+        DiskError* e = &g_array_index(s->stats.errors, DiskError, i);
+        g_free(e->path);
+        g_free(e->message);
+    }
+    g_array_unref(s->stats.errors);
+    for (guint i = 0; i < s->stats.largest->len; i++) g_free(g_array_index(s->stats.largest, DiskBigFile, i).path);
+    g_array_unref(s->stats.largest);
+    g_hash_table_unref(s->stats.extensions);
+    g_free(s->stats.deepest);
+    g_string_free(s->path, TRUE);
+    g_hash_table_unref(s->inodes);
+    g_mutex_clear(&s->lock);
+    disk_scan_snapshot_clear(&s->progress);
+    g_free(s->root_path);
+    g_free(s);
+}
+
+DiskAge disk_age_of(gint64 mtime, gint64 now) {
+    const gint64 day = 24 * 3600;
+    gint64 age = now - mtime;
+    if (age < day) return DISK_AGE_DAY;
+    if (age < 7 * day) return DISK_AGE_WEEK;
+    if (age < 30 * day) return DISK_AGE_MONTH;
+    if (age < 365 * day) return DISK_AGE_YEAR;
+    if (age < 3 * 365 * day) return DISK_AGE_3_YEARS;
+    return DISK_AGE_OLDER;
+}
+
+static void add_error(DiskScan* s, const gchar* path, const gchar* message) {
+    s->stats.n_errors++;
+    if (s->stats.errors->len >= DISK_SCAN_MAX_ERRORS) return;
+    DiskError e = { g_strdup(path), g_strdup(message) };
+    g_array_append_val(s->stats.errors, e);
+}
+
+/* Index where a file of this size goes in an array sorted largest first,
+ * keeping max entries at most; -1 when it is too small to be kept */
+static gint top_slot(GArray* arr, guint64 size, guint max, gsize size_offset) {
+    guint n = arr->len;
+    if (n >= max) {
+        const guint64* last = (const guint64*)(arr->data + (gsize)(n - 1) * g_array_get_element_size(arr) + size_offset);
+        if (size <= *last) return -1;
+    }
+    guint i = n;
+    while (i > 0) {
+        const guint64* prev = (const guint64*)(arr->data + (gsize)(i - 1) * g_array_get_element_size(arr) + size_offset);
+        if (*prev >= size) break;
+        i--;
+    }
+    return (gint)i;
+}
+
+static void keep_dir_file(DiskNode* node, const gchar* name, guint64 size, gint64 mtime) {
+    if (node->files == NULL) node->files = g_array_new(FALSE, FALSE, sizeof(DiskFile));
+    gint i = top_slot(node->files, size, DISK_SCAN_DIR_FILES, G_STRUCT_OFFSET(DiskFile, size));
+    if (i < 0) return;
+    if (node->files->len >= DISK_SCAN_DIR_FILES) {
+        g_free(g_array_index(node->files, DiskFile, node->files->len - 1).name);
+        g_array_set_size(node->files, node->files->len - 1);
+    }
+    DiskFile f = { g_strdup(name), size, mtime };
+    g_array_insert_val(node->files, (guint)i, f);
+}
+
+static void keep_big_file(DiskStats* st, const gchar* path, guint64 size, gint64 mtime) {
+    gint i = top_slot(st->largest, size, DISK_SCAN_TOP_FILES, G_STRUCT_OFFSET(DiskBigFile, size));
+    if (i < 0) return;
+    if (st->largest->len >= DISK_SCAN_TOP_FILES) {
+        g_free(g_array_index(st->largest, DiskBigFile, st->largest->len - 1).path);
+        g_array_set_size(st->largest, st->largest->len - 1);
+    }
+    DiskBigFile f = { g_strdup(path), size, mtime };
+    g_array_insert_val(st->largest, (guint)i, f);
+}
+
+/* Lower-case extension of a file name in buf ("" for none or a long one) */
+static void extension_key(const gchar* name, gchar buf[EXT_MAX + 1]) {
+    const gchar* dot = strrchr(name, '.');
+    buf[0] = '\0';
+    if (dot == NULL || dot == name || dot[1] == '\0') return;
+    gsize len = strlen(dot + 1);
+    if (len > EXT_MAX) return;
+    for (gsize i = 0; i <= len; i++) buf[i] = g_ascii_tolower(dot[1 + i]);
+}
+
+/* A regular file directly in node (its path in s->path) */
+static void add_file(DiskScan* s, DiskNode* node, const gchar* name, guint64 size, guint64 disk, gint64 mtime) {
+    node->files_size += size;
+    node->files_count++;
+    node->n_files++;
+    node->size += size;
+    node->disk += disk;
+    if (mtime > node->mtime) node->mtime = mtime;
+    keep_dir_file(node, name, size, mtime);
+
+    DiskStats* st = &s->stats;
+    st->n_files++;
+    st->size += size;
+    st->disk += disk;
+    if (size == 0) st->n_empty_files++;
+    DiskTally* age = &st->ages[disk_age_of(mtime, st->now)];
+    age->size += size;
+    age->count++;
+    if (st->oldest == 0 || mtime < st->oldest) st->oldest = mtime;
+    if (mtime > st->newest) st->newest = mtime;
+    gchar ext[EXT_MAX + 1];
+    extension_key(name, ext);
+    DiskTally* t = g_hash_table_lookup(st->extensions, ext);
+    if (t == NULL) {
+        t = g_new0(DiskTally, 1);
+        g_hash_table_insert(st->extensions, g_strdup(ext), t);
+    }
+    t->size += size;
+    t->count++;
+    keep_big_file(st, s->path->str, size, mtime);
+}
+
+/* s->path becomes the path of name inside the folder of length base */
+static void path_enter(DiskScan* s, gsize base, const gchar* name) {
+    g_string_truncate(s->path, base);
+    if (base > 0 && !G_IS_DIR_SEPARATOR(s->path->str[base - 1])) g_string_append_c(s->path, G_DIR_SEPARATOR);
+    g_string_append(s->path, name);
+}
+
+static gint compare_size(gconstpointer a, gconstpointer b) {
+    const DiskNode* x = *(DiskNode* const*)a;
+    const DiskNode* y = *(DiskNode* const*)b;
+    if (x->size != y->size) return x->size > y->size ? -1 : 1;
+    return g_strcmp0(x->name, y->name);
+}
+
+/* Is this file already counted through another of its links? (it is
+ * recorded when not) */
+static gboolean seen_link(DiskScan* s, const GStatBuf* st) {
+#ifdef G_OS_UNIX
+    if (st->st_nlink <= 1) return FALSE;
+    InodeKey key = { (guint64)st->st_dev, (guint64)st->st_ino };
+    if (g_hash_table_contains(s->inodes, &key)) return TRUE;
+    g_hash_table_add(s->inodes, g_memdup2(&key, sizeof key));
+#else
+    (void)s;
+    (void)st;
+#endif
+    return FALSE;
+}
+
+static guint64 disk_bytes(const GStatBuf* st) {
+#ifdef G_OS_UNIX
+    return (guint64)st->st_blocks * 512u;
+#else
+    return (guint64)st->st_size;
+#endif
+}
+
+static gboolean is_symlink(const GStatBuf* st) {
+#ifdef S_ISLNK
+    return S_ISLNK(st->st_mode);
+#else
+    (void)st;
+    return FALSE;
+#endif
+}
+
+/* Read the folder of node (its path in s->path), depth 0 for the root */
+static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
+    if (g_cancellable_is_cancelled(s->cancel)) {
+        s->cancelled = TRUE;
+        return;
+    }
+    g_mutex_lock(&s->lock);
+    g_free(s->progress.current);
+    s->progress.current = g_strdup(s->path->str);
+    g_mutex_unlock(&s->lock);
+
+    GError* err = NULL;
+    GDir* dir = g_dir_open(s->path->str, 0, &err);
+    if (dir == NULL) {
+        node->unreadable = TRUE;
+        add_error(s, s->path->str, err != NULL ? err->message : "");
+        g_clear_error(&err);
+        return;
+    }
+    /* Names first, the folder closed before going down: a deep tree does
+     * not keep a descriptor per level */
+    GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
+    const gchar* name;
+    while ((name = g_dir_read_name(dir)) != NULL) g_ptr_array_add(names, g_strdup(name));
+    g_dir_close(dir);
+    if (names->len == 0 && depth > 0) s->stats.n_empty_dirs++;
+
+    gsize base = s->path->len;
+    GPtrArray* subdirs = g_ptr_array_new(); /* names borrowed from names */
+    GArray* subdir_disk = g_array_new(FALSE, FALSE, sizeof(guint64)); /* their own blocks */
+    guint64 files = 0, size = 0, disk = 0;
+    for (guint i = 0; i < names->len; i++) {
+        name = g_ptr_array_index(names, i);
+        path_enter(s, base, name);
+        GStatBuf st;
+        if (g_lstat(s->path->str, &st) != 0) {
+            add_error(s, s->path->str, g_strerror(errno));
+            continue;
+        }
+        if (is_symlink(&st)) {
+            s->stats.n_symlinks++;
+        } else if (S_ISDIR(st.st_mode)) {
+            if (s->one_filesystem && (guint64)st.st_dev != s->root_dev) {
+                s->stats.n_mounts++;
+            } else {
+                g_ptr_array_add(subdirs, (gpointer)name);
+                guint64 bytes = disk_bytes(&st);
+                g_array_append_val(subdir_disk, bytes);
+            }
+        } else if (!S_ISREG(st.st_mode)) {
+            s->stats.n_special++;
+        } else if (seen_link(s, &st)) {
+            s->stats.n_hardlinks++;
+        } else {
+            guint64 bytes = disk_bytes(&st);
+            add_file(s, node, name, (guint64)st.st_size, bytes, (gint64)st.st_mtime);
+            files++;
+            size += (guint64)st.st_size;
+            disk += bytes;
+        }
+    }
+    g_string_truncate(s->path, base);
+    for (guint i = 0; i < subdir_disk->len; i++) disk += g_array_index(subdir_disk, guint64, i);
+
+    g_mutex_lock(&s->lock);
+    s->progress.files += files;
+    s->progress.size += size;
+    s->progress.disk += disk;
+    s->progress.dirs += subdirs->len;
+    if (depth == 0) {
+        s->progress.top_total = subdirs->len;
+        s->progress.root_files_size = node->files_size;
+        s->progress.root_files_count = node->files_count;
+    }
+    g_mutex_unlock(&s->lock);
+
+    for (guint i = 0; i < subdirs->len; i++) {
+        name = g_ptr_array_index(subdirs, i);
+        DiskNode* child = node_new(name, node);
+        /* A folder's own blocks are used on disk too (as du counts them) */
+        child->disk = g_array_index(subdir_disk, guint64, i);
+        s->stats.disk += child->disk;
+        path_enter(s, base, name);
+        guint d = depth + 1;
+        s->stats.n_dirs++;
+        if (d > s->stats.max_depth) {
+            s->stats.max_depth = d;
+            g_free(s->stats.deepest);
+            s->stats.deepest = g_strdup(s->path->str);
+        }
+        scan_dir(s, child, d);
+        g_string_truncate(s->path, base);
+
+        node->size += child->size;
+        node->disk += child->disk;
+        node->n_files += child->n_files;
+        node->n_dirs += child->n_dirs + 1;
+        if (child->mtime > node->mtime) node->mtime = child->mtime;
+        if (node->children == NULL) node->children = g_ptr_array_new_with_free_func(node_free);
+        g_ptr_array_add(node->children, child);
+        if (depth == 0) {
+            g_mutex_lock(&s->lock);
+            s->progress.top_done++;
+            g_ptr_array_add(s->progress.top, node_copy_flat(child));
+            g_mutex_unlock(&s->lock);
+        }
+        if (s->cancelled) break;
+    }
+    if (node->children != NULL) g_ptr_array_sort(node->children, compare_size);
+    g_ptr_array_unref(subdirs);
+    g_array_unref(subdir_disk);
+    g_ptr_array_unref(names);
+}
+
+/* Is path the mount point of its filesystem? (its parent is on another one) */
+static gboolean is_mount_point(const gchar* path, const GStatBuf* st) {
+    if (g_path_skip_root(path) != NULL && *g_path_skip_root(path) == '\0') return TRUE;
+#ifdef G_OS_UNIX
+    gchar* parent = g_path_get_dirname(path);
+    GStatBuf pst;
+    gboolean mount = g_stat(parent, &pst) == 0 && (pst.st_dev != st->st_dev || pst.st_ino == st->st_ino);
+    g_free(parent);
+    return mount;
+#else
+    (void)st;
+    return FALSE;
+#endif
+}
+
+/* Bytes used on the filesystem of path, 0 if unknown */
+static guint64 filesystem_used(const gchar* path) {
+    GFile* file = g_file_new_for_path(path);
+    GFileInfo* info = g_file_query_filesystem_info(file, G_FILE_ATTRIBUTE_FILESYSTEM_USED, NULL, NULL);
+    guint64 used = 0;
+    if (info != NULL && g_file_info_has_attribute(info, G_FILE_ATTRIBUTE_FILESYSTEM_USED)) {
+        used = g_file_info_get_attribute_uint64(info, G_FILE_ATTRIBUTE_FILESYSTEM_USED);
+    }
+    if (info != NULL) g_object_unref(info);
+    g_object_unref(file);
+    return used;
+}
+
+void disk_scan_run(DiskScan* s, GCancellable* cancel) {
+    if (s == NULL) return;
+    s->cancel = cancel;
+    s->stats.now = g_get_real_time() / G_USEC_PER_SEC;
+    GStatBuf st;
+    /* The root itself is followed when it is a link: it is what was asked */
+    gboolean found = g_stat(s->root_path, &st) == 0;
+    if (!found || !S_ISDIR(st.st_mode)) {
+        s->root->unreadable = TRUE;
+        add_error(s, s->root_path, g_strerror(found ? ENOTDIR : errno));
+    } else {
+        s->root_dev = (guint64)st.st_dev;
+        s->root->disk = disk_bytes(&st);
+        s->stats.disk = s->root->disk;
+        if (is_mount_point(s->root_path, &st)) {
+            guint64 used = filesystem_used(s->root_path);
+            g_mutex_lock(&s->lock);
+            s->progress.fs_used = used;
+            g_mutex_unlock(&s->lock);
+        }
+        scan_dir(s, s->root, 0);
+    }
+    g_hash_table_remove_all(s->inodes);
+    s->cancel = NULL;
+    g_mutex_lock(&s->lock);
+    g_clear_pointer(&s->progress.current, g_free);
+    s->progress.done = TRUE;
+    g_mutex_unlock(&s->lock);
+}
+
+void disk_scan_snapshot(DiskScan* s, DiskScanSnapshot* out) {
+    memset(out, 0, sizeof *out);
+    if (s == NULL) return;
+    g_mutex_lock(&s->lock);
+    *out = s->progress;
+    out->current = g_strdup(s->progress.current);
+    out->top = g_ptr_array_new_full(s->progress.top->len, node_free);
+    for (guint i = 0; i < s->progress.top->len; i++) {
+        g_ptr_array_add(out->top, node_copy_flat(g_ptr_array_index(s->progress.top, i)));
+    }
+    g_mutex_unlock(&s->lock);
+}
+
+void disk_scan_snapshot_clear(DiskScanSnapshot* snap) {
+    if (snap == NULL) return;
+    g_clear_pointer(&snap->current, g_free);
+    g_clear_pointer(&snap->top, g_ptr_array_unref);
+}
+
+const gchar* disk_scan_root_path(const DiskScan* s) {
+    return s != NULL ? s->root_path : NULL;
+}
+
+DiskNode* disk_scan_root(DiskScan* s) {
+    return s != NULL ? s->root : NULL;
+}
+
+const DiskStats* disk_scan_stats(const DiskScan* s) {
+    return s != NULL ? &s->stats : NULL;
+}
+
+gboolean disk_scan_cancelled(const DiskScan* s) {
+    return s != NULL && s->cancelled;
+}
+
+gchar* disk_node_path(const DiskNode* node) {
+    if (node == NULL) return NULL;
+    GPtrArray* parts = g_ptr_array_new();
+    for (const DiskNode* n = node; n != NULL; n = n->parent) g_ptr_array_insert(parts, 0, n->name);
+    g_ptr_array_add(parts, NULL);
+    gchar* path = g_build_filenamev((gchar**)parts->pdata);
+    g_ptr_array_unref(parts);
+    return path;
+}
+
+guint64 disk_node_other_files_size(const DiskNode* node) {
+    if (node == NULL) return 0;
+    guint64 listed = 0;
+    for (guint i = 0; node->files != NULL && i < node->files->len; i++) {
+        listed += g_array_index(node->files, DiskFile, i).size;
+    }
+    return node->files_size > listed ? node->files_size - listed : 0;
+}
+
+guint64 disk_node_other_files_count(const DiskNode* node) {
+    if (node == NULL) return 0;
+    guint64 listed = node->files != NULL ? node->files->len : 0;
+    return node->files_count > listed ? node->files_count - listed : 0;
+}

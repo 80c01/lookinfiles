@@ -79,6 +79,8 @@ sysstat:
 sysstat_host:sysstat
 countdown:
 run_time:
+disk_scan:
+disk_stats:disk_scan,file_types,i18n
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types
 file_save:
