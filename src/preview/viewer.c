@@ -1035,6 +1035,11 @@ static gboolean notebook_shows_editor(AppData* app) {
     return FALSE;
 }
 
+void viewer_show_preview_page(AppData* app) {
+    if (app == NULL || app->notebook == NULL || notebook_shows_editor(app)) return;
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+}
+
 /* Preview the selected row now */
 static void show_selected_row(AppData* app) {
     ExplorerRow* row = explorer_tree_get_selected(app->tree);

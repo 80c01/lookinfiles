@@ -22,6 +22,7 @@
 #include "explorer/file_list.h"
 #include "git/git_state.h"
 #include "explorer/explorer_keys.h"
+#include "explorer/explorer_tree.h"
 #include "preview/viewer.h"
 #include "media/image_preview.h"
 #include "preview/text_chunks.h"
@@ -102,13 +103,29 @@ static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointe
 
 static void on_tree_click_pressed(GtkGestureClick* gesture, gint n_press,
                                   gdouble x, gdouble y, gpointer user_data) {
-    (void)gesture;
     (void)n_press;
     (void)x;
     (void)y;
     AppData* app = (AppData*)user_data;
     if (app != NULL && app->tree_view != NULL) {
         gtk_widget_grab_focus(GTK_WIDGET(app->tree_view));
+    }
+    if (app != NULL && app->tree != NULL) {
+        g_object_set_data(G_OBJECT(gesture), "pressed-row", explorer_tree_get_selected(app->tree));
+    }
+}
+
+/* A click on the row already selected changes no selection: bring the
+ * preview back in front all the same */
+static void on_tree_click_released(GtkGestureClick* gesture, gint n_press,
+                                   gdouble x, gdouble y, gpointer user_data) {
+    (void)x;
+    (void)y;
+    AppData* app = (AppData*)user_data;
+    gpointer pressed = g_object_get_data(G_OBJECT(gesture), "pressed-row");
+    if (n_press != 1 || app == NULL || app->tree == NULL || pressed == NULL) return;
+    if (explorer_tree_get_selected(app->tree) == pressed) {
+        viewer_show_preview_page(app);
     }
 }
 
@@ -629,6 +646,7 @@ int main(int argc, char** argv) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(tree_click_ctrl), GDK_BUTTON_PRIMARY);
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(tree_click_ctrl), GTK_PHASE_CAPTURE);
     g_signal_connect(tree_click_ctrl, "pressed", G_CALLBACK(on_tree_click_pressed), app);
+    g_signal_connect(tree_click_ctrl, "released", G_CALLBACK(on_tree_click_released), app);
     gtk_widget_add_controller(tree_view, GTK_EVENT_CONTROLLER(tree_click_ctrl));
 
     GtkEventController* viewer_key_ctrl = gtk_event_controller_key_new();
