@@ -32,6 +32,7 @@ void settings_defaults(Settings* s) {
     s->clock_shown = TRUE;
     s->clock_12h = FALSE;
     s->clock_seconds = FALSE;
+    s->timers_shown = TRUE;
     s->timer_minutes = 60;
     s->timer_expiry = SETTINGS_EXPIRY_RESTART;
     s->width = 1000;
@@ -164,6 +165,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->clock_shown = read_bool(kf, "Clock", "clock", s->clock_shown);
     s->clock_12h = read_12h(kf, s->clock_12h);
     s->clock_seconds = read_bool(kf, "Clock", "clock-seconds", s->clock_seconds);
+    s->timers_shown = read_bool(kf, "Clock", "timers", s->timers_shown);
     s->timer_minutes = read_int(kf, "Clock", "timer-minutes", 0, SETTINGS_MAX_TIMER_MINUTES, s->timer_minutes);
     s->timer_expiry = read_expiry(kf, s->timer_expiry);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
@@ -195,6 +197,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_boolean(kf, "Clock", "clock", s->clock_shown);
     g_key_file_set_string(kf, "Clock", "clock-format", s->clock_12h ? "12h" : "24h");
     g_key_file_set_boolean(kf, "Clock", "clock-seconds", s->clock_seconds);
+    g_key_file_set_boolean(kf, "Clock", "timers", s->timers_shown);
     g_key_file_set_integer(kf, "Clock", "timer-minutes", s->timer_minutes);
     gsize expiry = ((gsize)s->timer_expiry < G_N_ELEMENTS(EXPIRY_NAMES)) ? (gsize)s->timer_expiry : 0;
     g_key_file_set_string(kf, "Clock", "timer-expiry", EXPIRY_NAMES[expiry]);

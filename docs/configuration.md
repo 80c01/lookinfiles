@@ -54,6 +54,7 @@ tagbar=false       # previews with headings or symbols show the tagbar (o in the
 clock=true            # the top bar shows the time (default)
 clock-format=24h      # 24h (default, 14:05) or 12h (2:05 PM)
 clock-seconds=false   # the time shows the seconds
+timers=true           # the top bar has timers (default; false: none)
 timer-minutes=60      # top bar timer 1 started at launch (default; 0: no timer)
 timer-expiry=restart  # timer 1 at 0:00: restart (default), stop or count-on
 

@@ -21,7 +21,8 @@
  * Stop / Count On), Pause / Reset / Off (what is picked there lasts until the next
  * launch, or the next Preferences change for timer 1); a right click on a
  * timer pauses / resumes it. LOOKIN_CLOCK_FROZEN in the environment shows a
- * fixed time and stopped timers (UI screenshots). */
+ * fixed time and stopped timers (UI screenshots). With [Clock] timers=false
+ * no timer shows and a click on the clock opens nothing. */
 #include "core/settings_store.h"
 
 #include <gtk/gtk.h>
@@ -29,13 +30,15 @@
 /* The row of the clock and the timers, with the [Clock] values of settings */
 GtkWidget* clock_pill_new(const Settings* settings);
 
-/* Restart timer 1 of pill with minutes (0 hides it) */
+/* Restart timer 1 of pill with minutes (0 hides it); nothing while the
+ * timers are off */
 void clock_pill_set_timer(GtkWidget* pill, gint minutes);
 
 /* The expiry action of timer 1, without restarting it */
 void clock_pill_set_expiry(GtkWidget* pill, SettingsExpiry expiry);
 
-/* Show the time as the [Clock] values of settings say */
+/* Show the time and the timers as the [Clock] values of settings say
+ * (timers turned on again: timer 1 starts with timer-minutes) */
 void clock_pill_set_display(GtkWidget* pill, const Settings* settings);
 
 #endif /* CLOCK_PILL_H */

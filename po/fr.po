@@ -9252,8 +9252,8 @@ msgstr ""
 msgid "Sho_w the time"
 msgstr "Afficher l’_heure"
 
-msgid "When hidden, an icon opens the timers while none runs"
-msgstr "Masquée, une icône ouvre les minuteurs tant qu’aucun ne tourne"
+msgid "When hidden, an icon opens the timers while none runs (if the timers are shown)"
+msgstr "Masquée, une icône ouvre les minuteurs tant qu’aucun ne tourne (si les minuteurs sont affichés)"
 
 msgid "24-hour (14:05)"
 msgstr "24 heures (14:05)"
@@ -9269,6 +9269,12 @@ msgstr "Comment la barre du haut affiche l’heure"
 
 msgid "Show the _seconds"
 msgstr "Afficher les _secondes"
+
+msgid "Show the ti_mers"
+msgstr "Afficher les mi_nuteurs"
+
+msgid "When off, the top bar shows no timer and a click on the clock does nothing"
+msgstr "Désactivé, la barre du haut n’affiche aucun minuteur et un clic sur l’horloge ne fait rien"
 
 msgid "_Timer 1 duration at launch (minutes)"
 msgstr "Durée du _minuteur 1 au lancement (minutes)"

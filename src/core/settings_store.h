@@ -27,6 +27,8 @@
  *                        # no timer shows, nothing while one does)
  *   clock-format=24h     # 24h (14:05) or 12h (2:05 PM)
  *   clock-seconds=false  # the time shows the seconds
+ *   timers=true          # the top bar has timers (false: none, and a click
+ *                        # on the clock opens nothing)
  *   timer-minutes=60     # top bar timer 1, started at launch (0: no timer)
  *   timer-expiry=restart # what timer 1 does at 0:00: restart, stop or count-on
  *   [Window]
@@ -87,6 +89,7 @@ typedef struct {
     gboolean clock_shown;  /* the top bar shows the time */
     gboolean clock_12h;    /* 12-hour time (2:05 PM), else 24-hour */
     gboolean clock_seconds; /* the time shows the seconds */
+    gboolean timers_shown; /* the top bar has timers */
     gint timer_minutes;    /* top bar timer, started at launch, 0: none */
     SettingsExpiry timer_expiry; /* what that timer does at 0:00 */
     gint width;            /* window size at startup */

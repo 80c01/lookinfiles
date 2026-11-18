@@ -74,7 +74,8 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   les minuteurs tant qu’aucun ne tourne) et jusqu’à trois **minuteurs**. Le
   minuteur 1 démarre au lancement (60 minutes et **Relancer** ; à changer
   dans les Préférences, **Horloge**, 0 pour aucun) ; les minuteurs 2 et 3 sont
-  arrêtés au départ. La dernière minute d’un minuteur s’affiche en couleurs
+  arrêtés au départ (Préférences, **Horloge**, **Afficher les minuteurs**
+  décoché : aucun minuteur, et l’horloge n’ouvre rien). La dernière minute d’un minuteur s’affiche en couleurs
   inversées et ses dix dernières secondes clignotent. Un clic sur un
   minuteur, ou sur l’horloge, ouvre le menu des minuteurs, un onglet par
   minuteur : son état, des durées prédéfinies (5, 15, 25, 60 min) et une

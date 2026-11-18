@@ -38,6 +38,7 @@ static void test_missing_file(void) {
     g_assert_true(s.clock_shown);
     g_assert_false(s.clock_12h);
     g_assert_false(s.clock_seconds);
+    g_assert_true(s.timers_shown);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
 }
@@ -69,6 +70,7 @@ static void test_save_load(void) {
     s.clock_shown = FALSE;
     s.clock_12h = TRUE;
     s.clock_seconds = TRUE;
+    s.timers_shown = FALSE;
     s.width = 1920;
     s.height = 1080;
     g_assert_true(settings_store_save(path, &s, NULL));
@@ -98,6 +100,7 @@ static void test_save_load(void) {
     g_assert_false(r.clock_shown);
     g_assert_true(r.clock_12h);
     g_assert_true(r.clock_seconds);
+    g_assert_false(r.timers_shown);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);
 

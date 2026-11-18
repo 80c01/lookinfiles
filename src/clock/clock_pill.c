@@ -44,6 +44,7 @@ struct ClockPill {
     gboolean shown;     /* the time shows */
     gboolean twelve_hour;
     gboolean seconds;
+    gboolean timers_on; /* [Clock] timers: off, no timer and no popover */
     Timer timers[TIMER_COUNT];
     GtkWidget* popover; /* open, else NULL */
     gboolean frozen;    /* LOOKIN_CLOCK_FROZEN: nothing moves */
@@ -93,7 +94,7 @@ static void update_clock(ClockPill* p, gint64 now) {
         text = NULL;
         /* TRANSLATORS: strftime format of the date in the clock tooltip */
         gchar* date = g_date_time_format(dt, _("%A, %B %-d, %Y"));
-        gchar* tip = g_strdup_printf("%s\n%s", date, _("Click: Timers"));
+        gchar* tip = p->timers_on ? g_strdup_printf("%s\n%s", date, _("Click: Timers")) : g_strdup(date);
         gtk_widget_set_tooltip_text(p->clock, tip);
         g_free(tip);
         g_free(date);
@@ -212,13 +213,14 @@ static void update_timer(Timer* t, gint64 now, gboolean blink) {
 
 static gboolean on_tick(gpointer data);
 
-/* The time, or the icon while no timer shows, or nothing */
+/* The time, or the icon while no timer shows (and timers are on), or
+ * nothing */
 static void update_clock_visibility(ClockPill* p) {
     gboolean timer_shown = FALSE;
     for (guint i = 0; i < TIMER_COUNT; i++) timer_shown = timer_shown || p->timers[i].enabled;
     gtk_widget_set_visible(p->clock_label, p->shown);
     gtk_widget_set_visible(p->clock_icon, !p->shown);
-    gtk_widget_set_visible(p->clock, p->shown || !timer_shown);
+    gtk_widget_set_visible(p->clock, p->shown || (p->timers_on && !timer_shown));
 }
 
 /* One wake-up at the next change: the second of a running timer (half
@@ -582,6 +584,7 @@ static void on_timer_clicked(GtkButton* button, gpointer data) {
 
 static void on_clock_clicked(GtkButton* button, gpointer data) {
     ClockPill* p = data;
+    if (!p->timers_on) return;
     open_popover(p, GTK_WIDGET(button), &p->timers[0]);
 }
 
@@ -606,7 +609,25 @@ static ClockPill* pill_get(GtkWidget* pill) {
 
 void clock_pill_set_timer(GtkWidget* pill, gint minutes) {
     ClockPill* p = pill_get(pill);
-    if (p != NULL) start_minutes(&p->timers[0], minutes);
+    if (p != NULL && p->timers_on) start_minutes(&p->timers[0], minutes);
+}
+
+/* Timers off: every timer stops and hides, the popover closes; on again:
+ * timer 1 starts with minutes */
+static void set_timers_on(ClockPill* p, gboolean on, gint minutes) {
+    if (p->timers_on == on) return;
+    p->timers_on = on;
+    if (on) {
+        start_minutes(&p->timers[0], minutes);
+        return;
+    }
+    if (p->popover != NULL) gtk_popover_popdown(GTK_POPOVER(p->popover));
+    for (guint i = 0; i < TIMER_COUNT; i++) {
+        Timer* t = &p->timers[i];
+        t->enabled = FALSE;
+        t->until = -1;
+        gtk_widget_set_visible(t->button, FALSE);
+    }
 }
 
 static CountdownExpiry countdown_expiry_of(SettingsExpiry expiry) {
@@ -628,7 +649,8 @@ void clock_pill_set_display(GtkWidget* pill, const Settings* settings) {
     p->shown = settings->clock_shown;
     p->twelve_hour = settings->clock_12h;
     p->seconds = settings->clock_seconds;
-    g_clear_pointer(&p->clock_text, g_free); /* the label is rewritten */
+    set_timers_on(p, settings->timers_shown, settings->timer_minutes);
+    g_clear_pointer(&p->clock_text, g_free); /* the label and its tooltip are rewritten */
     for (guint i = 0; i < TIMER_COUNT; i++) p->timers[i].tooltip_minute = -1; /* times of day */
     refresh(p);
 }
@@ -687,6 +709,7 @@ GtkWidget* clock_pill_new(const Settings* settings) {
     p->shown = settings->clock_shown;
     p->twelve_hour = settings->clock_12h;
     p->seconds = settings->clock_seconds;
+    p->timers_on = settings->timers_shown;
     p->timers[0].expiry = countdown_expiry_of(settings->timer_expiry);
     g_object_set_data_full(G_OBJECT(box), CLOCK_KEY, p, clock_pill_free);
     clock_pill_set_timer(box, settings->timer_minutes);

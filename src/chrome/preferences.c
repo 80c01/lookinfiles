@@ -44,6 +44,7 @@ typedef struct {
     GtkWidget* clock_shown;   /* GtkCheckButton: the top bar shows the time */
     GtkWidget* clock_format;  /* GtkDropDown: 24-hour, 12-hour */
     GtkWidget* clock_seconds; /* GtkCheckButton */
+    GtkWidget* timers;        /* GtkCheckButton: the top bar has timers */
     GtkWidget* timer;         /* GtkSpinButton: minutes of the top bar timer */
     GtkWidget* timer_expiry;  /* GtkDropDown: restart, stop, count on (EXPIRIES) */
     GtkWidget* auto_terminal; /* GtkDropDown: as it is, shown, hidden (PANEL_CHOICES) */
@@ -272,6 +273,13 @@ static void on_clock_shown_toggled(GtkCheckButton* check, gpointer data) {
     gtk_widget_set_sensitive(p->clock_seconds, shown);
 }
 
+/* Timer 1 only matters while the top bar has timers */
+static void on_timers_toggled(GtkCheckButton* check, gpointer data) {
+    Preferences* p = data;
+    gboolean on = gtk_check_button_get_active(check);
+    gtk_widget_set_sensitive(gtk_widget_get_parent(p->timer), on); /* the grid of timer 1 */
+}
+
 static GtkWidget* clock_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label(_("Click the clock or a timer to set up three timers; right-click a "
@@ -279,7 +287,8 @@ static GtkWidget* clock_page(Preferences* p, const Settings* s) {
                                             "colours and its last ten seconds blink.")));
     p->clock_shown = gtk_check_button_new_with_mnemonic(_("Sho_w the time"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->clock_shown), s->clock_shown);
-    gtk_widget_set_tooltip_text(p->clock_shown, _("When hidden, an icon opens the timers while none runs"));
+    gtk_widget_set_tooltip_text(p->clock_shown,
+                                _("When hidden, an icon opens the timers while none runs (if the timers are shown)"));
     gtk_box_append(GTK_BOX(box), p->clock_shown);
 
     GtkWidget* grid = gtk_grid_new();
@@ -296,10 +305,15 @@ static GtkWidget* clock_page(Preferences* p, const Settings* s) {
     g_signal_connect(p->clock_shown, "toggled", G_CALLBACK(on_clock_shown_toggled), p);
     on_clock_shown_toggled(GTK_CHECK_BUTTON(p->clock_shown), p);
 
+    p->timers = gtk_check_button_new_with_mnemonic(_("Show the ti_mers"));
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->timers), s->timers_shown);
+    gtk_widget_set_tooltip_text(p->timers, _("When off, the top bar shows no timer and a click on the clock does nothing"));
+    gtk_widget_set_margin_top(p->timers, 12);
+    gtk_box_append(GTK_BOX(box), p->timers);
+
     GtkWidget* timer_grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(timer_grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(timer_grid), 8);
-    gtk_widget_set_margin_top(timer_grid, 12);
     GtkWidget* label = gtk_label_new_with_mnemonic(_("_Timer 1 duration at launch (minutes)"));
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_set_hexpand(label, TRUE);
@@ -318,6 +332,8 @@ static GtkWidget* clock_page(Preferences* p, const Settings* s) {
                                   _("Restart at once, stay at 0:00 or count on below 0:00 (-0:01, -0:02…)"),
                                   expiries, expiry);
     gtk_box_append(GTK_BOX(box), timer_grid);
+    g_signal_connect(p->timers, "toggled", G_CALLBACK(on_timers_toggled), p);
+    on_timers_toggled(GTK_CHECK_BUTTON(p->timers), p);
     return box;
 }
 
@@ -438,6 +454,7 @@ static void save_settings(Preferences* p) {
     s.clock_shown = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->clock_shown));
     s.clock_12h = (gtk_drop_down_get_selected(GTK_DROP_DOWN(p->clock_format)) == 1);
     s.clock_seconds = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->clock_seconds));
+    s.timers_shown = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->timers));
     s.auto_terminal = panel_selected(p->auto_terminal);
     s.auto_preview = panel_selected(p->auto_preview);
     s.auto_tagbar = panel_selected(p->auto_tagbar);
@@ -472,7 +489,7 @@ static void save_settings(Preferences* p) {
         topbar_set_timer(app, s.timer_minutes); /* restarts it: only when changed */
     }
     if (s.clock_shown != app->settings.clock_shown || s.clock_12h != app->settings.clock_12h ||
-        s.clock_seconds != app->settings.clock_seconds) {
+        s.clock_seconds != app->settings.clock_seconds || s.timers_shown != app->settings.timers_shown) {
         topbar_set_clock(app, &s);
     }
     gboolean column_changed = (s.color_column != app->settings.color_column);

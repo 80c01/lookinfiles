@@ -71,7 +71,8 @@ hidden.
   seconds, or hides it: an icon then opens the timers while none runs) and
   up to three **timers**. Timer 1 starts at launch (60 minutes and
   **Restart**; change both in Preferences, **Clock**, 0 for none); timers 2 and 3
-  start off. A timer's last minute is shown in reverse colours and its last
+  start off (Preferences, **Clock**, **Show the timers** off: no timer at
+  all, and the clock opens nothing). A timer's last minute is shown in reverse colours and its last
   ten seconds blink. A click on a timer, or on the clock, opens the timers
   menu, a tab per timer: its state, preset durations (5, 15, 25, 60 min) and
   a free one that start it at once, a time of day (`14:30`, `14h30`,
