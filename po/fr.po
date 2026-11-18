@@ -10081,3 +10081,30 @@ msgstr ""
 
 msgid "Next / previous searched word in the page"
 msgstr "Mot recherché suivant / précédent dans la page"
+
+msgid "No shortcut holds every word of the filter"
+msgstr "Aucun raccourci ne contient tous les mots du filtre"
+
+msgid "Filter shortcuts"
+msgstr "Filtrer les raccourcis"
+
+msgid ""
+"Show only the shortcuts that hold every word (the search key of your mode: "
+"Ctrl+F, / or C-s)"
+msgstr ""
+"N’afficher que les raccourcis qui contiennent tous les mots (la touche de "
+"recherche de votre mode : Ctrl+F, / ou C-s)"
+
+msgid ""
+"Filter the shortcuts: only those that hold every word (Enter / Esc: back to "
+"the list)"
+msgstr ""
+"Filtrer les raccourcis : seulement ceux qui contiennent tous les mots (Enter "
+"/ Esc : retour à la liste)"
+
+msgid ""
+"Filter the shortcuts: only those that hold every word (RET / Esc: back to the "
+"list)"
+msgstr ""
+"Filtrer les raccourcis : seulement ceux qui contiennent tous les mots (RET / "
+"Esc : retour à la liste)"

@@ -132,5 +132,5 @@ Click the mode in the top bar to change it, or start with `-e vim` /
    source.
 5. Press `Ctrl+P` and type part of a file name to jump to it.
 6. Press `Ctrl+T` for a terminal.
-7. Press `?` for the cheat sheet of the current mode, `F1` for this guide,
-   `Ctrl+Q` to quit.
+7. Press `?` for the cheat sheet of the current mode (`Ctrl+F`, `/` in Vim
+   or `C-s` in Emacs filters it), `F1` for this guide, `Ctrl+Q` to quit.

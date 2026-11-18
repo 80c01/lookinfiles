@@ -49,6 +49,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+Q` | Quit |
 | `F1` | User guide, in a **Help** tab of the preview panel (also a click on the top bar's **Help** button, which closes the tab when shown; a right click on it shows the cheat sheet) |
 | `?` | Show / hide the shortcut cheat sheet |
+| `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs) | (In help panel) Filter the shortcuts: only those whose section, key or description hold every word typed (case and accents ignored); `Enter` / `Esc` go back to the list, `Esc` again closes it |
 | `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in this workspace |
 | `f` | Toggle fullscreen |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels (a tagbar on screen comes right after its text) |
@@ -227,6 +228,7 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` / `C-r` (Emacs) | Go to the search field above the page: `Enter` lists the sections of the guide that hold every word (case and accents ignored), `Esc` goes back to the page |
 | `F3` / `Shift+F3` (Notepad), `n` / `N` (Vim) | Next / previous searched word in the page (a result opens its page with the words highlighted) |
 | `?` | Show / hide the shortcut cheat sheet |
+| `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs) | (In help panel) Filter the shortcuts: only those whose section, key or description hold every word typed (case and accents ignored); `Enter` / `Esc` go back to the list, `Esc` again closes it |
 | `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in this workspace |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Help tab |
 

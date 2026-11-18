@@ -6,6 +6,7 @@
 #include "core/app_events.h"
 #include "explorer/nav_keys.h"
 #include "games/games.h"
+#include "chrome/user_guide_search.h"
 
 /* Modes in which an entry is shown (global mode, nav_keys.h); 0 = every mode */
 #define NP (1u << NAV_STYLE_NOTEPAD)
@@ -330,14 +331,20 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Help tab"), "C-s / C-r", N_("Search every page of the guide (RET: the sections that hold every word, Esc: back to the page)"), EM},
     {N_("Help tab"), "F3 / Shift+F3", N_("Next / previous searched word in the page"), NP},
     {N_("Help tab"), "n / N", N_("Next / previous searched word in the page"), VI},
+    {N_("Help panel"), "Ctrl+F", N_("Filter the shortcuts: only those that hold every word (Enter / Esc: back to the list)"), NP},
+    {N_("Help panel"), "/", N_("Filter the shortcuts: only those that hold every word (Enter / Esc: back to the list)"), VI},
+    {N_("Help panel"), "C-s", N_("Filter the shortcuts: only those that hold every word (RET / Esc: back to the list)"), EM},
     {N_("Help panel"), "Up Up Down Down Left Right Left Right A B Enter", N_("Unlock Game Mode in this workspace"), 0},
     {N_("Global"), "Ctrl+Q", N_("Quit"), 0},
 };
 
-/* Fill the cheat sheet with the keys of the global mode */
+/* Fill the cheat sheet with the keys of the global mode that match the
+ * filter field (every word in the section, key or description) */
 static void fill_help_panel(AppData* app, GtkWidget* panel) {
     GtkWidget* scroll = g_object_get_data(G_OBJECT(panel), "help-scroll");
     GtkWidget* title_label = g_object_get_data(G_OBJECT(panel), "help-title");
+    GtkWidget* filter = g_object_get_data(G_OBJECT(panel), "help-filter");
+    const gchar* query = filter != NULL ? gtk_editable_get_text(GTK_EDITABLE(filter)) : "";
     NavStyle style = app_nav_style(app);
     /* TRANSLATORS: %s is Notepad, Vim or Emacs */
     gchar* mode = g_strdup_printf(_("(%s mode)"), nav_style_name(style));
@@ -360,6 +367,13 @@ static void fill_help_panel(AppData* app, GtkWidget* panel) {
         if (KEY_HELP[i].modes != 0 && (KEY_HELP[i].modes & (1u << style)) == 0) {
             continue;
         }
+        const gchar* key = g_dpgettext2(GETTEXT_PACKAGE, "key", KEY_HELP[i].key);
+        gchar* text = g_strjoin(" ", _(KEY_HELP[i].section), key, _(KEY_HELP[i].description), NULL);
+        gboolean shown = user_guide_matches_all(text, query);
+        g_free(text);
+        if (!shown) {
+            continue;
+        }
         if (current_section == NULL ||
             g_strcmp0(current_section, KEY_HELP[i].section) != 0) {
             current_section = KEY_HELP[i].section;
@@ -372,7 +386,7 @@ static void fill_help_panel(AppData* app, GtkWidget* panel) {
             }
             gtk_grid_attach(grid, section_label, 0, row++, 2, 1);
         }
-        GtkWidget* key_label = gtk_label_new(g_dpgettext2(GETTEXT_PACKAGE, "key", KEY_HELP[i].key));
+        GtkWidget* key_label = gtk_label_new(key);
         gtk_widget_add_css_class(key_label, "help-key");
         /* A long key sequence wraps instead of squeezing the descriptions */
         gtk_label_set_wrap(GTK_LABEL(key_label), TRUE);
@@ -392,6 +406,13 @@ static void fill_help_panel(AppData* app, GtkWidget* panel) {
         gtk_grid_attach(grid, desc_label, 1, row, 1, 1);
         row++;
     }
+    if (row == 0) {
+        GtkWidget* none = gtk_label_new(_("No shortcut holds every word of the filter"));
+        gtk_label_set_wrap(GTK_LABEL(none), TRUE);
+        gtk_widget_add_css_class(none, "dim-label");
+        gtk_widget_set_halign(none, GTK_ALIGN_START);
+        gtk_grid_attach(grid, none, 0, 0, 2, 1);
+    }
 
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), GTK_WIDGET(grid));
 }
@@ -410,6 +431,12 @@ void toggle_help_panel(AppData* app) {
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     gboolean vis = gtk_widget_get_visible(app->help_window);
     if (!vis) {
+        GtkWidget* filter = g_object_get_data(G_OBJECT(app->help_window), "help-filter");
+        if (filter != NULL) {
+            g_signal_handlers_block_matched(filter, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, app);
+            gtk_editable_set_text(GTK_EDITABLE(filter), ""); /* every key again */
+            g_signal_handlers_unblock_matched(filter, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, app);
+        }
         fill_help_panel(app, app->help_window); /* the global mode may have changed */
     }
     app_layout_hold(app);
@@ -432,12 +459,42 @@ static void on_help_close_clicked(GtkButton* btn, gpointer data) {
     toggle_help_panel((AppData*)data);
 }
 
-/* In the help panel, ? or Escape closes it and gives keyboard focus back to the explorer panel */
+/* The filter field holds the keyboard focus */
+static gboolean filter_focused(GtkWidget* panel) {
+    GtkWidget* filter = g_object_get_data(G_OBJECT(panel), "help-filter");
+    GtkRoot* root = gtk_widget_get_root(panel);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    return filter != NULL && focus != NULL && (focus == filter || gtk_widget_is_ancestor(focus, filter));
+}
+
+static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
+    (void)entry;
+    AppData* app = data;
+    fill_help_panel(app, app->help_window);
+}
+
+/* In the help panel, ? or Escape closes it and gives keyboard focus back to
+ * the explorer panel; the search key of the global mode goes to the filter
+ * field, where Escape or Enter goes back to the panel */
 gboolean on_help_key_press(GtkEventControllerKey* controller, guint keyval,
                            guint keycode, GdkModifierType state, gpointer data) {
     (void)controller;
     (void)keycode;
     AppData* app = (AppData*)data;
+    if (filter_focused(app->help_window)) {
+        if (keyval == GDK_KEY_Escape || keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
+            gtk_widget_grab_focus(app->help_window);
+            return TRUE;
+        }
+        return FALSE; /* typed into the field */
+    }
+    NavAction action = nav_keys_lookup(app_nav_style(app), NAV_PREFIX_NONE, keyval, state, NULL);
+    if (action == NAV_SEARCH || action == NAV_SEARCH_BACKWARD) {
+        GtkWidget* filter = g_object_get_data(G_OBJECT(app->help_window), "help-filter");
+        gtk_widget_grab_focus(filter);
+        gtk_editable_select_region(GTK_EDITABLE(filter), 0, -1);
+        return TRUE;
+    }
     if (keyval == GDK_KEY_question || keyval == GDK_KEY_Escape) {
         toggle_help_panel(app);
         return TRUE;
@@ -486,8 +543,20 @@ void create_help_panel(GtkWindow* parent, AppData* app) {
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll),
                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
+    /* Filter: only the keys whose section, key or description hold every word */
+    GtkWidget* filter = gtk_search_entry_new();
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(filter), _("Filter shortcuts"));
+    gtk_widget_set_tooltip_text(filter, _("Show only the shortcuts that hold every word (the search key of your mode: "
+                                          "Ctrl+F, / or C-s)"));
+    gtk_widget_set_margin_top(filter, 8);
+    gtk_widget_set_margin_start(filter, 14);
+    gtk_widget_set_margin_end(filter, 14);
+    g_signal_connect(filter, "search-changed", G_CALLBACK(on_filter_changed), app);
+    gtk_box_append(GTK_BOX(panel), filter);
+
     g_object_set_data(G_OBJECT(panel), "help-scroll", scroll);
     g_object_set_data(G_OBJECT(panel), "help-title", title_label);
+    g_object_set_data(G_OBJECT(panel), "help-filter", filter);
     fill_help_panel(app, panel);
     gtk_box_append(GTK_BOX(panel), scroll);
 

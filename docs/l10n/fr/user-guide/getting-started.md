@@ -143,5 +143,5 @@ modes.
 5. Appuyez sur `Ctrl+P` et tapez une partie d’un nom de fichier pour y
    aller.
 6. Appuyez sur `Ctrl+T` pour un terminal.
-7. Appuyez sur `?` pour l’aide-mémoire du mode actuel, `F1` pour ce guide,
-   `Ctrl+Q` pour quitter.
+7. Appuyez sur `?` pour l’aide-mémoire du mode actuel (`Ctrl+F`, `/` en Vim
+   ou `C-s` en Emacs le filtre), `F1` pour ce guide, `Ctrl+Q` pour quitter.

@@ -324,7 +324,7 @@ Layers, from bottom to top
   `docs/l10n/<lang>/` (prefix `/org/lookin/guide-l10n/`): `user_guide_read_in()`,
   `user_guide_read_localized()` (the Help tab). Its test checks every link of the
   guide and of each translation.
-- `user_guide_search` — searching the user guide (the Help tab's search field):
+- `user_guide_search` — searching the user guide (the Help tab's search field; the cheat sheet filter uses `user_guide_matches_all()`):
   every page in the language shown (`user_guide_read_localized()`), by section
   (a heading and the text under it); every word of the query in a section, case
   and accents ignored; scored by page title, heading and text, best first
@@ -1229,7 +1229,7 @@ Layers, from bottom to top
 - `sidebar` — explorer header: view switcher and per-view action toolbars;
   `sidebar_header_update()` (called by `update_path_label()`) shows the
   current view. Its widgets are private (`struct SidebarHeader`).
-- `help` — cheat sheet (`?`, right click on the Help button); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
+- `help` — cheat sheet (`?`, right click on the Help button), with a filter field (search key of the global mode; `user_guide_matches_all()` on the section, key and description); `KEY_HELP` must stay in sync with `docs/keyboard.md`.
 - `help_guide` — the **Help** page of the preview notebook (`app->help_page`, after
   the Git and result pages): a `user_guide` page rendered by `markdown`,
   scrolled with the navigation keys of the global mode; links followed through

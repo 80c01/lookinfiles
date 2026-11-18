@@ -289,6 +289,9 @@ key m;                  shot word_document_raw_hex_dump
 key m
 key Up Up Up Up Up      # back to plan.org
 key question;           shot help_open
+key ctrl+f; xdotool type --delay 60 "bookmark"
+sleep 0.3;              shot help_filtered          # only the bookmark shortcuts
+key Escape;             shot help_filter_left       # back to the list, filter kept
 key question;           shot help_closed
 key F1;                 shot help_guide_tab        # user guide in the Help tab
 key Tab;                shot help_guide_link_selected

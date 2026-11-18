@@ -54,6 +54,14 @@ static void test_ranges(void) {
     g_array_unref(r);
 }
 
+static void test_matches_all(void) {
+    g_assert_true(user_guide_matches_all("Bookmark selected entry · Ctrl+D", "ctrl+d BOOKMARK"));
+    g_assert_true(user_guide_matches_all("Créer un signet", "creer"));
+    g_assert_false(user_guide_matches_all("Bookmark selected entry", "bookmark folder"));
+    g_assert_true(user_guide_matches_all("anything", "  "));
+    g_assert_true(user_guide_matches_all(NULL, NULL));
+}
+
 static const gchar* DOC =
     "# The Editor\n"
     "\n"
@@ -156,6 +164,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/user_guide_search/plain", test_plain);
     g_test_add_func("/user_guide_search/escape", test_escape);
     g_test_add_func("/user_guide_search/ranges", test_ranges);
+    g_test_add_func("/user_guide_search/matches_all", test_matches_all);
     g_test_add_func("/user_guide_search/sections", test_sections);
     g_test_add_func("/user_guide_search/long_excerpt", test_long_excerpt);
     g_test_add_func("/user_guide_search/guide", test_guide);

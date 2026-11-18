@@ -121,6 +121,19 @@ GArray* user_guide_match_ranges(const gchar* text, const gchar* query) {
     return ranges;
 }
 
+gboolean user_guide_matches_all(const gchar* text, const gchar* query) {
+    GArray* words = query_words(query);
+    glong len = 0;
+    gunichar* hay = fold_text(text != NULL ? text : "", &len);
+    gboolean all = TRUE;
+    for (guint k = 0; k < words->len && all; k++) {
+        all = find_word(hay, len, &g_array_index(words, Word, k), 0) >= 0;
+    }
+    g_free(hay);
+    g_array_unref(words);
+    return all;
+}
+
 /* ---- Markdown to plain text ---- */
 
 static gboolean is_word_char(const gchar* p) {

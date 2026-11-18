@@ -32,6 +32,10 @@ void user_guide_hit_free(gpointer hit);
  * characters of text, as GtkTextIter offsets do. */
 GArray* user_guide_match_ranges(const gchar* text, const gchar* query);
 
+/* TRUE when text holds every word of query, case and accents ignored (a
+ * query without words matches everything) */
+gboolean user_guide_matches_all(const gchar* text, const gchar* query);
+
 /* A line of Markdown as the reader sees it: no list marker, heading marks,
  * emphasis or code marks, links reduced to their text, table cells joined
  * with " · ". Caller frees. */
