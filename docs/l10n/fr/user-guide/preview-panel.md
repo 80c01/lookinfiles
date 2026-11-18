@@ -254,6 +254,16 @@ colonne trie selon elle). `Enter` ouvre un dossier, `Backspace`
 revient ; `Enter` sur un fichier le montre dans l’explorateur. Un clic
 droit sur une ligne permet aussi de copier son chemin.
 
+Sous la liste, une carte montre le même dossier en rectangles imbriqués,
+chacun aussi grand que la place qu’il prend : les dossiers avec leur nom et
+leur contenu (sur trois niveaux), les fichiers colorés selon leur type
+(documents, images, vidéos, audio, archives, texte et code, programmes). La
+ligne sélectionnée dans la liste est entourée ; un clic sur un rectangle
+sélectionne sa ligne, un double clic ouvre un dossier ou montre un fichier
+dans l’explorateur, et le pointeur posé sur un rectangle donne son chemin
+et sa taille. Faites glisser la ligne entre la liste et la carte pour
+partager la hauteur.
+
 À côté de la liste, une fois le dossier lu, ses statistiques : tailles (et
 la place occupée sur le disque), fichiers, dossiers, taille moyenne d’un
 fichier, fichiers et dossiers vides, liens, la plus ancienne et la plus

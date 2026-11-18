@@ -132,7 +132,9 @@ static void show_overview(DuStats* ds, const DiskStats* st, const gchar* root) {
     }
     if (st->deepest != NULL) {
         /* TRANSLATORS: depth of the deepest folder, and its path */
-        fact(g, row++, _("Deepest folder"), g_strdup_printf(_("%1$u levels: %2$s"), st->max_depth, inside(st->deepest, root)));
+        fact(g, row++, _("Deepest folder"),
+             g_strdup_printf(ngettext("%1$u level: %2$s", "%1$u levels: %2$s", st->max_depth), st->max_depth,
+                             inside(st->deepest, root)));
     }
 }
 

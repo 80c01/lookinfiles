@@ -230,6 +230,15 @@ files and its last change (click a column header to sort by it). `Enter`
 opens a folder, `Backspace` comes back; `Enter` on a file shows it in the
 explorer. A right click on a row also copies its path.
 
+Under the list, a map shows the same folder as nested rectangles, each one
+as large as the room it takes: folders with their name and what they hold
+(three levels deep), files coloured by kind (documents, images, videos,
+audio, archives, text and code, programs). The row selected in the list is
+outlined; a click on a rectangle selects its row, a double click opens a
+folder or shows a file in the explorer, and the pointer resting on a
+rectangle gives its path and size. Drag the line between the list and the
+map to share the height.
+
 Beside the list, once the folder is read, its statistics: sizes (and the
 room taken on the disk), files, folders, average file size, empty files
 and folders, links, the oldest and newest change, the deepest folder; then

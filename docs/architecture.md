@@ -80,6 +80,9 @@ Layers, from bottom to top
   (`countdown_parse_time()`).
 - `run_time` — the time a notebook cell run took, as shown in its head
   (`0.4s`, `1m 05s`, `2h 03m`).
+- `treemap_layout` — the squarified treemap layout (Bruls, Huizing, van
+  Wijk): rectangles of areas proportional to weights, as square as can be,
+  tiling a rectangle (the map of the Disk Usage tab).
 - `disk_scan` — disk usage of a folder (the Disk Usage tab): the whole tree
   read in a worker thread (`disk_scan_run()`, cancellable; names read
   first, so a deep tree keeps no descriptor per level) into `DiskNode`
@@ -897,7 +900,12 @@ Layers, from bottom to top
   `disk_usage_stats` — the statistics beside it, once the tree is read
   (`disk_stats`): overview, room by kind, by age and by extension with
   bars, the largest files (a click shows one in the explorer), the
-  unreadable entries.
+  unreadable entries. `disk_usage_map` — the treemap under the list (a
+  `GtkPaned`): the folder shown in nested rectangles (`treemap_layout`,
+  three folder levels, 300 rectangles per folder at most, laid out again
+  only when the folder or the size changes), files coloured by kind with
+  the `icon_*` roles; the selected row outlined, a click selects a row, a
+  double click opens a folder or shows a file.
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and

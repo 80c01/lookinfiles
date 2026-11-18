@@ -9982,8 +9982,10 @@ msgstr "Dossier le plus profond"
 
 #. TRANSLATORS: depth of the deepest folder, and its path
 #, c-format
-msgid "%1$u levels: %2$s"
-msgstr "%1$u niveaux : %2$s"
+msgid "%1$u level: %2$s"
+msgid_plural "%1$u levels: %2$s"
+msgstr[0] "%1$u niveau : %2$s"
+msgstr[1] "%1$u niveaux : %2$s"
 
 msgid "By Kind"
 msgstr "Par type"
@@ -10011,3 +10013,13 @@ msgstr[1] "Illisibles (%s éléments)"
 
 msgid "The statistics come once the folder is read"
 msgstr "Les statistiques arrivent une fois le dossier lu"
+
+msgid "The map comes once the folder is read"
+msgstr "La carte arrive une fois le dossier lu"
+
+#. TRANSLATORS: %s is a number of files and folders too small to be drawn
+#, c-format
+msgid "%s more"
+msgid_plural "%s more"
+msgstr[0] "%s de plus"
+msgstr[1] "%s de plus"

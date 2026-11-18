@@ -1,6 +1,7 @@
 /* The Disk Usage tab: the room a folder takes (see disk_usage_tab.h) */
 #include "diskuse/disk_usage_tab.h"
 #include "diskuse/disk_usage_list.h"
+#include "diskuse/disk_usage_map.h"
 #include "diskuse/disk_usage_stats.h"
 #include "core/app_events.h"
 #include "core/disk_scan.h"
@@ -34,6 +35,9 @@ typedef struct {
     GtkWidget* current;  /* folder being read, then the folder shown */
     GtkWidget* list;     /* disk_usage_list */
     GtkWidget* stats;    /* disk_usage_stats */
+    GtkWidget* map;      /* disk_usage_map, under the list */
+    GtkWidget* split;    /* GtkPaned of the list and the map */
+    gboolean split_set;  /* its first position given */
 
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
@@ -69,7 +73,8 @@ static void ensure_css(void) {
                   ".disk-usage .du-stats { padding: 0 12px 12px 12px; }"
                   ".disk-usage .du-section { color: @fg_strong; font-weight: bold; padding-top: 10px; }"
                   ".disk-usage .du-grid { color: @fg_text; }"
-                  ".disk-usage .du-file { padding: 0 2px; min-height: 0; }");
+                  ".disk-usage .du-file { padding: 0 2px; min-height: 0; }"
+                  ".disk-usage .du-map { font-size: @size_small; }");
 }
 
 static DiskUsageTab* tab_state(AppData* app) {
@@ -193,6 +198,10 @@ static void show_summary(DiskUsageTab* dt) {
 static void show_folder(DiskUsageTab* dt, DiskNode* node, const gchar* select) {
     dt->shown = node;
     disk_usage_list_show_node(dt->list, node, select);
+    disk_usage_map_show(dt->map, node);
+    gchar* selected = disk_usage_list_selected_name(dt->list);
+    disk_usage_map_select(dt->map, selected);
+    g_free(selected);
     set_label(dt->current, disk_node_path(node));
     sync_buttons(dt);
 }
@@ -246,6 +255,7 @@ static void start_scan(DiskUsageTab* dt) {
     dt->cancel = g_cancellable_new();
     disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
     disk_usage_stats_show(dt->stats, NULL);
+    disk_usage_map_show(dt->map, NULL);
     dt->shown = NULL;
     g_clear_pointer(&dt->scan, disk_scan_free);
 
@@ -280,6 +290,20 @@ static void on_row_activate(gpointer data, DiskNode* folder, const gchar* path) 
         reveal_path_in_tree(dt->app, path);
         if (dt->app->tree_view != NULL) gtk_widget_grab_focus(dt->app->tree_view);
     }
+}
+
+static void on_row_selected(gpointer data, const gchar* name) {
+    DiskUsageTab* dt = data;
+    disk_usage_map_select(dt->map, dt->shown != NULL ? name : NULL);
+}
+
+/* The map: a click selects the row, a double click opens */
+static void on_map_selected(gpointer data, const gchar* name) {
+    disk_usage_list_select(((DiskUsageTab*)data)->list, name);
+}
+
+static void on_map_open(gpointer data, DiskNode* folder) {
+    show_folder(data, folder, NULL);
 }
 
 static void go_up(DiskUsageTab* dt) {
@@ -329,6 +353,17 @@ static gboolean on_page_key(GtkEventControllerKey* controller, guint keyval, gui
         return TRUE;
     }
     return FALSE;
+}
+
+/* The first time the list and the map have a height: half each */
+static void on_split_sized(GObject* split, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    DiskUsageTab* dt = data;
+    gint max = 0;
+    g_object_get(split, "max-position", &max, NULL);
+    if (dt->split_set || max < 100) return;
+    dt->split_set = TRUE;
+    gtk_paned_set_position(GTK_PANED(split), max / 2);
 }
 
 /* The page */
@@ -459,15 +494,27 @@ static DiskUsageTab* ensure_page(AppData* app) {
     dt->current = small_label("du-current");
     gtk_box_append(GTK_BOX(page), dt->current);
 
-    DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, dt };
+    DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, on_row_selected, dt };
     dt->list = disk_usage_list_new(app, &handlers);
+    DiskUsageMapHandlers map_handlers = { on_map_selected, on_map_open, on_row_reveal, dt };
+    dt->map = disk_usage_map_new(&map_handlers);
+    /* The list over the map, both resizable */
+    dt->split = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+    paned_use_thin_handle(dt->split);
+    gtk_paned_set_start_child(GTK_PANED(dt->split), dt->list);
+    gtk_paned_set_resize_start_child(GTK_PANED(dt->split), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(dt->split), FALSE);
+    gtk_paned_set_end_child(GTK_PANED(dt->split), dt->map);
+    gtk_paned_set_resize_end_child(GTK_PANED(dt->split), TRUE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(dt->split), FALSE);
+    g_signal_connect(dt->split, "notify::max-position", G_CALLBACK(on_split_sized), dt);
     dt->stats = disk_usage_stats_new(on_row_reveal, dt);
     gtk_widget_set_size_request(dt->stats, 380, -1);
     /* The breakdown takes the room, the statistics keep their width */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
     paned_use_thin_handle(paned);
     gtk_widget_set_vexpand(paned, TRUE);
-    gtk_paned_set_start_child(GTK_PANED(paned), dt->list);
+    gtk_paned_set_start_child(GTK_PANED(paned), dt->split);
     gtk_paned_set_resize_start_child(GTK_PANED(paned), TRUE);
     gtk_paned_set_shrink_start_child(GTK_PANED(paned), FALSE);
     gtk_paned_set_end_child(GTK_PANED(paned), dt->stats);

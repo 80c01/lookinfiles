@@ -383,6 +383,14 @@ static void on_cell_menu(GtkGestureClick* gesture, gint n_press, gdouble x, gdou
     gtk_popover_popup(GTK_POPOVER(popover));
 }
 
+static void on_selection_changed(GObject* selection, GParamSpec* pspec, gpointer data) {
+    (void)selection;
+    (void)pspec;
+    DuList* dl = data;
+    DuRow* r = selected_row(dl);
+    if (dl->handlers.selected != NULL) dl->handlers.selected(dl->handlers.data, r != NULL ? r->name : NULL);
+}
+
 static void list_free(gpointer data) {
     DuList* dl = data;
     g_object_unref(dl->selection); /* holds the sorted model, which holds the store */
@@ -412,6 +420,7 @@ GtkWidget* disk_usage_list_new(AppData* app, const DiskUsageListHandlers* handle
     gtk_column_view_set_model(GTK_COLUMN_VIEW(dl->view), GTK_SELECTION_MODEL(dl->selection));
     gtk_column_view_sort_by_column(GTK_COLUMN_VIEW(dl->view), size, GTK_SORT_DESCENDING);
     g_signal_connect(dl->view, "activate", G_CALLBACK(on_activate), dl);
+    g_signal_connect(dl->selection, "notify::selected", G_CALLBACK(on_selection_changed), dl);
     g_object_set_data(G_OBJECT(dl->view), LIST_KEY, dl);
     focus_route_attach_list(app, dl->view, dl->selection);
     GtkEventController* keys = gtk_event_controller_key_new();
@@ -466,9 +475,8 @@ static DuRow* other_row(guint64 count, guint64 size, guint64 total, gboolean all
     return r;
 }
 
-/* Put the rows in the list, the one named select selected (else the first) */
-static void set_rows(DuList* dl, GPtrArray* rows, const gchar* select) {
-    g_list_store_splice(dl->store, 0, g_list_model_get_n_items(G_LIST_MODEL(dl->store)), rows->pdata, rows->len);
+/* Select the row named select (else the first) */
+static void select_name(DuList* dl, const gchar* select) {
     GListModel* model = G_LIST_MODEL(dl->selection);
     guint n = g_list_model_get_n_items(model);
     guint pos = 0;
@@ -485,6 +493,17 @@ static void set_rows(DuList* dl, GPtrArray* rows, const gchar* select) {
         gtk_single_selection_set_selected(dl->selection, pos);
         gtk_column_view_scroll_to(GTK_COLUMN_VIEW(dl->view), pos, NULL, GTK_LIST_SCROLL_FOCUS | GTK_LIST_SCROLL_SELECT, NULL);
     }
+}
+
+/* Put the rows in the list, the one named select selected (else the first) */
+static void set_rows(DuList* dl, GPtrArray* rows, const gchar* select) {
+    g_list_store_splice(dl->store, 0, g_list_model_get_n_items(G_LIST_MODEL(dl->store)), rows->pdata, rows->len);
+    select_name(dl, select);
+}
+
+void disk_usage_list_select(GtkWidget* list, const gchar* name) {
+    DuList* dl = list_state(list);
+    if (dl != NULL && name != NULL) select_name(dl, name);
 }
 
 void disk_usage_list_show_node(GtkWidget* list, DiskNode* node, const gchar* select) {

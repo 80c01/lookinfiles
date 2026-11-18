@@ -18,6 +18,8 @@ typedef struct {
     void (*up)(gpointer data);
     /* Show in the explorer (context menu) */
     void (*reveal)(gpointer data, const gchar* path);
+    /* The selected row changed: its name, NULL if none */
+    void (*selected)(gpointer data, const gchar* name);
     gpointer data;
 } DiskUsageListHandlers;
 
@@ -35,6 +37,9 @@ void disk_usage_list_show_node(GtkWidget* list, DiskNode* node, const gchar* sel
 void disk_usage_list_show_progress(GtkWidget* list, const gchar* root, const DiskScanSnapshot* snap);
 /* No rows */
 void disk_usage_list_clear(GtkWidget* list);
+
+/* Select the row named name (scrolled to) */
+void disk_usage_list_select(GtkWidget* list, const gchar* name);
 
 /* Name of the selected row, NULL if none (owned) */
 gchar* disk_usage_list_selected_name(GtkWidget* list);
