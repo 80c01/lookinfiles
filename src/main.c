@@ -67,6 +67,7 @@
 #include "preview/preview_tagbar.h"
 #include "preview/preview_menu.h"
 #include "preview/preview_full.h"
+#include "preview/dir_preview.h"
 #include "preview/preview_busy.h"
 #include "core/ui_probe.h"
 #include "chrome/new_tab_menu.h"
@@ -578,7 +579,7 @@ int main(int argc, char** argv) {
     GtkWidget* text_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(text_row, TRUE);
     gtk_widget_set_vexpand(text_row, TRUE);
-    gtk_box_append(GTK_BOX(text_row), color_column_wrap(right_scroll, text_view));
+    gtk_box_append(GTK_BOX(text_row), dir_preview_wrap(app, color_column_wrap(right_scroll, text_view)));
     gtk_box_append(GTK_BOX(text_row), minimap_viewer_new(app));
     gtk_box_append(GTK_BOX(text_page), preview_tagbar_wrap(app, preview_full_wrap(app, text_row), text_view));
     color_column_hide_on_change(text_view);

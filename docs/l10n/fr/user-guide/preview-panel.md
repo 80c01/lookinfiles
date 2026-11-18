@@ -236,8 +236,8 @@ l’onglet le ferme.
 ## Espace disque
 
 `Shift+S` dans l’explorateur (ou **Espace disque** dans le menu du clic
-droit d’un dossier, ou le bouton **Espace disque** de l’aperçu d’un
-dossier, après ses totaux) ouvre l’onglet **Espace disque** dans le panneau
+droit d’un dossier, ou le bouton **Espace disque** en haut à droite de
+l’aperçu d’un dossier) ouvre l’onglet **Espace disque** dans le panneau
 d’aperçu : la place que prennent le dossier et tout ce qu’il contient. Sur
 un fichier, c’est le dossier du fichier.
 

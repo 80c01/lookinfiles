@@ -390,6 +390,7 @@ static void cache_job(DirPreviewJob* job) {
 
 static void render_job(AppData* app, const DirPreviewJob* job);
 
+#define DISK_USAGE_KEY "lookin-dir-disk-usage"  /* the button, on app->text_view */
 #define DISK_USAGE_PATH_KEY "lookin-dir-preview-path"
 
 static void on_disk_usage_clicked(GtkButton* button, gpointer data) {
@@ -397,22 +398,57 @@ static void on_disk_usage_clicked(GtkButton* button, gpointer data) {
     if (path != NULL) disk_usage_tab_show((AppData*)data, path);
 }
 
-/* A button at it opening the Disk Usage tab on the folder (its whole tree
- * is read there, never here) */
-static void insert_disk_usage_button(AppData* app, GtkTextIter* it, const gchar* full) {
-    static gboolean css = FALSE;
-    if (!css) {
-        css = TRUE;
-        theme_add_css(".dir-disk-usage { padding: 0 6px; min-height: 0; margin: 0; }");
-    }
-    GtkWidget* button = icon_button_new("drive-harddisk", _("Disk Usage of This Folder (Shift+S)"));
+static GtkWidget* disk_usage_button(AppData* app) {
+    return app->text_view != NULL ? g_object_get_data(G_OBJECT(app->text_view), DISK_USAGE_KEY) : NULL;
+}
+
+/* Anything else shown in the preview text: the button goes */
+static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
+    (void)buffer;
+    gtk_widget_set_visible(GTK_WIDGET(data), FALSE);
+}
+
+static void on_view_buffer(GObject* view, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    gtk_widget_set_visible(GTK_WIDGET(data), FALSE);
+    g_signal_connect_object(gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)), "changed",
+                            G_CALLBACK(on_buffer_changed), data, 0);
+}
+
+GtkWidget* dir_preview_wrap(AppData* app, GtkWidget* content) {
+    theme_add_css(".dir-disk-usage { background-color: @bg_raised; border: 1px solid @border; }"
+                  ".dir-disk-usage:hover { background-color: @bg_hover; }");
+    GtkWidget* button = gtk_button_new();
     icon_button_set_content(button, "drive-harddisk", _("Disk Usage"));
+    gtk_widget_set_tooltip_text(button, _("Disk Usage of This Folder (Shift+S)"));
     gtk_widget_add_css_class(button, "dir-disk-usage");
     gtk_widget_set_focusable(button, FALSE);
-    g_object_set_data_full(G_OBJECT(button), DISK_USAGE_PATH_KEY, g_strdup(full), g_free);
+    gtk_widget_set_halign(button, GTK_ALIGN_END);
+    gtk_widget_set_valign(button, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(button, 8);
+    gtk_widget_set_margin_end(button, 20); /* clear of the overlay scrollbar */
+    gtk_widget_set_visible(button, FALSE);
     g_signal_connect(button, "clicked", G_CALLBACK(on_disk_usage_clicked), app);
-    GtkTextChildAnchor* anchor = gtk_text_buffer_create_child_anchor(app->buffer, it);
-    gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(app->text_view), button, anchor);
+    if (app->text_view != NULL) {
+        g_object_set_data(G_OBJECT(app->text_view), DISK_USAGE_KEY, button);
+        on_view_buffer(G_OBJECT(app->text_view), NULL, button);
+        g_signal_connect_object(app->text_view, "notify::buffer", G_CALLBACK(on_view_buffer), button, 0);
+    }
+    GtkWidget* overlay = gtk_overlay_new();
+    gtk_widget_set_hexpand(overlay, TRUE);
+    gtk_widget_set_vexpand(overlay, TRUE);
+    gtk_overlay_set_child(GTK_OVERLAY(overlay), content);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), button);
+    return overlay;
+}
+
+/* The folder full is shown: the button opens the Disk Usage tab on it (its
+ * whole tree is read there, never here) */
+static void show_disk_usage_button(AppData* app, const gchar* full) {
+    GtkWidget* button = disk_usage_button(app);
+    if (button == NULL) return;
+    g_object_set_data_full(G_OBJECT(button), DISK_USAGE_PATH_KEY, g_strdup(full), g_free);
+    gtk_widget_set_visible(button, TRUE);
 }
 
 static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
@@ -480,12 +516,10 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
     g_free(path);
     if (!job->unreadable) {
         gchar* totals = totals_line(s, now);
-        gchar* line = g_strconcat(totals, "  ", NULL);
+        gchar* line = g_strconcat(totals, "\n", NULL);
         insert_tagged(buffer, &it, line, "dir_dim", NULL);
         g_free(line);
         g_free(totals);
-        insert_disk_usage_button(app, &it, job->full);
-        insert_tagged(buffer, &it, "\n", "dir_dim", NULL);
     }
     gchar* kinds = job->unreadable ? NULL : dir_summary_kinds_line(s);
     if (kinds != NULL) {
@@ -517,6 +551,8 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
         insert_tagged(buffer, &it, heading, "dir_section", NULL);
         g_free(heading);
     }
+
+    if (!job->unreadable) show_disk_usage_button(app, job->full);
 
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {
