@@ -17,6 +17,7 @@
 #include "explorer/archive_tree.h"
 #include "editor/editor.h"
 #include "widgets/focus_route.h"
+#include "diskuse/disk_usage_tab.h"
 
 /* Rows with children the arrow keys and space expand: directories,
  * bookmark folders, notebooks, the notes trash and remote folders */
@@ -30,6 +31,22 @@ static gboolean is_container_row(ExplorerRow* row) {
 /* Files view (not bookmarks / notes / remote) */
 static gboolean is_files_view(AppData* app) {
     return app->sidebar_view == SIDEBAR_VIEW_FILES;
+}
+
+/* Shift+S: the disk usage of the selected folder, of the selected file's
+ * folder, else of the folder shown */
+static void show_disk_usage(AppData* app) {
+    ExplorerRow* row = tree_nav_selected(app);
+    gchar* path = NULL;
+    if (explorer_row_is(row, "dir") && row->path[0] != '\0') {
+        path = g_strdup(row->path);
+    } else if (explorer_row_is(row, "file") && row->path[0] != '\0') {
+        path = g_path_get_dirname(row->path);
+    } else if (app->base_dir != NULL) {
+        path = g_strdup(app->base_dir);
+    }
+    if (path != NULL && g_file_test(path, G_FILE_TEST_IS_DIR)) disk_usage_tab_show(app, path);
+    g_free(path);
 }
 
 /* Right / l / C-f: open a bookmark, expand a folder or step into its first child */
@@ -263,6 +280,12 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
             rename_selected_in_tree(app);
         }
         return TRUE;
+    case GDK_KEY_S: /* Shift+S: disk usage of the selected folder (files view) */
+        if (is_files_view(app) && !ctrl && (state & GDK_ALT_MASK) == 0) {
+            show_disk_usage(app);
+            return TRUE;
+        }
+        return FALSE;
     case GDK_KEY_f: /* f alone: fullscreen (Ctrl+F is a navigation key) */
         if (ctrl) return FALSE;
         toggle_fullscreen(app->window);

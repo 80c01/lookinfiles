@@ -209,3 +209,29 @@ as administrator.
 The tab only shows: it never stops or changes a process. The processes and
 filesystems are read only while the tab is on screen. `Ctrl+W` or a middle
 click on the tab closes it.
+
+## Disk Usage
+
+`Shift+S` in the explorer (or **Disk Usage** in the right-click menu of a
+folder) opens the **Disk Usage** tab in the preview panel: how much room
+the folder and everything below it take. On a file, it is the file's
+folder.
+
+The folder is read in the background: a bar shows how far the reading is
+(the folders done out of all of them, or, for the top of a disk, the part
+of its used space read so far), with the files, folders and bytes counted
+so far; the folders already read are listed as they come. `Escape` (or the
+**Stop** button) stops the reading and keeps what was read; `F5` reads the
+folder again.
+
+Then the list shows the folders and the largest files of the folder, the
+largest first, each with its share of the folder, its size, its number of
+files and its last change (click a column header to sort by it). `Enter`
+opens a folder, `Backspace` comes back; `Enter` on a file shows it in the
+explorer. A right click on a row also copies its path.
+
+Symbolic links are not followed, a file with several hard links counts
+once, and other disks mounted inside the folder are left out. The summary
+under the title gives the room really taken on the disk too, and the
+number of entries that could not be read. `Ctrl+W` or a middle click on
+the tab closes it and stops the reading.

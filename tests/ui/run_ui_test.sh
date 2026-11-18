@@ -298,6 +298,8 @@ key Page_Down;          shot help_guide_scrolled
 key ctrl+w;             shot help_guide_closed
 key ctrl+shift+b; sleep 1; shot browser_tab_empty    # address bar focused (or a notice without WebKit)
 key ctrl+w;             shot browser_tab_closed
+key shift+s; sleep 1;   shot disk_usage_tab        # the folder of plan.org, read in the background
+key ctrl+w;             shot disk_usage_closed
 key End;                shot G_last_row
 key Up;                 shot select_previous_row
 key Down Down;          shot select_next_rows

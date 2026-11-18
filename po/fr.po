@@ -3733,11 +3733,11 @@ msgstr ""
 
 #: src/chrome/help.c:134
 msgid ""
-"Context menu: open, side panel, default app, terminal here, rename, trash, "
-"copy name or path, bookmark"
+"Context menu: open, side panel, default app, terminal here, disk usage, "
+"rename, trash, copy name or path, bookmark"
 msgstr ""
 "Menu contextuel : ouvrir, panneau latéral, application par défaut, terminal "
-"ici, renommer, corbeille, copier le nom ou le chemin, signet"
+"ici, espace disque, renommer, corbeille, copier le nom ou le chemin, signet"
 
 #: src/chrome/help.c:135
 msgid ""
@@ -9784,3 +9784,161 @@ msgid "… %u more line"
 msgid_plural "… %u more lines"
 msgstr[0] "… %u ligne de plus"
 msgstr[1] "… %u lignes de plus"
+
+msgid "Documents"
+msgstr "Documents"
+
+msgid "Images"
+msgstr "Images"
+
+msgid "Videos"
+msgstr "Vidéos"
+
+msgid "Audio"
+msgstr "Audio"
+
+msgid "Archives"
+msgstr "Archives"
+
+msgid "Text and code"
+msgstr "Texte et code"
+
+msgid "Programs"
+msgstr "Programmes"
+
+msgid "Other"
+msgstr "Autres"
+
+msgid "Less than a day"
+msgstr "Moins d’un jour"
+
+msgid "Less than a week"
+msgstr "Moins d’une semaine"
+
+msgid "Less than a month"
+msgstr "Moins d’un mois"
+
+msgid "Less than a year"
+msgstr "Moins d’un an"
+
+msgid "1 to 3 years"
+msgstr "1 à 3 ans"
+
+msgid "Over 3 years"
+msgstr "Plus de 3 ans"
+
+#. TRANSLATORS: a size and a number of files: "2.1 GB (124 files)"
+#, c-format
+msgid "%s (%s)"
+msgstr "%s (%s)"
+
+#. TRANSLATORS: a folder that could not be read
+#, c-format
+msgid "%s (unreadable)"
+msgstr "%s (illisible)"
+
+msgid "Share"
+msgstr "Part"
+
+msgid "Last Change"
+msgstr "Dernière modification"
+
+msgid "Open Folder"
+msgstr "Ouvrir le dossier"
+
+msgid "Show in Explorer"
+msgstr "Montrer dans l’explorateur"
+
+#, c-format
+msgid "%s other file"
+msgid_plural "%s other files"
+msgstr[0] "%s autre fichier"
+msgstr[1] "%s autres fichiers"
+
+#, c-format
+msgid "%.1f s"
+msgstr "%.1f s"
+
+#, c-format
+msgid "%u min %02u s"
+msgstr "%u min %02u s"
+
+#. TRANSLATORS: %s is a number of folders
+#, c-format
+msgid "%s folder"
+msgid_plural "%s folders"
+msgstr[0] "%s dossier"
+msgstr[1] "%s dossiers"
+
+#. TRANSLATORS: bytes read so far, of the bytes used on the filesystem
+#, c-format
+msgid "%1$s of %2$s used on this filesystem"
+msgstr "%1$s sur %2$s utilisés sur ce système de fichiers"
+
+#. TRANSLATORS: folders of the analysed folder read in full, of all of them
+#, c-format
+msgid "%1$u of %2$u folders"
+msgstr "%1$u dossiers sur %2$u"
+
+#. TRANSLATORS: counts and size, the room taken on disk, the time of the reading
+#, c-format
+msgid "%1$s (%2$s on disk) · read in %3$s"
+msgstr "%1$s (%2$s sur le disque) · lu en %3$s"
+
+#. TRANSLATORS: %s is a number of entries that could not be read
+#, c-format
+msgid "%s unreadable"
+msgid_plural "%s unreadable"
+msgstr[0] "%s illisible"
+msgstr[1] "%s illisibles"
+
+msgid "stopped before the end"
+msgstr "arrêté avant la fin"
+
+msgid "Reading…"
+msgstr "Lecture…"
+
+msgid "The folders open once the whole tree is read"
+msgstr "Les dossiers s’ouvrent une fois toute l’arborescence lue"
+
+msgid "Disk Usage"
+msgstr "Espace disque"
+
+msgid "Parent Folder (Backspace / Left)"
+msgstr "Dossier parent (Backspace / Left)"
+
+msgid "Read Again (F5)"
+msgstr "Relire (F5)"
+
+msgid "Stop Reading (Escape)"
+msgstr "Arrêter la lecture (Escape)"
+
+msgid "Close Disk Usage"
+msgstr "Fermer l’espace disque"
+
+msgid "Disk Usage tab"
+msgstr "Onglet Espace disque"
+
+msgid "Disk usage of the selected folder (from the explorer; also its context menu)"
+msgstr "Espace disque du dossier sélectionné (depuis l’explorateur ; aussi son menu contextuel)"
+
+msgid "Open the selected folder; on a file, show it in the explorer"
+msgstr "Ouvrir le dossier sélectionné ; sur un fichier, le montrer dans l’explorateur"
+
+msgid "Open the selected folder"
+msgstr "Ouvrir le dossier sélectionné"
+
+msgid "Back to the parent folder"
+msgstr "Revenir au dossier parent"
+
+msgid "Read the folder again"
+msgstr "Relire le dossier"
+
+msgid "Stop the reading (what was read stays)"
+msgstr "Arrêter la lecture (ce qui a été lu reste)"
+
+msgid "Close the Disk Usage tab"
+msgstr "Fermer l’onglet Espace disque"
+
+msgid "Disk usage of the selected folder, in the Disk Usage tab"
+msgstr "Espace disque du dossier sélectionné, dans l’onglet Espace disque"

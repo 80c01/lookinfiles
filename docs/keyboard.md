@@ -99,10 +99,11 @@ count) is dropped when the focus moves to another panel or tab.
 | `u` | Undo the last move to the trash or rename (also the Undo button of the explorer bar message) |
 | `i` / `I` | Toggle hidden files |
 | `o` | Cycle the sort: name, date, size, extension |
+| `Shift+S` | Disk usage of the selected folder (of a selected file's folder) in the **Disk Usage** tab |
 | `Ctrl+D` | Bookmark the selected entry or the current directory |
 | `m` | Toggle the rendered / raw preview of the selected file |
 | `+` / `-` / `0` | Zoom the previewed image, PDF or slides in / out / back to the fitted size |
-| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), in a browser tab (HTML files), open a terminal in a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
+| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), in a browser tab (HTML files), open a terminal in a folder, disk usage of a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
 
 **Bookmarks view**
 
@@ -236,6 +237,20 @@ mode move in the process list)
 |---|---|
 | Click on a column header | Sort the processes by that column (again: reverse order) |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the System Monitor tab (also its cross) |
+
+**Disk Usage tab** (the room a folder and everything below it take, read in
+the background; opened by `Shift+S` or the context menu of the explorer; the
+navigation keys of the global mode move in the list)
+
+| Key | Action |
+|---|---|
+| `Enter` / double click, `Right` (Vim: also `l`; Emacs: `C-f`) | Open the selected folder; on a file, show it in the explorer |
+| `Backspace` / `Alt+Up`, `Left` (Vim: also `h`; Emacs: `C-b`) | Back to the parent folder |
+| `F5` | Read the folder again |
+| `Escape` | Stop the reading (what was read stays) |
+| Click on a column header | Sort by that column (again: reverse order) |
+| Right click on a row | Open the folder, show in the explorer, copy the path |
+| `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Disk Usage tab (also its cross) |
 
 **Remote view**
 

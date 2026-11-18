@@ -125,7 +125,8 @@ fonctions git.
 
 Sur un fichier ou un dossier : ouvrir, ouvrir dans le panneau latéral
 (fichiers texte) ou avec l’application par défaut (autres fichiers), ouvrir
-un terminal dans un dossier, renommer, mettre à la corbeille, copier le
+un terminal dans un dossier, son espace disque, renommer, mettre à la
+corbeille, copier le
 nom, le chemin relatif au dépôt git (dans un dépôt) ou le chemin absolu,
 ajouter un signet, annuler. Sur une zone vide : nouveau fichier, nouveau
 dossier, terminal, et les trois mêmes copies pour le dossier courant.
@@ -135,6 +136,7 @@ dossier, terminal, et les trois mêmes copies pour le dossier courant.
 | Touche | Action |
 |---|---|
 | `Ctrl+D` | Ajouter un signet sur l’élément sélectionné (ou le dossier courant) |
+| `Shift+S` | Espace disque du dossier sélectionné (voir [Espace disque](preview-panel.md#espace-disque)) |
 | `m` | Basculer l’aperçu entre rendu et brut |
 | `+` / `-` / `0` | Zoomer sur l’image, le PDF ou les diapositives affichés, dézoomer, revenir à l’ajustement |
 

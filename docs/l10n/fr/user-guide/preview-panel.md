@@ -232,3 +232,30 @@ L’onglet ne fait qu’afficher : il n’arrête ni ne modifie jamais un
 processus. Les processus et les systèmes de fichiers ne sont lus que
 pendant que l’onglet est à l’écran. `Ctrl+W` ou un clic du milieu sur
 l’onglet le ferme.
+
+## Espace disque
+
+`Shift+S` dans l’explorateur (ou **Espace disque** dans le menu du clic
+droit d’un dossier) ouvre l’onglet **Espace disque** dans le panneau
+d’aperçu : la place que prennent le dossier et tout ce qu’il contient. Sur
+un fichier, c’est le dossier du fichier.
+
+Le dossier est lu en arrière-plan : une barre montre où en est la lecture
+(les dossiers terminés sur l’ensemble, ou, pour la racine d’un disque, la
+part de son espace utilisé déjà lue), avec les fichiers, dossiers et octets
+comptés jusque-là ; les dossiers déjà lus s’affichent au fur et à mesure.
+`Escape` (ou le bouton **Arrêter**) arrête la lecture et garde ce qui a été
+lu ; `F5` relit le dossier.
+
+Ensuite, la liste montre les dossiers et les plus gros fichiers du dossier,
+du plus gros au plus petit, chacun avec sa part du dossier, sa taille, son
+nombre de fichiers et sa dernière modification (un clic sur l’en-tête d’une
+colonne trie selon elle). `Enter` ouvre un dossier, `Backspace`
+revient ; `Enter` sur un fichier le montre dans l’explorateur. Un clic
+droit sur une ligne permet aussi de copier son chemin.
+
+Les liens symboliques ne sont pas suivis, un fichier qui a plusieurs liens
+physiques ne compte qu’une fois, et les autres disques montés dans le
+dossier sont laissés de côté. Le résumé sous le titre donne aussi la place
+réellement occupée sur le disque et le nombre d’éléments illisibles.
+`Ctrl+W` ou un clic du milieu sur l’onglet le ferme et arrête la lecture.

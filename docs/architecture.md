@@ -37,6 +37,7 @@ The directories group modules by feature, not by layer:
 | `workspace/` | workspaces, layouts, session |
 | `clock/` | the clock and the timers of the top bar |
 | `sysmon/` | the system monitor: top bar CPU chart and the System Monitor tab |
+| `diskuse/` | the Disk Usage tab: the room a folder and everything below it take |
 | `chrome/` | top bar, status bar, sidebar, help, preferences, applying themes, `ui` |
 
 Layers, from bottom to top
@@ -882,6 +883,17 @@ Layers, from bottom to top
   and filesystems only while the page is mapped). `sysmon_indicator` — the
   CPU chart of the top bar (`sysstat_host_cpu()` every 2 s; `LOOKIN_SYSMON_FROZEN`
   stops it for the UI tests), whose click opens or closes the tab.
+- `disk_usage_tab` — the Disk Usage tab in the preview notebook (one per
+  workspace, kept like the System Monitor), opened on a folder from the
+  explorer (`Shift+S`, context menu): the tree read by `disk_scan` in a
+  `GTask` worker (the scan is owned by the task until the tab adopts it, so
+  a reading replaced or a tab closed never frees a tree still being read),
+  a progress bar and counters from `disk_scan_snapshot()` every 200 ms,
+  then the summary. `disk_usage_list` — its breakdown: a sorted
+  `GtkColumnView` of the folders and largest files of one `DiskNode` (share
+  bar, size, files, last change), the folders of the root done so far
+  while the reading runs; `Enter` / `Right` into a folder, `Backspace` /
+  `Left` back up, a file shown in the explorer (`reveal_path_in_tree()`).
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and
