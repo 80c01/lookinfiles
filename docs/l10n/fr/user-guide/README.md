@@ -73,12 +73,22 @@ pour ouvrir ce guide dans un onglet **Aide** du panneau d’aperçu ; cliquez
 | `Tab` / `Shift+Tab` | Sélectionner le lien suivant / précédent |
 | `Enter`, ou un clic | Suivre le lien |
 | `Shift+H` / `Shift+L`, boutons précédent / suivant de la souris | Précédent / suivant |
+| `Ctrl+F` (Vim : `/`, Emacs : `C-s`) | Rechercher dans le guide |
+| `F3` / `Shift+F3` (Vim : `n` / `N`) | Mot recherché suivant / précédent dans la page |
 | `Ctrl+W` (Vim : `Ctrl+W c`), clic du milieu sur l’onglet | Fermer l’onglet |
 
 Les boutons au-dessus de la page reviennent en arrière, vont en avant et
 à ce sommaire, affichent l’aide-mémoire du clavier et ferment l’onglet. Sur
 une longue page, la minicarte à droite montre toute la page en petit :
 cliquez dessus ou faites-la glisser pour vous déplacer.
+
+Pour rechercher dans le guide, tapez des mots dans le champ de recherche
+au-dessus de la page (ou appuyez sur la touche de recherche de votre mode)
+puis sur `Enter` : une page liste les sections qui contiennent tous les
+mots, dans n’importe quel ordre, sans tenir compte de la casse ni des
+accents, les meilleures d’abord, avec la ligne où ils apparaissent. Suivez
+un résultat pour ouvrir sa page avec les mots surlignés ; `Shift+H`
+revient aux résultats.
 
 ## Pages de référence
 

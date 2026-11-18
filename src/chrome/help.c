@@ -325,6 +325,11 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Global"), "Ctrl+Shift+L", N_("Stack the terminal pane under the viewer, or put it back beside it (the explorer panel stays fixed)"), 0},
     {N_("Global"), "Ctrl+Shift+R", N_("Toggle Remote (SSH) machines view in sidebar"), 0},
     {N_("Global"), "F1", N_("User guide in a Help tab (also a click on the top bar's Help button; right click: this cheat sheet)"), 0},
+    {N_("Help tab"), "Ctrl+F", N_("Search every page of the guide (Enter: the sections that hold every word, Esc: back to the page)"), NP},
+    {N_("Help tab"), "/", N_("Search every page of the guide (Enter: the sections that hold every word, Esc: back to the page)"), VI},
+    {N_("Help tab"), "C-s / C-r", N_("Search every page of the guide (RET: the sections that hold every word, Esc: back to the page)"), EM},
+    {N_("Help tab"), "F3 / Shift+F3", N_("Next / previous searched word in the page"), NP},
+    {N_("Help tab"), "n / N", N_("Next / previous searched word in the page"), VI},
     {N_("Help panel"), "Up Up Down Down Left Right Left Right A B Enter", N_("Unlock Game Mode in this workspace"), 0},
     {N_("Global"), "Ctrl+Q", N_("Quit"), 0},
 };

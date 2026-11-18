@@ -324,6 +324,14 @@ Layers, from bottom to top
   `docs/l10n/<lang>/` (prefix `/org/lookin/guide-l10n/`): `user_guide_read_in()`,
   `user_guide_read_localized()` (the Help tab). Its test checks every link of the
   guide and of each translation.
+- `user_guide_search` — searching the user guide (the Help tab's search field):
+  every page in the language shown (`user_guide_read_localized()`), by section
+  (a heading and the text under it); every word of the query in a section, case
+  and accents ignored; scored by page title, heading and text, best first
+  (`user_guide_search()`, `UserGuideHit`: page, anchor, Markdown excerpt). The
+  results page (`user_guide_search_page()`, page name `"search:<query>"`) and the
+  ranges of the words in a rendered page (`user_guide_match_ranges()`, character
+  offsets) for highlighting.
 - `org_time` — Org timestamps (`<2026-10-29 Thu 10:00 +1w>`): parse, format,
   field arithmetic, repeaters, the date prompt (`org_timestamp_read()`).
 - `org_doc` — Org document commands on an array of lines + cursor (`OrgPos`):
@@ -1227,7 +1235,10 @@ Layers, from bottom to top
   scrolled with the navigation keys of the global mode; links followed through
   `markdown_link` (`user_guide_resolve_link()`: guide pages and anchors, web pages
   in a browser tab, `browser_open()`), Tab / Enter, back / forward history (Shift+H / Shift+L,
-  mouse buttons), a minimap (`minimap_new_for_view()`). F1 (`ui`) and a click on the Help button (`topbar`) open it,
+  mouse buttons), a minimap (`minimap_new_for_view()`), a search field in its header
+  (search key of the global mode: the `user_guide_search` results page, its links
+  open pages with the words highlighted, next / previous word with the global
+  mode's keys). F1 (`ui`) and a click on the Help button (`topbar`) open it,
   its close button, a middle click or Ctrl+W close it.
   Per workspace (`VirtualLayout.help_page`): the page, with its history and
   scroll position, is taken out of the notebook on a switch and put back

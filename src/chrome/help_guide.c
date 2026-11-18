@@ -1,5 +1,7 @@
 /* The Help tab: the user guide in a page of the preview notebook (see help_guide.h) */
 #include "chrome/help_guide.h"
+
+#include <string.h>
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "preview/browser.h"
@@ -16,13 +18,19 @@
 #include "theme/text_style.h"
 #include "theme/theme.h"
 #include "chrome/user_guide.h"
+#include "chrome/user_guide_search.h"
+#include "theme/text_tags.h"
 
 #define PAGE_KEY "lookin-help-guide"
+#define MATCH_TAG "help-search-match"
+#define CURRENT_TAG "help-search-current"
 
-/* A place in the history: a page and the first character shown */
+/* A place in the history: a page, the first character shown and the words
+ * highlighted */
 typedef struct {
     gchar* page;
     gint offset;
+    gchar* highlight;
 } HelpPlace;
 
 typedef struct {
@@ -37,6 +45,10 @@ typedef struct {
     GPtrArray* forward;
     gint link;          /* link selected with Tab (markdown_link index), -1: none */
     GtkWidget* label;   /* tab label (owned ref: kept while the page is detached) */
+    GtkWidget* entry;   /* the search field of the header */
+    gchar* highlight;   /* words of the search highlighted in the page, or NULL */
+    GArray* matches;    /* their ranges (pairs of character offsets) */
+    gint match;         /* current match (n / N), -1: none */
 } HelpGuide;
 
 static void ensure_css(void) {
@@ -54,6 +66,7 @@ static HelpGuide* guide_state(AppData* app) {
 static void place_free(gpointer p) {
     HelpPlace* place = p;
     g_free(place->page);
+    g_free(place->highlight);
     g_free(place);
 }
 
@@ -122,7 +135,9 @@ static void update_buttons(HelpGuide* hg) {
 
 /* Render page in the view and show its title */
 static void load_page(HelpGuide* hg, const gchar* page) {
-    gchar* text = user_guide_read_localized(page);
+    gboolean results = g_str_has_prefix(page, USER_GUIDE_SEARCH_PREFIX);
+    const gchar* query = page + strlen(USER_GUIDE_SEARCH_PREFIX);
+    gchar* text = results ? user_guide_search_page(query) : user_guide_read_localized(page);
     if (text == NULL) {
         text = g_strdup_printf(_("# Page Not Found\n\nThe user guide has no page `%s`.\n"), page);
     }
@@ -134,7 +149,8 @@ static void load_page(HelpGuide* hg, const gchar* page) {
     gtk_text_buffer_place_cursor(buffer, &start);
     hg->link = -1;
 
-    gchar* title = user_guide_title(text);
+    /* TRANSLATORS: title of the Help tab's search results; %s is what was searched */
+    gchar* title = results ? g_strdup_printf(_("Search: %s"), query) : user_guide_title(text);
     gtk_label_set_text(GTK_LABEL(hg->title), title != NULL ? title : _("User Guide"));
     g_free(title);
     g_free(text);
@@ -144,25 +160,110 @@ static void load_page(HelpGuide* hg, const gchar* page) {
     }
 }
 
-/* Show page at anchor (NULL: its top, or offset when >= 0); record the place
- * left in the back history when push is TRUE */
-static void go_to(HelpGuide* hg, const gchar* page, const gchar* anchor, gint offset, gboolean push) {
+static GtkTextTag* match_tag(GtkTextBuffer* buffer, const gchar* name, const gchar* bg) {
+    GtkTextTag* tag = text_tag_ensure(buffer, name, "background", bg, NULL);
+    /* Above the Markdown tags */
+    gtk_text_tag_set_priority(tag, gtk_text_tag_table_get_size(gtk_text_buffer_get_tag_table(buffer)) - 1);
+    return tag;
+}
+
+/* Highlight the words of query in the page (NULL: none) */
+static void set_highlight(HelpGuide* hg, const gchar* query) {
+    GtkTextBuffer* buffer = guide_buffer(hg);
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(buffer, &start, &end);
+    GtkTextTag* all = match_tag(buffer, MATCH_TAG, "@editor_match");
+    GtkTextTag* current = match_tag(buffer, CURRENT_TAG, "@editor_match_current");
+    gtk_text_buffer_remove_tag(buffer, all, &start, &end);
+    gtk_text_buffer_remove_tag(buffer, current, &start, &end);
+    if (query != hg->highlight) {
+        g_free(hg->highlight);
+        hg->highlight = query != NULL && query[0] != '\0' ? g_strdup(query) : NULL;
+    }
+    g_clear_pointer(&hg->matches, g_array_unref);
+    hg->match = -1;
+    if (hg->highlight == NULL) return;
+    /* The slice counts pictures and widgets: its offsets are the buffer's */
+    gchar* text = gtk_text_buffer_get_slice(buffer, &start, &end, TRUE);
+    hg->matches = user_guide_match_ranges(text, hg->highlight);
+    g_free(text);
+    for (guint i = 0; i < hg->matches->len; i++) {
+        GtkTextIter s, e;
+        gtk_text_buffer_get_iter_at_offset(buffer, &s, g_array_index(hg->matches, gint, 2 * i));
+        gtk_text_buffer_get_iter_at_offset(buffer, &e, g_array_index(hg->matches, gint, 2 * i + 1));
+        gtk_text_buffer_apply_tag(buffer, all, &s, &e);
+    }
+}
+
+/* n / N: the next (step 1) or previous (-1) highlighted word, from the
+ * current one or the top of the view */
+static void step_match(HelpGuide* hg, gint step) {
+    if (hg->matches == NULL || hg->matches->len == 0) {
+        app_notice(hg->app, hg->highlight != NULL ? _("The searched words are not in this page")
+                                                  : _("Search the guide first (the search key of your mode)"),
+                   FALSE);
+        return;
+    }
+    gint n = (gint)hg->matches->len;
+    gint i;
+    if (hg->match >= 0) {
+        i = ((hg->match + step) % n + n) % n;
+    } else {
+        gint top = top_offset(hg);
+        i = step > 0 ? 0 : n - 1;
+        for (gint k = 0; k < n; k++) {
+            if (g_array_index(hg->matches, gint, 2 * k) >= top) {
+                i = step > 0 ? k : (k > 0 ? k - 1 : n - 1);
+                break;
+            }
+        }
+    }
+    GtkTextBuffer* buffer = guide_buffer(hg);
+    GtkTextTag* current = match_tag(buffer, CURRENT_TAG, "@editor_match_current");
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(buffer, &s, &e);
+    gtk_text_buffer_remove_tag(buffer, current, &s, &e);
+    gtk_text_buffer_get_iter_at_offset(buffer, &s, g_array_index(hg->matches, gint, 2 * i));
+    gtk_text_buffer_get_iter_at_offset(buffer, &e, g_array_index(hg->matches, gint, 2 * i + 1));
+    gtk_text_buffer_apply_tag(buffer, current, &s, &e);
+    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(hg->view), &s, 0.2, FALSE, 0.0, 0.0);
+    hg->match = i;
+}
+
+/* Show page at anchor (NULL: its top, or offset when >= 0), the words of
+ * highlight highlighted; record the place left in the back history when push
+ * is TRUE */
+static void go_to(HelpGuide* hg, const gchar* page, const gchar* anchor, gint offset, gboolean push,
+                  const gchar* highlight) {
     if (push && hg->current != NULL) {
         HelpPlace* place = g_new0(HelpPlace, 1);
         place->page = g_strdup(hg->current);
         place->offset = top_offset(hg);
+        place->highlight = g_strdup(hg->highlight);
         g_ptr_array_add(hg->back, place);
         g_ptr_array_set_size(hg->forward, 0);
     }
     if (g_strcmp0(page, hg->current) != 0) {
         load_page(hg, page);
     }
+    gchar* words = g_strdup(highlight);
+    set_highlight(hg, words);
+    g_free(words);
     GtkTextIter iter;
     if (anchor == NULL || !find_anchor(hg, anchor, &iter)) {
         gtk_text_buffer_get_iter_at_offset(guide_buffer(hg), &iter, offset > 0 ? offset : 0);
     }
     scroll_to_iter_top(hg, &iter);
     update_buttons(hg);
+}
+
+/* Search the guide for query: its results page */
+static void search_guide(HelpGuide* hg, const gchar* query) {
+    gchar* words = g_strstrip(g_strdup(query != NULL ? query : ""));
+    gchar* page = g_strconcat(USER_GUIDE_SEARCH_PREFIX, words, NULL);
+    go_to(hg, page, NULL, 0, TRUE, words);
+    g_free(page);
+    g_free(words);
 }
 
 /* Back (step -1) or forward (1) in the history */
@@ -173,9 +274,10 @@ static void step_history(HelpGuide* hg, gint step) {
     HelpPlace* here = g_new0(HelpPlace, 1);
     here->page = g_strdup(hg->current);
     here->offset = top_offset(hg);
+    here->highlight = g_strdup(hg->highlight);
     g_ptr_array_add(to, here);
     HelpPlace* place = g_ptr_array_steal_index(from, from->len - 1);
-    go_to(hg, place->page, NULL, place->offset, FALSE);
+    go_to(hg, place->page, NULL, place->offset, FALSE, place->highlight);
     place_free(place);
 }
 
@@ -185,9 +287,12 @@ static void on_link(GtkTextView* view, const gchar* url, gpointer data) {
     HelpGuide* hg = data;
     gchar* page = NULL;
     gchar* anchor = NULL;
-    switch (user_guide_resolve_link(hg->current, url, &page, &anchor)) {
+    /* The results page names pages from docs/; the page a result opens
+     * keeps the searched words highlighted */
+    gboolean results = hg->current != NULL && g_str_has_prefix(hg->current, USER_GUIDE_SEARCH_PREFIX);
+    switch (user_guide_resolve_link(results ? NULL : hg->current, url, &page, &anchor)) {
     case USER_GUIDE_LINK_PAGE:
-        go_to(hg, page, anchor, 0, TRUE);
+        go_to(hg, page, anchor, 0, TRUE, results ? hg->highlight : NULL);
         break;
     case USER_GUIDE_LINK_WEB:
         browser_open(hg->app, url); /* a browser tab, or the default browser */
@@ -262,9 +367,10 @@ static void close_page(AppData* app) {
     app_emit(app, APP_EVENT_CHROME_CHANGED); /* the Help button */
 }
 
-/* Navigation keys of the global mode scroll the page; Tab / Enter choose
- * and follow links; Shift+H / Shift+L go back / forward; ? shows the cheat
- * sheet */
+/* Navigation keys of the global mode scroll the page; their search key
+ * goes to the search field, next / previous match to the highlighted words;
+ * Tab / Enter choose and follow links; Shift+H / Shift+L go back / forward;
+ * ? shows the cheat sheet */
 static gboolean on_key(GtkEventControllerKey* controller, guint keyval, guint keycode,
                        GdkModifierType state, gpointer data) {
     (void)controller;
@@ -296,6 +402,13 @@ static gboolean on_key(GtkEventControllerKey* controller, guint keyval, guint ke
     case NAV_TAB_PREV:
         focus_route_step_tab(app, GTK_NOTEBOOK(app->notebook), action == NAV_TAB_NEXT ? 1 : -1, TRUE);
         return TRUE;
+    case NAV_SEARCH:
+    case NAV_SEARCH_BACKWARD:
+        gtk_widget_grab_focus(hg->entry);
+        gtk_editable_select_region(GTK_EDITABLE(hg->entry), 0, -1);
+        return TRUE;
+    case NAV_SEARCH_NEXT: step_match(hg, 1); return TRUE;
+    case NAV_SEARCH_PREV: step_match(hg, -1); return TRUE;
     default:
         return TRUE; /* prefixes, and keys the page has no use for */
     }
@@ -373,7 +486,7 @@ static void on_shortcuts_clicked(GtkButton* button, gpointer data) {
 static void on_contents_clicked(GtkButton* button, gpointer data) {
     (void)button;
     HelpGuide* hg = data;
-    go_to(hg, USER_GUIDE_HOME, NULL, 0, TRUE);
+    go_to(hg, USER_GUIDE_HOME, NULL, 0, TRUE, NULL);
     gtk_widget_grab_focus(hg->view);
 }
 
@@ -387,10 +500,25 @@ static void on_forward_clicked(GtkButton* button, gpointer data) {
     step_history(data, 1);
 }
 
+/* Enter in the search field: the results page, the keys back to the page */
+static void on_search_activate(GtkSearchEntry* entry, gpointer data) {
+    HelpGuide* hg = data;
+    search_guide(hg, gtk_editable_get_text(GTK_EDITABLE(entry)));
+    gtk_widget_grab_focus(hg->view);
+}
+
+/* Escape in the search field: back to the page */
+static void on_search_stop(GtkSearchEntry* entry, gpointer data) {
+    (void)entry;
+    gtk_widget_grab_focus(((HelpGuide*)data)->view);
+}
+
 static void guide_free(gpointer data) {
     HelpGuide* hg = data;
     g_ptr_array_unref(hg->back);
     g_ptr_array_unref(hg->forward);
+    g_clear_pointer(&hg->matches, g_array_unref);
+    g_free(hg->highlight);
     g_free(hg->current);
     g_clear_object(&hg->label);
     g_free(hg);
@@ -443,6 +571,7 @@ static HelpGuide* ensure_page(AppData* app) {
     hg->back = g_ptr_array_new_with_free_func(place_free);
     hg->forward = g_ptr_array_new_with_free_func(place_free);
     hg->link = -1;
+    hg->match = -1;
 
     GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(page, "help-guide");
@@ -459,6 +588,15 @@ static HelpGuide* ensure_page(AppData* app) {
     gtk_label_set_ellipsize(GTK_LABEL(hg->title), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(hg->title, TRUE);
     gtk_box_append(GTK_BOX(bar), hg->title);
+    hg->entry = gtk_search_entry_new();
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(hg->entry), _("Search the guide"));
+    gtk_widget_set_tooltip_text(hg->entry, _("Search every page of the guide (the search key of your mode: Ctrl+F, / "
+                                             "or C-s; Enter lists the sections that hold every word)"));
+    gtk_editable_set_width_chars(GTK_EDITABLE(hg->entry), 18);
+    gtk_widget_set_valign(hg->entry, GTK_ALIGN_CENTER);
+    g_signal_connect(hg->entry, "activate", G_CALLBACK(on_search_activate), hg);
+    g_signal_connect(hg->entry, "stop-search", G_CALLBACK(on_search_stop), hg);
+    gtk_box_append(GTK_BOX(bar), hg->entry);
     header_button(bar, "dialog-question", _("Show Keyboard Shortcuts (?)"), G_CALLBACK(on_shortcuts_clicked), hg);
     header_button(bar, "window-close", _("Close Help"), G_CALLBACK(on_close_clicked), hg);
     gtk_box_append(GTK_BOX(page), bar);
@@ -512,9 +650,9 @@ void help_guide_show(AppData* app, const gchar* page) {
     HelpGuide* hg = ensure_page(app);
     if (hg == NULL) return;
     if (!opened) {
-        go_to(hg, page != NULL ? page : USER_GUIDE_HOME, NULL, 0, FALSE);
+        go_to(hg, page != NULL ? page : USER_GUIDE_HOME, NULL, 0, FALSE, NULL);
     } else if (page != NULL && g_strcmp0(page, hg->current) != 0) {
-        go_to(hg, page, NULL, 0, TRUE);
+        go_to(hg, page, NULL, 0, TRUE, NULL);
     }
     /* The preview panel holds the tab: show it when hidden */
     if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {

@@ -203,6 +203,7 @@ canvas_history:
 canvas_rough_draw:canvas_doc,canvas_geometry,palette
 canvas_text:canvas_doc,fonts,palette,text_tags
 user_guide:
+user_guide_search:user_guide,i18n
 fuzzy_match:
 web_address:
 web_keys:

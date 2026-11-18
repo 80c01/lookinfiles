@@ -224,6 +224,8 @@ it again. An nbformat 3 or broken notebook opens as text)
 | `Tab` / `Shift+Tab` | Select the next / previous link |
 | `Enter`, click | Follow the selected / clicked link (another page of the guide, or a web page in your browser) |
 | `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward in the pages visited |
+| `Ctrl+F` (Notepad), `/` (Vim), `C-s` / `C-r` (Emacs) | Go to the search field above the page: `Enter` lists the sections of the guide that hold every word (case and accents ignored), `Esc` goes back to the page |
+| `F3` / `Shift+F3` (Notepad), `n` / `N` (Vim) | Next / previous searched word in the page (a result opens its page with the words highlighted) |
 | `?` | Show / hide the shortcut cheat sheet |
 | `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in this workspace |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Help tab |

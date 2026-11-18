@@ -295,6 +295,11 @@ key Tab;                shot help_guide_link_selected
 key Return;             shot help_guide_link_followed  # the first link of the contents
 key shift+h;            shot help_guide_back
 key Page_Down;          shot help_guide_scrolled
+key ctrl+f; xdotool type --delay 60 "minimap"
+key Return;             shot help_guide_search_results  # the sections that hold the word
+key Tab Return;         shot help_guide_search_opened   # the first result, the word highlighted
+key F3;                 shot help_guide_search_next     # the next highlighted word
+key shift+h;            shot help_guide_search_back     # back to the results
 key ctrl+w;             shot help_guide_closed
 key ctrl+shift+b; sleep 1; shot browser_tab_empty    # address bar focused (or a notice without WebKit)
 key ctrl+w;             shot browser_tab_closed

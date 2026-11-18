@@ -63,11 +63,19 @@ in a **Help** tab of the preview panel; click the button again to close it.
 | `Tab` / `Shift+Tab` | Select the next / previous link |
 | `Enter`, or a click | Follow the link |
 | `Shift+H` / `Shift+L`, mouse back / forward buttons | Back / forward |
+| `Ctrl+F` (Vim: `/`, Emacs: `C-s`) | Search the guide |
+| `F3` / `Shift+F3` (Vim: `n` / `N`) | Next / previous searched word in the page |
 | `Ctrl+W` (Vim: `Ctrl+W c`), middle click on the tab | Close the tab |
 
 The buttons above the page go back, forward and to these contents, show
 the keyboard cheat sheet and close the tab. On a long page, the minimap on
 the right shows the whole page in small: click or drag it to move.
+
+To search the guide, type words in the search field above the page (or
+press the search key of your mode) and press `Enter`: a page lists the
+sections that hold every word, in any order, ignoring case and accents,
+best first, with the line where they appear. Follow a result to open its
+page with the words highlighted; `Shift+H` returns to the results.
 
 ## Reference pages
 

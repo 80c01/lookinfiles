@@ -10026,3 +10026,58 @@ msgstr[1] "%s de plus"
 
 msgid "Disk Usage of This Folder (Shift+S)"
 msgstr "Espace disque de ce dossier (Shift+S)"
+
+#. TRANSLATORS: title of the Help tab's search results; %s is what was searched
+#, c-format
+msgid "Search: %s"
+msgstr "Recherche : %s"
+
+msgid "Type words to search for in the search field above the page."
+msgstr "Tapez les mots à rechercher dans le champ de recherche au-dessus de la page."
+
+msgid "No section of the guide holds every word searched."
+msgstr "Aucune section du guide ne contient tous les mots recherchés."
+
+#, c-format
+msgid "The first %u sections that hold every word searched, best first:"
+msgstr "Les %u premières sections qui contiennent tous les mots recherchés, les meilleures d’abord :"
+
+#, c-format
+msgid "%u section holds every word searched:"
+msgid_plural "%u sections hold every word searched, best first:"
+msgstr[0] "%u section contient tous les mots recherchés :"
+msgstr[1] "%u sections contiennent tous les mots recherchés, les meilleures d’abord :"
+
+msgid "The searched words are not in this page"
+msgstr "Les mots recherchés ne sont pas dans cette page"
+
+msgid "Search the guide first (the search key of your mode)"
+msgstr "Recherchez d’abord dans le guide (la touche de recherche de votre mode)"
+
+msgid "Search the guide"
+msgstr "Rechercher dans le guide"
+
+msgid ""
+"Search every page of the guide (the search key of your mode: Ctrl+F, / or "
+"C-s; Enter lists the sections that hold every word)"
+msgstr ""
+"Rechercher dans toutes les pages du guide (la touche de recherche de votre "
+"mode : Ctrl+F, / ou C-s ; Entrée liste les sections qui contiennent tous les "
+"mots)"
+
+msgid ""
+"Search every page of the guide (Enter: the sections that hold every word, "
+"Esc: back to the page)"
+msgstr ""
+"Rechercher dans toutes les pages du guide (Enter : les sections qui "
+"contiennent tous les mots, Esc : retour à la page)"
+
+msgid ""
+"Search every page of the guide (RET: the sections that hold every word, Esc: "
+"back to the page)"
+msgstr ""
+"Rechercher dans toutes les pages du guide (RET : les sections qui "
+"contiennent tous les mots, Esc : retour à la page)"
+
+msgid "Next / previous searched word in the page"
+msgstr "Mot recherché suivant / précédent dans la page"
