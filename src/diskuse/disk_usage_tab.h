@@ -7,11 +7,11 @@
  * tree is read in a worker thread (disk_scan.h) with a progress bar and the
  * folders done so far; then its breakdown (disk_usage_list.h) goes down
  * into the folders (Enter, Right) and back up (Backspace, Left), and the
- * statistics of the whole folder are shown beside it. F5 reads it again,
- * Escape stops the reading (what was read stays). The close button, a
- * middle click on the tab, Ctrl+W (Vim Ctrl+W c) close it and stop the
- * reading. Each workspace has its own tab; opening it on another folder
- * replaces the folder analysed. */
+ * statistics of the whole folder are shown beside it (disk_usage_stats.h).
+ * F5 reads it again, Escape stops the reading (what was read stays). The
+ * close button, a middle click on the tab, Ctrl+W (Vim Ctrl+W c) close it
+ * and stop the reading. Each workspace has its own tab; opening it on
+ * another folder replaces the folder analysed. */
 #include "core/app_types.h"
 
 /* Analyse path (a folder) in the tab, opened when needed and shown; the

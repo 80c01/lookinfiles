@@ -894,6 +894,10 @@ Layers, from bottom to top
   bar, size, files, last change), the folders of the root done so far
   while the reading runs; `Enter` / `Right` into a folder, `Backspace` /
   `Left` back up, a file shown in the explorer (`reveal_path_in_tree()`).
+  `disk_usage_stats` — the statistics beside it, once the tree is read
+  (`disk_stats`): overview, room by kind, by age and by extension with
+  bars, the largest files (a click shows one in the explorer), the
+  unreadable entries.
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and

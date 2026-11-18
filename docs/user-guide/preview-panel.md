@@ -230,6 +230,15 @@ files and its last change (click a column header to sort by it). `Enter`
 opens a folder, `Backspace` comes back; `Enter` on a file shows it in the
 explorer. A right click on a row also copies its path.
 
+Beside the list, once the folder is read, its statistics: sizes (and the
+room taken on the disk), files, folders, average file size, empty files
+and folders, links, the oldest and newest change, the deepest folder; then
+the room taken by kind of file (documents, images, videos, audio,
+archives, text and code, programs), by last change (less than a day, a
+week, a month, a year, 1 to 3 years, more) and by extension, the largest
+files of the whole folder (a click shows one in the explorer), and the
+entries that could not be read.
+
 Symbolic links are not followed, a file with several hard links counts
 once, and other disks mounted inside the folder are left out. The summary
 under the title gives the room really taken on the disk too, and the

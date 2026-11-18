@@ -9942,3 +9942,72 @@ msgstr "Fermer l’onglet Espace disque"
 
 msgid "Disk usage of the selected folder, in the Disk Usage tab"
 msgstr "Espace disque du dossier sélectionné, dans l’onglet Espace disque"
+
+msgid "Overview"
+msgstr "Vue d’ensemble"
+
+msgid "On disk"
+msgstr "Sur le disque"
+
+msgid "Average file"
+msgstr "Fichier moyen"
+
+msgid "Empty files"
+msgstr "Fichiers vides"
+
+msgid "Empty folders"
+msgstr "Dossiers vides"
+
+msgid "Symbolic links"
+msgstr "Liens symboliques"
+
+#. TRANSLATORS: links to files already counted, left out of the sizes
+msgid "Hard links left out"
+msgstr "Liens physiques non comptés"
+
+msgid "Devices, pipes, sockets"
+msgstr "Périphériques, tubes, sockets"
+
+msgid "Other filesystems left out"
+msgstr "Autres systèmes de fichiers non lus"
+
+msgid "Oldest change"
+msgstr "Plus ancienne modification"
+
+msgid "Newest change"
+msgstr "Plus récente modification"
+
+msgid "Deepest folder"
+msgstr "Dossier le plus profond"
+
+#. TRANSLATORS: depth of the deepest folder, and its path
+#, c-format
+msgid "%1$u levels: %2$s"
+msgstr "%1$u niveaux : %2$s"
+
+msgid "By Kind"
+msgstr "Par type"
+
+msgid "By Last Change"
+msgstr "Par dernière modification"
+
+msgid "By Extension"
+msgstr "Par extension"
+
+msgid "Largest Files"
+msgstr "Plus gros fichiers"
+
+#. TRANSLATORS: tooltip of a file of the largest files: its path
+#, c-format
+msgid "Show in Explorer: %s"
+msgstr "Montrer dans l’explorateur : %s"
+
+#. TRANSLATORS: %s is a number of entries
+#, c-format
+msgid "Unreadable (%s entry)"
+msgid_plural "Unreadable (%s entries)"
+msgstr[0] "Illisible (%s élément)"
+msgstr[1] "Illisibles (%s éléments)"
+
+msgid "The statistics come once the folder is read"
+msgstr "Les statistiques arrivent une fois le dossier lu"

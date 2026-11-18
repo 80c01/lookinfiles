@@ -1,6 +1,7 @@
 /* The Disk Usage tab: the room a folder takes (see disk_usage_tab.h) */
 #include "diskuse/disk_usage_tab.h"
 #include "diskuse/disk_usage_list.h"
+#include "diskuse/disk_usage_stats.h"
 #include "core/app_events.h"
 #include "core/disk_scan.h"
 #include "core/disk_stats.h"
@@ -10,6 +11,7 @@
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "widgets/focus_route.h"
+#include "widgets/panels.h"
 
 #define PAGE_KEY "lookin-disk-usage-tab"
 #define TICK_MS 200 /* progress shown again while the tree is read */
@@ -31,6 +33,7 @@ typedef struct {
     GtkWidget* status;   /* counters, then the summary */
     GtkWidget* current;  /* folder being read, then the folder shown */
     GtkWidget* list;     /* disk_usage_list */
+    GtkWidget* stats;    /* disk_usage_stats */
 
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
@@ -62,7 +65,11 @@ static void ensure_css(void) {
                   "  min-height: 6px; padding: 0; }"
                   ".disk-usage levelbar block { min-height: 6px; border: none; border-radius: 3px; }"
                   ".disk-usage levelbar block.filled { background-color: @accent; }"
-                  ".disk-usage levelbar block.empty { background-color: transparent; }");
+                  ".disk-usage levelbar block.empty { background-color: transparent; }"
+                  ".disk-usage .du-stats { padding: 0 12px 12px 12px; }"
+                  ".disk-usage .du-section { color: @fg_strong; font-weight: bold; padding-top: 10px; }"
+                  ".disk-usage .du-grid { color: @fg_text; }"
+                  ".disk-usage .du-file { padding: 0 2px; min-height: 0; }");
 }
 
 static DiskUsageTab* tab_state(AppData* app) {
@@ -219,6 +226,7 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
     }
     gtk_widget_set_visible(dt->progress, FALSE);
     show_summary(dt);
+    disk_usage_stats_show(dt->stats, dt->scan);
     gchar* select = disk_usage_list_selected_name(dt->list);
     show_folder(dt, disk_scan_root(dt->scan), select);
     g_free(select);
@@ -237,6 +245,7 @@ static void start_scan(DiskUsageTab* dt) {
     }
     dt->cancel = g_cancellable_new();
     disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
+    disk_usage_stats_show(dt->stats, NULL);
     dt->shown = NULL;
     g_clear_pointer(&dt->scan, disk_scan_free);
 
@@ -452,7 +461,19 @@ static DiskUsageTab* ensure_page(AppData* app) {
 
     DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, dt };
     dt->list = disk_usage_list_new(app, &handlers);
-    gtk_box_append(GTK_BOX(page), dt->list);
+    dt->stats = disk_usage_stats_new(on_row_reveal, dt);
+    gtk_widget_set_size_request(dt->stats, 380, -1);
+    /* The breakdown takes the room, the statistics keep their width */
+    GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+    paned_use_thin_handle(paned);
+    gtk_widget_set_vexpand(paned, TRUE);
+    gtk_paned_set_start_child(GTK_PANED(paned), dt->list);
+    gtk_paned_set_resize_start_child(GTK_PANED(paned), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(paned), FALSE);
+    gtk_paned_set_end_child(GTK_PANED(paned), dt->stats);
+    gtk_paned_set_resize_end_child(GTK_PANED(paned), FALSE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(paned), FALSE);
+    gtk_box_append(GTK_BOX(page), paned);
 
     GtkEventController* keys = gtk_event_controller_key_new();
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_page_key), dt);

@@ -94,7 +94,9 @@ static gchar* date_text(gint64 mtime) {
 static gchar* cell_text(DuRow* r, DuColumn col) {
     switch (col) {
     case COL_SIZE: return r->unreadable ? g_strdup("?") : g_format_size(r->size);
-    case COL_FILES: return r->kind == ROW_FILE ? g_strdup("") : g_strdup_printf("%" G_GUINT64_FORMAT, r->files);
+    case COL_FILES:
+        if (r->kind == ROW_FILE) return g_strdup("");
+        return r->unreadable ? g_strdup("?") : g_strdup_printf("%" G_GUINT64_FORMAT, r->files);
     case COL_DATE: return date_text(r->mtime);
     case COL_NAME:
     case COL_SHARE: break;

@@ -254,6 +254,16 @@ colonne trie selon elle). `Enter` ouvre un dossier, `Backspace`
 revient ; `Enter` sur un fichier le montre dans l’explorateur. Un clic
 droit sur une ligne permet aussi de copier son chemin.
 
+À côté de la liste, une fois le dossier lu, ses statistiques : tailles (et
+la place occupée sur le disque), fichiers, dossiers, taille moyenne d’un
+fichier, fichiers et dossiers vides, liens, la plus ancienne et la plus
+récente modification, le dossier le plus profond ; puis la place prise
+par type de fichier (documents, images, vidéos, audio, archives, texte et
+code, programmes), par dernière modification (moins d’un jour, d’une
+semaine, d’un mois, d’un an, 1 à 3 ans, plus) et par extension, les plus
+gros fichiers de tout le dossier (un clic en montre un dans
+l’explorateur), et les éléments illisibles.
+
 Les liens symboliques ne sont pas suivis, un fichier qui a plusieurs liens
 physiques ne compte qu’une fois, et les autres disques montés dans le
 dossier sont laissés de côté. Le résumé sous le titre donne aussi la place
