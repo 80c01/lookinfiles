@@ -97,7 +97,8 @@ format.
 - Directory overview: totals, file types, branch and git changes, then each entry with
   its icon, size, date and git status, in the explorer's sort order, and the
   folder's README rendered below (one level read in the background, never
-  recursively).
+  recursively); a **Disk Usage** button after the totals opens the Disk
+  Usage tab, which reads the whole tree.
 - Canvas notes drawn exactly as their Canvas tab shows them (the same block
   widgets, read-only, at 100 %; `Ctrl+wheel` zooms, a middle-button drag
   moves the view); an empty or unreadable page falls back to its text

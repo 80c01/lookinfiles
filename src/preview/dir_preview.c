@@ -15,6 +15,8 @@
 #include "org/orgmode.h"
 #include "preview/preview_cache.h"
 #include "theme/icons.h"
+#include "theme/theme.h"
+#include "diskuse/disk_usage_tab.h"
 
 #include <stdio.h>
 
@@ -388,6 +390,31 @@ static void cache_job(DirPreviewJob* job) {
 
 static void render_job(AppData* app, const DirPreviewJob* job);
 
+#define DISK_USAGE_PATH_KEY "lookin-dir-preview-path"
+
+static void on_disk_usage_clicked(GtkButton* button, gpointer data) {
+    const gchar* path = g_object_get_data(G_OBJECT(button), DISK_USAGE_PATH_KEY);
+    if (path != NULL) disk_usage_tab_show((AppData*)data, path);
+}
+
+/* A button at it opening the Disk Usage tab on the folder (its whole tree
+ * is read there, never here) */
+static void insert_disk_usage_button(AppData* app, GtkTextIter* it, const gchar* full) {
+    static gboolean css = FALSE;
+    if (!css) {
+        css = TRUE;
+        theme_add_css(".dir-disk-usage { padding: 0 6px; min-height: 0; margin: 0; }");
+    }
+    GtkWidget* button = icon_button_new("drive-harddisk", _("Disk Usage of This Folder (Shift+S)"));
+    icon_button_set_content(button, "drive-harddisk", _("Disk Usage"));
+    gtk_widget_add_css_class(button, "dir-disk-usage");
+    gtk_widget_set_focusable(button, FALSE);
+    g_object_set_data_full(G_OBJECT(button), DISK_USAGE_PATH_KEY, g_strdup(full), g_free);
+    g_signal_connect(button, "clicked", G_CALLBACK(on_disk_usage_clicked), app);
+    GtkTextChildAnchor* anchor = gtk_text_buffer_create_child_anchor(app->buffer, it);
+    gtk_text_view_add_child_at_anchor(GTK_TEXT_VIEW(app->text_view), button, anchor);
+}
+
 static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
     (void)source_object;
     (void)user_data;
@@ -453,10 +480,12 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
     g_free(path);
     if (!job->unreadable) {
         gchar* totals = totals_line(s, now);
-        gchar* line = g_strconcat(totals, "\n", NULL);
+        gchar* line = g_strconcat(totals, "  ", NULL);
         insert_tagged(buffer, &it, line, "dir_dim", NULL);
         g_free(line);
         g_free(totals);
+        insert_disk_usage_button(app, &it, job->full);
+        insert_tagged(buffer, &it, "\n", "dir_dim", NULL);
     }
     gchar* kinds = job->unreadable ? NULL : dir_summary_kinds_line(s);
     if (kinds != NULL) {

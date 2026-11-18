@@ -10023,3 +10023,6 @@ msgid "%s more"
 msgid_plural "%s more"
 msgstr[0] "%s de plus"
 msgstr[1] "%s de plus"
+
+msgid "Disk Usage of This Folder (Shift+S)"
+msgstr "Espace disque de ce dossier (Shift+S)"

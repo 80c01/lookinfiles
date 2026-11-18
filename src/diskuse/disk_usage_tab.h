@@ -3,7 +3,8 @@
 
 /* The Disk Usage tab: the room a folder and everything below it take, in
  * a page of the preview notebook (after the Git tab and the result pages).
- * Opened on a folder from the explorer (Shift+S, the context menu). The
+ * Opened on a folder from the explorer (Shift+S, the context menu) or the
+ * button of the folder preview (dir_preview.c). The
  * tree is read in a worker thread (disk_scan.h) with a progress bar and the
  * folders done so far; then its breakdown (disk_usage_list.h) goes down
  * into the folders (Enter, Right) and back up (Backspace, Left), and the

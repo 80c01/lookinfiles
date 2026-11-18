@@ -213,7 +213,8 @@ click on the tab closes it.
 ## Disk Usage
 
 `Shift+S` in the explorer (or **Disk Usage** in the right-click menu of a
-folder) opens the **Disk Usage** tab in the preview panel: how much room
+folder, or the **Disk Usage** button of a folder's preview, after its
+totals) opens the **Disk Usage** tab in the preview panel: how much room
 the folder and everything below it take. On a file, it is the file's
 folder.
 
