@@ -10367,3 +10367,6 @@ msgstr ""
 
 msgid "Give extensions or a category, not both"
 msgstr "Donnez des extensions ou une catégorie, pas les deux"
+
+msgid "Pick a Day"
+msgstr "Choisir un jour"

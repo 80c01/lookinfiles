@@ -91,7 +91,7 @@ Fill in any of the criteria, then press `Enter` in a field (or the
 | **Contains** | A text in the file, with the same buttons as Search in Files (`Aa`, `ab`, `.*`, `a…z`; `Alt+M`, `Alt+W`, `Alt+R`, `Alt+L`); binary files are skipped, large files are read in full |
 | **Type** | Files and folders, files only (links count as files) or folders only |
 | **Size** | From / to, both included: `42`, `500k`, `10M`, `2G` (powers of 1024); files only |
-| **Last change** | From / to: a day (`2026-11-01`, `2026-11-01 14:30`, `today`, `yesterday`) or a time ago (`30min`, `3h`, `7d`, `2w`, `6m` for months, `1y`); a day given as the second date is included |
+| **Last change** | From / to: a day (`2026-11-01`, `2026-11-01 14:30`, `today`, `yesterday`) or a time ago (`30min`, `3h`, `7d`, `2w`, `6m` for months, `1y`); a day given as the second date is included; the calendar button right of each field picks a day |
 | **Exclude** | Paths left out, separated by commas, as in Search in Files: `node_modules`, `.git`, `build/`; the folders left out are not entered |
 | **Depth** | Levels below the folder: `1` for its own entries only |
 | **Hidden entries** | Also the names starting with a dot (off: they are skipped, with what is below them) |

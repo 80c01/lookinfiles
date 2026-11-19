@@ -935,8 +935,8 @@ Layers, from bottom to top
   workspace, kept like the Disk Usage tab; inserted after the result and
   tool pages), opened on a folder from the explorer (`Shift+F`, context
   menu) or the **Search** button of `dir_preview`: a form of criteria read
-  into a `DeepQuery` (sizes and dates parsed by `deep_query`, errors shown
-  under it), the search run by `deep_search` in a `GTask` worker (owned by
+  into a `DeepQuery` (sizes and dates parsed by `deep_query`, a `GtkCalendar`
+  popover beside each date, errors shown under it), the search run by `deep_search` in a `GTask` worker (owned by
   the task, so a search replaced or a tab closed never frees one still
   running), its results and counters taken every 200 ms
   (`deep_search_take()`). `deep_search_list` — its results: a sorted
