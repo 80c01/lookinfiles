@@ -178,5 +178,8 @@ DiskAge disk_age_of(gint64 mtime, gint64 now);
 
 /* Size group of a file of size bytes */
 DiskSize disk_size_of(guint64 size);
+/* The smallest and the largest size of a group, in bytes (both included);
+ * *max is -1 for DISK_SIZE_HUGE (no top) */
+void disk_size_bounds(DiskSize group, gint64* min, gint64* max);
 
 #endif /* DISK_SCAN_H */

@@ -114,6 +114,19 @@ gchar* disk_format_files(guint64 n) {
     return text;
 }
 
+gchar* disk_format_group(const gchar* name, const DiskTally* t, guint64 all_count, guint64 all_size) {
+    gchar* files = disk_format_files(t->count);
+    gchar* files_pct = disk_format_percent(t->count, all_count);
+    gchar* size = g_format_size(t->size);
+    gchar* size_pct = disk_format_percent(t->size, all_size);
+    gchar* tip = g_strdup_printf("%s\n%s (%s)\n%s (%s)", name, files, files_pct, size, size_pct);
+    g_free(size_pct);
+    g_free(size);
+    g_free(files_pct);
+    g_free(files);
+    return tip;
+}
+
 gchar* disk_format_tally(const DiskTally* t) {
     gchar* size = g_format_size(t->size);
     gchar* count = disk_format_files(t->count);

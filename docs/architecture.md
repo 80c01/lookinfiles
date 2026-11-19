@@ -86,6 +86,10 @@ Layers, from bottom to top
 - `treemap_layout` — the squarified treemap layout (Bruls, Huizing, van
   Wijk): rectangles of areas proportional to weights, as square as can be,
   tiling a rectangle (the map of the Disk Usage tab).
+- `date_bins` — calendar groups of dates for a histogram: a day as
+  `YYYYMMDD` (local), grouped by day, month or year (the finest unit that
+  fits a number of bars), their bounds, spans and labels (the dates chart
+  of the Deep Search tab).
 - `disk_scan` — disk usage of a folder (the Disk Usage tab): the whole tree
   read in a worker thread (`disk_scan_run()`, cancellable; names read
   first, so a deep tree keeps no descriptor per level) into `DiskNode`
@@ -597,7 +601,9 @@ Layers, from bottom to top
 - `histogram` — a bar chart (`GtkDrawingArea`) of files in a few groups:
   two bars per group (number of files, room taken), each series scaled to
   its largest group, a legend, a label under each group, the group under
-  the pointer lit with its tooltip. Used by the Disk Usage statistics.
+  the pointer lit with its tooltip; with an activate handler, a click or
+  `Enter` on a group (`Left` / `Right` move the focus) and a group chosen
+  outlined. Used by the Disk Usage statistics and Deep Search.
 - `add_button` — the "+" add button drawn with the palette (rounded box,
   accent border on hover): `add_button_draw()` for the workspace switcher,
   `add_button_new()` (a `GtkButton`) for the tab bars (`new_tab_menu`).
@@ -952,7 +958,12 @@ Layers, from bottom to top
   `GtkColumnView` filled as they come (name, folder below the one searched,
   size, last change; matches and first matching line with a content);
   `Enter` shows an entry in the explorer (`reveal_path_in_tree()`),
-  `Ctrl+Enter` opens a file at its first match (`editor_open_at()`).
+  `Ctrl+Enter` opens a file at its first match (`editor_open_at()`); a
+  `DeepSearchRange` (a `GtkCustomFilter`) lists only the files of the bars
+  chosen. `deep_search_charts` — under the list (a `GtkPaned`), the files
+  found by size (`disk_size_of()`) and by day of last change (`date_bins`)
+  in two `histogram`s, counted as the results come; a bar clicked sets the
+  range of the list.
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and

@@ -152,6 +152,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Deep Search tab"), "Escape", N_("Stop the search (what was found stays)"), 0},
     {N_("Deep Search tab"), "Alt+M / Alt+W / Alt+R / Alt+L", N_("Content: match case / whole word / regular expression / letters in order"), 0},
     {N_("Deep Search tab"), "Down", N_("From a field: to the results"), 0},
+    {N_("Deep Search tab"), "Left / Right, Home / End", N_("In a chart: previous / next bar, first / last bar"), 0},
+    {N_("Deep Search tab"), "Enter / Space", N_("On a bar of a chart: list only its files (again: every result)"), 0},
     {N_("Deep Search tab"), "Ctrl+W", N_("Close the Deep Search tab"), NP},
     {N_("Deep Search tab"), "Ctrl+W c", N_("Close the Deep Search tab"), VI},
     {N_("Browser tab"), "Ctrl+Shift+B", N_("Open an empty browser tab (also Help links, web bookmarks, right click on an HTML file)"), 0},

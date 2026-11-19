@@ -274,6 +274,8 @@ mode move in the list)
 | `Ctrl+Enter` on a result | Open the file in an editor tab, at its first match |
 | Click on a column header | Sort by that column (again: reverse order) |
 | Right click on a result | Show in the explorer, open in an editor tab, copy the path |
+| `Left` / `Right`, `Home` / `End` in a chart | Move to the previous / next bar, the first / last one |
+| `Enter` / `Space` / click on a bar of a chart | List only the files of that bar (again: every result) |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Deep Search tab and stop the search (also its cross) |
 
 **Remote view**

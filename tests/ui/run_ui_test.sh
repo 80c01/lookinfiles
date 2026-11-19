@@ -312,6 +312,7 @@ key shift+f;            shot deep_search_tab       # the folder of plan.org, the
 xdotool type --delay 60 "plan"
 key Return; sleep 1;    shot deep_search_results   # the entries named *plan*, found in the background
 key Down;               shot deep_search_list      # the first result selected
+key Tab Right Return;   shot deep_search_chart_bar # the size chart focused, the files under 1k listed alone
 key ctrl+w;             shot deep_search_closed
 key End;                shot G_last_row
 key Up;                 shot select_previous_row

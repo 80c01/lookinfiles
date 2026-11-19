@@ -82,6 +82,7 @@ run_time:
 disk_scan:
 disk_stats:disk_scan,file_types,i18n
 treemap_layout:
+date_bins:
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types
 file_save:

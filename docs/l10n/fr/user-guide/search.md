@@ -123,6 +123,18 @@ ou un double clic montre l’entrée dans l’explorateur, `Ctrl+Enter` ouvre
 un fichier dans un onglet d’édition à sa première occurrence, et un clic
 droit permet aussi de copier le chemin.
 
+Sous les résultats, deux graphiques les suivent à mesure qu’ils arrivent :
+les fichiers par taille (vides, moins de 1k, 1k à 10k… 10G et plus) et par
+dernière modification (par jour, mois ou année, selon ce qui tient ; les
+années les plus anciennes ensemble dans la première barre), chacun avec une
+barre pour le nombre de fichiers et une pour la place qu’ils prennent
+(l’infobulle d’une barre donne les deux). Cliquez sur une barre, ou
+allez-y avec `Left` / `Right` puis `Enter`, pour ne lister que ses
+fichiers, sans relancer la recherche ; une taille et une date peuvent être
+choisies ensemble. Cliquez-la de nouveau, ou sur **Tout afficher**, pour
+lister tous les résultats. Tirez la ligne au-dessus des graphiques pour les
+réduire ou les cacher.
+
 L’onglet garde ses critères tant qu’il est ouvert : l’ouvrir sur un autre
 dossier ne change que le dossier. Chaque espace de travail a le sien.
 `Ctrl+W`, un clic du milieu sur l’onglet ou sa croix le ferment et

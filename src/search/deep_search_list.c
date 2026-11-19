@@ -1,5 +1,6 @@
 /* The results of the Deep Search tab (see deep_search_list.h) */
 #include "search/deep_search_list.h"
+#include "core/date_bins.h"
 #include "core/i18n.h"
 #include "core/path_copy.h"
 #include "theme/icons.h"
@@ -30,6 +31,7 @@ struct _DsRow {
     const gchar* name;   /* in hit->path */
     const gchar* folder; /* in hit->path: below the folder searched ("" for it) */
     gsize folder_len;
+    gint day;            /* day of the last change (YYYYMMDD), 0 until needed */
 };
 
 G_DEFINE_FINAL_TYPE(DsRow, ds_row, G_TYPE_OBJECT)
@@ -51,6 +53,10 @@ typedef struct {
     AppData* app;
     DeepSearchListHandlers handlers;
     GListStore* store;
+    GtkFilterListModel* filtered; /* the store through the range */
+    GtkCustomFilter* filter;
+    gboolean ranged;              /* range applies */
+    DeepSearchRange range;
     GtkSingleSelection* selection;
     GtkWidget* view;
     GtkColumnViewColumn* matches;
@@ -207,6 +213,23 @@ static GtkColumnViewColumn* add_column(GtkWidget* view, const gchar* title, DsCo
     return c;
 }
 
+static gboolean in_range(gpointer item, gpointer data) {
+    DsList* dl = data;
+    if (!dl->ranged) return TRUE;
+    DsRow* r = item;
+    const DeepHit* h = r->hit;
+    const DeepSearchRange* g = &dl->range;
+    if (h->is_dir) return FALSE;
+    if (g->min_size >= 0 && h->size < (guint64)g->min_size) return FALSE;
+    if (g->max_size >= 0 && h->size > (guint64)g->max_size) return FALSE;
+    if (g->first_day > 0 || g->last_day > 0) {
+        if (r->day == 0) r->day = date_bins_day_of(h->mtime);
+        if (g->first_day > 0 && r->day < g->first_day) return FALSE;
+        if (g->last_day > 0 && r->day > g->last_day) return FALSE;
+    }
+    return TRUE;
+}
+
 static DsList* list_state(GtkWidget* list) {
     return list != NULL ? g_object_get_data(G_OBJECT(list), LIST_KEY) : NULL;
 }
@@ -352,7 +375,7 @@ static void on_cell_menu(GtkGestureClick* gesture, gint n_press, gdouble x, gdou
 
 static void list_free(gpointer data) {
     DsList* dl = data;
-    g_object_unref(dl->selection); /* holds the sorted model, which holds the store */
+    g_object_unref(dl->selection); /* holds the sorted model, which holds the filtered one, then the store */
     g_object_unref(dl->store);
     g_free(dl->root);
     g_free(dl);
@@ -379,7 +402,9 @@ GtkWidget* deep_search_list_new(AppData* app, const DeepSearchListHandlers* hand
 
     /* Unsorted: the order of the search, each folder before what is below */
     GtkSorter* sorter = gtk_column_view_get_sorter(GTK_COLUMN_VIEW(dl->view));
-    GtkSortListModel* sorted = gtk_sort_list_model_new(G_LIST_MODEL(g_object_ref(dl->store)), g_object_ref(sorter));
+    dl->filter = gtk_custom_filter_new(in_range, dl, NULL);
+    dl->filtered = gtk_filter_list_model_new(G_LIST_MODEL(g_object_ref(dl->store)), GTK_FILTER(dl->filter));
+    GtkSortListModel* sorted = gtk_sort_list_model_new(G_LIST_MODEL(dl->filtered), g_object_ref(sorter));
     gtk_sort_list_model_set_incremental(sorted, TRUE);
     dl->selection = gtk_single_selection_new(G_LIST_MODEL(sorted));
     gtk_single_selection_set_autoselect(dl->selection, TRUE);
@@ -410,6 +435,10 @@ void deep_search_list_reset(GtkWidget* list, const gchar* root, gboolean content
     DsList* dl = list_state(list);
     if (dl == NULL) return;
     g_list_store_remove_all(dl->store);
+    if (dl->ranged) {
+        dl->ranged = FALSE;
+        gtk_filter_changed(GTK_FILTER(dl->filter), GTK_FILTER_CHANGE_LESS_STRICT);
+    }
     g_free(dl->root);
     dl->root = g_strdup(root);
     gtk_column_view_column_set_visible(dl->matches, content);
@@ -435,4 +464,17 @@ void deep_search_list_add(GtkWidget* list, GPtrArray* hits) {
 guint deep_search_list_count(GtkWidget* list) {
     DsList* dl = list_state(list);
     return dl != NULL ? g_list_model_get_n_items(G_LIST_MODEL(dl->store)) : 0;
+}
+
+void deep_search_list_set_range(GtkWidget* list, const DeepSearchRange* range) {
+    DsList* dl = list_state(list);
+    if (dl == NULL || (!dl->ranged && range == NULL)) return;
+    dl->ranged = range != NULL;
+    if (range != NULL) dl->range = *range;
+    gtk_filter_changed(GTK_FILTER(dl->filter), GTK_FILTER_CHANGE_DIFFERENT);
+}
+
+guint deep_search_list_shown(GtkWidget* list) {
+    DsList* dl = list_state(list);
+    return dl != NULL ? g_list_model_get_n_items(G_LIST_MODEL(dl->filtered)) : 0;
 }

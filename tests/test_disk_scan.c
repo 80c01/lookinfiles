@@ -309,6 +309,25 @@ static void test_size_groups(void) {
         g_assert_cmpstr(disk_size_label((DiskSize)g), !=, "");
     }
     g_assert_cmpstr(disk_size_label(DISK_SIZE_1M), ==, "1M");
+    gint64 lo, hi;
+    disk_size_bounds(DISK_SIZE_EMPTY, &lo, &hi);
+    g_assert_cmpint(lo, ==, 0);
+    g_assert_cmpint(hi, ==, 0);
+    disk_size_bounds(DISK_SIZE_TINY, &lo, &hi);
+    g_assert_cmpint(lo, ==, 1);
+    g_assert_cmpint(hi, ==, 1023);
+    disk_size_bounds(DISK_SIZE_10K, &lo, &hi);
+    g_assert_cmpint(lo, ==, 10 * 1024);
+    g_assert_cmpint(hi, ==, 100 * 1024 - 1);
+    disk_size_bounds(DISK_SIZE_HUGE, &lo, &hi);
+    g_assert_cmpint(lo, ==, (gint64)(10ULL << 30));
+    g_assert_cmpint(hi, ==, -1);
+    /* Every size falls in the group whose bounds hold it */
+    for (gint g = DISK_SIZE_EMPTY; g < DISK_SIZE_HUGE; g++) {
+        disk_size_bounds((DiskSize)g, &lo, &hi);
+        g_assert_cmpint(disk_size_of((guint64)lo), ==, g);
+        g_assert_cmpint(disk_size_of((guint64)hi), ==, g);
+    }
 }
 
 static void test_kinds(void) {
@@ -352,6 +371,9 @@ static void test_format(void) {
     DiskTally t = { 2000, 3 };
     p = disk_format_tally(&t);
     g_assert_cmpstr(p, ==, "2.0\u00a0kB (3 files)");
+    g_free(p);
+    p = disk_format_group("1k to 10k", &t, 12, 8000);
+    g_assert_cmpstr(p, ==, "1k to 10k\n3 files (25.0%)\n2.0\u00a0kB (25.0%)");
     g_free(p);
 }
 

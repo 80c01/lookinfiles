@@ -10430,3 +10430,30 @@ msgstr "Réinitialiser les critères et les résultats"
 
 msgid "Reset"
 msgstr "Réinitialiser"
+
+msgid "Click a bar to list only its files"
+msgstr "Cliquez sur une barre pour ne lister que ses fichiers"
+
+msgid "List Every Result Again"
+msgstr "Lister de nouveau tous les résultats"
+
+msgid "Show All"
+msgstr "Tout afficher"
+
+#. TRANSLATORS: a bar of the dates: the files of this year and of the years before
+#, c-format
+msgid "%s and before"
+msgstr "%s et avant"
+
+#. TRANSLATORS: %s is a number of results, those of the bars chosen in the charts
+#, c-format
+msgid "%s listed"
+msgid_plural "%s listed"
+msgstr[0] "%s listé"
+msgstr[1] "%s listés"
+
+msgid "In a chart: previous / next bar, first / last bar"
+msgstr "Dans un graphique : barre précédente / suivante, première / dernière"
+
+msgid "On a bar of a chart: list only its files (again: every result)"
+msgstr "Sur une barre d’un graphique : ne lister que ses fichiers (de nouveau : tous les résultats)"

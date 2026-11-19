@@ -1,6 +1,7 @@
 /* The Deep Search tab (see deep_search_tab.h) */
 #include "search/deep_search_tab.h"
 #include "search/deep_search.h"
+#include "search/deep_search_charts.h"
 #include "search/deep_search_list.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
@@ -9,6 +10,7 @@
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "widgets/focus_route.h"
+#include "widgets/panels.h"
 
 
 #define PAGE_KEY "lookin-deep-search-tab"
@@ -52,6 +54,9 @@ typedef struct {
     GtkWidget* status;    /* counters, then the summary */
     GtkWidget* current;   /* folder being read */
     GtkWidget* list;      /* deep_search_list */
+    GtkWidget* charts;    /* deep_search_charts, under the list */
+    gchar* status_text;   /* the status without the rows listed */
+    gboolean ranged;      /* the charts limit the rows listed */
 
     DeepSearch* running;  /* owned by its job, else NULL */
     GCancellable* cancel;
@@ -72,7 +77,11 @@ static void ensure_css(void) {
                   ".deep-search .ds-current { color: @fg_subtle; font-size: @size_small; padding: 0 12px 6px 12px; }"
                   ".deep-search .ds-off { opacity: 0.45; }"
                   ".deep-search .ds-num { font-feature-settings: \"tnum\"; }"
-                  ".deep-search .ds-code { font-family: @font_code; }");
+                  ".deep-search .ds-code { font-family: @font_code; }"
+                  ".deep-search .ds-charts { padding: 4px 12px 8px 12px; }"
+                  ".deep-search .ds-chart-title { color: @fg_strong; font-weight: bold; }"
+                  ".deep-search .ds-chart-hint { color: @fg_subtle; font-size: @size_small; }"
+                  ".deep-search .histogram { font-size: @size_small; }");
 }
 
 static DeepSearchTab* tab_state(AppData* app) {
@@ -149,6 +158,26 @@ static gchar* counters_text(const DeepSearchProgress* p, gboolean content) {
     return g_string_free(s, FALSE);
 }
 
+/* The status: text (taken, NULL: the one kept), then the rows listed when
+ * the charts limit them */
+static void set_status(DeepSearchTab* dt, gchar* text) {
+    if (text != NULL) {
+        g_free(dt->status_text);
+        dt->status_text = text;
+    }
+    if (!dt->ranged) {
+        gtk_label_set_text(GTK_LABEL(dt->status), dt->status_text != NULL ? dt->status_text : "");
+        return;
+    }
+    guint shown = deep_search_list_shown(dt->list);
+    /* TRANSLATORS: %s is a number of results, those of the bars chosen in the charts */
+    gchar* listed = with_count(ngettext("%s listed", "%s listed", shown), shown);
+    gchar* full = g_strdup_printf("%s · %s", dt->status_text != NULL ? dt->status_text : "", listed);
+    gtk_label_set_text(GTK_LABEL(dt->status), full);
+    g_free(full);
+    g_free(listed);
+}
+
 static void sync_buttons(DeepSearchTab* dt) {
     gtk_widget_set_visible(dt->stop, dt->running != NULL);
     gtk_widget_set_visible(dt->search, dt->running == NULL);
@@ -158,7 +187,9 @@ static void sync_buttons(DeepSearchTab* dt) {
 static void show_progress(DeepSearchTab* dt, DeepSearch* search, gboolean done) {
     DeepSearchProgress p;
     GPtrArray* hits = deep_search_take(search, &p);
+    deep_search_charts_add(dt->charts, hits);
     deep_search_list_add(dt->list, hits);
+    deep_search_charts_refresh(dt->charts);
     gboolean content = field_text(dt->content)[0] != '\0';
     gchar* counters = counters_text(&p, content);
     gchar* time = format_duration(g_get_monotonic_time() - dt->started);
@@ -175,7 +206,7 @@ static void show_progress(DeepSearchTab* dt, DeepSearch* search, gboolean done) 
     case DEEP_SEARCH_RUNNING:
     case DEEP_SEARCH_DONE: break;
     }
-    set_label(dt->status, g_string_free(s, FALSE));
+    set_status(dt, g_string_free(s, FALSE));
     set_label(dt->current, g_strdup(!done && p.current != NULL ? p.current : ""));
     gtk_widget_set_visible(dt->current, !done);
     g_free(counters);
@@ -341,6 +372,8 @@ static void start_search(DeepSearchTab* dt) {
     SearchJob* job = g_new0(SearchJob, 1);
     job->search = deep_search_new(root, &q);
     deep_search_list_reset(dt->list, deep_search_root(job->search), q.content != NULL);
+    deep_search_charts_reset(dt->charts);
+    dt->ranged = FALSE;
     deep_query_clear(&q);
     g_free(root);
     dt->running = job->search;
@@ -349,7 +382,7 @@ static void start_search(DeepSearchTab* dt) {
     g_task_set_task_data(task, job, job_free);
     g_task_run_in_thread(task, search_thread);
     g_object_unref(task);
-    set_label(dt->status, g_strdup(_("Searching…")));
+    set_status(dt, g_strdup(_("Searching…")));
     gtk_widget_set_visible(dt->current, TRUE);
     if (dt->timer == 0) dt->timer = g_timeout_add(TICK_MS, on_tick, dt);
     sync_buttons(dt);
@@ -366,6 +399,14 @@ static void on_reveal(gpointer data, const gchar* path) {
 static void on_open(gpointer data, const gchar* path, gint line, gint column) {
     DeepSearchTab* dt = data;
     if (editor_open_at(dt->app, path, line, column) == NULL) on_reveal(dt, path);
+}
+
+/* The bars chosen in the charts: the rows listed */
+static void on_charts_changed(gpointer data, const DeepSearchRange* range) {
+    DeepSearchTab* dt = data;
+    dt->ranged = range != NULL;
+    deep_search_list_set_range(dt->list, range);
+    set_status(dt, NULL);
 }
 
 /* Buttons and keys */
@@ -392,7 +433,9 @@ static void reset_search(DeepSearchTab* dt) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->hidden), FALSE);
     gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->one_fs), TRUE);
     deep_search_list_reset(dt->list, NULL, FALSE);
-    set_label(dt->status, g_strdup(READY_TEXT));
+    deep_search_charts_reset(dt->charts);
+    dt->ranged = FALSE;
+    set_status(dt, g_strdup(READY_TEXT));
     set_label(dt->current, g_strdup(""));
     gtk_widget_grab_focus(dt->name);
 }
@@ -526,6 +569,7 @@ static void tab_free(gpointer data) {
         g_object_unref(dt->cancel);
     }
     g_clear_object(&dt->label);
+    g_free(dt->status_text);
     g_free(dt);
 }
 
@@ -884,14 +928,26 @@ static DeepSearchTab* ensure_page(AppData* app) {
     dt->status = small_label("ds-status");
     gtk_label_set_ellipsize(GTK_LABEL(dt->status), PANGO_ELLIPSIZE_END);
     gtk_widget_add_css_class(dt->status, "ds-num");
-    set_label(dt->status, g_strdup(READY_TEXT));
+    set_status(dt, g_strdup(READY_TEXT));
     gtk_box_append(GTK_BOX(page), dt->status);
     dt->current = small_label("ds-current");
     gtk_box_append(GTK_BOX(page), dt->current);
 
     DeepSearchListHandlers handlers = {on_reveal, on_open, dt};
     dt->list = deep_search_list_new(app, &handlers);
-    gtk_box_append(GTK_BOX(page), dt->list);
+    dt->charts = deep_search_charts_new(on_charts_changed, dt);
+    /* The results over their charts, which keep their height (dragged to
+     * nothing when not wanted) */
+    GtkWidget* split = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+    paned_use_thin_handle(split);
+    gtk_widget_set_vexpand(split, TRUE);
+    gtk_paned_set_start_child(GTK_PANED(split), dt->list);
+    gtk_paned_set_resize_start_child(GTK_PANED(split), TRUE);
+    gtk_paned_set_shrink_start_child(GTK_PANED(split), FALSE);
+    gtk_paned_set_end_child(GTK_PANED(split), dt->charts);
+    gtk_paned_set_resize_end_child(GTK_PANED(split), FALSE);
+    gtk_paned_set_shrink_end_child(GTK_PANED(split), TRUE);
+    gtk_box_append(GTK_BOX(page), split);
 
     GtkEventController* keys = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);

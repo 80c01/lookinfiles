@@ -56,6 +56,10 @@ gchar* disk_format_percent(guint64 part, guint64 whole);
 /* "1 file", "12340 files" */
 gchar* disk_format_files(guint64 n);
 
+/* Tooltip of a group of a histogram: "1k to 10k\n3 files (12.0%)\n25 MB
+ * (0.4%)", the percentages of all_count files and all_size bytes */
+gchar* disk_format_group(const gchar* name, const DiskTally* t, guint64 all_count, guint64 all_size);
+
 /* "2.1 GB (12340 files)" */
 gchar* disk_format_tally(const DiskTally* t);
 

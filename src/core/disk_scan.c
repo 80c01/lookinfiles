@@ -132,15 +132,34 @@ DiskAge disk_age_of(gint64 mtime, gint64 now) {
     return DISK_AGE_OLDER;
 }
 
+/* The top (excluded) of each group from DISK_SIZE_TINY */
+static const guint64 SIZE_TOPS[] = { 1ULL << 10,  10ULL << 10,  100ULL << 10, 1ULL << 20,
+                                     10ULL << 20, 100ULL << 20, 1ULL << 30,   10ULL << 30 };
+G_STATIC_ASSERT(G_N_ELEMENTS(SIZE_TOPS) == DISK_SIZE_HUGE - DISK_SIZE_TINY);
+
 DiskSize disk_size_of(guint64 size) {
-    /* The top (excluded) of each group from DISK_SIZE_TINY */
-    static const guint64 tops[] = { 1ULL << 10,  10ULL << 10,  100ULL << 10, 1ULL << 20,
-                                    10ULL << 20, 100ULL << 20, 1ULL << 30,   10ULL << 30 };
     if (size == 0) return DISK_SIZE_EMPTY;
-    for (guint i = 0; i < G_N_ELEMENTS(tops); i++) {
-        if (size < tops[i]) return (DiskSize)(DISK_SIZE_TINY + i);
+    for (guint i = 0; i < G_N_ELEMENTS(SIZE_TOPS); i++) {
+        if (size < SIZE_TOPS[i]) return (DiskSize)(DISK_SIZE_TINY + i);
     }
     return DISK_SIZE_HUGE;
+}
+
+void disk_size_bounds(DiskSize group, gint64* min, gint64* max) {
+    gint64 lo = 0, hi = -1;
+    if (group <= DISK_SIZE_EMPTY) {
+        hi = 0;
+    } else if (group == DISK_SIZE_TINY) {
+        lo = 1;
+        hi = (gint64)SIZE_TOPS[0] - 1;
+    } else if (group < DISK_SIZE_HUGE) {
+        lo = (gint64)SIZE_TOPS[group - DISK_SIZE_TINY - 1];
+        hi = (gint64)SIZE_TOPS[group - DISK_SIZE_TINY] - 1;
+    } else {
+        lo = (gint64)SIZE_TOPS[G_N_ELEMENTS(SIZE_TOPS) - 1];
+    }
+    if (min != NULL) *min = lo;
+    if (max != NULL) *max = hi;
 }
 
 static void add_error(DiskScan* s, const gchar* path, const gchar* message) {

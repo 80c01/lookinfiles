@@ -166,27 +166,13 @@ static void show_kinds(DuStats* ds, const DiskStats* st) {
     }
 }
 
-/* "1k to 10k\n3 files (12.0%)\n25 MB (0.4%)" */
-static gchar* group_tip(const gchar* name, const DiskTally* t, const DiskStats* st) {
-    gchar* files = disk_format_files(t->count);
-    gchar* files_pct = disk_format_percent(t->count, st->n_files);
-    gchar* size = g_format_size(t->size);
-    gchar* size_pct = disk_format_percent(t->size, st->size);
-    gchar* tip = g_strdup_printf("%s\n%s (%s)\n%s (%s)", name, files, files_pct, size, size_pct);
-    g_free(size_pct);
-    g_free(size);
-    g_free(files_pct);
-    g_free(files);
-    return tip;
-}
-
 /* The files by size: a histogram of their number and of their room */
 static void show_sizes(DuStats* ds, const DiskStats* st) {
     section_title(ds, _("By Size"));
     HistogramBin bins[DISK_SIZE_COUNT];
     gchar* tips[DISK_SIZE_COUNT];
     for (gint g = 0; g < DISK_SIZE_COUNT; g++) {
-        tips[g] = group_tip(disk_size_name((DiskSize)g), &st->sizes[g], st);
+        tips[g] = disk_format_group(disk_size_name((DiskSize)g), &st->sizes[g], st->n_files, st->size);
         bins[g] = (HistogramBin){ disk_size_label((DiskSize)g), tips[g], st->sizes[g].count, st->sizes[g].size };
     }
     GtkWidget* chart = histogram_new();
