@@ -3,6 +3,7 @@
 #include "search/deep_search.h"
 #include "search/deep_search_charts.h"
 #include "search/deep_search_list.h"
+#include "search/deep_search_preview.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
@@ -64,6 +65,8 @@ typedef struct {
     GCancellable* cancel;
     guint timer;
     gint64 started;       /* monotonic time the search started */
+
+    DeepSearchPreview* preview;
 } DeepSearchTab;
 
 static void ensure_css(void) {
@@ -403,6 +406,10 @@ static void on_open(gpointer data, const gchar* path, gint line, gint column) {
     if (editor_open_at(dt->app, path, line, column) == NULL) on_reveal(dt, path);
 }
 
+static void on_preview(gpointer data, const gchar* path, gint line, gboolean asked) {
+    deep_search_preview_result(((DeepSearchTab*)data)->preview, path, line, asked);
+}
+
 /* The bars chosen in the charts: the rows listed */
 static void on_charts_changed(gpointer data, const DeepSearchRange* range) {
     DeepSearchTab* dt = data;
@@ -592,6 +599,7 @@ static gboolean on_page_key(GtkEventControllerKey* controller, guint keyval, gui
 
 static void tab_free(gpointer data) {
     DeepSearchTab* dt = data;
+    deep_search_preview_free(dt->preview);
     if (dt->timer != 0) g_source_remove(dt->timer);
     if (dt->cancel != NULL) {
         g_cancellable_cancel(dt->cancel);
@@ -602,17 +610,30 @@ static void tab_free(gpointer data) {
     g_free(dt);
 }
 
+/* Take the page out of the notebook holding it: the preview notebook, or
+ * a notebook of the editor panel (left empty, it goes) */
+static void remove_page(AppData* app, GtkWidget* page) {
+    GtkNotebook* nb = deep_search_page_notebook(page);
+    if (nb == NULL) return;
+    if (GTK_WIDGET(nb) == app->notebook) {
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
+    } else {
+        editor_remove_page(app, page);
+    }
+}
+
 static void close_page(AppData* app) {
     if (app->deep_search_page == NULL || app->notebook == NULL) return;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     GtkWidget* closed = app->deep_search_page;
     DeepSearchTab* dt = tab_state(app);
-    if (dt != NULL) stop_search(dt);
+    if (dt != NULL) {
+        stop_search(dt);
+        deep_search_preview_cancel(dt->preview);
+    }
     GtkWidget* focus_back = focus_route_return_target(app, closed);
     g_object_ref(closed);
-    gint num = gtk_notebook_page_num(nb, closed);
     app->deep_search_page = NULL;
-    if (num >= 0) gtk_notebook_remove_page(nb, num);
+    remove_page(app, closed);
     focus_route_return(app, focus_back, closed);
     g_object_unref(closed); /* frees the state, once a search still running is done */
     app_emit(app, APP_EVENT_CHROME_CHANGED);
@@ -631,8 +652,23 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdoubl
     close_page(((DeepSearchTab*)data)->app);
 }
 
-/* Put the page in the notebook: after the result pages and the tool tabs,
- * else at the end */
+static void on_menu_close(GtkWidget* child, gpointer data) {
+    (void)child;
+    close_page(data);
+}
+
+/* The tab menu, as for an editor tab: move, close */
+static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    DeepSearchTab* dt = data;
+    editor_page_show_context_menu(dt->app, dt->page, dt->label, on_menu_close, dt->app);
+}
+
+/* Put the page in the preview notebook: after the result pages and the
+ * tool tabs, else at the end; it moves from there like an editor tab */
 static void insert_page(AppData* app, DeepSearchTab* dt) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     GtkWidget* after_pages[] = {app->refs_page, app->search_page, app->help_page, app->sysmon_page,
@@ -642,11 +678,15 @@ static void insert_page(AppData* app, DeepSearchTab* dt) {
         if (after_pages[i] != NULL) after = MAX(after, gtk_notebook_page_num(nb, after_pages[i]));
     }
     gtk_notebook_insert_page(nb, dt->page, dt->label, after >= 0 ? after + 1 : -1);
+    gtk_notebook_set_tab_reorderable(nb, dt->page, TRUE);
+    gtk_notebook_set_tab_detachable(nb, dt->page, TRUE);
     app->deep_search_page = dt->page;
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
-/* Take the page out of the notebook with its tab: an owned ref, or NULL */
+/* The page of the workspace left, an owned ref (or NULL): taken out of the
+ * preview notebook with its tab; in the editor panel or a terminal pane, it
+ * already left with them (editor_detach_tabs()) */
 static GtkWidget* detach_page(AppData* app) {
     GtkWidget* page = app->deep_search_page;
     if (page == NULL || app->notebook == NULL) return NULL;
@@ -654,10 +694,9 @@ static GtkWidget* detach_page(AppData* app) {
     GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
     if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
     g_object_ref(page);
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint n = gtk_notebook_page_num(nb, page);
+    GtkNotebook* nb = deep_search_page_notebook(page);
     app->deep_search_page = NULL;
-    if (n >= 0) gtk_notebook_remove_page(nb, n);
+    if (nb != NULL && GTK_WIDGET(nb) == app->notebook) gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     return page;
 }
@@ -965,8 +1004,9 @@ static DeepSearchTab* ensure_page(AppData* app) {
     dt->current = small_label("ds-current");
     gtk_box_append(GTK_BOX(page), dt->current);
 
-    DeepSearchListHandlers handlers = {on_reveal, on_open, dt};
+    DeepSearchListHandlers handlers = {on_reveal, on_open, on_preview, dt};
     dt->list = deep_search_list_new(app, &handlers);
+    dt->preview = deep_search_preview_new(app, page, dt->list);
     dt->charts = deep_search_charts_new(on_charts_changed, dt);
     /* The results over their charts, which keep their height (dragged to
      * nothing when not wanted) */
@@ -989,12 +1029,17 @@ static DeepSearchTab* ensure_page(AppData* app) {
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_page_key), dt);
     gtk_widget_add_controller(page, keys);
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, dt, tab_free);
+    editor_page_set_movable(page);
 
     dt->label = g_object_ref(icon_label_new("edit-find", _("Deep Search")));
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), dt);
     gtk_widget_add_controller(dt->label, GTK_EVENT_CONTROLLER(mclick));
+    GtkGesture* rclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(rclick), GDK_BUTTON_SECONDARY);
+    g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), dt);
+    gtk_widget_add_controller(dt->label, GTK_EVENT_CONTROLLER(rclick));
 
     sync_buttons(dt);
     insert_page(app, dt);
@@ -1006,23 +1051,22 @@ void deep_search_tab_show(AppData* app, const gchar* path) {
     DeepSearchTab* dt = ensure_page(app);
     if (dt == NULL) return;
     gtk_editable_set_text(GTK_EDITABLE(dt->folder), path);
-    /* The preview panel holds the tab: show it when hidden */
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
-        app_layout_begin(app);
-        gtk_widget_set_visible(app->viewer_box, TRUE);
-        app_emit(app, APP_EVENT_CHROME_CHANGED);
-        app_emit(app, APP_EVENT_LAYOUT_REBUILT);
-    }
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    GtkNotebook* nb = deep_search_page_notebook(dt->page);
+    if (nb == NULL) return;
+    /* The preview panel holding the tab shows when hidden */
+    if (GTK_WIDGET(nb) == app->notebook) deep_search_show_preview_panel(app);
     gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, dt->page));
     gtk_widget_grab_focus(dt->name);
 }
 
 gboolean deep_search_tab_close_shown(AppData* app) {
     if (app == NULL || app->deep_search_page == NULL || app->notebook == NULL) return FALSE;
+    GtkWidget* page = app->deep_search_page;
+    GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
+    gboolean focused = focus != NULL && (focus == page || gtk_widget_is_ancestor(focus, page));
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    if (gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, app->deep_search_page)) return FALSE;
-    if (!gtk_widget_get_mapped(app->deep_search_page)) return FALSE;
+    if (!focused && gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, page)) return FALSE;
+    if (!gtk_widget_get_mapped(page)) return FALSE;
     close_page(app);
     return TRUE;
 }
@@ -1040,7 +1084,15 @@ void deep_search_tab_workspace_shown(AppData* app, VirtualLayout* ws) {
     GtkWidget* page = ws->deep_search_page;
     ws->deep_search_page = NULL;
     DeepSearchTab* dt = g_object_get_data(G_OBJECT(page), PAGE_KEY);
-    if (dt != NULL && app->notebook != NULL && app->deep_search_page == NULL) insert_page(app, dt);
+    if (dt != NULL && app->notebook != NULL && app->deep_search_page == NULL) {
+        if (deep_search_page_notebook(page) != NULL) {
+            /* Back with the editor panel or the terminal panes */
+            app->deep_search_page = page;
+            app_emit(app, APP_EVENT_CHROME_CHANGED);
+        } else {
+            insert_page(app, dt);
+        }
+    }
     g_object_unref(page);
 }
 
@@ -1051,6 +1103,7 @@ void deep_search_tab_workspace_removed(AppData* app, VirtualLayout* ws) {
         if (page != NULL) {
             DeepSearchTab* dt = g_object_get_data(G_OBJECT(page), PAGE_KEY);
             if (dt != NULL) stop_search(dt);
+            remove_page(app, page); /* still in the editor panel shown */
             g_object_unref(page);
         }
     }

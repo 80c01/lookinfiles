@@ -112,7 +112,15 @@ and the last change; with a content, also the number of matches and the
 first matching line. Click a column header to sort by it. `Down` in a field
 goes to the results; there, `Enter` or a double click shows the entry in
 the explorer, `Ctrl+Enter` opens a file in an editor tab at its first
-match, and a right click also copies the path.
+match, `Space` previews it at its first match, and a right click also
+copies the path.
+
+To see the files while going through the results, move the tab out of the
+preview panel, as an editor tab: `Ctrl+Alt+Arrow`, the right-click menu
+of the tab, or a drag of the tab to the editor panel or the edge of a pane.
+Beside the preview, the result you move to (arrows, click) is previewed
+there, at its first match; the explorer keeps its selection, and shows it
+again in the preview when it gets the focus back.
 
 Under the results, two charts (side by side when the panel is wide
 enough, else one over the other) follow them as they come: the files by size

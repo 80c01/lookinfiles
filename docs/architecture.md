@@ -965,7 +965,9 @@ Layers, from bottom to top
   as its widest page: this page sets how narrow the preview panel gets).
 - `deep_search_tab` — the Deep Search tab in the preview notebook (one per
   workspace, kept like the Disk Usage tab; inserted after the result and
-  tool pages), opened on a folder from the explorer (`Shift+F`, context
+  tool pages; a movable page, `editor_page_set_movable()`, so it moves to
+  the editor panel or a split like a Canvas tab, and goes with them on a
+  workspace switch), opened on a folder from the explorer (`Shift+F`, context
   menu) or the **Search** button of `dir_preview`: a form of criteria read
   into a `DeepQuery` (sizes and dates parsed by `deep_query`, a `GtkCalendar`
   popover beside each date, errors shown under it), the search run by `deep_search` in a `GTask` worker (owned by
@@ -982,7 +984,11 @@ Layers, from bottom to top
   in two `histogram`s, counted as the results come; a bar clicked sets the
   range of the list. The pane gives the charts their natural height at
   first and again when they switch layout (one over the other takes twice
-  as much), whatever it was dragged to.
+  as much), whatever it was dragged to. `deep_search_preview` — the
+  results previewed: out of the preview notebook, the result moved to
+  (after the list's next frame, `after_frame`) and the one selected when
+  the tab gets there; `Space` in either place (`APP_EVENT_PREVIEW_PATH`,
+  handled by `preview_show_requested()`).
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and
@@ -1040,6 +1046,12 @@ Layers, from bottom to top
   documents map their
   source lines with `MdOut.sources` (`md_out_mark_source()`, set by the
   Markdown parser and `org_render`); text previews go line by line.
+  `preview_sync_goto_line()` makes the next load of a file open on a line
+  (a Deep Search match) instead of its top.
+- `preview_show` — `preview_show_path()`: a file or folder previewed
+  without being the explorer's selection (a Deep Search result), marked
+  with `preview_state_set_from_editor()` so that the explorer's selection
+  comes back when it gets the focus.
 - `image_preview`, `image_decode`, `image_prefetch` — the image preview.
   `image_preview` lays the picture out in the preview (header, details,
   zoom, Copy Image); `image_decode` decodes it in a worker thread at the size
@@ -1402,6 +1414,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_FILES_CHANGED`        | files created/renamed/saved                  | `refresh_listing()`            |
 | `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
 | `APP_EVENT_PREVIEW_LOCATION`     | path of the value at the preview cursor changed | `status_bar_show_location()` |
+| `APP_EVENT_PREVIEW_PATH`         | Deep Search: preview `app->preview_request_path` at `app->preview_request_line` | `preview_show_requested()` |
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
 | `APP_EVENT_ADD_BOOKMARK`         | browser tab: bookmark `app->bookmark_add_target` (name `app->bookmark_add_name`) | `bookmarks_add_requested()` |

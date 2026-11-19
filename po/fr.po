@@ -10174,6 +10174,16 @@ msgid "In a field: search; on a result: show it in the explorer"
 msgstr ""
 "Dans un champ : rechercher ; sur un résultat : le montrer dans l’explorateur"
 
+msgid "Preview the selected result, at its first match"
+msgstr "Afficher l’aperçu du résultat sélectionné, à sa première occurrence"
+
+msgid ""
+"Move the Deep Search tab to another pane, as an editor tab (beside the "
+"preview, the result moved to is previewed)"
+msgstr ""
+"Déplacer l’onglet Recherche approfondie vers un autre volet, comme un onglet "
+"d’édition (à côté de l’aperçu, le résultat atteint y est affiché)"
+
 msgid "Open the selected file in an editor tab, at its first match"
 msgstr ""
 "Ouvrir le fichier sélectionné dans un onglet d’édition, à sa première "

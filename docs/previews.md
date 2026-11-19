@@ -159,6 +159,12 @@ file or by the page in front:
    back after selecting.
 3. **Opening is explicit**: a double click or Enter opens the editor tab
    (focused); a video opens its own tab; the file picker shows the preview.
+4. **A Deep Search result** moved to while the Deep Search tab is out of
+   the preview notebook (beside the preview) is previewed like a selected
+   row, the Preview tab in front (`APP_EVENT_PREVIEW_PATH`,
+   `preview_show_path()`); in the preview
+   notebook, only `Space` previews it. The explorer keeps its selection,
+   shown again when it gets the focus.
 
 The rule lives in one place, `bring_preview_forward()` in `viewer.c` (the
 click on the selected row goes through `viewer_show_preview_page()`). Do not

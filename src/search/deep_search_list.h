@@ -6,7 +6,7 @@
  * size, last change; with a content, the matches and the first matching
  * line), filled while the search runs. Enter or a double click shows the
  * entry in the explorer, Ctrl+Enter opens a file in an editor tab at its
- * first match; the right-click menu does both and copies the path. A
+ * first match, Space previews it; the right-click menu does both and copies the path. A
  * range (deep_search_list_set_range(), the bars of deep_search_charts)
  * shows only the files in it. */
 #include "core/app_types.h"
@@ -15,6 +15,9 @@
 typedef struct {
     void (*reveal)(gpointer data, const gchar* path);
     void (*open)(gpointer data, const gchar* path, gint line, gint column);
+    /* The result selected (asked FALSE: moved to, or found first), or Space
+     * on it (asked TRUE); line: its first match (0-based), else -1 */
+    void (*preview)(gpointer data, const gchar* path, gint line, gboolean asked);
     gpointer data;
 } DeepSearchListHandlers;
 
@@ -32,6 +35,8 @@ typedef struct {
 GtkWidget* deep_search_list_new(AppData* app, const DeepSearchListHandlers* handlers);
 /* Its GtkColumnView (for the focus) */
 GtkWidget* deep_search_list_view(GtkWidget* list);
+/* Preview the result selected, as Space does (no result: nothing) */
+void deep_search_list_preview_selected(GtkWidget* list);
 
 /* No row, no range; the next ones are found below root, with the content columns
  * shown when content */

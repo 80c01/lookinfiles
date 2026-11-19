@@ -257,7 +257,17 @@ static void on_activate(GtkColumnView* view, guint position, gpointer data) {
     if (r != NULL) g_object_unref(r);
 }
 
-/* Ctrl+Enter: open in an editor tab (Enter is the activation) */
+static void preview_row(DsList* dl, DsRow* r, gboolean asked) {
+    if (r == NULL || dl->handlers.preview == NULL) return;
+    dl->handlers.preview(dl->handlers.data, r->hit->path, r->hit->text != NULL ? r->hit->line : -1, asked);
+}
+
+static void on_selected(GObject* selection, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    preview_row(data, gtk_single_selection_get_selected_item(GTK_SINGLE_SELECTION(selection)), FALSE);
+}
+
+/* Ctrl+Enter: open in an editor tab (Enter is the activation); Space: preview */
 static gboolean on_key(GtkEventControllerKey* controller, guint keyval, guint keycode, GdkModifierType state,
                        gpointer data) {
     (void)controller;
@@ -266,6 +276,10 @@ static gboolean on_key(GtkEventControllerKey* controller, guint keyval, guint ke
     GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
     if ((keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) && mods == GDK_CONTROL_MASK) {
         open_row(dl, gtk_single_selection_get_selected_item(dl->selection));
+        return TRUE;
+    }
+    if ((keyval == GDK_KEY_space || keyval == GDK_KEY_KP_Space) && mods == 0) {
+        preview_row(dl, gtk_single_selection_get_selected_item(dl->selection), TRUE);
         return TRUE;
     }
     return FALSE;
@@ -375,6 +389,7 @@ static void on_cell_menu(GtkGestureClick* gesture, gint n_press, gdouble x, gdou
 
 static void list_free(gpointer data) {
     DsList* dl = data;
+    g_signal_handlers_disconnect_by_data(dl->selection, dl);
     g_object_unref(dl->selection); /* holds the sorted model, which holds the filtered one, then the store */
     g_object_unref(dl->store);
     g_free(dl->root);
@@ -410,6 +425,7 @@ GtkWidget* deep_search_list_new(AppData* app, const DeepSearchListHandlers* hand
     gtk_single_selection_set_autoselect(dl->selection, TRUE);
     gtk_column_view_set_model(GTK_COLUMN_VIEW(dl->view), GTK_SELECTION_MODEL(dl->selection));
     g_signal_connect(dl->view, "activate", G_CALLBACK(on_activate), dl);
+    g_signal_connect(dl->selection, "notify::selected-item", G_CALLBACK(on_selected), dl);
     g_object_set_data(G_OBJECT(dl->view), LIST_KEY, dl);
     focus_route_attach_list(app, dl->view, dl->selection);
     GtkEventController* keys = gtk_event_controller_key_new();
@@ -429,6 +445,11 @@ GtkWidget* deep_search_list_new(AppData* app, const DeepSearchListHandlers* hand
 GtkWidget* deep_search_list_view(GtkWidget* list) {
     DsList* dl = list_state(list);
     return dl != NULL ? dl->view : NULL;
+}
+
+void deep_search_list_preview_selected(GtkWidget* list) {
+    DsList* dl = list_state(list);
+    if (dl != NULL) preview_row(dl, gtk_single_selection_get_selected_item(dl->selection), TRUE);
 }
 
 void deep_search_list_reset(GtkWidget* list, const gchar* root, gboolean content) {

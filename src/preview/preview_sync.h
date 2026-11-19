@@ -16,6 +16,11 @@
  * Saving the file edited leaves the view where it is: the cursor is
  * followed when it moves. */
 
+/* The next preview of path (the load that follows) opens on its source
+ * line line (0-based), a third down the view, instead of at its top; a
+ * preview without lines opens at its top. line -1: no line asked for. */
+void preview_sync_goto_line(AppData* app, const gchar* path, gint line);
+
 /* The preview starts building the file at path (its old content is still
  * on screen): remember where the view is when path is the file shown */
 void preview_sync_loading(AppData* app, const gchar* path);

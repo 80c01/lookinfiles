@@ -9,8 +9,10 @@
  * form over the results (deep_search_list.h); Enter in a field starts the
  * search, run in a worker thread, the results listed as they are found.
  * F5 searches again, Escape stops the search (what was found stays).
- * The close button, a middle click on the tab, Ctrl+W (Vim Ctrl+W c)
- * close it and stop the search. Each workspace has its own tab; opening
+ * The tab moves like an editor tab (Ctrl+Alt+Arrow, its menu, a drag);
+ * beside the preview, the result moved to is previewed
+ * (deep_search_preview.h). The close button, a middle click on the tab,
+ * Ctrl+W (Vim Ctrl+W c) close it and stop the search. Each workspace has its own tab; opening
  * it on another folder keeps the criteria. */
 #include "core/app_types.h"
 

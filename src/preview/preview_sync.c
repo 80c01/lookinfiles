@@ -6,6 +6,8 @@
 #define SYNC_MARK "preview-sync"
 /* Frames the view is kept on the line while the new preview is laid out */
 #define SETTLE_FRAMES 60
+/* Height in the view of a line asked for (preview_sync_goto_line()) */
+#define GOTO_ALIGN 0.3
 
 struct PreviewSync {
     gchar* path;            /* file in the preview */
@@ -31,12 +33,17 @@ struct PreviewSync {
     GtkTextBuffer* tracked; /* editor buffer of path whose cursor is followed */
     GtkWindow* window;      /* window whose focus is watched (an editor of path */
     gulong focus_handler;   /* may have opened), NULL once destroyed */
+    gchar* goto_path;       /* the next load of this file opens on goto_line */
+    gint goto_line;         /* source line, -1: none */
+    gboolean goto_load;     /* the load under way opens on goto_line */
+    gboolean goto_scroll;   /* scroll there once the preview is in the buffer */
 };
 
 static struct PreviewSync* sync_get(AppData* app) {
     if (app->preview_sync == NULL) {
         app->preview_sync = g_new0(struct PreviewSync, 1);
         app->preview_sync->first_line = -1;
+        app->preview_sync->goto_line = -1;
         app->preview_sync->synced_offset = -1;
     }
     return app->preview_sync;
@@ -295,6 +302,13 @@ static void scroll_when_shown(AppData* app) {
         s->shown_tick_id = 0;
     }
     track_editor(app, s);
+    if (s->goto_scroll) {
+        s->goto_scroll = FALSE;
+        s->restore = FALSE;
+        gint offset = line_offset(app, s, s->goto_line);
+        if (offset >= 0) scroll_settled(app, s, offset, GOTO_ALIGN, -1);
+        return;
+    }
     EditorTab* tab = cursor_tab(app, s->tracked);
     gboolean editing = tab != NULL && !gtk_widget_has_focus(app->text_view) &&
                        (gtk_widget_has_focus(tab->view) || tab == app->last_focused_editor) &&
@@ -326,9 +340,21 @@ static gboolean shown_tick(GtkWidget* widget, GdkFrameClock* clock, gpointer dat
     return G_SOURCE_REMOVE;
 }
 
+void preview_sync_goto_line(AppData* app, const gchar* path, gint line) {
+    struct PreviewSync* s = sync_get(app);
+    g_free(s->goto_path);
+    s->goto_path = (path != NULL && line >= 0) ? g_strdup(path) : NULL;
+    s->goto_line = s->goto_path != NULL ? line : -1;
+}
+
 void preview_sync_loading(AppData* app, const gchar* path) {
     struct PreviewSync* s = sync_get(app);
     s->restore = FALSE;
+    /* The line asked for is for the next load of its file only: a reload
+     * (saved, m) keeps its place */
+    s->goto_load = s->goto_path != NULL && g_strcmp0(path, s->goto_path) == 0;
+    g_clear_pointer(&s->goto_path, g_free);
+    if (s->goto_load) return;
     if (path == NULL || g_strcmp0(path, s->path) != 0 || g_strcmp0(path, preview_state_path(app)) != 0 ||
         preview_state_page(app) != s->page || preview_folding_restoring(app, path) ||
         !gtk_widget_get_mapped(app->text_view)) {
@@ -363,6 +389,7 @@ void preview_sync_showing(AppData* app, const gchar* path, const MdOut* md, gboo
         gtk_adjustment_set_value(vadj, gtk_adjustment_get_lower(vadj));
     }
     s->restore = s->restore && keep && g_strcmp0(path, s->path) == 0;
+    s->goto_scroll = s->goto_load && keep;
     if (g_strcmp0(path, s->path) != 0) {
         g_free(s->path);
         s->path = g_strdup(path);
@@ -412,5 +439,6 @@ void preview_sync_free(AppData* app) {
         g_array_unref(s->sources);
     }
     g_free(s->path);
+    g_free(s->goto_path);
     g_clear_pointer(&app->preview_sync, g_free);
 }

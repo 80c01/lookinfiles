@@ -120,8 +120,17 @@ la taille et la dernière modification ; avec un contenu, aussi le nombre
 d’occurrences et la première ligne trouvée. Cliquez sur l’en-tête d’une
 colonne pour trier. `Down` dans un champ passe aux résultats ; là, `Enter`
 ou un double clic montre l’entrée dans l’explorateur, `Ctrl+Enter` ouvre
-un fichier dans un onglet d’édition à sa première occurrence, et un clic
-droit permet aussi de copier le chemin.
+un fichier dans un onglet d’édition à sa première occurrence, `Space` en
+affiche l’aperçu à sa première occurrence, et un clic droit permet aussi
+de copier le chemin.
+
+Pour voir les fichiers en parcourant les résultats, sortez l’onglet du
+panneau d’aperçu, comme un onglet d’édition : `Ctrl+Alt+Arrow`, le menu
+du clic droit sur l’onglet, ou un glisser de l’onglet vers le panneau
+d’édition ou le bord d’un volet. À côté de l’aperçu, le résultat atteint
+(flèches, clic) y est affiché, à sa première occurrence ; l’explorateur
+garde sa sélection, et la remontre dans l’aperçu quand il reprend le
+focus.
 
 Sous les résultats, deux graphiques (côte à côte quand le panneau est
 assez large, sinon l’un sur l’autre) les suivent à mesure qu’ils arrivent :

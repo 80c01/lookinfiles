@@ -274,8 +274,10 @@ mode move in the list)
 | `Down` in a field | Go to the results |
 | `Enter` / double click on a result | Show it in the explorer |
 | `Ctrl+Enter` on a result | Open the file in an editor tab, at its first match |
+| `Space` on a result | Preview it, at its first match (in the preview panel, the Preview tab comes in front with the focus) |
 | Click on a column header | Sort by that column (again: reverse order) |
 | Right click on a result | Show in the explorer, open in an editor tab, copy the path |
+| `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the Deep Search tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it); out of the preview panel, the result moved to is previewed beside it |
 | `Left` / `Right`, `Home` / `End` in a chart | Move to the previous / next bar, the first / last one |
 | `Enter` / `Space` / click on a bar of a chart | List only the files of that bar (again: every result) |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Deep Search tab and stop the search (also its cross) |
