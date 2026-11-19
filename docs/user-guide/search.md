@@ -87,7 +87,7 @@ Fill in any of the criteria, then press `Enter` in a field (or the
 | **Folder** | Where to search, with everything below it (`~` is your home folder) |
 | **Name** | A part of the name, any case (`report`); with `*` or `?`, a pattern of the whole name (`IMG_????.jpg`, `*.tar.gz`) |
 | **Extensions** | Separated by commas, any case: `c, h, md`, `tar.gz` |
-| **or** a category | Instead of extensions, a kind of file: documents, images, videos, audio, archives, text and code, programs (from the extension, as in [Disk Usage](preview-panel.md#disk-usage)); choosing one empties and greys out the extensions, **Any category** gives them back |
+| **or** a category | Instead of extensions, a kind of file: documents, images, videos, audio, archives, text and code, programs (from the extension, as in [Disk Usage](preview-panel.md#disk-usage)); choosing one empties and dims the extensions; a click in them (or typing) sets **Any category** back |
 | **Contains** | A text in the file, with the same buttons as Search in Files (`Aa`, `ab`, `.*`, `a…z`; `Alt+M`, `Alt+W`, `Alt+R`, `Alt+L`); binary files are skipped, large files are read in full |
 | **Type** | Files and folders, files only (links count as files) or folders only |
 | **Size** | From / to, both included: `42`, `500k`, `10M`, `2G` (powers of 1024); files only |

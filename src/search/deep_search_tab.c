@@ -71,6 +71,7 @@ static void ensure_css(void) {
                   ".deep-search .ds-status { color: @fg_text; padding: 2px 12px 0 12px; }"
                   ".deep-search .ds-current { color: @fg_subtle; font-size: @size_small; padding: 0 12px 6px 12px; }"
                   ".deep-search .ds-muted { color: @fg_subtle; }"
+                  ".deep-search .ds-off { opacity: 0.45; }"
                   ".deep-search .ds-num { font-feature-settings: \"tnum\"; }"
                   ".deep-search .ds-code { font-family: @font_code; }");
 }
@@ -408,14 +409,34 @@ static void on_option_toggled(GtkToggleButton* button, gpointer data) {
     gtk_widget_set_sensitive(dt->options[OPT_WORD], !option_on(dt, OPT_FUZZY));
 }
 
-/* Extensions or a category, not both: a category empties and greys out
- * the extensions, "Any category" gives them back */
+/* Extensions or a category, not both: a category empties and dims the
+ * extensions; a click in them (or typing) sets "Any category" back */
 static void on_family_changed(GObject* drop_down, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     DeepSearchTab* dt = data;
     gboolean category = gtk_drop_down_get_selected(GTK_DROP_DOWN(drop_down)) > 0;
-    if (category) gtk_editable_set_text(GTK_EDITABLE(dt->extensions), "");
-    gtk_widget_set_sensitive(dt->extensions, !category);
+    if (category) {
+        gtk_editable_set_text(GTK_EDITABLE(dt->extensions), "");
+        gtk_widget_add_css_class(dt->extensions, "ds-off");
+    } else {
+        gtk_widget_remove_css_class(dt->extensions, "ds-off");
+    }
+}
+
+static void clear_family(DeepSearchTab* dt) {
+    if (gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->family)) > 0) gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->family), 0);
+}
+
+static void on_extensions_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)gesture;
+    (void)n_press;
+    (void)x;
+    (void)y;
+    clear_family(data);
+}
+
+static void on_extensions_changed(GtkEditable* editable, gpointer data) {
+    if (gtk_editable_get_text(editable)[0] != '\0') clear_family(data);
 }
 
 static gboolean is_field(DeepSearchTab* dt, GtkWidget* w) {
@@ -607,6 +628,11 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     gtk_box_append(GTK_BOX(box), dt->name);
     box = form_row(g, 1, 2, _("Extensions"), 1);
     dt->extensions = field_new(dt, _("c, h, md"), _("Extensions separated by commas, any case"), 0);
+    GtkGesture* press = gtk_gesture_click_new();
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(press), GTK_PHASE_CAPTURE);
+    g_signal_connect(press, "pressed", G_CALLBACK(on_extensions_pressed), dt);
+    gtk_widget_add_controller(dt->extensions, GTK_EVENT_CONTROLLER(press));
+    g_signal_connect(dt->extensions, "changed", G_CALLBACK(on_extensions_changed), dt);
     gtk_box_append(GTK_BOX(box), dt->extensions);
     /* TRANSLATORS: between the extensions and the category of file */
     gtk_box_append(GTK_BOX(box), between_label(_("or")));
