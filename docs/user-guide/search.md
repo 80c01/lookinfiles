@@ -101,6 +101,8 @@ The search runs in the background: the results are listed as they are
 found, with the counters (entries found, entries tested, folders read,
 bytes read for a content) and the folder being read. `Escape` (or the
 **Stop** button) stops it and keeps what was found; `F5` searches again.
+The **Reset** button empties the criteria (the folder stays) and the
+results.
 Symbolic links are listed but never followed, and `/proc`, `/sys` and
 `/dev` are skipped. The search stops at 1 000 000 results, to keep the
 memory in check.

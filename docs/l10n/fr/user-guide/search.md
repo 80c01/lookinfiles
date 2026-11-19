@@ -110,7 +110,8 @@ La recherche tourne en arrière-plan : les résultats s’affichent au fur et
 à mesure, avec les compteurs (entrées trouvées, entrées examinées,
 dossiers lus, octets lus pour un contenu) et le dossier en cours de
 lecture. `Escape` (ou le bouton **Arrêter**) l’arrête et garde ce qui a
-été trouvé ; `F5` relance la recherche. Les liens symboliques sont listés
+été trouvé ; `F5` relance la recherche. Le bouton **Réinitialiser** vide
+les critères (le dossier reste) et les résultats. Les liens symboliques sont listés
 mais jamais suivis, et `/proc`, `/sys` et `/dev` sont ignorés. La
 recherche s’arrête à 1 000 000 de résultats, pour ménager la mémoire.
 

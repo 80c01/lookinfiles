@@ -10373,3 +10373,9 @@ msgstr "Choisir un jour"
 
 msgid "Clear the Date"
 msgstr "Effacer la date"
+
+msgid "Reset the Criteria and the Results"
+msgstr "Réinitialiser les critères et les résultats"
+
+msgid "Reset"
+msgstr "Réinitialiser"

@@ -371,6 +371,38 @@ static void on_open(gpointer data, const gchar* path, gint line, gint column) {
 
 /* Buttons and keys */
 
+#define READY_TEXT _("Fill in the criteria, then press Enter")
+
+/* Every criterion back to its default (the folder stays), no result */
+static void reset_search(DeepSearchTab* dt) {
+    /* A search running is forgotten: its end shows nothing (its job frees it) */
+    stop_search(dt);
+    dt->running = NULL;
+    if (dt->timer != 0) {
+        g_source_remove(dt->timer);
+        dt->timer = 0;
+    }
+    sync_buttons(dt);
+    clear_errors(dt);
+    GtkWidget* fields[] = {dt->name,  dt->extensions, dt->content, dt->min_size, dt->max_size,
+                           dt->after, dt->before,     dt->exclude, dt->depth};
+    for (gsize i = 0; i < G_N_ELEMENTS(fields); i++) gtk_editable_set_text(GTK_EDITABLE(fields[i]), "");
+    for (gint i = 0; i < OPT_COUNT; i++) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dt->options[i]), FALSE);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->family), 0);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->kind), DEEP_KIND_ANY);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->hidden), FALSE);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->one_fs), TRUE);
+    deep_search_list_reset(dt->list, NULL, FALSE);
+    set_label(dt->status, g_strdup(READY_TEXT));
+    set_label(dt->current, g_strdup(""));
+    gtk_widget_grab_focus(dt->name);
+}
+
+static void on_reset_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    reset_search(data);
+}
+
 static void on_search_clicked(GtkButton* button, gpointer data) {
     (void)button;
     start_search(data);
@@ -831,6 +863,10 @@ static DeepSearchTab* ensure_page(AppData* app) {
     gtk_widget_set_hexpand(title, TRUE);
     gtk_widget_set_halign(title, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(bar), title);
+    GtkWidget* reset = icon_button_new("edit-clear", _("Reset the Criteria and the Results"));
+    icon_button_set_content(reset, "edit-clear", _("Reset"));
+    g_signal_connect(reset, "clicked", G_CALLBACK(on_reset_clicked), dt);
+    gtk_box_append(GTK_BOX(bar), reset);
     dt->search = icon_button_new("edit-find", _("Search (Enter / F5)"));
     icon_button_set_content(dt->search, "edit-find", C_("action", "Search"));
     g_signal_connect(dt->search, "clicked", G_CALLBACK(on_search_clicked), dt);
@@ -849,7 +885,7 @@ static DeepSearchTab* ensure_page(AppData* app) {
     dt->status = small_label("ds-status");
     gtk_label_set_ellipsize(GTK_LABEL(dt->status), PANGO_ELLIPSIZE_END);
     gtk_widget_add_css_class(dt->status, "ds-num");
-    set_label(dt->status, g_strdup(_("Fill in the criteria, then press Enter")));
+    set_label(dt->status, g_strdup(READY_TEXT));
     gtk_box_append(GTK_BOX(page), dt->status);
     dt->current = small_label("ds-current");
     gtk_box_append(GTK_BOX(page), dt->current);
