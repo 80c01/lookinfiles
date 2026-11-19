@@ -41,6 +41,12 @@ GArray* disk_stats_top_extensions(const DiskStats* stats, guint n);
 /* Translated name of an age group: "Less than a day", "Over 3 years"... */
 const gchar* disk_age_name(DiskAge age);
 
+/* Translated name of a size group: "Empty", "Under 1k", "1k to 10k"...
+ * "10G and more" (k, M, G: powers of 1024, as the Deep Search criteria) */
+const gchar* disk_size_name(DiskSize size);
+/* Short label of a size group, under its bar: "0", "<1k", "1k"... "10G+" */
+const gchar* disk_size_label(DiskSize size);
+
 /* part of whole as a percentage, 0 when whole is 0 */
 gdouble disk_percent(guint64 part, guint64 whole);
 

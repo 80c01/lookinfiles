@@ -276,7 +276,10 @@ la place occupée sur le disque), fichiers, dossiers, taille moyenne d’un
 fichier, fichiers et dossiers vides, liens, la plus ancienne et la plus
 récente modification, le dossier le plus profond ; puis la place prise
 par type de fichier (documents, images, vidéos, audio, archives, texte et
-code, programmes), par dernière modification (moins d’un jour, d’une
+code, programmes), un histogramme des fichiers par taille (vides, moins
+de 1k, 1k à 10k… 10G et plus, k M G étant des puissances de 1024 : une
+barre pour leur nombre, une pour la place qu’ils prennent ; l’infobulle
+d’un groupe donne les deux), par dernière modification (moins d’un jour, d’une
 semaine, d’un mois, d’un an, 1 à 3 ans, plus) et par extension, les plus
 gros fichiers de tout le dossier (un clic en montre un dans
 l’explorateur), et les éléments illisibles.

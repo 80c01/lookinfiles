@@ -132,6 +132,17 @@ DiskAge disk_age_of(gint64 mtime, gint64 now) {
     return DISK_AGE_OLDER;
 }
 
+DiskSize disk_size_of(guint64 size) {
+    /* The top (excluded) of each group from DISK_SIZE_TINY */
+    static const guint64 tops[] = { 1ULL << 10,  10ULL << 10,  100ULL << 10, 1ULL << 20,
+                                    10ULL << 20, 100ULL << 20, 1ULL << 30,   10ULL << 30 };
+    if (size == 0) return DISK_SIZE_EMPTY;
+    for (guint i = 0; i < G_N_ELEMENTS(tops); i++) {
+        if (size < tops[i]) return (DiskSize)(DISK_SIZE_TINY + i);
+    }
+    return DISK_SIZE_HUGE;
+}
+
 static void add_error(DiskScan* s, const gchar* path, const gchar* message) {
     s->stats.n_errors++;
     if (s->stats.errors->len >= DISK_SCAN_MAX_ERRORS) return;
@@ -207,6 +218,9 @@ static void add_file(DiskScan* s, DiskNode* node, const gchar* name, guint64 siz
     DiskTally* age = &st->ages[disk_age_of(mtime, st->now)];
     age->size += size;
     age->count++;
+    DiskTally* by_size = &st->sizes[disk_size_of(size)];
+    by_size->size += size;
+    by_size->count++;
     if (st->oldest == 0 || mtime < st->oldest) st->oldest = mtime;
     if (mtime > st->newest) st->newest = mtime;
     gchar ext[EXT_MAX + 1];

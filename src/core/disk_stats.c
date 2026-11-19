@@ -70,6 +70,32 @@ const gchar* disk_age_name(DiskAge age) {
     return _("Over 3 years");
 }
 
+const gchar* disk_size_name(DiskSize size) {
+    switch (size) {
+    /* TRANSLATORS: a group of files by size: those of 0 bytes */
+    case DISK_SIZE_EMPTY: return _("Empty");
+    /* TRANSLATORS: groups of files by size; k, M, G are powers of 1024 */
+    case DISK_SIZE_TINY: return _("Under 1k");
+    case DISK_SIZE_1K: return _("1k to 10k");
+    case DISK_SIZE_10K: return _("10k to 100k");
+    case DISK_SIZE_100K: return _("100k to 1M");
+    case DISK_SIZE_1M: return _("1M to 10M");
+    case DISK_SIZE_10M: return _("10M to 100M");
+    case DISK_SIZE_100M: return _("100M to 1G");
+    case DISK_SIZE_1G: return _("1G to 10G");
+    case DISK_SIZE_HUGE:
+    case DISK_SIZE_COUNT: break;
+    }
+    return _("10G and more");
+}
+
+const gchar* disk_size_label(DiskSize size) {
+    /* The units are those typed in the size criteria: not translated */
+    static const gchar* const labels[DISK_SIZE_COUNT] = { "0",   "<1k", "1k",   "10k", "100k",
+                                                          "1M",  "10M", "100M", "1G",  "10G+" };
+    return (guint)size < DISK_SIZE_COUNT ? labels[size] : labels[DISK_SIZE_HUGE];
+}
+
 gdouble disk_percent(guint64 part, guint64 whole) {
     return whole > 0 ? 100.0 * (gdouble)part / (gdouble)whole : 0.0;
 }

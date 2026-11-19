@@ -77,7 +77,8 @@ static void ensure_css(void) {
                   ".disk-usage .du-section { color: @fg_strong; font-weight: bold; padding-top: 10px; }"
                   ".disk-usage .du-grid { color: @fg_text; }"
                   ".disk-usage .du-file { padding: 0 2px; min-height: 0; }"
-                  ".disk-usage .du-map { font-size: @size_small; }");
+                  ".disk-usage .du-map { font-size: @size_small; }"
+                  ".disk-usage .du-histogram { font-size: @size_small; margin-top: 4px; }");
 }
 
 static DiskUsageTab* tab_state(AppData* app) {

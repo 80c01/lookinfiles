@@ -110,6 +110,11 @@ static void test_sizes(void) {
     g_assert_cmpuint(st->largest->len, ==, 4);
     g_assert_true(g_str_has_suffix(g_array_index(st->largest, DiskBigFile, 0).path, "y.png"));
     g_assert_cmpuint(st->ages[DISK_AGE_DAY].count, ==, 4);
+    g_assert_cmpuint(st->sizes[DISK_SIZE_TINY].count, ==, 3); /* 100, 10, 1000 bytes */
+    g_assert_cmpuint(st->sizes[DISK_SIZE_TINY].size, ==, 1110);
+    g_assert_cmpuint(st->sizes[DISK_SIZE_1K].count, ==, 1);
+    g_assert_cmpuint(st->sizes[DISK_SIZE_1K].size, ==, 5000);
+    g_assert_cmpuint(st->sizes[DISK_SIZE_EMPTY].count, ==, 0);
     g_assert_cmpuint(g_hash_table_size(st->extensions), ==, 4);
     disk_scan_free(s);
     remove_tree(dir);
@@ -283,6 +288,29 @@ static void test_ages(void) {
     for (gint a = 0; a < DISK_AGE_COUNT; a++) g_assert_cmpstr(disk_age_name((DiskAge)a), !=, "");
 }
 
+static void test_size_groups(void) {
+    g_assert_cmpint(disk_size_of(0), ==, DISK_SIZE_EMPTY);
+    g_assert_cmpint(disk_size_of(1), ==, DISK_SIZE_TINY);
+    g_assert_cmpint(disk_size_of(1023), ==, DISK_SIZE_TINY);
+    g_assert_cmpint(disk_size_of(1024), ==, DISK_SIZE_1K);
+    g_assert_cmpint(disk_size_of(10 * 1024 - 1), ==, DISK_SIZE_1K);
+    g_assert_cmpint(disk_size_of(10 * 1024), ==, DISK_SIZE_10K);
+    g_assert_cmpint(disk_size_of(100 * 1024), ==, DISK_SIZE_100K);
+    g_assert_cmpint(disk_size_of(1024 * 1024 - 1), ==, DISK_SIZE_100K);
+    g_assert_cmpint(disk_size_of(1024 * 1024), ==, DISK_SIZE_1M);
+    g_assert_cmpint(disk_size_of(50ULL << 20), ==, DISK_SIZE_10M);
+    g_assert_cmpint(disk_size_of(500ULL << 20), ==, DISK_SIZE_100M);
+    g_assert_cmpint(disk_size_of(1ULL << 30), ==, DISK_SIZE_1G);
+    g_assert_cmpint(disk_size_of((10ULL << 30) - 1), ==, DISK_SIZE_1G);
+    g_assert_cmpint(disk_size_of(10ULL << 30), ==, DISK_SIZE_HUGE);
+    g_assert_cmpint(disk_size_of(G_MAXUINT64), ==, DISK_SIZE_HUGE);
+    for (gint g = 0; g < DISK_SIZE_COUNT; g++) {
+        g_assert_cmpstr(disk_size_name((DiskSize)g), !=, "");
+        g_assert_cmpstr(disk_size_label((DiskSize)g), !=, "");
+    }
+    g_assert_cmpstr(disk_size_label(DISK_SIZE_1M), ==, "1M");
+}
+
 static void test_kinds(void) {
     g_assert_cmpint(disk_kind_of_extension("png"), ==, DISK_KIND_IMAGES);
     g_assert_cmpint(disk_kind_of_extension("mp4"), ==, DISK_KIND_VIDEOS);
@@ -425,6 +453,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/disk_scan/unreadable", test_unreadable);
 #endif
     g_test_add_func("/disk_stats/ages", test_ages);
+    g_test_add_func("/disk_stats/size_groups", test_size_groups);
     g_test_add_func("/disk_stats/kinds", test_kinds);
     g_test_add_func("/disk_stats/format", test_format);
     return g_test_run();

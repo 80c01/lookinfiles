@@ -3,6 +3,7 @@
 #include "core/disk_stats.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
+#include "widgets/histogram.h"
 
 #include <string.h>
 
@@ -40,8 +41,12 @@ static GtkWidget* number_take(gchar* text, const gchar* css) {
     return l;
 }
 
-static GtkWidget* section(DuStats* ds, const gchar* title) {
+static void section_title(DuStats* ds, const gchar* title) {
     gtk_box_append(GTK_BOX(ds->box), label_new(title, "du-section", 0.0f));
+}
+
+static GtkWidget* section(DuStats* ds, const gchar* title) {
+    section_title(ds, title);
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 3);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
@@ -161,6 +166,36 @@ static void show_kinds(DuStats* ds, const DiskStats* st) {
     }
 }
 
+/* "1k to 10k\n3 files (12.0%)\n25 MB (0.4%)" */
+static gchar* group_tip(const gchar* name, const DiskTally* t, const DiskStats* st) {
+    gchar* files = disk_format_files(t->count);
+    gchar* files_pct = disk_format_percent(t->count, st->n_files);
+    gchar* size = g_format_size(t->size);
+    gchar* size_pct = disk_format_percent(t->size, st->size);
+    gchar* tip = g_strdup_printf("%s\n%s (%s)\n%s (%s)", name, files, files_pct, size, size_pct);
+    g_free(size_pct);
+    g_free(size);
+    g_free(files_pct);
+    g_free(files);
+    return tip;
+}
+
+/* The files by size: a histogram of their number and of their room */
+static void show_sizes(DuStats* ds, const DiskStats* st) {
+    section_title(ds, _("By Size"));
+    HistogramBin bins[DISK_SIZE_COUNT];
+    gchar* tips[DISK_SIZE_COUNT];
+    for (gint g = 0; g < DISK_SIZE_COUNT; g++) {
+        tips[g] = group_tip(disk_size_name((DiskSize)g), &st->sizes[g], st);
+        bins[g] = (HistogramBin){ disk_size_label((DiskSize)g), tips[g], st->sizes[g].count, st->sizes[g].size };
+    }
+    GtkWidget* chart = histogram_new();
+    gtk_widget_add_css_class(chart, "du-histogram");
+    histogram_set(chart, bins, DISK_SIZE_COUNT);
+    for (gint g = 0; g < DISK_SIZE_COUNT; g++) g_free(tips[g]);
+    gtk_box_append(GTK_BOX(ds->box), chart);
+}
+
 static void show_ages(DuStats* ds, const DiskStats* st) {
     GtkWidget* g = section(ds, _("By Last Change"));
     for (gint a = 0; a < DISK_AGE_COUNT; a++) tally_row(g, a, disk_age_name((DiskAge)a), &st->ages[a], st->size);
@@ -254,6 +289,7 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan) {
     show_overview(ds, st, disk_scan_root_path(scan));
     if (st->n_files > 0) {
         show_kinds(ds, st);
+        show_sizes(ds, st);
         show_ages(ds, st);
         show_extensions(ds, st);
         show_largest(ds, st, disk_scan_root_path(scan));

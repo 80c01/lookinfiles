@@ -250,7 +250,10 @@ Beside the list, once the folder is read, its statistics: sizes (and the
 room taken on the disk), files, folders, average file size, empty files
 and folders, links, the oldest and newest change, the deepest folder; then
 the room taken by kind of file (documents, images, videos, audio,
-archives, text and code, programs), by last change (less than a day, a
+archives, text and code, programs), a histogram of the files by size
+(empty, under 1k, 1k to 10k... 10G and more, k M G being powers of 1024:
+one bar for their number, one for the room they take; the tooltip of a
+group gives both), by last change (less than a day, a
 week, a month, a year, 1 to 3 years, more) and by extension, the largest
 files of the whole folder (a click shows one in the explorer), and the
 entries that could not be read.

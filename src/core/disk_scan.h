@@ -58,6 +58,22 @@ typedef enum {
     DISK_AGE_COUNT
 } DiskAge;
 
+/* Size of a file, by decades of powers of 1024 (the units of the size
+ * criteria of the Deep Search tab: 1k = 1024 bytes) */
+typedef enum {
+    DISK_SIZE_EMPTY = 0,  /* 0 bytes */
+    DISK_SIZE_TINY,       /* under 1k */
+    DISK_SIZE_1K,         /* 1k to under 10k */
+    DISK_SIZE_10K,
+    DISK_SIZE_100K,
+    DISK_SIZE_1M,
+    DISK_SIZE_10M,
+    DISK_SIZE_100M,
+    DISK_SIZE_1G,
+    DISK_SIZE_HUGE,       /* 10G and more */
+    DISK_SIZE_COUNT
+} DiskSize;
+
 typedef struct {
     gchar* path;   /* full path */
     guint64 size;
@@ -87,6 +103,7 @@ typedef struct {
     GArray* largest;       /* DiskBigFile, largest first, DISK_SCAN_TOP_FILES at most */
     GHashTable* extensions;/* lower-case extension ("" for none) -> DiskTally* */
     DiskTally ages[DISK_AGE_COUNT];
+    DiskTally sizes[DISK_SIZE_COUNT];
     gint64 oldest;         /* oldest / newest file modification, 0 if no file */
     gint64 newest;
     guint max_depth;       /* depth of the deepest folder (1: directly in the root) */
@@ -145,7 +162,7 @@ DiskNode* disk_scan_find(DiskScan* scan, const gchar* path);
 /* Take path (a folder or a listed file below the root, full path) out of
  * the tree read: the sizes and counts of the folders above it and of the
  * statistics drop it, as do the largest files and the unreadable entries
- * below it; the groups by extension and age, the dates and the deepest
+ * below it; the groups by extension, age and size, the dates and the deepest
  * folder stay as read (a new reading with disk_scan_exclude() has them
  * exact). The nodes below it are freed. FALSE if path is not in the tree. */
 gboolean disk_scan_remove(DiskScan* scan, const gchar* path);
@@ -158,5 +175,8 @@ guint64 disk_node_other_files_count(const DiskNode* node);
 
 /* Age group of a modification time, now being the reference (seconds) */
 DiskAge disk_age_of(gint64 mtime, gint64 now);
+
+/* Size group of a file of size bytes */
+DiskSize disk_size_of(guint64 size);
 
 #endif /* DISK_SCAN_H */

@@ -90,15 +90,15 @@ Layers, from bottom to top
   read in a worker thread (`disk_scan_run()`, cancellable; names read
   first, so a deep tree keeps no descriptor per level) into `DiskNode`
   folders (sizes rolled up, apparent and on disk, the 20 largest files of
-  each) and `DiskStats` (counts, the 50 largest files, sizes by extension
-  and age, deepest folder, unreadable entries); symbolic links not
+  each) and `DiskStats` (counts, the 50 largest files, sizes by extension,
+  age and size group (`disk_size_of()`, decades of powers of 1024), deepest folder, unreadable entries); symbolic links not
   followed, hard links counted once, other filesystems skipped, the paths
   given to `disk_scan_exclude()` left out; `disk_scan_remove()` takes an
   entry out of a tree read (sizes and counts rolled up again). Any thread
   reads the progress with `disk_scan_snapshot()` (counters, the folders of
   the root done so far). `disk_stats` groups the statistics for display:
   broad kinds from the extensions (`file_kind_from_name()`), the largest
-  extensions, age names, percentages.
+  extensions, age and size group names, percentages.
 - `profile` — the performance probe (`LOOKIN_PROFILE`, docs/performance.md):
   start-up marks (`profile_mark()`), timed operations (`profile_start()` /
   `profile_done()`, thread-safe), frame counters and the exit report (CPU
@@ -594,6 +594,10 @@ Layers, from bottom to top
 - `sparkline` — a small line chart (`GtkDrawingArea`) of the last values of
   one or more series, each in a palette colour, the newest at the right;
   fixed or automatic scale. Used by the system monitor.
+- `histogram` — a bar chart (`GtkDrawingArea`) of files in a few groups:
+  two bars per group (number of files, room taken), each series scaled to
+  its largest group, a legend, a label under each group, the group under
+  the pointer lit with its tooltip. Used by the Disk Usage statistics.
 - `add_button` — the "+" add button drawn with the palette (rounded box,
   accent border on hover): `add_button_draw()` for the workspace switcher,
   `add_button_new()` (a `GtkButton`) for the tab bars (`new_tab_menu`).
@@ -929,7 +933,7 @@ Layers, from bottom to top
   `Left` back up, a file shown in the explorer (`reveal_path_in_tree()`).
   `disk_usage_stats` — the statistics beside it, once the tree is read
   (`disk_stats`): overview, room by kind, by age and by extension with
-  bars, the largest files (a click shows one in the explorer), the
+  bars, the files by size (a `histogram`), the largest files (a click shows one in the explorer), the
   unreadable entries. `disk_usage_map` — the treemap under the list (a
   `GtkPaned`): the folder shown in nested rectangles (`treemap_layout`,
   three folder levels, 300 rectangles per folder at most, laid out again

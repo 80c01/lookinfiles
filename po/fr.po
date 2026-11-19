@@ -10011,6 +10011,39 @@ msgstr "Par type"
 msgid "By Last Change"
 msgstr "Par dernière modification"
 
+msgid "By Size"
+msgstr "Par taille"
+
+msgid "Empty"
+msgstr "Vides"
+
+msgid "Under 1k"
+msgstr "Moins de 1k"
+
+msgid "1k to 10k"
+msgstr "1k à 10k"
+
+msgid "10k to 100k"
+msgstr "10k à 100k"
+
+msgid "100k to 1M"
+msgstr "100k à 1M"
+
+msgid "1M to 10M"
+msgstr "1M à 10M"
+
+msgid "10M to 100M"
+msgstr "10M à 100M"
+
+msgid "100M to 1G"
+msgstr "100M à 1G"
+
+msgid "1G to 10G"
+msgstr "1G à 10G"
+
+msgid "10G and more"
+msgstr "10G et plus"
+
 msgid "By Extension"
 msgstr "Par extension"
 
