@@ -97,7 +97,7 @@ lequel ».
 | **Contient** | Un texte dans le fichier, avec les mêmes boutons que la recherche dans les fichiers (`Aa`, `ab`, `.*`, `a…z` ; `Alt+M`, `Alt+W`, `Alt+R`, `Alt+L`) ; les fichiers binaires sont ignorés, les gros fichiers sont lus en entier |
 | **Type** | Fichiers et dossiers, fichiers seulement (les liens comptent comme des fichiers) ou dossiers seulement |
 | **Taille** | De / à, bornes comprises : `42`, `500k`, `10M`, `2G` (puissances de 1024) ; fichiers seulement |
-| **Dernière modification** | De / à : un jour (`2026-11-01`, `2026-11-01 14:30`, `today`, `yesterday`) ou une durée écoulée (`30min`, `3h`, `7d`, `2w`, `6m` pour des mois, `1y`) ; un jour donné comme seconde date est compris ; le bouton calendrier à droite de chaque champ permet de choisir un jour |
+| **Dernière modification** | De / à : un jour (`2026-11-01`, `2026-11-01 14:30`, `today`, `yesterday`) ou une durée écoulée (`30min`, `3h`, `7d`, `2w`, `6m` pour des mois, `1y`) ; un jour donné comme seconde date est compris ; le bouton calendrier à droite de chaque champ permet de choisir un jour, ou d’effacer la date |
 | **Exclure** | Chemins écartés, séparés par des virgules, comme dans la recherche dans les fichiers : `node_modules`, `.git`, `build/` ; les dossiers écartés ne sont pas parcourus |
 | **Profondeur** | Niveaux sous le dossier : `1` pour ses seules entrées |
 | **Entrées cachées** | Aussi les noms qui commencent par un point (décoché : ils sont ignorés, avec ce qu’ils contiennent) |

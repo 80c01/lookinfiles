@@ -10370,3 +10370,6 @@ msgstr "Donnez des extensions ou une catégorie, pas les deux"
 
 msgid "Pick a Day"
 msgstr "Choisir un jour"
+
+msgid "Clear the Date"
+msgstr "Effacer la date"

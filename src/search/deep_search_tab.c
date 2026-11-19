@@ -599,7 +599,8 @@ static GtkWidget* option_new(DeepSearchTab* dt, gint opt, const gchar* label, co
 }
 
 /* The calendar of a date field: a button on its right, a GtkCalendar in
- * its popover; a click on a day writes it in the field and closes it */
+ * its popover; a click on a day writes it in the field and closes it, the
+ * button under it empties the field */
 
 #define CAL_ENTRY_KEY "lookin-deep-search-date-entry"
 #define CAL_SHOWN_KEY "lookin-deep-search-date-shown" /* year * 12 + month shown */
@@ -666,6 +667,13 @@ static void on_calendar_day(GtkCalendar* cal, gpointer data) {
     gtk_menu_button_popdown(GTK_MENU_BUTTON(button));
 }
 
+/* Clear: no date in the field */
+static void on_calendar_clear(GtkButton* clear, gpointer data) {
+    GtkWidget* entry = g_object_get_data(G_OBJECT(clear), CAL_ENTRY_KEY);
+    gtk_editable_set_text(GTK_EDITABLE(entry), "");
+    gtk_menu_button_popdown(GTK_MENU_BUTTON(data));
+}
+
 static GtkWidget* calendar_button(GtkWidget* entry) {
     GtkWidget* button = gtk_menu_button_new();
     gtk_menu_button_set_child(GTK_MENU_BUTTON(button), icon_image_new("x-office-calendar"));
@@ -677,8 +685,16 @@ static GtkWidget* calendar_button(GtkWidget* entry) {
     g_signal_connect(cal, "day-selected", G_CALLBACK(on_calendar_day), button);
     const gchar* moves[] = {"prev-month", "next-month", "prev-year", "next-year"};
     for (gsize i = 0; i < G_N_ELEMENTS(moves); i++) g_signal_connect(cal, moves[i], G_CALLBACK(on_calendar_moved), NULL);
+    GtkWidget* clear = gtk_button_new();
+    icon_button_set_content(clear, "edit-clear", _("Clear the Date"));
+    gtk_widget_set_halign(clear, GTK_ALIGN_END);
+    g_object_set_data(G_OBJECT(clear), CAL_ENTRY_KEY, entry);
+    g_signal_connect(clear, "clicked", G_CALLBACK(on_calendar_clear), button);
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_box_append(GTK_BOX(box), cal);
+    gtk_box_append(GTK_BOX(box), clear);
     GtkWidget* popover = gtk_popover_new();
-    gtk_popover_set_child(GTK_POPOVER(popover), cal);
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect(popover, "show", G_CALLBACK(on_calendar_shown), cal);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
     return button;
