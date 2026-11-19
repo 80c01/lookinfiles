@@ -254,7 +254,7 @@ navigation keys of the global mode move in the list)
 | `F5` | Read the folder again |
 | `Escape` | Stop the reading (what was read stays) |
 | Click on a column header | Sort by that column (again: reverse order) |
-| Right click on a row | Open the folder, show in the explorer, copy the path |
+| Right click on a row | Open the folder, show in the explorer, copy the path, exclude it from the calculation (out of the sizes at once, then the tree read again without it; the header button with the number excluded puts them back) |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Disk Usage tab (also its cross) |
 
 **Deep Search tab** (the entries below a folder found by name, extensions

@@ -10,6 +10,9 @@
  * into the folders (Enter, Right) and back up (Backspace, Left), and the
  * statistics of the whole folder are shown beside it (disk_usage_stats.h),
  * its treemap under it (disk_usage_map.h).
+ * The context menu of a row excludes it from the calculation (then the
+ * tree is read again without it, the old one shown meanwhile); a header
+ * button puts the excluded entries back.
  * F5 reads it again, Escape stops the reading (what was read stays). The
  * close button, a middle click on the tab, Ctrl+W (Vim Ctrl+W c) close it
  * and stop the reading. Each workspace has its own tab; opening it on

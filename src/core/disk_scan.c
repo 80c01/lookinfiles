@@ -21,6 +21,7 @@ struct DiskScan {
     DiskStats stats;
     GString* path;          /* path of the folder being read (worker only) */
     GHashTable* inodes;     /* InodeKey of the files with several links (worker only) */
+    GHashTable* excluded;   /* full paths left out of the reading */
     guint64 root_dev;
     GCancellable* cancel;   /* borrowed during disk_scan_run() */
     gboolean cancelled;
@@ -71,19 +72,25 @@ static DiskNode* node_copy_flat(const DiskNode* n) {
     return c;
 }
 
+/* A copy of path without trailing separator (a filesystem root keeps its own) */
+static gchar* trimmed_path(const gchar* path) {
+    gchar* copy = g_strdup(path);
+    gsize len = strlen(copy);
+    while (len > 1 && G_IS_DIR_SEPARATOR(copy[len - 1]) && g_path_skip_root(copy) != copy + len) {
+        copy[--len] = '\0';
+    }
+    return copy;
+}
+
 DiskScan* disk_scan_new(const gchar* root, gboolean one_filesystem) {
     DiskScan* s = g_new0(DiskScan, 1);
-    gchar* path = g_strdup(root != NULL && root[0] != '\0' ? root : ".");
-    /* No trailing separator, but a filesystem root keeps its own */
-    gsize len = strlen(path);
-    while (len > 1 && G_IS_DIR_SEPARATOR(path[len - 1]) && g_path_skip_root(path) != path + len) {
-        path[--len] = '\0';
-    }
+    gchar* path = trimmed_path(root != NULL && root[0] != '\0' ? root : ".");
     s->root_path = path;
     s->one_filesystem = one_filesystem;
     s->root = node_new(path, NULL);
     s->path = g_string_new(path);
     s->inodes = g_hash_table_new_full(inode_hash, inode_equal, g_free, NULL);
+    s->excluded = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     s->stats.errors = g_array_new(FALSE, FALSE, sizeof(DiskError));
     s->stats.largest = g_array_new(FALSE, FALSE, sizeof(DiskBigFile));
     s->stats.extensions = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -107,6 +114,7 @@ void disk_scan_free(DiskScan* s) {
     g_free(s->stats.deepest);
     g_string_free(s->path, TRUE);
     g_hash_table_unref(s->inodes);
+    g_hash_table_unref(s->excluded);
     g_mutex_clear(&s->lock);
     disk_scan_snapshot_clear(&s->progress);
     g_free(s->root_path);
@@ -148,7 +156,7 @@ static gint top_slot(GArray* arr, guint64 size, guint max, gsize size_offset) {
     return (gint)i;
 }
 
-static void keep_dir_file(DiskNode* node, const gchar* name, guint64 size, gint64 mtime) {
+static void keep_dir_file(DiskNode* node, const gchar* name, guint64 size, guint64 disk, gint64 mtime) {
     if (node->files == NULL) node->files = g_array_new(FALSE, FALSE, sizeof(DiskFile));
     gint i = top_slot(node->files, size, DISK_SCAN_DIR_FILES, G_STRUCT_OFFSET(DiskFile, size));
     if (i < 0) return;
@@ -156,7 +164,7 @@ static void keep_dir_file(DiskNode* node, const gchar* name, guint64 size, gint6
         g_free(g_array_index(node->files, DiskFile, node->files->len - 1).name);
         g_array_set_size(node->files, node->files->len - 1);
     }
-    DiskFile f = { g_strdup(name), size, mtime };
+    DiskFile f = { g_strdup(name), size, disk, mtime };
     g_array_insert_val(node->files, (guint)i, f);
 }
 
@@ -189,7 +197,7 @@ static void add_file(DiskScan* s, DiskNode* node, const gchar* name, guint64 siz
     node->size += size;
     node->disk += disk;
     if (mtime > node->mtime) node->mtime = mtime;
-    keep_dir_file(node, name, size, mtime);
+    keep_dir_file(node, name, size, disk, mtime);
 
     DiskStats* st = &s->stats;
     st->n_files++;
@@ -287,12 +295,17 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
     if (names->len == 0 && depth > 0) s->stats.n_empty_dirs++;
 
     gsize base = s->path->len;
+    gboolean excluded = g_hash_table_size(s->excluded) > 0;
     GPtrArray* subdirs = g_ptr_array_new(); /* names borrowed from names */
     GArray* subdir_disk = g_array_new(FALSE, FALSE, sizeof(guint64)); /* their own blocks */
     guint64 files = 0, size = 0, disk = 0;
     for (guint i = 0; i < names->len; i++) {
         name = g_ptr_array_index(names, i);
         path_enter(s, base, name);
+        if (excluded && g_hash_table_contains(s->excluded, s->path->str)) {
+            s->stats.n_excluded++;
+            continue;
+        }
         GStatBuf st;
         if (g_lstat(s->path->str, &st) != 0) {
             add_error(s, s->path->str, g_strerror(errno));
@@ -401,6 +414,12 @@ static guint64 filesystem_used(const gchar* path) {
     return used;
 }
 
+void disk_scan_exclude(DiskScan* s, const gchar* path) {
+    if (s == NULL || path == NULL || path[0] == '\0') return;
+    gchar* clean = trimmed_path(path);
+    g_hash_table_add(s->excluded, clean);
+}
+
 void disk_scan_run(DiskScan* s, GCancellable* cancel) {
     if (s == NULL) return;
     s->cancel = cancel;
@@ -464,6 +483,136 @@ const DiskStats* disk_scan_stats(const DiskScan* s) {
 
 gboolean disk_scan_cancelled(const DiskScan* s) {
     return s != NULL && s->cancelled;
+}
+
+/* The part of path below the root, NULL when it is not below it */
+static const gchar* below_root(const DiskScan* s, const gchar* path) {
+    gsize len = strlen(s->root_path);
+    if (strncmp(path, s->root_path, len) != 0) return NULL;
+    const gchar* rel = path + len;
+    if (*rel != '\0' && !G_IS_DIR_SEPARATOR(*rel) && !G_IS_DIR_SEPARATOR(s->root_path[len - 1])) return NULL;
+    while (G_IS_DIR_SEPARATOR(*rel)) rel++;
+    return rel;
+}
+
+static DiskNode* child_named(DiskNode* node, const gchar* name, guint* index) {
+    for (guint i = 0; node->children != NULL && i < node->children->len; i++) {
+        DiskNode* c = g_ptr_array_index(node->children, i);
+        if (strcmp(c->name, name) == 0) {
+            if (index != NULL) *index = i;
+            return c;
+        }
+    }
+    return NULL;
+}
+
+/* The folder at the components parts[0..n) below the root, NULL if none */
+static DiskNode* walk(DiskScan* s, gchar** parts, guint n) {
+    DiskNode* node = s->root;
+    for (guint i = 0; node != NULL && i < n; i++) {
+        if (parts[i][0] == '\0') continue;
+        node = child_named(node, parts[i], NULL);
+    }
+    return node;
+}
+
+DiskNode* disk_scan_find(DiskScan* s, const gchar* path) {
+    if (s == NULL || path == NULL) return NULL;
+    gchar* clean = trimmed_path(path);
+    const gchar* rel = below_root(s, clean);
+    DiskNode* node = NULL;
+    if (rel != NULL) {
+        gchar** parts = g_strsplit(rel, G_DIR_SEPARATOR_S, -1);
+        node = walk(s, parts, g_strv_length(parts));
+        g_strfreev(parts);
+    }
+    g_free(clean);
+    return node;
+}
+
+/* Is path at or below the folder dir? */
+static gboolean path_inside(const gchar* path, const gchar* dir) {
+    gsize len = strlen(dir);
+    return strncmp(path, dir, len) == 0 && (path[len] == '\0' || G_IS_DIR_SEPARATOR(path[len]));
+}
+
+/* Drop the largest files and the unreadable entries at or below path */
+static void drop_stats_below(DiskStats* st, const gchar* path) {
+    for (guint i = st->largest->len; i > 0; i--) {
+        DiskBigFile* f = &g_array_index(st->largest, DiskBigFile, i - 1);
+        if (!path_inside(f->path, path)) continue;
+        g_free(f->path);
+        g_array_remove_index(st->largest, i - 1);
+    }
+    for (guint i = st->errors->len; i > 0; i--) {
+        DiskError* e = &g_array_index(st->errors, DiskError, i - 1);
+        if (!path_inside(e->path, path)) continue;
+        g_free(e->path);
+        g_free(e->message);
+        g_array_remove_index(st->errors, i - 1);
+        if (st->n_errors > 0) st->n_errors--;
+    }
+}
+
+static guint64 minus(guint64 a, guint64 b) {
+    return a > b ? a - b : 0;
+}
+
+gboolean disk_scan_remove(DiskScan* s, const gchar* path) {
+    if (s == NULL || path == NULL) return FALSE;
+    gchar* clean = trimmed_path(path);
+    const gchar* rel = below_root(s, clean);
+    gchar** parts = rel != NULL && rel[0] != '\0' ? g_strsplit(rel, G_DIR_SEPARATOR_S, -1) : NULL;
+    guint n = parts != NULL ? g_strv_length(parts) : 0;
+    DiskNode* parent = n > 0 ? walk(s, parts, n - 1) : NULL;
+    const gchar* name = n > 0 ? parts[n - 1] : NULL;
+    guint64 size = 0, disk = 0, files = 0, dirs = 0;
+    gboolean found = FALSE;
+    guint index = 0;
+    DiskNode* folder = parent != NULL ? child_named(parent, name, &index) : NULL;
+    if (folder != NULL) {
+        size = folder->size;
+        disk = folder->disk;
+        files = folder->n_files;
+        dirs = folder->n_dirs + 1;
+        g_ptr_array_remove_index(parent->children, index); /* frees it */
+        if (parent->children->len == 0) g_clear_pointer(&parent->children, g_ptr_array_unref);
+        found = TRUE;
+    } else if (parent != NULL) {
+        for (guint i = 0; parent->files != NULL && i < parent->files->len; i++) {
+            DiskFile* f = &g_array_index(parent->files, DiskFile, i);
+            if (strcmp(f->name, name) != 0) continue;
+            size = f->size;
+            disk = f->disk;
+            files = 1;
+            parent->files_size = minus(parent->files_size, f->size);
+            if (parent->files_count > 0) parent->files_count--;
+            g_free(f->name);
+            g_array_remove_index(parent->files, i);
+            if (parent->files->len == 0) g_clear_pointer(&parent->files, g_array_unref);
+            found = TRUE;
+            break;
+        }
+    }
+    if (found) {
+        for (DiskNode* a = parent; a != NULL; a = a->parent) {
+            a->size = minus(a->size, size);
+            a->disk = minus(a->disk, disk);
+            a->n_files = minus(a->n_files, files);
+            a->n_dirs = minus(a->n_dirs, dirs);
+            if (a->parent != NULL) g_ptr_array_sort(a->parent->children, compare_size);
+        }
+        DiskStats* st = &s->stats;
+        st->size = minus(st->size, size);
+        st->disk = minus(st->disk, disk);
+        st->n_files = minus(st->n_files, files);
+        st->n_dirs = minus(st->n_dirs, dirs);
+        st->n_excluded++;
+        drop_stats_below(st, clean);
+    }
+    g_strfreev(parts);
+    g_free(clean);
+    return found;
 }
 
 gchar* disk_node_path(const DiskNode* node) {

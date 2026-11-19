@@ -9895,6 +9895,24 @@ msgstr[1] "%s illisibles"
 msgid "stopped before the end"
 msgstr "arrêté avant la fin"
 
+#. TRANSLATORS: %s is a number of entries excluded from the calculation
+#. TRANSLATORS: %s is a number of files and folders excluded from the calculation
+#, c-format
+msgid "%s excluded"
+msgid_plural "%s excluded"
+msgstr[0] "%s exclue"
+msgstr[1] "%s exclues"
+
+msgid "Include the Excluded Entries Again"
+msgstr "Réintégrer les entrées exclues"
+
+msgid "Exclude from the Calculation"
+msgstr "Exclure du calcul"
+
+#. TRANSLATORS: files and folders excluded from the calculation on request
+msgid "Excluded"
+msgstr "Exclues"
+
 msgid "Reading…"
 msgstr "Lecture…"
 

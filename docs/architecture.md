@@ -92,7 +92,9 @@ Layers, from bottom to top
   folders (sizes rolled up, apparent and on disk, the 20 largest files of
   each) and `DiskStats` (counts, the 50 largest files, sizes by extension
   and age, deepest folder, unreadable entries); symbolic links not
-  followed, hard links counted once, other filesystems skipped. Any thread
+  followed, hard links counted once, other filesystems skipped, the paths
+  given to `disk_scan_exclude()` left out; `disk_scan_remove()` takes an
+  entry out of a tree read (sizes and counts rolled up again). Any thread
   reads the progress with `disk_scan_snapshot()` (counters, the folders of
   the root done so far). `disk_stats` groups the statistics for display:
   broad kinds from the extensions (`file_kind_from_name()`), the largest
@@ -917,7 +919,10 @@ Layers, from bottom to top
   `GTask` worker (the scan is owned by the task until the tab adopts it, so
   a reading replaced or a tab closed never frees a tree still being read),
   a progress bar and counters from `disk_scan_snapshot()` every 200 ms,
-  then the summary. `disk_usage_list` — its breakdown: a sorted
+  then the summary. An entry excluded from the calculation (context menu
+  of the list) leaves the tree read at once (`disk_scan_remove()`), then
+  the tree is read again without it, the old one shown until the new one
+  is read (a quiet reading: the progress bar only). `disk_usage_list` — its breakdown: a sorted
   `GtkColumnView` of the folders and largest files of one `DiskNode` (share
   bar, size, files, last change), the folders of the root done so far
   while the reading runs; `Enter` / `Right` into a folder, `Backspace` /

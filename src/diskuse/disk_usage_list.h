@@ -18,6 +18,9 @@ typedef struct {
     void (*up)(gpointer data);
     /* Show in the explorer (context menu) */
     void (*reveal)(gpointer data, const gchar* path);
+    /* Exclude from the calculation (context menu): path is the row's full
+     * path */
+    void (*exclude)(gpointer data, const gchar* path);
     /* The selected row changed: its name, NULL if none */
     void (*selected)(gpointer data, const gchar* name);
     gpointer data;

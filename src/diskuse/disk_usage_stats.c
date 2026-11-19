@@ -126,6 +126,8 @@ static void show_overview(DuStats* ds, const DiskStats* st, const gchar* root) {
     }
     if (st->n_special > 0) fact(g, row++, _("Devices, pipes, sockets"), count_text(st->n_special));
     if (st->n_mounts > 0) fact(g, row++, _("Other filesystems left out"), count_text(st->n_mounts));
+    /* TRANSLATORS: files and folders excluded from the calculation on request */
+    if (st->n_excluded > 0) fact(g, row++, _("Excluded"), count_text(st->n_excluded));
     if (st->n_files > 0) {
         fact(g, row++, _("Oldest change"), date_text(st->oldest));
         fact(g, row++, _("Newest change"), date_text(st->newest));

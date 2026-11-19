@@ -30,6 +30,7 @@ typedef struct {
     GtkWidget* up;       /* header buttons */
     GtkWidget* refresh;
     GtkWidget* stop;
+    GtkWidget* include;  /* the excluded entries back in */
     GtkWidget* progress; /* GtkProgressBar, while the tree is read */
     GtkWidget* status;   /* counters, then the summary */
     GtkWidget* current;  /* folder being read, then the folder shown */
@@ -42,6 +43,8 @@ typedef struct {
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
     DiskScan* running;   /* the scan being read (owned by its job), else NULL */
+    gboolean quiet;      /* the reading running keeps the tree read shown */
+    GPtrArray* excluded; /* full paths left out of the calculation */
     GCancellable* cancel;
     DiskNode* shown;     /* folder of the breakdown, in scan's tree */
     guint timer;
@@ -120,6 +123,23 @@ static void sync_buttons(DiskUsageTab* dt) {
     gtk_widget_set_sensitive(dt->up, dt->shown != NULL && dt->shown->parent != NULL);
     gtk_widget_set_visible(dt->stop, dt->running != NULL);
     gtk_widget_set_visible(dt->refresh, dt->running == NULL);
+    guint n = dt->excluded->len;
+    gtk_widget_set_visible(dt->include, n > 0);
+    if (n > 0) {
+        gchar* count = format_count(n);
+        /* TRANSLATORS: %s is a number of files and folders excluded from the calculation */
+        gchar* text = g_strdup_printf(ngettext("%s excluded", "%s excluded", n), count);
+        icon_button_set_content(dt->include, "edit-undo", text);
+        GString* tip = g_string_new(_("Include the Excluded Entries Again"));
+        for (guint i = 0; i < n; i++) {
+            g_string_append_c(tip, '\n');
+            g_string_append(tip, g_ptr_array_index(dt->excluded, i));
+        }
+        gtk_widget_set_tooltip_text(dt->include, tip->str);
+        g_string_free(tip, TRUE);
+        g_free(text);
+        g_free(count);
+    }
 }
 
 /* While the tree is read: the bar, the counters, the folders done so far */
@@ -147,6 +167,10 @@ static void show_progress(DiskUsageTab* dt) {
     } else {
         gtk_progress_bar_pulse(bar);
         gtk_progress_bar_set_text(bar, NULL);
+    }
+    if (dt->quiet) { /* the tree read stays shown */
+        disk_scan_snapshot_clear(&snap);
+        return;
     }
     gchar* counters = counters_text(snap.files, snap.dirs, snap.size);
     gchar* time = format_duration(g_get_monotonic_time() - dt->started);
@@ -187,6 +211,13 @@ static void show_summary(DiskUsageTab* dt) {
         g_string_append_printf(text, ngettext("%s unreadable", "%s unreadable", (gulong)MIN(st->n_errors, G_MAXULONG)), n);
         g_free(n);
     }
+    if (st->n_excluded > 0) {
+        gchar* n = format_count(st->n_excluded);
+        g_string_append(text, " · ");
+        /* TRANSLATORS: %s is a number of entries excluded from the calculation */
+        g_string_append_printf(text, ngettext("%s excluded", "%s excluded", (gulong)MIN(st->n_excluded, G_MAXULONG)), n);
+        g_free(n);
+    }
     if (disk_scan_cancelled(dt->scan)) {
         g_string_append(text, " · ");
         g_string_append(text, _("stopped before the end"));
@@ -225,15 +256,38 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
     ScanJob* job = g_task_get_task_data(G_TASK(res));
     g_task_propagate_boolean(G_TASK(res), NULL);
     if (dt == NULL || job->scan == NULL || job->scan != dt->running) return; /* replaced or closed */
-    dt->scan = job->scan;
-    job->scan = NULL;
     dt->running = NULL;
-    dt->elapsed = g_get_monotonic_time() - dt->started;
     if (dt->timer != 0) {
         g_source_remove(dt->timer);
         dt->timer = 0;
     }
     gtk_widget_set_visible(dt->progress, FALSE);
+    if (dt->quiet && dt->scan != NULL) {
+        dt->quiet = FALSE;
+        if (disk_scan_cancelled(job->scan)) { /* stopped: the tree read stays */
+            sync_buttons(dt);
+            return;
+        }
+        /* The new tree in place of the old one, on the same folder */
+        DiskScan* old = dt->scan;
+        gchar* path = disk_node_path(dt->shown);
+        gchar* select = disk_usage_list_selected_name(dt->list);
+        dt->scan = job->scan;
+        job->scan = NULL;
+        dt->elapsed = g_get_monotonic_time() - dt->started;
+        DiskNode* node = disk_scan_find(dt->scan, path);
+        show_summary(dt);
+        disk_usage_stats_show(dt->stats, dt->scan);
+        show_folder(dt, node != NULL ? node : disk_scan_root(dt->scan), select);
+        disk_scan_free(old); /* nothing shown points into it any more */
+        g_free(select);
+        g_free(path);
+        return;
+    }
+    dt->quiet = FALSE;
+    dt->scan = job->scan;
+    job->scan = NULL;
+    dt->elapsed = g_get_monotonic_time() - dt->started;
     show_summary(dt);
     disk_usage_stats_show(dt->stats, dt->scan);
     gchar* select = disk_usage_list_selected_name(dt->list);
@@ -246,21 +300,27 @@ static void stop_scan(DiskUsageTab* dt) {
     if (dt->running != NULL) g_cancellable_cancel(dt->cancel);
 }
 
-/* Read the tree of dt->root again, from the start */
-static void start_scan(DiskUsageTab* dt) {
+/* Read the tree of dt->root again, from the start, without the excluded
+ * entries; quiet: the tree read stays shown until the new one is read (the
+ * progress bar only) */
+static void start_scan(DiskUsageTab* dt, gboolean quiet) {
     if (dt->cancel != NULL) {
         g_cancellable_cancel(dt->cancel);
         g_object_unref(dt->cancel);
     }
     dt->cancel = g_cancellable_new();
-    disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
-    disk_usage_stats_show(dt->stats, NULL);
-    disk_usage_map_show(dt->map, NULL);
-    dt->shown = NULL;
-    g_clear_pointer(&dt->scan, disk_scan_free);
+    dt->quiet = quiet && dt->scan != NULL;
+    if (!dt->quiet) {
+        disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
+        disk_usage_stats_show(dt->stats, NULL);
+        disk_usage_map_show(dt->map, NULL);
+        dt->shown = NULL;
+        g_clear_pointer(&dt->scan, disk_scan_free);
+    }
 
     ScanJob* job = g_new0(ScanJob, 1);
     job->scan = disk_scan_new(dt->root, TRUE);
+    for (guint i = 0; i < dt->excluded->len; i++) disk_scan_exclude(job->scan, g_ptr_array_index(dt->excluded, i));
     dt->running = job->scan;
     dt->started = g_get_monotonic_time();
     GTask* task = g_task_new(dt->page, dt->cancel, on_scan_done, NULL);
@@ -268,12 +328,14 @@ static void start_scan(DiskUsageTab* dt) {
     g_task_run_in_thread(task, scan_thread);
     g_object_unref(task);
 
-    set_label(dt->title, g_strdup(dt->root));
-    gtk_widget_set_tooltip_text(dt->title, dt->root);
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(dt->progress), 0.0);
     gtk_widget_set_visible(dt->progress, TRUE);
-    set_label(dt->status, g_strdup(_("Reading…")));
-    set_label(dt->current, g_strdup(dt->root));
+    if (!dt->quiet) {
+        set_label(dt->title, g_strdup(dt->root));
+        gtk_widget_set_tooltip_text(dt->title, dt->root);
+        set_label(dt->status, g_strdup(_("Reading…")));
+        set_label(dt->current, g_strdup(dt->root));
+    }
     if (dt->timer == 0) dt->timer = g_timeout_add(TICK_MS, on_tick, dt);
     sync_buttons(dt);
 }
@@ -290,6 +352,28 @@ static void on_row_activate(gpointer data, DiskNode* folder, const gchar* path) 
         reveal_path_in_tree(dt->app, path);
         if (dt->app->tree_view != NULL) gtk_widget_grab_focus(dt->app->tree_view);
     }
+}
+
+/* Exclude path from the calculation: out of the tree read at once (its
+ * sizes), then the tree read again without it (its statistics); while
+ * the first reading runs, it starts again without it */
+static void on_row_exclude(gpointer data, const gchar* path) {
+    DiskUsageTab* dt = data;
+    if (path == NULL) return;
+    for (guint i = 0; i < dt->excluded->len; i++) {
+        if (g_strcmp0(g_ptr_array_index(dt->excluded, i), path) == 0) return;
+    }
+    g_ptr_array_add(dt->excluded, g_strdup(path));
+    if (dt->scan == NULL) {
+        start_scan(dt, FALSE);
+        return;
+    }
+    if (dt->shown != NULL && disk_scan_remove(dt->scan, path)) {
+        show_summary(dt);
+        disk_usage_stats_show(dt->stats, dt->scan);
+        show_folder(dt, dt->shown, NULL);
+    }
+    start_scan(dt, TRUE);
 }
 
 static void on_row_selected(gpointer data, const gchar* name) {
@@ -330,7 +414,15 @@ static void on_up_clicked(GtkButton* button, gpointer data) {
 
 static void on_refresh_clicked(GtkButton* button, gpointer data) {
     (void)button;
-    start_scan(data);
+    start_scan(data, FALSE);
+}
+
+/* The excluded entries back in: the tree read again with them */
+static void on_include_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    DiskUsageTab* dt = data;
+    g_ptr_array_set_size(dt->excluded, 0);
+    start_scan(dt, TRUE);
 }
 
 static void on_stop_clicked(GtkButton* button, gpointer data) {
@@ -345,7 +437,7 @@ static gboolean on_page_key(GtkEventControllerKey* controller, guint keyval, gui
     DiskUsageTab* dt = data;
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) != 0) return FALSE;
     if (keyval == GDK_KEY_F5) {
-        if (dt->running == NULL) start_scan(dt);
+        if (dt->running == NULL) start_scan(dt, FALSE);
         return TRUE;
     }
     if (keyval == GDK_KEY_Escape && dt->running != NULL) {
@@ -376,6 +468,7 @@ static void tab_free(gpointer data) {
         g_object_unref(dt->cancel);
     }
     disk_scan_free(dt->scan);
+    g_ptr_array_unref(dt->excluded);
     g_free(dt->root);
     g_clear_object(&dt->label);
     g_free(dt);
@@ -454,6 +547,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
     ensure_css();
     dt = g_new0(DiskUsageTab, 1);
     dt->app = app;
+    dt->excluded = g_ptr_array_new_with_free_func(g_free);
 
     GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(page, "disk-usage");
@@ -474,6 +568,10 @@ static DiskUsageTab* ensure_page(AppData* app) {
     dt->refresh = icon_button_new("view-refresh", _("Read Again (F5)"));
     g_signal_connect(dt->refresh, "clicked", G_CALLBACK(on_refresh_clicked), dt);
     gtk_box_append(GTK_BOX(bar), dt->refresh);
+    dt->include = icon_button_new("edit-undo", _("Include the Excluded Entries Again"));
+    g_signal_connect(dt->include, "clicked", G_CALLBACK(on_include_clicked), dt);
+    gtk_widget_set_visible(dt->include, FALSE);
+    gtk_box_append(GTK_BOX(bar), dt->include);
     dt->stop = icon_button_new("process-stop", _("Stop Reading (Escape)"));
     icon_button_set_content(dt->stop, "process-stop", _("Stop")); /* not taken for the close button */
     g_signal_connect(dt->stop, "clicked", G_CALLBACK(on_stop_clicked), dt);
@@ -494,7 +592,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
     dt->current = small_label("du-current");
     gtk_box_append(GTK_BOX(page), dt->current);
 
-    DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, on_row_selected, dt };
+    DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, on_row_exclude, on_row_selected, dt };
     dt->list = disk_usage_list_new(app, &handlers);
     DiskUsageMapHandlers map_handlers = { on_map_selected, on_map_open, on_row_reveal, dt };
     dt->map = disk_usage_map_new(&map_handlers);
@@ -541,9 +639,10 @@ void disk_usage_tab_show(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return;
     DiskUsageTab* dt = ensure_page(app);
     if (dt == NULL) return;
+    if (g_strcmp0(dt->root, path) != 0) g_ptr_array_set_size(dt->excluded, 0); /* another folder */
     g_free(dt->root);
     dt->root = g_strdup(path);
-    start_scan(dt);
+    start_scan(dt, FALSE);
     /* The preview panel holds the tab: show it when hidden */
     if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
         app_layout_begin(app);

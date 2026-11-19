@@ -285,6 +285,7 @@ typedef enum {
     MENU_OPEN,
     MENU_REVEAL,
     MENU_COPY_PATH,
+    MENU_EXCLUDE,
 } DuMenuAction;
 
 typedef struct {
@@ -301,6 +302,9 @@ static gboolean run_menu_action(gpointer data) {
         if (m->dl->handlers.reveal != NULL) m->dl->handlers.reveal(m->dl->handlers.data, m->row->path);
         break;
     case MENU_COPY_PATH: path_copy(m->dl->app, m->row->path, PATH_COPY_ABSOLUTE); break;
+    case MENU_EXCLUDE:
+        if (m->dl->handlers.exclude != NULL) m->dl->handlers.exclude(m->dl->handlers.data, m->row->path);
+        break;
     }
     g_object_unref(m->row);
     g_free(m);
@@ -378,6 +382,10 @@ static void on_cell_menu(GtkGestureClick* gesture, gint n_press, gdouble x, gdou
     if (r->kind == ROW_DIR && r->node != NULL) menu_item(box, popover, _("Open Folder"), "Enter", MENU_OPEN);
     menu_item(box, popover, _("Show in Explorer"), r->kind == ROW_FILE ? "Enter" : NULL, MENU_REVEAL);
     menu_item(box, popover, _("Copy Path"), NULL, MENU_COPY_PATH);
+    if (dl->handlers.exclude != NULL) {
+        gtk_box_append(GTK_BOX(box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+        menu_item(box, popover, _("Exclude from the Calculation"), NULL, MENU_EXCLUDE);
+    }
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect(popover, "closed", G_CALLBACK(on_popover_closed), NULL);
     gtk_popover_popup(GTK_POPOVER(popover));

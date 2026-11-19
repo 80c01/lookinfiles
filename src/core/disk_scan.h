@@ -20,6 +20,7 @@
 typedef struct {
     gchar* name;
     guint64 size;  /* apparent size in bytes */
+    guint64 disk;  /* bytes allocated on disk */
     gint64 mtime;  /* seconds since the epoch */
 } DiskFile;
 
@@ -79,6 +80,8 @@ typedef struct {
     guint64 n_empty_files;
     guint64 n_empty_dirs;
     guint64 n_mounts;      /* other filesystems mounted below (skipped) */
+    guint64 n_excluded;    /* entries left out on request (disk_scan_exclude(),
+                              disk_scan_remove()) */
     guint64 n_errors;      /* entries that could not be read */
     GArray* errors;        /* DiskError, the first DISK_SCAN_MAX_ERRORS */
     GArray* largest;       /* DiskBigFile, largest first, DISK_SCAN_TOP_FILES at most */
@@ -116,6 +119,10 @@ typedef struct DiskScan DiskScan;
 DiskScan* disk_scan_new(const gchar* root, gboolean one_filesystem);
 void disk_scan_free(DiskScan* scan);
 
+/* Leave path (a file or a folder below the root, full path) out of the
+ * reading; call it before disk_scan_run() */
+void disk_scan_exclude(DiskScan* scan, const gchar* path);
+
 /* Read the tree: blocks until it is read or cancel is triggered (a cancelled
  * scan keeps what it read). Call it once, in a worker thread. */
 void disk_scan_run(DiskScan* scan, GCancellable* cancel);
@@ -131,6 +138,17 @@ DiskNode* disk_scan_root(DiskScan* scan);
 const DiskStats* disk_scan_stats(const DiskScan* scan);
 /* TRUE when the scan was cancelled before the end */
 gboolean disk_scan_cancelled(const DiskScan* scan);
+
+/* The folder of the tree read at path (full path), NULL if none */
+DiskNode* disk_scan_find(DiskScan* scan, const gchar* path);
+
+/* Take path (a folder or a listed file below the root, full path) out of
+ * the tree read: the sizes and counts of the folders above it and of the
+ * statistics drop it, as do the largest files and the unreadable entries
+ * below it; the groups by extension and age, the dates and the deepest
+ * folder stay as read (a new reading with disk_scan_exclude() has them
+ * exact). The nodes below it are freed. FALSE if path is not in the tree. */
+gboolean disk_scan_remove(DiskScan* scan, const gchar* path);
 
 /* Full path of a node (from the root's path) */
 gchar* disk_node_path(const DiskNode* node);

@@ -327,6 +327,89 @@ static void test_format(void) {
     g_free(p);
 }
 
+/* Left out of the reading: a folder and a file */
+static void test_exclude(void) {
+    gchar* dir = make_tree();
+    DiskScan* s = disk_scan_new(dir, TRUE);
+    gchar* deep = g_build_filename(dir, "docs", "deep", NULL);
+    gchar* a = g_build_filename(dir, "a.txt", NULL);
+    disk_scan_exclude(s, deep);
+    disk_scan_exclude(s, a);
+    disk_scan_run(s, NULL);
+    DiskNode* root = disk_scan_root(s);
+    g_assert_cmpuint(root->size, ==, 1010);
+    g_assert_cmpuint(root->n_files, ==, 2);
+    g_assert_cmpuint(root->n_dirs, ==, 2); /* docs, empty */
+    g_assert_null(child_named(child_named(root, "docs"), "deep"));
+    const DiskStats* st = disk_scan_stats(s);
+    g_assert_cmpuint(st->n_excluded, ==, 2);
+    g_assert_cmpuint(st->size, ==, 1010);
+    g_assert_cmpuint(st->largest->len, ==, 2);
+    g_assert_cmpuint(g_hash_table_size(st->extensions), ==, 2);
+    disk_scan_free(s);
+    g_free(deep);
+    g_free(a);
+    remove_tree(dir);
+    g_free(dir);
+}
+
+/* Taken out of the tree read */
+static void test_remove(void) {
+    gchar* dir = make_tree();
+    DiskScan* s = scan_dir(dir);
+    DiskNode* root = disk_scan_root(s);
+    const DiskStats* st = disk_scan_stats(s);
+    guint64 disk = st->disk;
+    guint64 x_disk = child_named(child_named(child_named(root, "docs"), "deep"), "x")->disk;
+    g_assert_true(disk_scan_find(s, dir) == root);
+
+    gchar* x = g_build_filename(dir, "docs", "deep", "x", NULL);
+    gchar* deep = g_build_filename(dir, "docs", "deep", NULL);
+    g_assert_true(disk_scan_find(s, x) != NULL);
+    g_assert_true(disk_scan_remove(s, x));
+    g_assert_null(disk_scan_find(s, x));
+    g_assert_false(disk_scan_remove(s, x)); /* gone */
+    DiskNode* docs = child_named(root, "docs");
+    g_assert_true(disk_scan_find(s, deep) == child_named(docs, "deep"));
+    g_assert_null(child_named(docs, "deep")->children);
+    g_assert_cmpuint(docs->size, ==, 1000);
+    g_assert_cmpuint(docs->n_files, ==, 1);
+    g_assert_cmpuint(docs->n_dirs, ==, 1);
+    g_assert_cmpuint(root->size, ==, 1110);
+    g_assert_cmpuint(root->n_files, ==, 3);
+    g_assert_cmpuint(root->n_dirs, ==, 3);
+    g_assert_cmpuint(st->size, ==, 1110);
+    g_assert_cmpuint(st->disk, ==, disk - x_disk);
+    g_assert_cmpuint(st->n_files, ==, 3);
+    g_assert_cmpuint(st->n_dirs, ==, 3);
+    g_assert_cmpuint(st->largest->len, ==, 3);
+    g_assert_cmpuint(st->n_excluded, ==, 1);
+
+    /* A listed file; then the folders are sorted again by size */
+    gchar* r = g_build_filename(dir, "docs", "r.md", NULL);
+    g_assert_true(disk_scan_remove(s, r));
+    g_assert_cmpuint(docs->size, ==, 0);
+    g_assert_cmpuint(docs->files_count, ==, 0);
+    g_assert_null(docs->files);
+    g_assert_cmpuint(root->size, ==, 110);
+    g_assert_cmpuint(st->n_files, ==, 2);
+    g_assert_cmpuint(st->largest->len, ==, 2);
+    g_assert_cmpstr(((DiskNode*)g_ptr_array_index(root->children, 0))->name, ==, "docs");
+
+    /* Not below the root, the root itself */
+    g_assert_false(disk_scan_remove(s, "/nowhere/at/all"));
+    g_assert_false(disk_scan_remove(s, dir));
+    gchar* outside = g_strconcat(dir, "x", NULL); /* a sibling sharing the prefix */
+    g_assert_null(disk_scan_find(s, outside));
+    g_free(outside);
+    g_free(r);
+    g_free(x);
+    g_free(deep);
+    disk_scan_free(s);
+    remove_tree(dir);
+    g_free(dir);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/disk_scan/sizes", test_sizes);
@@ -335,6 +418,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/disk_scan/missing_root", test_missing_root);
     g_test_add_func("/disk_scan/cancelled", test_cancelled);
     g_test_add_func("/disk_scan/root_path", test_root_path);
+    g_test_add_func("/disk_scan/exclude", test_exclude);
+    g_test_add_func("/disk_scan/remove", test_remove);
 #ifdef G_OS_UNIX
     g_test_add_func("/disk_scan/links", test_links);
     g_test_add_func("/disk_scan/unreadable", test_unreadable);
