@@ -114,10 +114,10 @@ new ones. See [Git](git.md) for the rest of the git features.
 
 On a file or folder: open, open in the side panel (text files) or with the
 default application (other files), open a terminal in a folder, its disk
-usage, rename,
+usage, search in it ([deep search](search.md#deep-search-shiftf)), rename,
 move to the trash, copy the name, the path relative to the git repository
 (inside one) or the absolute path, bookmark, undo. On an empty area: new
-file, new folder, terminal, and the same three copies for the current
+file, new folder, terminal, disk usage, search here, and the same three copies for the current
 folder.
 
 ## Other keys
@@ -126,6 +126,7 @@ folder.
 |---|---|
 | `Ctrl+D` | Bookmark the selected entry (or the current folder) |
 | `Shift+S` | Disk usage of the selected folder (see [Disk Usage](preview-panel.md#disk-usage)) |
+| `Shift+F` | Search in the selected folder (see [Deep search](search.md#deep-search-shiftf)) |
 | `m` | Switch the preview between rendered and raw |
 | `+` / `-` / `0` | Zoom the previewed image, PDF or slides in, out, back to fit |
 

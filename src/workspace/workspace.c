@@ -21,6 +21,7 @@
 #include "theme/palette.h"
 #include "widgets/add_button.h"
 #include "search/project_search.h"
+#include "search/deep_search_tab.h"
 #include "chrome/help_guide.h"
 #include "sysmon/sysmon_tab.h"
 #include "diskuse/disk_usage_tab.h"
@@ -463,6 +464,7 @@ void workspace_switch(AppData* app, gint idx) {
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
             sysmon_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             disk_usage_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            deep_search_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
             canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
             video_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -491,6 +493,7 @@ void workspace_switch(AppData* app, gint idx) {
         help_guide_workspace_shown(app, ws);
         sysmon_tab_workspace_shown(app, ws);
         disk_usage_tab_workspace_shown(app, ws);
+        deep_search_tab_workspace_shown(app, ws);
         browser_workspace_shown(app, ws);
         canvas_view_workspace_shown(app, ws);
         video_tab_workspace_shown(app, ws);
@@ -756,6 +759,7 @@ void workspace_remove(AppData* app, gint idx) {
     help_guide_workspace_removed(app, rm);
     sysmon_tab_workspace_removed(app, rm);
     disk_usage_tab_workspace_removed(app, rm);
+    deep_search_tab_workspace_removed(app, rm);
     browser_workspace_removed(app, rm);
 #ifdef HAVE_VTE
     terminal_workspace_removed(app, rm);

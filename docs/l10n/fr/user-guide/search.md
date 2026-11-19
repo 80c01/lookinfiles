@@ -2,7 +2,9 @@
 
 Trois outils trouvent des choses au-delà de l’arborescence visible. Ils
 travaillent sur le **projet** : le dépôt git du dossier courant, ou le
-dossier lui-même quand il n’est pas dans un dépôt.
+dossier lui-même quand il n’est pas dans un dépôt. Un quatrième, la
+[recherche approfondie](#recherche-approfondie--shiftf), cherche dans
+n’importe quel dossier par nom, taille, date et contenu, sans limite.
 
 ## Aller à un fichier : `Ctrl+P`
 
@@ -71,6 +73,58 @@ votre dernière recherche) est déjà remplie.
   ligne ; la croix ferme l’onglet.
 - Les fichiers sont lus sur le disque : les modifications non enregistrées
   des onglets d’édition ne sont pas cherchées.
+
+## Recherche approfondie : `Shift+F`
+
+`Shift+F` dans l’explorateur (ou **Rechercher ici** dans le menu du clic
+droit d’un dossier, ou le bouton **Rechercher** en haut à droite de
+l’aperçu d’un dossier) ouvre l’onglet **Recherche approfondie** dans le
+panneau d’aperçu, sur le dossier sélectionné (sur un fichier : son
+dossier). Contrairement aux outils ci-dessus, elle n’est limitée ni au
+projet, ni en nombre de fichiers listés ou lus : elle parcourt tout ce qui
+se trouve sous le dossier.
+
+Remplissez les critères voulus, puis appuyez sur `Enter` dans un champ (ou
+sur le bouton **Rechercher**) ; un champ vide veut dire « n’importe
+lequel ».
+
+| Champ | Ce qu’il retient |
+|---|---|
+| **Dossier** | Où chercher, avec tout ce qu’il contient (`~` est votre dossier personnel) |
+| **Nom** | Une partie du nom, sans tenir compte de la casse (`rapport`) ; avec `*` ou `?`, un motif du nom entier (`IMG_????.jpg`, `*.tar.gz`) |
+| **Extensions** | Séparées par des virgules, sans tenir compte de la casse : `c, h, md`, `tar.gz` |
+| **Contient** | Un texte dans le fichier, avec les mêmes boutons que la recherche dans les fichiers (`Aa`, `ab`, `.*`, `a…z` ; `Alt+M`, `Alt+W`, `Alt+R`, `Alt+L`) ; les fichiers binaires sont ignorés, les gros fichiers sont lus en entier |
+| **Type** | Fichiers et dossiers, fichiers seulement (les liens comptent comme des fichiers) ou dossiers seulement |
+| **Taille** | De / à, bornes comprises : `42`, `500k`, `10M`, `2G` (puissances de 1024) ; fichiers seulement |
+| **Dernière modification** | De / à : un jour (`2026-11-01`, `2026-11-01 14:30`, `today`, `yesterday`) ou une durée écoulée (`30min`, `3h`, `7d`, `2w`, `6m` pour des mois, `1y`) ; un jour donné comme seconde date est compris |
+| **Exclure** | Chemins écartés, séparés par des virgules, comme dans la recherche dans les fichiers : `node_modules`, `.git`, `build/` ; les dossiers écartés ne sont pas parcourus |
+| **Profondeur** | Niveaux sous le dossier : `1` pour ses seules entrées |
+| **Entrées cachées** | Aussi les noms qui commencent par un point (décoché : ils sont ignorés, avec ce qu’ils contiennent) |
+| **Ce système de fichiers seulement** | Ne pas entrer dans les autres disques montés sous le dossier |
+
+Les mots des dates (`today`, `yesterday`) et les unités (`min`, `h`, `d`,
+`w`, `m`, `y`) s’écrivent en anglais.
+
+La recherche tourne en arrière-plan : les résultats s’affichent au fur et
+à mesure, avec les compteurs (entrées trouvées, entrées examinées,
+dossiers lus, octets lus pour un contenu) et le dossier en cours de
+lecture. `Escape` (ou le bouton **Arrêter**) l’arrête et garde ce qui a
+été trouvé ; `F5` relance la recherche. Les liens symboliques sont listés
+mais jamais suivis, et `/proc`, `/sys` et `/dev` sont ignorés. La
+recherche s’arrête à 1 000 000 de résultats, pour ménager la mémoire.
+
+Les résultats montrent le nom, le dossier (sous celui de la recherche),
+la taille et la dernière modification ; avec un contenu, aussi le nombre
+d’occurrences et la première ligne trouvée. Cliquez sur l’en-tête d’une
+colonne pour trier. `Down` dans un champ passe aux résultats ; là, `Enter`
+ou un double clic montre l’entrée dans l’explorateur, `Ctrl+Enter` ouvre
+un fichier dans un onglet d’édition à sa première occurrence, et un clic
+droit permet aussi de copier le chemin.
+
+L’onglet garde ses critères tant qu’il est ouvert : l’ouvrir sur un autre
+dossier ne change que le dossier. Chaque espace de travail a le sien.
+`Ctrl+W`, un clic du milieu sur l’onglet ou sa croix le ferment et
+arrêtent la recherche.
 
 ## Rechercher dans un panneau ou un onglet
 

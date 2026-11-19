@@ -2,7 +2,9 @@
 
 Three tools find things beyond the visible tree. They work on the
 **project**: the git repository of the current folder, or the folder
-itself when it is not in a repository.
+itself when it is not in a repository. A fourth one, the
+[deep search](#deep-search-shiftf), searches any folder by name, size,
+date and content, with no limit.
 
 ## Go to a file: `Ctrl+P`
 
@@ -67,6 +69,51 @@ your last search) is filled in.
   the tab.
 - Files are read from disk: unsaved changes in editor tabs are not
   searched.
+
+## Deep search: `Shift+F`
+
+`Shift+F` in the explorer (or **Search Here** in the right-click menu of a
+folder, or the **Search** button in the top right corner of a folder's
+preview) opens the **Deep Search** tab in the preview panel, on the
+selected folder (on a file: its folder). Unlike the tools above, it is not
+limited to the project, nor in the number of files listed or read: it goes
+through everything below the folder.
+
+Fill in any of the criteria, then press `Enter` in a field (or the
+**Search** button); an empty field means "any".
+
+| Field | What it matches |
+|---|---|
+| **Folder** | Where to search, with everything below it (`~` is your home folder) |
+| **Name** | A part of the name, any case (`report`); with `*` or `?`, a pattern of the whole name (`IMG_????.jpg`, `*.tar.gz`) |
+| **Extensions** | Separated by commas, any case: `c, h, md`, `tar.gz` |
+| **Contains** | A text in the file, with the same buttons as Search in Files (`Aa`, `ab`, `.*`, `a…z`; `Alt+M`, `Alt+W`, `Alt+R`, `Alt+L`); binary files are skipped, large files are read in full |
+| **Type** | Files and folders, files only (links count as files) or folders only |
+| **Size** | From / to, both included: `42`, `500k`, `10M`, `2G` (powers of 1024); files only |
+| **Last change** | From / to: a day (`2026-11-01`, `2026-11-01 14:30`, `today`, `yesterday`) or a time ago (`30min`, `3h`, `7d`, `2w`, `6m` for months, `1y`); a day given as the second date is included |
+| **Exclude** | Paths left out, separated by commas, as in Search in Files: `node_modules`, `.git`, `build/`; the folders left out are not entered |
+| **Depth** | Levels below the folder: `1` for its own entries only |
+| **Hidden entries** | Also the names starting with a dot (off: they are skipped, with what is below them) |
+| **This filesystem only** | Do not enter the other disks mounted below the folder |
+
+The search runs in the background: the results are listed as they are
+found, with the counters (entries found, entries tested, folders read,
+bytes read for a content) and the folder being read. `Escape` (or the
+**Stop** button) stops it and keeps what was found; `F5` searches again.
+Symbolic links are listed but never followed, and `/proc`, `/sys` and
+`/dev` are skipped. The search stops at 1 000 000 results, to keep the
+memory in check.
+
+The results show the name, the folder (below the one searched), the size
+and the last change; with a content, also the number of matches and the
+first matching line. Click a column header to sort by it. `Down` in a field
+goes to the results; there, `Enter` or a double click shows the entry in
+the explorer, `Ctrl+Enter` opens a file in an editor tab at its first
+match, and a right click also copies the path.
+
+The tab keeps its criteria while it is open: opening it on another folder
+only changes the folder. Each workspace has its own. `Ctrl+W`, a middle
+click on the tab or its cross close it and stop the search.
 
 ## Search in a panel or a tab
 

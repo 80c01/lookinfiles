@@ -7,7 +7,7 @@ pages need poppler, see [Getting started](getting-started.md#installing)).
 
 Selecting a file, or clicking the one already selected, always brings the
 **Preview** tab back in front, whatever tab was shown (an editor tab, Git,
-Disk Usage, System Monitor...). To edit the file, double-click it or press
+Disk Usage, Deep Search, System Monitor...). To edit the file, double-click it or press
 `Enter`.
 
 The full list of formats and their limits is in
@@ -219,7 +219,8 @@ click on the tab closes it.
 
 `Shift+S` in the explorer (or **Disk Usage** in the right-click menu of a
 folder, or the **Disk Usage** button in the top right corner of a
-folder's preview) opens the **Disk Usage** tab in the preview panel: how much room
+folder's preview, next to **Search**, which opens the
+[deep search](search.md#deep-search-shiftf)) opens the **Disk Usage** tab in the preview panel: how much room
 the folder and everything below it take. On a file, it is the file's
 folder.
 

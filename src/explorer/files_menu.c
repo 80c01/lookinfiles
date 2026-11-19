@@ -16,6 +16,7 @@
 #include "terminal/terminal.h"
 #include "explorer/tree_nav.h"
 #include "diskuse/disk_usage_tab.h"
+#include "search/deep_search_tab.h"
 
 typedef enum {
     FM_OPEN,
@@ -30,6 +31,7 @@ typedef enum {
     FM_BOOKMARK,
     FM_TERMINAL,
     FM_DISK_USAGE,
+    FM_DEEP_SEARCH,
     FM_NEW_FILE,
     FM_NEW_FOLDER,
     FM_UNDO
@@ -90,6 +92,7 @@ static gboolean run_action(gpointer data) {
     case FM_BOOKMARK:         bookmarks_add_from_context(app); break;
     case FM_TERMINAL:         terminal_open(app, FALSE, r->path); break;
     case FM_DISK_USAGE:       disk_usage_tab_show(app, r->path); break;
+    case FM_DEEP_SEARCH:      deep_search_tab_show(app, r->path); break;
     case FM_NEW_FILE:         create_new_file_in_tree(app); break;
     case FM_NEW_FOLDER:       create_new_folder_in_tree(app); break;
     case FM_UNDO:             undo_last_file_move(app); break;
@@ -185,6 +188,7 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
     } else {
         menu_item(box, popover, app, _("Open Terminal Here"), NULL, FM_TERMINAL);
         menu_item(box, popover, app, _("Disk Usage"), "Shift+S", FM_DISK_USAGE);
+        menu_item(box, popover, app, _("Search Here"), "Shift+F", FM_DEEP_SEARCH);
     }
     menu_separator(box);
     menu_item(box, popover, app, _("Rename…"), "F2", FM_RENAME);
@@ -201,6 +205,7 @@ static void fill_folder_menu(GtkWidget* box, GtkWidget* popover, AppData* app) {
     menu_separator(box);
     menu_item(box, popover, app, _("Open Terminal Here"), NULL, FM_TERMINAL);
     menu_item(box, popover, app, _("Disk Usage"), "Shift+S", FM_DISK_USAGE);
+    menu_item(box, popover, app, _("Search Here"), "Shift+F", FM_DEEP_SEARCH);
     menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);
     menu_separator(box);
     copy_items(box, popover, app, app->base_dir);

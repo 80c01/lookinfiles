@@ -10108,3 +10108,248 @@ msgid ""
 msgstr ""
 "Filtrer les raccourcis : seulement ceux qui contiennent tous les mots (RET / "
 "Esc : retour à la liste)"
+
+msgid "Deep Search tab"
+msgstr "Onglet Recherche approfondie"
+
+msgid ""
+"Search the selected folder by name, extensions, type, size, date and content "
+"(from the explorer; also its context menu)"
+msgstr ""
+"Rechercher dans le dossier sélectionné par nom, extensions, type, taille, "
+"date et contenu (depuis l’explorateur ; aussi son menu contextuel)"
+
+msgid "In a field: search; on a result: show it in the explorer"
+msgstr ""
+"Dans un champ : rechercher ; sur un résultat : le montrer dans l’explorateur"
+
+msgid "Open the selected file in an editor tab, at its first match"
+msgstr ""
+"Ouvrir le fichier sélectionné dans un onglet d’édition, à sa première "
+"occurrence"
+
+msgid "Search again"
+msgstr "Relancer la recherche"
+
+msgid "Stop the search (what was found stays)"
+msgstr "Arrêter la recherche (ce qui a été trouvé reste)"
+
+msgid ""
+"Content: match case / whole word / regular expression / letters in order"
+msgstr ""
+"Contenu : respecter la casse / mot entier / expression régulière / lettres "
+"dans l’ordre"
+
+msgid "From a field: to the results"
+msgstr "Depuis un champ : vers les résultats"
+
+msgid "Close the Deep Search tab"
+msgstr "Fermer l’onglet Recherche approfondie"
+
+msgid "Deep search in the selected folder, in the Deep Search tab"
+msgstr ""
+"Recherche approfondie dans le dossier sélectionné, dans l’onglet Recherche "
+"approfondie"
+
+msgid "Search Here"
+msgstr "Rechercher ici"
+
+msgctxt "action"
+msgid "Search"
+msgstr "Rechercher"
+
+msgid "Search in This Folder (Shift+F)"
+msgstr "Rechercher dans ce dossier (Shift+F)"
+
+msgid "The minimum size is over the maximum"
+msgstr "La taille minimale dépasse la taille maximale"
+
+msgid "The first date is not before the second"
+msgstr "La première date n’est pas avant la seconde"
+
+#, c-format
+msgid "Invalid regular expression: %s"
+msgstr "Expression régulière invalide : %s"
+
+msgid "Open in Editor"
+msgstr "Ouvrir dans l’éditeur"
+
+msgid "Matches"
+msgstr "Occurrences"
+
+msgid "First Match"
+msgstr "Première occurrence"
+
+#, c-format
+msgid "%s found"
+msgid_plural "%s found"
+msgstr[0] "%s trouvé"
+msgstr[1] "%s trouvés"
+
+#, c-format
+msgid "%s entry"
+msgid_plural "%s entries"
+msgstr[0] "%s entrée"
+msgstr[1] "%s entrées"
+
+#, c-format
+msgid "%1$s · %2$s in %3$s"
+msgstr "%1$s · %2$s dans %3$s"
+
+#, c-format
+msgid "%s read"
+msgstr "%s lus"
+
+#, c-format
+msgid "%s binary file skipped"
+msgid_plural "%s binary files skipped"
+msgstr[0] "%s fichier binaire ignoré"
+msgstr[1] "%s fichiers binaires ignorés"
+
+msgid "The folder cannot be read"
+msgstr "Le dossier ne peut pas être lu"
+
+#, c-format
+msgid "Not a size: %s (sizes look like 42, 500k, 10M, 2G)"
+msgstr "Taille invalide : %s (les tailles s’écrivent 42, 500k, 10M, 2G)"
+
+#, c-format
+msgid ""
+"Not a date: %s (dates look like 2026-11-01, today, yesterday, 7d, 3h, 2w, 6m, "
+"1y)"
+msgstr ""
+"Date invalide : %s (les dates s’écrivent 2026-11-01, today, yesterday, 7d, "
+"3h, 2w, 6m, 1y)"
+
+msgid "The depth is a number of levels: 1 for the folder's own entries"
+msgstr ""
+"La profondeur est un nombre de niveaux : 1 pour les seules entrées du dossier"
+
+msgid "Type the folder to search"
+msgstr "Saisissez le dossier où chercher"
+
+#, c-format
+msgid "No such folder: %s"
+msgstr "Dossier introuvable : %s"
+
+msgid "Searching…"
+msgstr "Recherche en cours…"
+
+msgid "to"
+msgstr "à"
+
+msgid ""
+"Patterns separated by commas: node_modules (a name at any depth), src/build "
+"(from the folder searched), build/ (folders only); the folders left out are "
+"not entered"
+msgstr ""
+"Motifs séparés par des virgules : node_modules (un nom à toute profondeur), "
+"src/build (depuis le dossier de la recherche), build/ (dossiers seulement) ; "
+"les dossiers écartés ne sont pas parcourus"
+
+msgid "Folder to search"
+msgstr "Dossier où chercher"
+
+msgid "The folder searched, with everything below it"
+msgstr "Le dossier de la recherche, avec tout ce qu’il contient"
+
+msgid "Parent Folder"
+msgstr "Dossier parent"
+
+msgid "Part of the name, or *.jpg"
+msgstr "Partie du nom, ou *.jpg"
+
+msgid ""
+"A part of the name, any case; with * or ? a pattern of the whole name "
+"(IMG_????.jpg)"
+msgstr ""
+"Une partie du nom, sans tenir compte de la casse ; avec * ou ? un motif du "
+"nom entier (IMG_????.jpg)"
+
+msgid "Extensions"
+msgstr "Extensions"
+
+msgid "c, h, md"
+msgstr "c, h, md"
+
+msgid "Extensions separated by commas, any case"
+msgstr ""
+"Extensions séparées par des virgules, sans tenir compte de la casse"
+
+msgid "Contains"
+msgstr "Contient"
+
+msgid "Text in the file"
+msgstr "Texte dans le fichier"
+
+msgid "A text the file holds (files only; binary files are skipped)"
+msgstr ""
+"Un texte que contient le fichier (fichiers seulement ; les fichiers binaires "
+"sont ignorés)"
+
+msgid "Files and folders"
+msgstr "Fichiers et dossiers"
+
+msgid "The kind of entries found (links count as files)"
+msgstr ""
+"Le genre des entrées trouvées (les liens comptent comme des fichiers)"
+
+msgid ""
+"In bytes, or with k, M, G (powers of 1024); both ends included; files only"
+msgstr ""
+"En octets, ou avec k, M, G (puissances de 1024) ; bornes comprises ; "
+"fichiers seulement"
+
+msgid "any"
+msgstr "libre"
+
+msgid ""
+"A day (2026-11-01, 2026-11-01 14:30, today, yesterday) or a time ago (30min, "
+"3h, 7d, 2w, 6m, 1y); a day given as the second date is included"
+msgstr ""
+"Un jour (2026-11-01, 2026-11-01 14:30, today, yesterday) ou une durée "
+"écoulée (30min, 3h, 7d, 2w, 6m, 1y) ; un jour donné comme seconde date est "
+"compris"
+
+msgid "Last change"
+msgstr "Dernière modification"
+
+msgid "Exclude"
+msgstr "Exclure"
+
+msgid "node_modules, .git, build/"
+msgstr "node_modules, .git, build/"
+
+msgid "Depth"
+msgstr "Profondeur"
+
+msgid "Levels below the folder: 1 for its own entries only"
+msgstr "Niveaux sous le dossier : 1 pour ses seules entrées"
+
+msgid "Hidden entries"
+msgstr "Entrées cachées"
+
+msgid "Also the names starting with a dot"
+msgstr "Aussi les noms qui commencent par un point"
+
+msgid "This filesystem only"
+msgstr "Ce système de fichiers seulement"
+
+msgid "Do not enter the other filesystems mounted below the folder"
+msgstr ""
+"Ne pas entrer dans les autres systèmes de fichiers montés sous le dossier"
+
+msgid "Deep Search"
+msgstr "Recherche approfondie"
+
+msgid "Search (Enter / F5)"
+msgstr "Rechercher (Enter / F5)"
+
+msgid "Stop the Search (Escape)"
+msgstr "Arrêter la recherche (Escape)"
+
+msgid "Close Deep Search"
+msgstr "Fermer la recherche approfondie"
+
+msgid "Fill in the criteria, then press Enter"
+msgstr "Remplissez les critères, puis appuyez sur Enter"

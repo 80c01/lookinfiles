@@ -8,7 +8,7 @@ lui-même (les pages PDF demandent poppler, voir
 
 Sélectionner un fichier, ou cliquer sur celui déjà sélectionné, ramène
 toujours l’onglet **Aperçu** au premier plan, quel que soit l’onglet affiché
-(un onglet d’édition, Git, Espace disque, Moniteur système…). Pour modifier
+(un onglet d’édition, Git, Espace disque, Recherche approfondie, Moniteur système…). Pour modifier
 le fichier, double-cliquez dessus ou appuyez sur `Enter`.
 
 La liste complète des formats et de leurs limites est dans
@@ -242,7 +242,8 @@ l’onglet le ferme.
 
 `Shift+S` dans l’explorateur (ou **Espace disque** dans le menu du clic
 droit d’un dossier, ou le bouton **Espace disque** en haut à droite de
-l’aperçu d’un dossier) ouvre l’onglet **Espace disque** dans le panneau
+l’aperçu d’un dossier, à côté de **Rechercher**, qui ouvre la
+[recherche approfondie](search.md#recherche-approfondie--shiftf)) ouvre l’onglet **Espace disque** dans le panneau
 d’aperçu : la place que prennent le dossier et tout ce qu’il contient. Sur
 un fichier, c’est le dossier du fichier.
 

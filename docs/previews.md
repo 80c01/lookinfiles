@@ -142,7 +142,7 @@ format.
 ## Which tab is in front
 
 The Preview tab shares its notebook with editor tabs (docked mode), Git,
-Disk Usage, System Monitor, search results, references and help. One rule
+Disk Usage, Deep Search, System Monitor, search results, references and help. One rule
 decides which page is shown, by the **cause** of the selection, never by the
 file or by the page in front:
 

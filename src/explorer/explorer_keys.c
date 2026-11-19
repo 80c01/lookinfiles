@@ -18,6 +18,7 @@
 #include "editor/editor.h"
 #include "widgets/focus_route.h"
 #include "diskuse/disk_usage_tab.h"
+#include "search/deep_search_tab.h"
 
 /* Rows with children the arrow keys and space expand: directories,
  * bookmark folders, notebooks, the notes trash and remote folders */
@@ -33,9 +34,9 @@ static gboolean is_files_view(AppData* app) {
     return app->sidebar_view == SIDEBAR_VIEW_FILES;
 }
 
-/* Shift+S: the disk usage of the selected folder, of the selected file's
- * folder, else of the folder shown */
-static void show_disk_usage(AppData* app) {
+/* The selected folder, the selected file's folder, else the folder shown;
+ * NULL when it is no folder. Free with g_free(). */
+static gchar* selected_folder(AppData* app) {
     ExplorerRow* row = tree_nav_selected(app);
     gchar* path = NULL;
     if (explorer_row_is(row, "dir") && row->path[0] != '\0') {
@@ -45,7 +46,21 @@ static void show_disk_usage(AppData* app) {
     } else if (app->base_dir != NULL) {
         path = g_strdup(app->base_dir);
     }
-    if (path != NULL && g_file_test(path, G_FILE_TEST_IS_DIR)) disk_usage_tab_show(app, path);
+    if (path != NULL && !g_file_test(path, G_FILE_TEST_IS_DIR)) g_clear_pointer(&path, g_free);
+    return path;
+}
+
+/* Shift+S: the disk usage of the selected folder */
+static void show_disk_usage(AppData* app) {
+    gchar* path = selected_folder(app);
+    if (path != NULL) disk_usage_tab_show(app, path);
+    g_free(path);
+}
+
+/* Shift+F: a deep search in the selected folder */
+static void show_deep_search(AppData* app) {
+    gchar* path = selected_folder(app);
+    if (path != NULL) deep_search_tab_show(app, path);
     g_free(path);
 }
 
@@ -283,6 +298,12 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
     case GDK_KEY_S: /* Shift+S: disk usage of the selected folder (files view) */
         if (is_files_view(app) && !ctrl && (state & GDK_ALT_MASK) == 0) {
             show_disk_usage(app);
+            return TRUE;
+        }
+        return FALSE;
+    case GDK_KEY_F: /* Shift+F: deep search in the selected folder (files view) */
+        if (is_files_view(app) && !ctrl && (state & GDK_ALT_MASK) == 0) {
+            show_deep_search(app);
             return TRUE;
         }
         return FALSE;

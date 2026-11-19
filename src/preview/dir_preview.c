@@ -17,6 +17,7 @@
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "diskuse/disk_usage_tab.h"
+#include "search/deep_search_tab.h"
 
 #include <stdio.h>
 
@@ -390,19 +391,30 @@ static void cache_job(DirPreviewJob* job) {
 
 static void render_job(AppData* app, const DirPreviewJob* job);
 
-#define DISK_USAGE_KEY "lookin-dir-disk-usage"  /* the button, on app->text_view */
-#define DISK_USAGE_PATH_KEY "lookin-dir-preview-path"
+#define FOLDER_BUTTONS_KEY "lookin-dir-buttons" /* the buttons' box, on app->text_view */
+#define FOLDER_PATH_KEY "lookin-dir-preview-path" /* the folder shown, on the box */
+
+/* The folder the buttons act on (their box holds it) */
+static const gchar* button_folder(GtkWidget* button) {
+    GtkWidget* box = gtk_widget_get_parent(button);
+    return box != NULL ? g_object_get_data(G_OBJECT(box), FOLDER_PATH_KEY) : NULL;
+}
 
 static void on_disk_usage_clicked(GtkButton* button, gpointer data) {
-    const gchar* path = g_object_get_data(G_OBJECT(button), DISK_USAGE_PATH_KEY);
+    const gchar* path = button_folder(GTK_WIDGET(button));
     if (path != NULL) disk_usage_tab_show((AppData*)data, path);
 }
 
-static GtkWidget* disk_usage_button(AppData* app) {
-    return app->text_view != NULL ? g_object_get_data(G_OBJECT(app->text_view), DISK_USAGE_KEY) : NULL;
+static void on_deep_search_clicked(GtkButton* button, gpointer data) {
+    const gchar* path = button_folder(GTK_WIDGET(button));
+    if (path != NULL) deep_search_tab_show((AppData*)data, path);
 }
 
-/* Anything else shown in the preview text: the button goes */
+static GtkWidget* folder_buttons(AppData* app) {
+    return app->text_view != NULL ? g_object_get_data(G_OBJECT(app->text_view), FOLDER_BUTTONS_KEY) : NULL;
+}
+
+/* Anything else shown in the preview text: the buttons go */
 static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     gtk_widget_set_visible(GTK_WIDGET(data), FALSE);
@@ -415,40 +427,50 @@ static void on_view_buffer(GObject* view, GParamSpec* pspec, gpointer data) {
                             G_CALLBACK(on_buffer_changed), data, 0);
 }
 
-GtkWidget* dir_preview_wrap(AppData* app, GtkWidget* content) {
-    theme_add_css(".dir-disk-usage { background-color: @bg_raised; border: 1px solid @border; }"
-                  ".dir-disk-usage:hover { background-color: @bg_hover; }");
+static GtkWidget* folder_button(const gchar* icon, const gchar* text, const gchar* tooltip, GCallback clicked,
+                                AppData* app) {
     GtkWidget* button = gtk_button_new();
-    icon_button_set_content(button, "drive-harddisk", _("Disk Usage"));
-    gtk_widget_set_tooltip_text(button, _("Disk Usage of This Folder (Shift+S)"));
-    gtk_widget_add_css_class(button, "dir-disk-usage");
+    icon_button_set_content(button, icon, text);
+    gtk_widget_set_tooltip_text(button, tooltip);
+    gtk_widget_add_css_class(button, "dir-tool");
     gtk_widget_set_focusable(button, FALSE);
-    gtk_widget_set_halign(button, GTK_ALIGN_END);
-    gtk_widget_set_valign(button, GTK_ALIGN_START);
-    gtk_widget_set_margin_top(button, 8);
-    gtk_widget_set_margin_end(button, 20); /* clear of the overlay scrollbar */
-    gtk_widget_set_visible(button, FALSE);
-    g_signal_connect(button, "clicked", G_CALLBACK(on_disk_usage_clicked), app);
+    g_signal_connect(button, "clicked", clicked, app);
+    return button;
+}
+
+GtkWidget* dir_preview_wrap(AppData* app, GtkWidget* content) {
+    theme_add_css(".dir-tool { background-color: @bg_raised; border: 1px solid @border; }"
+                  ".dir-tool:hover { background-color: @bg_hover; }");
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_append(GTK_BOX(box), folder_button("edit-find", C_("action", "Search"), _("Search in This Folder (Shift+F)"),
+                                               G_CALLBACK(on_deep_search_clicked), app));
+    gtk_box_append(GTK_BOX(box), folder_button("drive-harddisk", _("Disk Usage"), _("Disk Usage of This Folder (Shift+S)"),
+                                               G_CALLBACK(on_disk_usage_clicked), app));
+    gtk_widget_set_halign(box, GTK_ALIGN_END);
+    gtk_widget_set_valign(box, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(box, 8);
+    gtk_widget_set_margin_end(box, 20); /* clear of the overlay scrollbar */
+    gtk_widget_set_visible(box, FALSE);
     if (app->text_view != NULL) {
-        g_object_set_data(G_OBJECT(app->text_view), DISK_USAGE_KEY, button);
-        on_view_buffer(G_OBJECT(app->text_view), NULL, button);
-        g_signal_connect_object(app->text_view, "notify::buffer", G_CALLBACK(on_view_buffer), button, 0);
+        g_object_set_data(G_OBJECT(app->text_view), FOLDER_BUTTONS_KEY, box);
+        on_view_buffer(G_OBJECT(app->text_view), NULL, box);
+        g_signal_connect_object(app->text_view, "notify::buffer", G_CALLBACK(on_view_buffer), box, 0);
     }
     GtkWidget* overlay = gtk_overlay_new();
     gtk_widget_set_hexpand(overlay, TRUE);
     gtk_widget_set_vexpand(overlay, TRUE);
     gtk_overlay_set_child(GTK_OVERLAY(overlay), content);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), button);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay), box);
     return overlay;
 }
 
-/* The folder full is shown: the button opens the Disk Usage tab on it (its
- * whole tree is read there, never here) */
-static void show_disk_usage_button(AppData* app, const gchar* full) {
-    GtkWidget* button = disk_usage_button(app);
-    if (button == NULL) return;
-    g_object_set_data_full(G_OBJECT(button), DISK_USAGE_PATH_KEY, g_strdup(full), g_free);
-    gtk_widget_set_visible(button, TRUE);
+/* The folder full is shown: the buttons open the Deep Search and Disk Usage
+ * tabs on it (its whole tree is read there, never here) */
+static void show_folder_buttons(AppData* app, const gchar* full) {
+    GtkWidget* box = folder_buttons(app);
+    if (box == NULL) return;
+    g_object_set_data_full(G_OBJECT(box), FOLDER_PATH_KEY, g_strdup(full), g_free);
+    gtk_widget_set_visible(box, TRUE);
 }
 
 static void job_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
@@ -552,7 +574,7 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
         g_free(heading);
     }
 
-    if (!job->unreadable) show_disk_usage_button(app, job->full);
+    if (!job->unreadable) show_folder_buttons(app, job->full);
 
     GtkAdjustment* hadj = gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(app->text_view));
     if (hadj != NULL) {

@@ -101,10 +101,11 @@ count) is dropped when the focus moves to another panel or tab.
 | `i` / `I` | Toggle hidden files |
 | `o` | Cycle the sort: name, date, size, extension |
 | `Shift+S` | Disk usage of the selected folder (of a selected file's folder) in the **Disk Usage** tab |
+| `Shift+F` | Deep search in the selected folder (of a selected file's folder) in the **Deep Search** tab |
 | `Ctrl+D` | Bookmark the selected entry or the current directory |
 | `m` | Toggle the rendered / raw preview of the selected file |
 | `+` / `-` / `0` | Zoom the previewed image, PDF or slides in / out / back to the fitted size |
-| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), in a browser tab (HTML files), open a terminal in a folder, disk usage of a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
+| Right click | Context menu. Files view: open, open in the side panel (text files) or with the default application (other files), in a browser tab (HTML files), open a terminal in a folder, disk usage of a folder, search in a folder, rename, move to the trash, copy the path, bookmark, undo; on an empty area: new file, new folder, terminal |
 
 **Bookmarks view**
 
@@ -255,6 +256,25 @@ navigation keys of the global mode move in the list)
 | Click on a column header | Sort by that column (again: reverse order) |
 | Right click on a row | Open the folder, show in the explorer, copy the path |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Disk Usage tab (also its cross) |
+
+**Deep Search tab** (the entries below a folder found by name, extensions,
+type, size, last change and content, with no limit, searched in the
+background; opened by `Shift+F`, the context menu of the explorer or the
+**Search** button of a folder's preview; the navigation keys of the global
+mode move in the list)
+
+| Key | Action |
+|---|---|
+| `Enter` in a field | Search (a new search replaces the one running) |
+| `F5` | Search again |
+| `Escape` | Stop the search (what was found stays) |
+| `Alt+M` / `Alt+W` / `Alt+R` / `Alt+L` | Content: match case / whole word / regular expression / letters in order |
+| `Down` in a field | Go to the results |
+| `Enter` / double click on a result | Show it in the explorer |
+| `Ctrl+Enter` on a result | Open the file in an editor tab, at its first match |
+| Click on a column header | Sort by that column (again: reverse order) |
+| Right click on a result | Show in the explorer, open in an editor tab, copy the path |
+| `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Deep Search tab and stop the search (also its cross) |
 
 **Remote view**
 

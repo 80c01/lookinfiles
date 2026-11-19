@@ -928,6 +928,19 @@ Layers, from bottom to top
   only when the folder or the size changes), files coloured by kind with
   the `icon_*` roles; the selected row outlined, a click selects a row, a
   double click opens a folder or shows a file.
+- `deep_search_tab` — the Deep Search tab in the preview notebook (one per
+  workspace, kept like the Disk Usage tab; inserted after the result and
+  tool pages), opened on a folder from the explorer (`Shift+F`, context
+  menu) or the **Search** button of `dir_preview`: a form of criteria read
+  into a `DeepQuery` (sizes and dates parsed by `deep_query`, errors shown
+  under it), the search run by `deep_search` in a `GTask` worker (owned by
+  the task, so a search replaced or a tab closed never frees one still
+  running), its results and counters taken every 200 ms
+  (`deep_search_take()`). `deep_search_list` — its results: a sorted
+  `GtkColumnView` filled as they come (name, folder below the one searched,
+  size, last change; matches and first matching line with a content);
+  `Enter` shows an entry in the explorer (`reveal_path_in_tree()`),
+  `Ctrl+Enter` opens a file at its first match (`editor_open_at()`).
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and
@@ -1001,7 +1014,9 @@ Layers, from bottom to top
 - `dir_preview` — directory preview (`dir_preview_show()`): one level read
   in a worker thread after a short delay (never recursive), header and table.
   A folder seen before is shown at once from a `preview_cache`, and drawn
-  again only if the worker reads something different.
+  again only if the worker reads something different. The **Search** and
+  **Disk Usage** buttons over its top right corner (`dir_preview_wrap()`)
+  open `deep_search_tab` and `disk_usage_tab` on the folder.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `git_tab` reads the history only when its tab is on screen (`map`); while
   hidden, a new repository or a change in `.git` only marks it stale.

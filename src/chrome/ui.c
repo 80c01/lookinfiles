@@ -25,6 +25,7 @@
 #include "widgets/focus_route.h"
 #include "search/quick_open.h"
 #include "search/project_search.h"
+#include "search/deep_search_tab.h"
 #include "workspace/session.h"
 
 
@@ -170,7 +171,7 @@ void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
     if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
-        (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
+        (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
         return;
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);

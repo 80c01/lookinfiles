@@ -127,6 +127,7 @@ typedef struct {
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
     GtkWidget* sysmon_page;        /* its System Monitor tab while another workspace is shown (owned ref, sysmon_tab.c) */
     GtkWidget* disk_usage_page;    /* its Disk Usage tab while another workspace is shown (owned ref, disk_usage_tab.c) */
+    GtkWidget* deep_search_page;   /* its Deep Search tab while another workspace is shown (owned ref, deep_search_tab.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
     GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
     GPtrArray* video_pages;        /* its Video tabs of the preview notebook while another workspace is shown (owned refs, video_tab.c) */
@@ -202,6 +203,7 @@ typedef struct AppData {
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
     GtkWidget* sysmon_page;         /* System Monitor page (sysmon_tab.c), or NULL */
     GtkWidget* disk_usage_page;     /* Disk Usage page (disk_usage_tab.c), or NULL */
+    GtkWidget* deep_search_page;    /* Deep Search page (deep_search_tab.c), or NULL */
 
     /* Media previews */
     GtkWidget* preview_stack;   /* GtkStack: "text" (text_view), "video" (video_player), or "audio" (audio_player) */
