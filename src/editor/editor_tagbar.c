@@ -1,5 +1,6 @@
 /* The tagbar of an editor tab (see editor_tagbar.h) */
 #include "editor/editor_tagbar.h"
+#include "core/app_events.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
 #include "code/code_outline.h"
@@ -233,6 +234,7 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
     } else if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
     }
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }
 
 gboolean editor_tagbar_available(EditorTab* tab) {
@@ -251,8 +253,22 @@ GtkWidget* editor_tagbar_list(EditorTab* tab) {
 /* States                                                                    */
 /* ------------------------------------------------------------------------- */
 
+static GWeakRef* weak_ref_new(gpointer obj) {
+    GWeakRef* ref = g_new0(GWeakRef, 1);
+    g_weak_ref_init(ref, obj);
+    return ref;
+}
+
+static void weak_ref_free(gpointer data) {
+    GWeakRef* ref = data;
+    if (ref != NULL) {
+        g_weak_ref_clear(ref);
+        g_free(ref);
+    }
+}
+
 struct EditorTagbarStates {
-    GPtrArray* panes;   /* the tabs' GtkPaned, referenced (they hold the Tagbar) */
+    GPtrArray* panes;   /* GWeakRef* to the tabs' GtkPaned (they hold the Tagbar) */
     GArray* wanted;     /* gboolean per pane */
     gboolean last;      /* settings.tagbar */
 };
@@ -261,14 +277,14 @@ static void take_tabs(EditorTagbarStates* st, GList* tabs) {
     for (GList* l = tabs; l != NULL; l = l->next) {
         EditorTab* t = l->data;
         if (t == NULL || t->tagbar == NULL) continue;
-        g_ptr_array_add(st->panes, g_object_ref(outline_pane_widget(t->tagbar->pane)));
+        g_ptr_array_add(st->panes, weak_ref_new(outline_pane_widget(t->tagbar->pane)));
         g_array_append_val(st->wanted, t->tagbar->wanted);
     }
 }
 
 EditorTagbarStates* editor_tagbar_states_take(AppData* app) {
     EditorTagbarStates* st = g_new0(EditorTagbarStates, 1);
-    st->panes = g_ptr_array_new_with_free_func(g_object_unref);
+    st->panes = g_ptr_array_new_with_free_func(weak_ref_free);
     st->wanted = g_array_new(FALSE, FALSE, sizeof(gboolean));
     st->last = app->settings.tagbar;
     take_tabs(st, app->editors);
@@ -282,11 +298,43 @@ void editor_tagbar_states_restore(AppData* app, const EditorTagbarStates* st) {
     if (app == NULL || st == NULL) return;
     app->settings.tagbar = st->last;
     for (guint i = 0; i < st->panes->len; i++) {
-        Tagbar* tb = g_object_get_data(G_OBJECT(g_ptr_array_index(st->panes, i)), "editor-tagbar");
-        if (tb == NULL || tb->tab == NULL) continue; /* closed meanwhile */
-        tb->wanted = g_array_index(st->wanted, gboolean, i);
-        update_visibility(tb);
+        GtkWidget* pane = g_weak_ref_get(g_ptr_array_index(st->panes, i));
+        if (pane == NULL) continue; /* closed meanwhile */
+        Tagbar* tb = g_object_get_data(G_OBJECT(pane), "editor-tagbar");
+        if (tb != NULL && tb->tab != NULL) {
+            tb->wanted = g_array_index(st->wanted, gboolean, i);
+            update_visibility(tb);
+        }
+        g_object_unref(pane);
     }
+}
+
+gboolean editor_tagbar_states_same(const EditorTagbarStates* a, const EditorTagbarStates* b) {
+    if (a == b) return TRUE;
+    if (a == NULL || b == NULL) return FALSE;
+    if (a->last != b->last) return FALSE;
+    GHashTable* map = g_hash_table_new(g_direct_hash, g_direct_equal);
+    for (guint i = 0; i < a->panes->len; i++) {
+        GtkWidget* pane = g_weak_ref_get(g_ptr_array_index(a->panes, i));
+        if (pane != NULL) {
+            g_hash_table_replace(map, pane, GINT_TO_POINTER(g_array_index(a->wanted, gboolean, i) ? 2 : 1));
+            g_object_unref(pane);
+        }
+    }
+    gboolean same = TRUE;
+    for (guint i = 0; i < b->panes->len; i++) {
+        GtkWidget* pane = g_weak_ref_get(g_ptr_array_index(b->panes, i));
+        if (pane == NULL) continue;
+        gpointer prev = g_hash_table_lookup(map, pane);
+        g_object_unref(pane);
+        gpointer cur = GINT_TO_POINTER(g_array_index(b->wanted, gboolean, i) ? 2 : 1);
+        if (prev != NULL && prev != cur) {
+            same = FALSE;
+            break;
+        }
+    }
+    g_hash_table_destroy(map);
+    return same;
 }
 
 void editor_tagbar_states_free(EditorTagbarStates* st) {

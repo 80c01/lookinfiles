@@ -28,6 +28,8 @@ void paned_use_thin_handle(GtkWidget* paned);
 /* Add the size popup shown while a split handle is dragged over overlay
  * (once, when the window is built) */
 void panels_size_popup_attach(AppData* app, GtkOverlay* overlay);
+/* TRUE while the user is dragging a split handle */
+gboolean panels_is_resizing(const AppData* app);
 /* Free the focused-panel and split-handle drag state (at exit) */
 void panels_free(AppData* app);
 

@@ -38,6 +38,8 @@ typedef struct EditorTagbarStates EditorTagbarStates;
 EditorTagbarStates* editor_tagbar_states_take(AppData* app);
 /* Put them back (tabs closed meanwhile are skipped; not saved) */
 void editor_tagbar_states_restore(AppData* app, const EditorTagbarStates* states);
+/* TRUE when the tagbar preference and every still-live tab's tagbar state match */
+gboolean editor_tagbar_states_same(const EditorTagbarStates* a, const EditorTagbarStates* b);
 void editor_tagbar_states_free(EditorTagbarStates* states);
 
 #endif /* EDITOR_TAGBAR_H */

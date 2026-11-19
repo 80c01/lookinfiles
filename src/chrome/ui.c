@@ -9,6 +9,7 @@
 #include "games/games.h"
 #include "widgets/dialog.h"
 #include "workspace/layout_switcher.h"
+#include "workspace/layout_history.h"
 #include "chrome/preferences.h"
 #include "chrome/themes.h"
 #include "widgets/panels.h"
@@ -316,9 +317,18 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         }
     }
 
-    /* Alt+Left / Alt+Right: panel focus cycling */
-    if ((state & GDK_ALT_MASK) != 0 &&
+    /* Alt+Shift+Left / Alt+Shift+Right: previous / next layout in this workspace's history;
+     * Alt+Left / Alt+Right: panel focus cycling (Ctrl+Alt+Arrows move editor tabs) */
+    if ((state & GDK_ALT_MASK) != 0 && (state & GDK_CONTROL_MASK) == 0 &&
         (keyval == GDK_KEY_Left || keyval == GDK_KEY_Right)) {
+        if ((state & GDK_SHIFT_MASK) != 0) {
+            if (keyval == GDK_KEY_Left) {
+                layout_history_back(app);
+            } else {
+                layout_history_forward(app);
+            }
+            return TRUE;
+        }
         focus_adjacent_panel(keyval == GDK_KEY_Right ? 1 : -1, app);
         return TRUE;
     }

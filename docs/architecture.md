@@ -189,6 +189,10 @@ Layers, from bottom to top
   of open files and the panel's size (`layout_store_editor_area()`): side
   by side when wide, stacked when tall, 2×2 or one row / column for four,
   panes of at least `LAYOUT_GRID_MIN_W` × `LAYOUT_GRID_MIN_H`.
+- `layout_history_stack` — bounded back/forward history stack (`LayoutHistoryStack`)
+  and `layout_history_same_panels()` (compares visible panels, split trees and
+  fractions within `LAYOUT_HISTORY_FRAC_EPS`, ignoring tab counts inside a leaf
+  and hidden divider fractions). Pure logic, unit-tested.
 - `gif_decoder` — GIF frames composed on an RGBA canvas (LZW, interlacing,
   transparency, disposal, delays, loop count), played by `animation`
   (GdkPixbufAnimation is deprecated in gdk-pixbuf 2.44: never use it).
@@ -1399,6 +1403,15 @@ Layers, from bottom to top
   under the name "Default") or reset, and ends with the built-in presets
   (not deletable; saving under a preset's name replaces it). A click selects a row; double click,
   Enter or Apply applies it.
+- `layout_history` — per-workspace layout history (`VirtualLayout.layout_history`,
+  backed by `layout_history_stack`): listens to `APP_EVENT_LAYOUT_CHANGED` /
+  `APP_EVENT_LAYOUT_REBUILT`, waits for drags (`panels_is_resizing()`) and
+  rebuilds (`app_layout_held()`) to settle, skips `layouts_preview_active()`,
+  and records snapshots (`SavedLayout`, `EditorSnapshot`, `TermSnapshot`,
+  `EditorTagbarStates` using `GWeakRef` so closed widgets are never retained).
+  `layout_history_back()` / `_forward()` (top-bar arrows beside the layouts
+  button, `Alt+Shift+Left` / `Alt+Shift+Right`) restore the arrangement without
+  closing running terminals.
 - `ui` — focus tracking and cycling, global key handler
   (`on_window_key_press()`, incl. `Ctrl+Q`), layout toggle.
 

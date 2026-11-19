@@ -4447,6 +4447,14 @@ msgstr ""
 "suivante), Enter applique, Escape restaure ; Modifier les dispositions… "
 "enregistre (pas dans les onglets d’édition Emacs)"
 
+#: src/chrome/help.c:316
+msgid ""
+"Previous / next layout in this workspace's layout history (also the arrows "
+"around the top-bar layouts button)"
+msgstr ""
+"Disposition précédente / suivante dans l’historique de cet espace de travail "
+"(aussi les flèches autour du bouton de disposition dans la barre du haut)"
+
 #: src/chrome/help.c:262
 msgid ""
 "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, "
@@ -5401,6 +5409,14 @@ msgstr ""
 #: src/main.c:555
 msgid "Workspace Layouts (Alt+L)"
 msgstr "Dispositions de l’espace de travail (Alt+L)"
+
+#: src/chrome/topbar.c:402
+msgid "Previous Layout (Alt+Shift+Left)"
+msgstr "Disposition précédente (Alt+Shift+Left)"
+
+#: src/chrome/topbar.c:404
+msgid "Next Layout (Alt+Shift+Right)"
+msgstr "Disposition suivante (Alt+Shift+Right)"
 
 #: src/main.c:559
 msgid "Preferences (Ctrl+,)"

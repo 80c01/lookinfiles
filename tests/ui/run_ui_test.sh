@@ -502,6 +502,11 @@ key alt+l;              shot layout_switcher_next # Alt+L again: the next layout
 key Down Escape;        shot layout_switcher_restored
 key alt+l Tab Return;   shot layouts_dialog       # Edit Layouts…: the default and the built-in presets
 key Escape;             shot layouts_dialog_closed
+# Layout history (Alt+Shift+Left / Alt+Shift+Right): step back and forward
+key ctrl+shift+l;       shot layout_history_changed
+key alt+shift+Left;     shot layout_history_back
+key alt+shift+Right;    shot layout_history_forward
+key alt+shift+Left
 # Themes (Alt+T, Preferences on Appearance): selecting a row previews it, Escape goes back, Enter applies
 key alt+t;              shot themes_dialog
 key Down;               shot themes_light_preview

@@ -18,6 +18,7 @@
 #include "terminal/terminal.h"
 #include "media/video.h"
 #include "workspace/layout_store.h"
+#include "workspace/layout_history.h"
 #include "theme/palette.h"
 #include "widgets/add_button.h"
 #include "search/project_search.h"
@@ -449,6 +450,7 @@ void workspace_switch(AppData* app, gint idx) {
     gboolean ws_changed = (idx != app->current_ws);
     gboolean restored_rows = FALSE;
     if (ws_changed && app->current_ws >= 0) {
+        layout_history_flush(app);
         workspace_save_current(app);
     }
     app->switching_ws = TRUE;
@@ -593,6 +595,9 @@ void workspace_switch(AppData* app, gint idx) {
     workspace_apply_positions(app);
     app->switching_ws = FALSE;
     workspace_save_current(app);
+    if (ws_changed) {
+        layout_history_workspace_changed(app);
+    }
     g_free(target_path);
 
     if (ws->files_vis && app->tree_view != NULL) {
@@ -679,6 +684,7 @@ void workspace_add(AppData* app) {
     ws_minimap_update_size(app);
     workspace_switch(app, new_idx); /* opens one terminal if term_vis */
     apply_default_terminals(app, def);
+    layout_history_reset_current(app);
     saved_layout_free(def);
 }
 
@@ -755,6 +761,7 @@ void workspace_remove(AppData* app, gint idx) {
     g_clear_pointer(&rm->git_state, git_state_free);
     g_clear_pointer(&rm->remote_id, g_free);
     nav_history_workspace_removed(rm);
+    layout_history_workspace_removed(rm);
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);
     sysmon_tab_workspace_removed(app, rm);

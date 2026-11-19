@@ -57,6 +57,8 @@ TermSnapshot* term_snapshot_take(AppData* app);
  * the other terminals of the panel go to spare, or without spare become the
  * last tabs of the last pane */
 void term_snapshot_restore(AppData* app, const TermSnapshot* snap, GPtrArray* spare);
+/* TRUE when every still-live terminal present in both snapshots is in the same pane */
+gboolean term_snapshot_same_panes(const TermSnapshot* a, const TermSnapshot* b);
 void term_snapshot_free(TermSnapshot* snap);
 
 /* Take vte out of its notebook (terminal panel or editor area); returns a

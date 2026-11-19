@@ -229,6 +229,7 @@ lsp_protocol:code_symbol,json_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths,tab_tree,i18n
+layout_history_stack:layout_store,tab_tree
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets
 markdown:app_types,fonts,text_tags,markdown_parse,md_show

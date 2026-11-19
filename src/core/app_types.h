@@ -123,6 +123,7 @@ typedef struct {
     ExplorerTreeState* tree_state; /* explorer rows while another workspace is shown (owned) */
     GitState* git_state;           /* git badges and counts while another workspace is shown (owned) */
     struct FolderHistory* dir_history; /* folders shown, for back / forward (private to nav_history.c) */
+    struct LayoutHistory* layout_history; /* panel layouts shown, for back / forward (private to layout_history.c) */
     struct WsSearch* search_state; /* last search in files and its Search tab (project_search.c) */
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
     GtkWidget* sysmon_page;        /* its System Monitor tab while another workspace is shown (owned ref, sysmon_tab.c) */
@@ -240,6 +241,7 @@ typedef struct AppData {
     gboolean switching_ws;
     gboolean dir_scan_pending;
     struct WorkspaceView* workspace_view; /* minimap and layout being applied (workspace.c), or NULL */
+    struct LayoutHistoryState* layout_history_state; /* layout history timer & flags (layout_history.c) */
     GtkWidget* layouts_btn;       /* top-bar button: anchor of the Alt+L layout switcher */
 
     /* VS Code-style chrome: explorer panel header and bottom status bar */

@@ -20,6 +20,7 @@
 #include "terminal/terminal.h"
 #include "chrome/status_bar.h"
 #include "explorer/tree_nav.h"
+#include "workspace/layout_history.h"
 
 /* Private to this file: the top bar's widgets (NULL until topbar_new()) */
 struct TopBar {
@@ -27,6 +28,8 @@ struct TopBar {
     GtkWidget* breadcrumb_box;  /* folders of base_dir */
     GtkWidget* history_back_btn; /* folder history arrows */
     GtkWidget* history_fwd_btn;
+    GtkWidget* layout_back_btn; /* layout history arrows around the layouts button */
+    GtkWidget* layout_fwd_btn;
     GtkWidget* mode_btn;        /* global mode pill */
     GtkWidget* files_btn;       /* panel pills */
     GtkWidget* preview_btn;
@@ -372,6 +375,41 @@ static GtkWidget* history_buttons_new(AppData* app) {
     return box;
 }
 
+static void on_layout_back_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    layout_history_back((AppData*)data);
+}
+
+static void on_layout_fwd_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    layout_history_forward((AppData*)data);
+}
+
+static GtkWidget* layout_history_button_new(const gchar* icon, const gchar* tooltip,
+                                            GCallback cb, AppData* app) {
+    GtkWidget* btn = icon_button_new(icon, tooltip);
+    gtk_widget_add_css_class(btn, "status-pill");
+    gtk_widget_add_css_class(btn, "layout-history-btn");
+    gtk_widget_set_sensitive(btn, FALSE);
+    g_signal_connect(btn, "clicked", cb, app);
+    return btn;
+}
+
+static GtkWidget* layout_controls_new(AppData* app, GtkWidget* layouts_btn) {
+    struct TopBar* t = bar_get(app);
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
+    gtk_widget_add_css_class(box, "layout-history-group");
+    t->layout_back_btn = layout_history_button_new("go-previous", _("Previous Layout (Alt+Shift+Left)"),
+                                                   G_CALLBACK(on_layout_back_clicked), app);
+    t->layout_fwd_btn = layout_history_button_new("go-next", _("Next Layout (Alt+Shift+Right)"),
+                                                  G_CALLBACK(on_layout_fwd_clicked), app);
+    gtk_box_append(GTK_BOX(box), t->layout_back_btn);
+    gtk_box_append(GTK_BOX(box), layouts_btn);
+    gtk_box_append(GTK_BOX(box), t->layout_fwd_btn);
+    return box;
+}
+
 static const gchar* mode_name(EditorMode mode) {
     switch (mode) {
     case EDITOR_MODE_VIM:
@@ -618,6 +656,10 @@ void update_path_label(AppData* app) {
         gtk_widget_set_sensitive(t->history_back_btn, nav_history_can_go(app, TRUE));
         gtk_widget_set_sensitive(t->history_fwd_btn, nav_history_can_go(app, FALSE));
     }
+    if (t->layout_back_btn != NULL) {
+        gtk_widget_set_sensitive(t->layout_back_btn, layout_history_can_go(app, TRUE));
+        gtk_widget_set_sensitive(t->layout_fwd_btn, layout_history_can_go(app, FALSE));
+    }
 
     if (t->mode_btn != NULL) {
         /* Rebuilt only when the mode changes (stored as mode + 1) */
@@ -763,7 +805,7 @@ GtkWidget* topbar_new(AppData* app, GtkWidget* ws_minimap, GtkWidget* layouts_bt
     gtk_box_append(GTK_BOX(row), t->sysmon_btn);
     gtk_box_append(GTK_BOX(row), mode_button_new(app));
     gtk_box_append(GTK_BOX(row), ws_minimap);
-    gtk_box_append(GTK_BOX(row), layouts_btn);
+    gtk_box_append(GTK_BOX(row), layout_controls_new(app, layouts_btn));
     gtk_box_append(GTK_BOX(row), prefs_btn);
     gtk_box_append(GTK_BOX(row), separator_new());
     gtk_box_append(GTK_BOX(row), t->files_btn);

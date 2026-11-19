@@ -42,6 +42,7 @@
 #include "explorer/files_menu.h"
 #include "workspace/session.h"
 #include "workspace/session_bookmark.h"
+#include "workspace/layout_history.h"
 #include "org/orgmode.h"
 #include "org/org_fold.h"
 #include "preview/preview_folding.h"
@@ -521,7 +522,9 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, editor_modes_refresh_bars);
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, editor_modes_refresh_git);
     app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, workspace_save_current);
+    app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, layout_history_on_change);
     app_events_subscribe(app, APP_EVENT_LAYOUT_REBUILT, workspace_apply_positions);
+    app_events_subscribe(app, APP_EVENT_LAYOUT_REBUILT, layout_history_on_change);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_listing);
     app_events_subscribe(app, APP_EVENT_PREVIEW_STALE, viewer_reload_preview);
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_git_status_in_place);
@@ -764,6 +767,7 @@ int main(int argc, char** argv) {
     g_free(start_file);
     g_free(target_dir);
     g_free(cwd_alloc);
+    layout_history_init(app);
 
     profile_mark("main loop");
     g_main_loop_run(loop);
@@ -794,6 +798,7 @@ int main(int argc, char** argv) {
     preview_state_free(app);
     sidebar_free(app);
     topbar_free(app);
+    layout_history_free(app);
     workspace_view_free(app);
     status_bar_free(app);
     if (app->dir_cancellable != NULL) {

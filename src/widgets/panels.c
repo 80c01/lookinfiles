@@ -416,6 +416,10 @@ void panels_size_popup_attach(AppData* app, GtkOverlay* overlay) {
     d->label = label;
 }
 
+gboolean panels_is_resizing(const AppData* app) {
+    return app != NULL && app->panels != NULL && app->panels->active;
+}
+
 void panels_free(AppData* app) {
     if (app != NULL) {
         g_clear_pointer(&app->panels, g_free);

@@ -433,18 +433,52 @@ void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare
 }
 
 /* ------------------------------------------------------------------------- */
-/* Exact arrangement, put back after a layout preview                        */
+/* Exact arrangement, put back after a layout preview or history step        */
 /* ------------------------------------------------------------------------- */
 
+static GWeakRef* weak_ref_new(gpointer obj) {
+    GWeakRef* ref = g_new0(GWeakRef, 1);
+    g_weak_ref_init(ref, obj);
+    return ref;
+}
+
+static void weak_ref_free(gpointer data) {
+    GWeakRef* ref = data;
+    if (ref != NULL) {
+        g_weak_ref_clear(ref);
+        g_free(ref);
+    }
+}
+
 struct EditorSnapshot {
-    GPtrArray* pages;      /* editor tabs (containers) and terminals, referenced:
+    GPtrArray* pages;      /* GWeakRef* to editor tabs (containers) and terminals:
                             * the panel's first, then the preview notebook's */
     guint panel_count;     /* pages of the panel */
     TabTreeNode* panel;    /* the panel's splits, tabs being indices in pages; NULL if empty */
     GArray* preview;       /* indices in pages of the preview notebook's tabs, in order */
-    GtkWidget* preview_current; /* current page of the preview notebook */
-    GtkWidget* focused;    /* container of the editor view focused last */
+    GWeakRef* preview_current; /* current page of the preview notebook */
+    GWeakRef* focused;      /* container of the editor view focused last */
 };
+
+/* Strong reference to pages[index], or NULL if the widget was closed */
+static GtkWidget* snap_page_get(const EditorSnapshot* snap, guint index) {
+    if (snap == NULL || index >= snap->pages->len) {
+        return NULL;
+    }
+    return g_weak_ref_get(g_ptr_array_index(snap->pages, index));
+}
+
+static gboolean snap_has_page(const EditorSnapshot* snap, GtkWidget* page) {
+    for (guint i = 0; i < snap->pages->len; i++) {
+        GtkWidget* p = g_weak_ref_get(g_ptr_array_index(snap->pages, i));
+        gboolean match = (p == page);
+        g_clear_object(&p);
+        if (match) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
 
 #ifdef HAVE_VTE
 /* The notebook holding page, or NULL */
@@ -476,7 +510,7 @@ static TabTreeNode* snapshot_widget(AppData* app, GtkWidget* w, GPtrArray* pages
             if (p == current) {
                 node->current = (gint)pos;
             }
-            g_ptr_array_add(pages, g_object_ref(page));
+            g_ptr_array_add(pages, weak_ref_new(page));
         }
         if (node->tabs->len == 0) {
             tab_tree_free(node);
@@ -495,7 +529,7 @@ static TabTreeNode* snapshot_widget(AppData* app, GtkWidget* w, GPtrArray* pages
 
 EditorSnapshot* editor_layout_snapshot(AppData* app) {
     EditorSnapshot* snap = g_new0(EditorSnapshot, 1);
-    snap->pages = g_ptr_array_new_with_free_func(g_object_unref);
+    snap->pages = g_ptr_array_new_with_free_func(weak_ref_free);
     snap->preview = g_array_new(FALSE, FALSE, sizeof(guint));
     if (app->editor_box != NULL) {
         snap->panel = snapshot_widget(app, gtk_widget_get_first_child(app->editor_box), snap->pages);
@@ -507,13 +541,17 @@ EditorSnapshot* editor_layout_snapshot(AppData* app) {
             GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
             guint index = snap->pages->len;
             g_array_append_val(snap->preview, index);
-            g_ptr_array_add(snap->pages, g_object_ref(page));
+            g_ptr_array_add(snap->pages, weak_ref_new(page));
         }
         gint current = gtk_notebook_get_current_page(nb);
-        snap->preview_current = (current >= 0) ? g_object_ref(gtk_notebook_get_nth_page(nb, current)) : NULL;
+        if (current >= 0) {
+            snap->preview_current = weak_ref_new(gtk_notebook_get_nth_page(nb, current));
+        }
     }
     EditorTab* focused = g_list_find(app->editors, app->last_focused_editor) ? app->last_focused_editor : NULL;
-    snap->focused = (focused != NULL && focused->container != NULL) ? g_object_ref(focused->container) : NULL;
+    if (focused != NULL && focused->container != NULL) {
+        snap->focused = weak_ref_new(focused->container);
+    }
     return snap;
 }
 
@@ -524,9 +562,71 @@ void editor_snapshot_free(EditorSnapshot* snap) {
     g_ptr_array_unref(snap->pages);
     tab_tree_free(snap->panel);
     g_array_unref(snap->preview);
-    g_clear_object(&snap->preview_current);
-    g_clear_object(&snap->focused);
+    weak_ref_free(snap->preview_current);
+    weak_ref_free(snap->focused);
     g_free(snap);
+}
+
+static void map_panel_leaves(const TabTreeNode* node, const EditorSnapshot* snap,
+                             GHashTable* map, gint* next_pane) {
+    if (node == NULL) {
+        return;
+    }
+    if (node->is_notebook) {
+        gint pane = (*next_pane)++;
+        for (guint t = 0; t < node->tabs->len; t++) {
+            GtkWidget* page = snap_page_get(snap, g_array_index(node->tabs, guint, t));
+            if (page != NULL) {
+                g_hash_table_replace(map, page, GINT_TO_POINTER(pane + 2));
+                g_object_unref(page);
+            }
+        }
+        return;
+    }
+    map_panel_leaves(node->first, snap, map, next_pane);
+    map_panel_leaves(node->second, snap, map, next_pane);
+}
+
+static GHashTable* build_pane_map(const EditorSnapshot* snap) {
+    GHashTable* map = g_hash_table_new(g_direct_hash, g_direct_equal);
+    if (snap == NULL) {
+        return map;
+    }
+    gint next_pane = 0;
+    map_panel_leaves(snap->panel, snap, map, &next_pane);
+    for (guint i = 0; i < snap->preview->len; i++) {
+        GtkWidget* page = snap_page_get(snap, g_array_index(snap->preview, guint, i));
+        if (page != NULL) {
+            g_hash_table_replace(map, page, GINT_TO_POINTER(1));
+            g_object_unref(page);
+        }
+    }
+    return map;
+}
+
+gboolean editor_snapshot_same_panes(const EditorSnapshot* a, const EditorSnapshot* b) {
+    if (a == b) {
+        return TRUE;
+    }
+    if (a == NULL || b == NULL) {
+        return FALSE;
+    }
+    GHashTable* ma = build_pane_map(a);
+    GHashTable* mb = build_pane_map(b);
+    gboolean same = TRUE;
+    GHashTableIter iter;
+    gpointer key, val_a;
+    g_hash_table_iter_init(&iter, ma);
+    while (g_hash_table_iter_next(&iter, &key, &val_a)) {
+        gpointer val_b = g_hash_table_lookup(mb, key);
+        if (val_b != NULL && val_b != val_a) {
+            same = FALSE;
+            break;
+        }
+    }
+    g_hash_table_destroy(ma);
+    g_hash_table_destroy(mb);
+    return same;
 }
 
 /* Take a terminal out of its notebook into spare (closed without spare) */
@@ -547,6 +647,9 @@ static void set_aside(GtkWidget* page, GPtrArray* spare) {
 /* Put page (an editor tab or a terminal, in a notebook or in spare, or
  * another movable page of a notebook) into nb */
 static void place_page(AppData* app, GtkWidget* page, GtkNotebook* nb, GPtrArray* spare) {
+    if (page == NULL) {
+        return;
+    }
     EditorTab* tab = tab_of_page(app, page);
     if (tab != NULL) {
         if (tab->nb != GTK_WIDGET(nb)) {
@@ -582,9 +685,12 @@ static void place_page(AppData* app, GtkWidget* page, GtkNotebook* nb, GPtrArray
 static void order_pages(GtkNotebook* nb, const EditorSnapshot* snap, GArray* indices, GtkWidget* current) {
     gint pos = 0;
     for (guint i = 0; i < indices->len; i++) {
-        GtkWidget* page = g_ptr_array_index(snap->pages, g_array_index(indices, guint, i));
-        if (gtk_notebook_page_num(nb, page) >= 0) {
-            gtk_notebook_reorder_child(nb, page, pos++);
+        GtkWidget* page = snap_page_get(snap, g_array_index(indices, guint, i));
+        if (page != NULL) {
+            if (gtk_notebook_page_num(nb, page) >= 0) {
+                gtk_notebook_reorder_child(nb, page, pos++);
+            }
+            g_object_unref(page);
         }
     }
     gint num = (current != NULL) ? gtk_notebook_page_num(nb, current) : -1;
@@ -597,30 +703,41 @@ void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* 
     if (app == NULL || snap == NULL || app->editor_box == NULL) {
         return;
     }
-    /* Every page of the panel into its first notebook, the editor tabs of
-     * the preview notebook back there */
+    /* Every page of the panel into its first notebook, the editor tabs and
+     * terminals of the preview notebook back there */
     GtkNotebook* root = (snap->panel != NULL) ? panel_root(app) : NULL;
     for (guint i = 0; i < snap->panel_count && root != NULL; i++) {
-        place_page(app, g_ptr_array_index(snap->pages, i), root, spare);
+        GtkWidget* page = snap_page_get(snap, i);
+        place_page(app, page, root, spare);
+        g_clear_object(&page);
     }
     for (guint i = 0; i < snap->preview->len && app->notebook != NULL; i++) {
-        GtkWidget* page = g_ptr_array_index(snap->pages, g_array_index(snap->preview, guint, i));
-        if (tab_of_page(app, page) != NULL || is_other(app, page)) {
+        GtkWidget* page = snap_page_get(snap, g_array_index(snap->preview, guint, i));
+        if (page != NULL && (tab_of_page(app, page) != NULL || is_other(app, page) || is_terminal(page))) {
             place_page(app, page, GTK_NOTEBOOK(app->notebook), spare);
         }
+        g_clear_object(&page);
     }
-    /* What the panel holds besides: terminals go to spare, editor tabs to
-     * the first notebook (or the preview notebook) */
+    /* What the panel holds besides: with spare (layout preview), extra
+     * terminals go to spare; without spare (history), nothing closes, extra
+     * pages move to the first notebook (or the preview notebook) */
     GPtrArray* nbs = editor_get_all_notebooks(app);
     for (guint n = 0; n < nbs->len; n++) {
         GtkNotebook* nb = g_ptr_array_index(nbs, n);
         for (gint p = gtk_notebook_get_n_pages(nb) - 1; p >= 0; p--) {
             GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
-            if (nb == root || g_ptr_array_find(snap->pages, page, NULL)) {
+            if (nb == root || snap_has_page(snap, page)) {
                 continue;
             }
             if (is_terminal(page)) {
-                set_aside(page, spare);
+                if (spare != NULL) {
+                    set_aside(page, spare);
+                } else {
+                    GtkWidget* to = (root != NULL) ? GTK_WIDGET(root) : app->notebook;
+                    if (to != NULL) {
+                        place_page(app, page, GTK_NOTEBOOK(to), NULL);
+                    }
+                }
             } else if (tab_of_page(app, page) != NULL) {
                 GtkWidget* to = (root != NULL) ? GTK_WIDGET(root) : app->notebook;
                 editor_move_tab_to(app, tab_of_page(app, page), GTK_NOTEBOOK(to), -1, FALSE);
@@ -631,10 +748,10 @@ void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* 
         }
     }
     g_ptr_array_unref(nbs);
-    if (root != NULL) {
+    if (root != NULL && spare != NULL) {
         for (gint p = gtk_notebook_get_n_pages(root) - 1; p >= 0; p--) {
             GtkWidget* page = gtk_notebook_get_nth_page(root, p);
-            if (is_terminal(page) && !g_ptr_array_find(snap->pages, page, NULL)) {
+            if (is_terminal(page) && !snap_has_page(snap, page)) {
                 set_aside(page, spare);
             }
         }
@@ -650,21 +767,28 @@ void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* 
             GtkNotebook* nb = g_ptr_array_index(leaves, i);
             const TabTreeNode* node = g_ptr_array_index(nodes, i);
             for (guint t = 0; t < node->tabs->len; t++) {
-                place_page(app, g_ptr_array_index(snap->pages, g_array_index(node->tabs, guint, t)), nb, spare);
+                GtkWidget* page = snap_page_get(snap, g_array_index(node->tabs, guint, t));
+                place_page(app, page, nb, spare);
+                g_clear_object(&page);
             }
             GtkWidget* current = (node->current >= 0)
-                                     ? g_ptr_array_index(snap->pages, g_array_index(node->tabs, guint, node->current))
+                                     ? snap_page_get(snap, g_array_index(node->tabs, guint, node->current))
                                      : NULL;
             order_pages(nb, snap, node->tabs, current);
+            g_clear_object(&current);
         }
         g_ptr_array_unref(leaves);
         g_ptr_array_unref(nodes);
     }
     editor_remove_empty_notebooks(app);
     if (app->notebook != NULL) {
-        order_pages(GTK_NOTEBOOK(app->notebook), snap, snap->preview, snap->preview_current);
+        GtkWidget* prev_cur = (snap->preview_current != NULL) ? g_weak_ref_get(snap->preview_current) : NULL;
+        order_pages(GTK_NOTEBOOK(app->notebook), snap, snap->preview, prev_cur);
+        g_clear_object(&prev_cur);
     }
-    EditorTab* focused = (snap->focused != NULL) ? tab_of_page(app, snap->focused) : NULL;
+    GtkWidget* focused_w = (snap->focused != NULL) ? g_weak_ref_get(snap->focused) : NULL;
+    EditorTab* focused = (focused_w != NULL) ? tab_of_page(app, focused_w) : NULL;
+    g_clear_object(&focused_w);
     if (focused != NULL) {
         app->last_focused_editor = focused;
     }

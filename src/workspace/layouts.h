@@ -16,6 +16,11 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name);
 /* Apply a layout to the current workspace. Nothing closes: running
  * terminals it has no room for become tabs of its last terminal pane. */
 void layouts_apply(AppData* app, const SavedLayout* layout);
+/* Apply only the panel visibility, orientation, split fractions and tagbars
+ * of layout to the current workspace and show them (used by layout_history.c) */
+void layouts_apply_panels(AppData* app, const SavedLayout* layout);
+/* TRUE while a layout preview (Alt+L) is open */
+gboolean layouts_preview_active(void);
 
 /* Previews: layouts shown in full, then the start put back exactly (the
  * same tabs in the same panes and places, the same terminals) or one of

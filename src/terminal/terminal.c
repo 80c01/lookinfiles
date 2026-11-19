@@ -550,12 +550,14 @@ static void on_term_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone 
     if (source == NULL) {
         return;
     }
+    gboolean layout_changed = FALSE;
     if (zone == PANE_ZONE_CENTER) {
         if (source == target) {
             gtk_notebook_reorder_child(target, child, index);
             gtk_notebook_set_current_page(target, gtk_notebook_page_num(target, child));
         } else {
             term_move_page(source, target, child, index);
+            layout_changed = TRUE;
         }
     } else {
         if (source == target && gtk_notebook_get_n_pages(target) <= 1) {
@@ -564,9 +566,13 @@ static void on_term_tab_dropped(GtkNotebook* target, GtkWidget* child, PaneZone 
         GtkWidget* nb = term_notebook_new(app);
         term_split_beside(app, GTK_WIDGET(target), nb, zone);
         term_move_page(source, GTK_NOTEBOOK(nb), child, -1);
+        layout_changed = TRUE;
     }
     set_focus(app, child);
     gtk_widget_grab_focus(child);
+    if (layout_changed) {
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    }
 }
 
 static gboolean term_drag_done_idle(gpointer data) {
@@ -576,6 +582,7 @@ static gboolean term_drag_done_idle(gpointer data) {
     if (app != NULL && gtk_widget_get_parent(w) != NULL && gtk_notebook_get_n_pages(source) == 0) {
         term_remove_leaf(w);
         term_close_panel_if_empty(app);
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     g_object_unref(source);
     return G_SOURCE_REMOVE;
@@ -682,6 +689,9 @@ static void term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd)
     }
     term_notebook_add(target, vte, NULL, -1);
     set_focus(app, vte);
+    if (new_row) {
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+    }
 }
 
 void term_spawn_pane(AppData* app, gboolean new_row) {
@@ -738,6 +748,7 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         gtk_widget_grab_focus(gtk_notebook_get_nth_page(nb, gtk_notebook_get_current_page(nb)));
     } else {
         gtk_widget_grab_focus(GTK_WIDGET(g_ptr_array_index(panes, 0)));
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     g_ptr_array_unref(panes);
 }

@@ -34,8 +34,11 @@ void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare
 typedef struct EditorSnapshot EditorSnapshot;
 EditorSnapshot* editor_layout_snapshot(AppData* app);
 /* Put the tabs back as taken (terminals out of any notebook come from
- * spare); terminals of the panel not in the snapshot go to spare */
+ * spare); terminals of the panel not in the snapshot go to spare, or without
+ * spare stay in the panel (nothing closes) */
 void editor_layout_restore(AppData* app, const EditorSnapshot* snap, GPtrArray* spare);
+/* TRUE when every still-live page present in both snapshots is in the same pane */
+gboolean editor_snapshot_same_panes(const EditorSnapshot* a, const EditorSnapshot* b);
 void editor_snapshot_free(EditorSnapshot* snap);
 
 #endif /* EDITOR_LAYOUT_H */

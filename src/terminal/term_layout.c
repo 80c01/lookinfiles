@@ -200,12 +200,26 @@ void terminal_attach_tab(GtkWidget* vte, GtkNotebook* nb) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* Exact arrangement of the panel, put back after a layout preview           */
+/* Exact arrangement of the panel, put back after a layout preview or undo   */
 /* ------------------------------------------------------------------------- */
+
+static GWeakRef* weak_ref_new(gpointer obj) {
+    GWeakRef* ref = g_new0(GWeakRef, 1);
+    g_weak_ref_init(ref, obj);
+    return ref;
+}
+
+static void weak_ref_free(gpointer data) {
+    GWeakRef* ref = data;
+    if (ref != NULL) {
+        g_weak_ref_clear(ref);
+        g_free(ref);
+    }
+}
 
 struct TermSnapshot {
     gboolean is_pane;
-    GPtrArray* terms; /* pane: its terminals in tab order (referenced) */
+    GPtrArray* terms; /* pane: GWeakRef* to its terminals in tab order */
     gint current;     /* pane: current tab */
     gboolean vertical;
     gdouble frac;
@@ -222,9 +236,9 @@ static TermSnapshot* snapshot_of(GtkWidget* w) {
         }
         TermSnapshot* snap = g_new0(TermSnapshot, 1);
         snap->is_pane = TRUE;
-        snap->terms = g_ptr_array_new_with_free_func(g_object_unref);
+        snap->terms = g_ptr_array_new_with_free_func(weak_ref_free);
         for (gint p = 0; p < n; p++) {
-            g_ptr_array_add(snap->terms, g_object_ref(gtk_notebook_get_nth_page(nb, p)));
+            g_ptr_array_add(snap->terms, weak_ref_new(gtk_notebook_get_nth_page(nb, p)));
         }
         snap->current = gtk_notebook_get_current_page(nb);
         return snap;
@@ -265,6 +279,54 @@ void term_snapshot_free(TermSnapshot* snap) {
     g_free(snap);
 }
 
+static void map_term_leaves(const TermSnapshot* snap, GHashTable* map, gint* next_pane) {
+    if (snap == NULL) {
+        return;
+    }
+    if (snap->is_pane) {
+        gint pane = (*next_pane)++;
+        for (guint i = 0; i < snap->terms->len; i++) {
+            GtkWidget* vte = g_weak_ref_get(g_ptr_array_index(snap->terms, i));
+            if (vte != NULL) {
+                g_hash_table_replace(map, vte, GINT_TO_POINTER(pane + 1));
+                g_object_unref(vte);
+            }
+        }
+        return;
+    }
+    map_term_leaves(snap->first, map, next_pane);
+    map_term_leaves(snap->second, map, next_pane);
+}
+
+gboolean term_snapshot_same_panes(const TermSnapshot* a, const TermSnapshot* b) {
+    if (a == b) {
+        return TRUE;
+    }
+    if (a == NULL || b == NULL) {
+        return FALSE;
+    }
+    GHashTable* ma = g_hash_table_new(g_direct_hash, g_direct_equal);
+    GHashTable* mb = g_hash_table_new(g_direct_hash, g_direct_equal);
+    gint pa = 0;
+    gint pb = 0;
+    map_term_leaves(a, ma, &pa);
+    map_term_leaves(b, mb, &pb);
+    gboolean same = TRUE;
+    GHashTableIter iter;
+    gpointer key, val_a;
+    g_hash_table_iter_init(&iter, ma);
+    while (g_hash_table_iter_next(&iter, &key, &val_a)) {
+        gpointer val_b = g_hash_table_lookup(mb, key);
+        if (val_b != NULL && val_b != val_a) {
+            same = FALSE;
+            break;
+        }
+    }
+    g_hash_table_destroy(ma);
+    g_hash_table_destroy(mb);
+    return same;
+}
+
 /* Take vte from pool (the terminals out of their notebooks); FALSE if absent */
 static gboolean take_from(GPtrArray* pool, GtkWidget* vte) {
     guint i = 0;
@@ -280,10 +342,19 @@ static GtkWidget* rebuild_snapshot(AppData* app, const TermSnapshot* snap, GPtrA
     if (snap->is_pane) {
         GtkWidget* nb = term_notebook_new(app);
         for (guint i = 0; i < snap->terms->len; i++) {
-            GtkWidget* vte = g_ptr_array_index(snap->terms, i);
-            g_object_ref(vte);
+            GtkWidget* vte = g_weak_ref_get(g_ptr_array_index(snap->terms, i));
+            if (vte == NULL) {
+                continue;
+            }
             if (take_from(taken, vte) || take_from(spare, vte)) {
                 term_notebook_add(GTK_NOTEBOOK(nb), vte, NULL, -1);
+            } else if (spare == NULL && term_notebook_of(vte) != NULL) {
+                /* Moved into an editor or preview notebook since the snapshot: bring it back */
+                GtkWidget* detached = terminal_detach_tab(vte);
+                if (detached != NULL) {
+                    term_notebook_add(GTK_NOTEBOOK(nb), detached, NULL, -1);
+                    g_object_unref(detached);
+                }
             }
             g_object_unref(vte);
         }

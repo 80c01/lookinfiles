@@ -65,6 +65,14 @@ onglets, et les shells démarrés pour un aperçu s’arrêtent avec lui. `Enter
 ou un clic applique la disposition ; `Escape` remet tout comme avant, les
 mêmes onglets aux mêmes endroits et les mêmes terminaux.
 
+Chaque espace de travail conserve aussi un historique de ses dispositions
+(panneaux affichés ou masqués, redimensionnements, divisions, onglets
+déplacés d’un volet à un autre, barres de symboles et dispositions
+appliquées) : les flèches à gauche et à droite du bouton grille (ou
+`Alt+Shift+Left` / `Alt+Shift+Right`) permettent de revenir à la
+disposition précédente ou d’avancer à la suivante, sans fermer les
+terminaux en cours.
+
 **Modifier les dispositions…**, en bas de la liste, ouvre le dialogue des
 dispositions :
 

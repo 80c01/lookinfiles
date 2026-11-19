@@ -5,6 +5,7 @@
 #include "widgets/outline_pane.h"
 #include "widgets/focus_route.h"
 #include "widgets/panels.h"
+#include "core/app_events.h"
 #include "core/i18n.h"
 #include "core/settings_store.h"
 
@@ -219,6 +220,7 @@ static void toggle(PreviewTagbar* pt, gboolean save) {
         pt->app->settings.preview_tagbar = pt->wanted;
         save_setting(pt->app);
     }
+    app_emit(pt->app, APP_EVENT_LAYOUT_CHANGED);
 }
 
 static void close_tagbar(gpointer data) {

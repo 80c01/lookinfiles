@@ -54,6 +54,12 @@ no room for are stacked as tabs, and the shells started for a preview end
 with it. `Enter` or a click applies the layout; `Escape` puts everything
 back as it was, the same tabs in the same places and the same terminals.
 
+Each workspace also keeps a history of its layouts (panel toggles,
+resizes, splits, tabs moved between panes, tagbars and applied layouts):
+the arrows on either side of the grid button (or `Alt+Shift+Left` /
+`Alt+Shift+Right`) step back to the previous arrangement or forward to the
+next one, without closing running terminals.
+
 **Edit Layouts…** at the bottom of the list opens the layouts dialog:
 
 - **apply** a saved layout to the current workspace;

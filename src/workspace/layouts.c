@@ -143,11 +143,27 @@ void layouts_apply(AppData* app, const SavedLayout* l) {
     arrange(app, l, NULL, NULL);
     workspace_switch(app, app->current_ws); /* re-applies the current workspace */
     save_tagbars(app, l);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+}
+
+void layouts_apply_panels(AppData* app, const SavedLayout* l) {
+    if (app == NULL || l == NULL) {
+        return;
+    }
+    set_panels(app, l);
+    set_tagbars(app, l);
+    workspace_show_panels(app);
 }
 
 /* ------------------------------------------------------------------------- */
 /* Previews                                                                  */
 /* ------------------------------------------------------------------------- */
+
+static gint preview_depth = 0;
+
+gboolean layouts_preview_active(void) {
+    return preview_depth > 0;
+}
 
 struct LayoutsPreview {
     AppData* app;
@@ -162,6 +178,7 @@ struct LayoutsPreview {
 };
 
 LayoutsPreview* layouts_preview_begin(AppData* app) {
+    preview_depth++;
     LayoutsPreview* p = g_new0(LayoutsPreview, 1);
     p->app = app;
     p->panels = layouts_capture(app, "");
@@ -207,6 +224,12 @@ gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
         save_tagbars(app, l);
     } else {
         workspace_show_panels(app);
+    }
+    if (preview_depth > 0) {
+        preview_depth--;
+    }
+    if (apply) {
+        app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     editor_snapshot_free(p->editor);
     editor_tagbar_states_free(p->tagbars);
