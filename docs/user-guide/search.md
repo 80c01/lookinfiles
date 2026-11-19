@@ -118,6 +118,9 @@ comes back to the results), and a right click also copies the path.
 To see the files while going through the results, move the tab out of the
 preview panel, as an editor tab: `Ctrl+Alt+Arrow`, the right-click menu
 of the tab, or a drag of the tab to the editor panel or the edge of a pane.
+In one click, the button with two panes at the top right of the tab (shown
+while it is in the preview panel) puts the results on the left and the
+preview on the right, with the focus in the results.
 Beside the preview, the result you move to (arrows, click) is previewed
 there, at its first match; the explorer keeps its selection, and shows it
 again in the preview when it gets the focus back.

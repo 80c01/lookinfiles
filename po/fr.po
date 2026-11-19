@@ -10413,6 +10413,9 @@ msgstr "Rechercher (Enter / F5)"
 msgid "Stop the Search (Escape)"
 msgstr "Arrêter la recherche (Escape)"
 
+msgid "Show the Preview on the Right"
+msgstr "Afficher l’aperçu à droite"
+
 msgid "Close Deep Search"
 msgstr "Fermer la recherche approfondie"
 

@@ -127,7 +127,10 @@ aux résultats), et un clic droit permet aussi de copier le chemin.
 Pour voir les fichiers en parcourant les résultats, sortez l’onglet du
 panneau d’aperçu, comme un onglet d’édition : `Ctrl+Alt+Arrow`, le menu
 du clic droit sur l’onglet, ou un glisser de l’onglet vers le panneau
-d’édition ou le bord d’un volet. À côté de l’aperçu, le résultat atteint
+d’édition ou le bord d’un volet. En un clic, le bouton à deux volets en
+haut à droite de l’onglet (affiché tant qu’il est dans le panneau
+d’aperçu) met les résultats à gauche et l’aperçu à droite, avec le focus
+dans les résultats. À côté de l’aperçu, le résultat atteint
 (flèches, clic) y est affiché, à sa première occurrence ; l’explorateur
 garde sa sélection, et la remontre dans l’aperçu quand il reprend le
 focus.

@@ -7,6 +7,7 @@
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
+#include "editor/editor_swap.h"
 #include "explorer/file_list.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
@@ -50,6 +51,7 @@ typedef struct {
     GtkWidget* one_fs;
     GtkWidget* search;    /* buttons */
     GtkWidget* stop;
+    GtkWidget* beside;    /* in the preview notebook: the preview to the right */
     GtkWidget* error;     /* why the criteria cannot run */
 
     GtkWidget* status;    /* counters, then the summary */
@@ -639,6 +641,40 @@ static void close_page(AppData* app) {
     app_emit(app, APP_EVENT_CHROME_CHANGED);
 }
 
+/* The focus in the results (the name field without any), once the panels
+ * are placed. data: a ref on the page */
+static gboolean focus_after_move(gpointer data) {
+    GtkWidget* page = data;
+    DeepSearchTab* dt = g_object_get_data(G_OBJECT(page), PAGE_KEY);
+    if (dt != NULL && gtk_widget_get_mapped(page)) {
+        gtk_widget_grab_focus(deep_search_list_count(dt->list) > 0 ? deep_search_list_view(dt->list) : dt->name);
+    }
+    g_object_unref(page);
+    return G_SOURCE_REMOVE;
+}
+
+/* Out of the preview notebook into the editor panel, put left of the
+ * preview: the results on the left, the result selected previewed on the
+ * right */
+static void on_beside_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    DeepSearchTab* dt = data;
+    AppData* app = dt->app;
+    GtkNotebook* nb = deep_search_page_notebook(dt->page);
+    if (nb == NULL || GTK_WIDGET(nb) != app->notebook) return;
+    EditorMoveDirection away = editor_swap_preview_side(app) == EDITOR_MOVE_LEFT ? EDITOR_MOVE_RIGHT : EDITOR_MOVE_LEFT;
+    if (!editor_move_page_direction(app, dt->page, away)) return;
+    if (!editor_swap_active(app)) editor_swap_toggle(app);
+    g_idle_add(focus_after_move, g_object_ref(dt->page));
+}
+
+/* The button only in the preview notebook (beside it, the preview already shows) */
+static void on_page_map(GtkWidget* page, gpointer data) {
+    DeepSearchTab* dt = data;
+    GtkNotebook* nb = deep_search_page_notebook(page);
+    gtk_widget_set_visible(dt->beside, nb != NULL && GTK_WIDGET(nb) == dt->app->notebook);
+}
+
 static void on_close_clicked(GtkButton* button, gpointer data) {
     (void)button;
     close_page(((DeepSearchTab*)data)->app);
@@ -989,6 +1025,9 @@ static DeepSearchTab* ensure_page(AppData* app) {
     icon_button_set_content(dt->stop, "process-stop", _("Stop"));
     g_signal_connect(dt->stop, "clicked", G_CALLBACK(on_stop_clicked), dt);
     gtk_box_append(GTK_BOX(bar), dt->stop);
+    dt->beside = icon_button_new("view-dual", _("Show the Preview on the Right"));
+    g_signal_connect(dt->beside, "clicked", G_CALLBACK(on_beside_clicked), dt);
+    gtk_box_append(GTK_BOX(bar), dt->beside);
     GtkWidget* close = icon_button_new("window-close", _("Close Deep Search"));
     g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), dt);
     gtk_box_append(GTK_BOX(bar), close);
@@ -1029,6 +1068,7 @@ static DeepSearchTab* ensure_page(AppData* app) {
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_page_key), dt);
     gtk_widget_add_controller(page, keys);
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, dt, tab_free);
+    g_signal_connect(page, "map", G_CALLBACK(on_page_map), dt);
     editor_page_set_movable(page);
 
     dt->label = g_object_ref(icon_label_new("edit-find", _("Deep Search")));
