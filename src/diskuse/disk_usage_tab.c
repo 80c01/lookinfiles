@@ -16,6 +16,9 @@
 
 #define PAGE_KEY "lookin-disk-usage-tab"
 #define TICK_MS 200 /* progress shown again while the tree is read */
+#define STATS_WIDTH 380 /* the statistics at first */
+#define STATS_MIN_WIDTH 200 /* and in a narrow panel */
+#define BREAKDOWN_MIN_WIDTH 270 /* the list and its views: what gives way last */
 
 /* One reading of the tree: the scan lives as long as its worker */
 typedef struct {
@@ -39,6 +42,7 @@ typedef struct {
     GtkWidget* views;    /* disk_usage_views (treemap, wheel, histograms), under the list */
     GtkWidget* split;    /* GtkPaned of the list and the views */
     gboolean split_set;  /* its first position given */
+    gboolean stats_set;  /* the statistics given their first width */
 
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
@@ -465,6 +469,19 @@ static void on_split_sized(GObject* split, GParamSpec* pspec, gpointer data) {
     gtk_paned_set_position(GTK_PANED(split), max / 2);
 }
 
+/* The first time the breakdown and the statistics have a width: the
+ * statistics take STATS_WIDTH (they keep it as the panel grows, and give
+ * some back down to STATS_MIN_WIDTH in a narrow one) */
+static void on_body_sized(GObject* body, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    DiskUsageTab* dt = data;
+    gint max = 0;
+    g_object_get(body, "max-position", &max, NULL);
+    if (dt->stats_set || max < 100) return;
+    dt->stats_set = TRUE;
+    gtk_paned_set_position(GTK_PANED(body), MAX(max - STATS_WIDTH, max / 2));
+}
+
 /* The page */
 
 static void tab_free(gpointer data) {
@@ -613,8 +630,9 @@ static DiskUsageTab* ensure_page(AppData* app) {
     gtk_paned_set_resize_end_child(GTK_PANED(dt->split), TRUE);
     gtk_paned_set_shrink_end_child(GTK_PANED(dt->split), FALSE);
     g_signal_connect(dt->split, "notify::max-position", G_CALLBACK(on_split_sized), dt);
+    gtk_widget_set_size_request(dt->split, BREAKDOWN_MIN_WIDTH, -1);
     dt->stats = disk_usage_stats_new(on_row_reveal, dt);
-    gtk_widget_set_size_request(dt->stats, 380, -1);
+    gtk_widget_set_size_request(dt->stats, STATS_MIN_WIDTH, -1);
     /* The breakdown takes the room, the statistics keep their width */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
     paned_use_thin_handle(paned);
@@ -625,6 +643,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
     gtk_paned_set_end_child(GTK_PANED(paned), dt->stats);
     gtk_paned_set_resize_end_child(GTK_PANED(paned), FALSE);
     gtk_paned_set_shrink_end_child(GTK_PANED(paned), FALSE);
+    g_signal_connect(paned, "notify::max-position", G_CALLBACK(on_body_sized), dt);
     gtk_box_append(GTK_BOX(page), paned);
 
     GtkEventController* keys = gtk_event_controller_key_new();

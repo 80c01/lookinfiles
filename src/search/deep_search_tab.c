@@ -932,6 +932,9 @@ static DeepSearchTab* ensure_page(AppData* app) {
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_add_css_class(bar, "ds-header");
     GtkWidget* title = icon_label_new("edit-find", _("Deep Search"));
+    /* Cut in a narrow panel rather than widen it */
+    GtkWidget* title_text = gtk_widget_get_last_child(title);
+    if (GTK_IS_LABEL(title_text)) gtk_label_set_ellipsize(GTK_LABEL(title_text), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(title, TRUE);
     gtk_widget_set_halign(title, GTK_ALIGN_START);
     gtk_box_append(GTK_BOX(bar), title);

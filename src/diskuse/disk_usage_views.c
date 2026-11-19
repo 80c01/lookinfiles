@@ -33,6 +33,9 @@ static void on_toggled(GtkToggleButton* button, gpointer data) {
 
 static GtkWidget* view_button(Views* v, gint view, const gchar* label, const gchar* tooltip) {
     GtkWidget* b = gtk_toggle_button_new_with_label(label);
+    /* Cut in a narrow panel rather than widen it */
+    GtkWidget* text = gtk_button_get_child(GTK_BUTTON(b));
+    if (GTK_IS_LABEL(text)) gtk_label_set_ellipsize(GTK_LABEL(text), PANGO_ELLIPSIZE_END);
     gtk_widget_set_tooltip_text(b, tooltip);
     gtk_widget_set_focus_on_click(b, FALSE);
     if (view > 0) gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(b), GTK_TOGGLE_BUTTON(v->buttons[0]));

@@ -960,6 +960,9 @@ Layers, from bottom to top
   up). `disk_usage_charts` — the files of the folder shown by size and age
   (`DiskNode` groups) in two `histogram`s. `disk_usage_views` — the three
   in a `GtkStack` under the list, chosen by linked toggle buttons or `v`.
+  The statistics start 380 px wide and give way down to 200 in a narrow
+  panel, after the breakdown has come down to 270 (a notebook is as wide
+  as its widest page: this page sets how narrow the preview panel gets).
 - `deep_search_tab` — the Deep Search tab in the preview notebook (one per
   workspace, kept like the Disk Usage tab; inserted after the result and
   tool pages), opened on a folder from the explorer (`Shift+F`, context
