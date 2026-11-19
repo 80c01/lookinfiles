@@ -64,6 +64,15 @@ void focus_route_return(AppData* app, GtkWidget* target, GtkWidget* closed);
  * to: a tab moving between notebooks passes the focus through other pages */
 void focus_route_hold_history(AppData* app, gboolean hold);
 
+/* Show the Preview page in front and focus it; Escape there
+ * (focus_route_preview_back()) gives the focus back to from, until the focus
+ * leaves the Preview page */
+void focus_route_preview_from(AppData* app, GtkWidget* from);
+
+/* Escape in the Preview page: the focus back to the widget given to
+ * focus_route_preview_from(). FALSE when there is none (or it is gone). */
+gboolean focus_route_preview_back(AppData* app);
+
 /* A panel or tab key typed in widget (a list page, a tagbar):
  * NAV_PANEL_NEXT / _PREV, NAV_TAB_CLOSE, NAV_TAB_NEXT / _PREV (the tabs of
  * the notebook holding widget); other actions do nothing */

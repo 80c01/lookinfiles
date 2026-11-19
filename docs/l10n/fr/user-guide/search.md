@@ -121,8 +121,8 @@ d’occurrences et la première ligne trouvée. Cliquez sur l’en-tête d’une
 colonne pour trier. `Down` dans un champ passe aux résultats ; là, `Enter`
 ou un double clic montre l’entrée dans l’explorateur, `Ctrl+Enter` ouvre
 un fichier dans un onglet d’édition à sa première occurrence, `Space` en
-affiche l’aperçu à sa première occurrence, et un clic droit permet aussi
-de copier le chemin.
+affiche l’aperçu à sa première occurrence (`Escape` dans l’aperçu revient
+aux résultats), et un clic droit permet aussi de copier le chemin.
 
 Pour voir les fichiers en parcourant les résultats, sortez l’onglet du
 panneau d’aperçu, comme un onglet d’édition : `Ctrl+Alt+Arrow`, le menu

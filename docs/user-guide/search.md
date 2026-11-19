@@ -112,8 +112,8 @@ and the last change; with a content, also the number of matches and the
 first matching line. Click a column header to sort by it. `Down` in a field
 goes to the results; there, `Enter` or a double click shows the entry in
 the explorer, `Ctrl+Enter` opens a file in an editor tab at its first
-match, `Space` previews it at its first match, and a right click also
-copies the path.
+match, `Space` previews it at its first match (`Escape` in the preview
+comes back to the results), and a right click also copies the path.
 
 To see the files while going through the results, move the tab out of the
 preview panel, as an editor tab: `Ctrl+Alt+Arrow`, the right-click menu

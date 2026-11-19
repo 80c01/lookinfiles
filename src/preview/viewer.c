@@ -266,7 +266,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
             toggle_help_panel(app);
             return TRUE;
         }
-        return FALSE;
+        return focus_route_preview_back(app);
     default:
         return FALSE;
     }

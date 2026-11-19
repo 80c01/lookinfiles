@@ -69,9 +69,7 @@ void deep_search_preview_result(DeepSearchPreview* dp, const gchar* path, gint l
         deep_search_preview_cancel(dp);
         deep_search_show_preview_panel(app);
         preview_now(dp, path, line);
-        if (!beside_preview(dp) && app->notebook != NULL) {
-            focus_route_focus_page(app, gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), 0));
-        }
+        if (!beside_preview(dp)) focus_route_preview_from(app, deep_search_list_view(dp->list));
         return;
     }
     GtkWidget* view = deep_search_list_view(dp->list);

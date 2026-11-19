@@ -149,7 +149,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Deep Search tab"), "Shift+F", N_("Search the selected folder by name, extensions, type, size, date and content (from the explorer; also its context menu)"), 0},
     {N_("Deep Search tab"), "Enter", N_("In a field: search; on a result: show it in the explorer"), 0},
     {N_("Deep Search tab"), "Ctrl+Enter", N_("Open the selected file in an editor tab, at its first match"), 0},
-    {N_("Deep Search tab"), "Space", N_("Preview the selected result, at its first match"), 0},
+    {N_("Deep Search tab"), "Space", N_("Preview the selected result, at its first match (Escape in the preview: back to the results)"), 0},
     {N_("Deep Search tab"), NC_("key", "Ctrl+Alt+Arrow / right-click tab"), N_("Move the Deep Search tab to another pane, as an editor tab (beside the preview, the result moved to is previewed)"), 0},
     {N_("Deep Search tab"), "F5", N_("Search again"), 0},
     {N_("Deep Search tab"), "Escape", N_("Stop the search (what was found stays)"), 0},

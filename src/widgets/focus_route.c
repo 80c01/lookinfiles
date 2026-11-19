@@ -319,6 +319,58 @@ static gboolean lost_focus_idle(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* --- Escape in the Preview page: back to the widget that sent the focus there */
+
+#define BACK_KEY "lookin-focus-back"
+
+static void back_free(gpointer data) {
+    GWeakRef* ref = data;
+    g_weak_ref_clear(ref);
+    g_free(ref);
+}
+
+static GtkWidget* preview_page(AppData* app) {
+    return app->notebook != NULL ? gtk_notebook_get_nth_page(GTK_NOTEBOOK(app->notebook), 0) : NULL;
+}
+
+static void set_back(AppData* app, GtkWidget* from) {
+    if (app->window == NULL) return;
+    if (from == NULL) {
+        g_object_set_data(G_OBJECT(app->window), BACK_KEY, NULL);
+        return;
+    }
+    GWeakRef* ref = g_new0(GWeakRef, 1);
+    g_weak_ref_init(ref, from);
+    g_object_set_data_full(G_OBJECT(app->window), BACK_KEY, ref, back_free);
+}
+
+void focus_route_preview_from(AppData* app, GtkWidget* from) {
+    if (app == NULL) return;
+    GtkWidget* page = preview_page(app);
+    if (page == NULL) return;
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(app->notebook), 0);
+    focus_route_focus_page(app, page);
+    set_back(app, from != NULL && !gtk_widget_is_ancestor(from, page) ? from : NULL);
+}
+
+gboolean focus_route_preview_back(AppData* app) {
+    if (app == NULL || app->window == NULL) return FALSE;
+    GWeakRef* ref = g_object_get_data(G_OBJECT(app->window), BACK_KEY);
+    GtkWidget* from = ref != NULL ? g_weak_ref_get(ref) : NULL;
+    set_back(app, NULL);
+    if (from == NULL) return FALSE;
+    GtkWidget* pane = pane_of(app, from);
+    gboolean done = FALSE;
+    if (pane_usable(app, pane)) {
+        GtkNotebook* nb = notebook_of_page(pane);
+        if (nb != NULL) gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, pane));
+        done = gtk_widget_get_mapped(from) && gtk_widget_grab_focus(from);
+        if (!done) done = focus_pane(app, pane);
+    }
+    g_object_unref(from);
+    return done;
+}
+
 void focus_route_focus_changed(AppData* app) {
     if (app == NULL) return;
     app->nav_prefix = NAV_PREFIX_NONE;
@@ -329,7 +381,9 @@ void focus_route_focus_changed(AppData* app) {
     } else if (is_tab_notebook(app, focus)) {
         g_idle_add(redirect_idle, app);
     } else if (!history_held(app)) {
-        history_push(app, pane_of(app, focus));
+        GtkWidget* pane = pane_of(app, focus);
+        history_push(app, pane);
+        if (pane != preview_page(app)) set_back(app, NULL); /* left the preview: Escape no longer goes back */
     }
 }
 
