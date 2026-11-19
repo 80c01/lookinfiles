@@ -7,6 +7,7 @@
 #include "editor/editor_tagbar.h"
 #include "core/i18n.h"
 #include "core/path_copy.h"
+#include "theme/icons.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/minimap.h"
 
@@ -135,6 +136,22 @@ static void tab_menu_mode_item(GtkWidget* box, GtkWidget* popover, AppData* app,
     }
 }
 
+/* A toggle entry of the tab menu: a leading checkmark marks an enabled option
+ * (transparent when off so the labels stay aligned) */
+static void tab_menu_toggle_item(GtkWidget* box, GtkWidget* popover, AppData* app, EditorTab* tab,
+                                 const gchar* label, const gchar* shortcut, gboolean active, gint action) {
+    tab_menu_item(box, popover, app, tab, label, shortcut, action);
+    GtkWidget* btn = gtk_widget_get_last_child(box);
+    GtkWidget* row = gtk_button_get_child(GTK_BUTTON(btn));
+    GtkWidget* check = icon_image_new("object-select");
+    gtk_widget_set_opacity(check, active ? 1.0 : 0.0);
+    gtk_box_prepend(GTK_BOX(row), check);
+    gtk_box_set_spacing(GTK_BOX(row), 6);
+    if (shortcut != NULL) {
+        gtk_widget_set_margin_start(gtk_widget_get_last_child(row), 6);
+    }
+}
+
 /* Whether moving a tab of cur_nb in direction dir does something: the same
  * rules as editor_move_tab_direction() and editor_move_page_direction() */
 static gboolean notebook_can_move_tab(AppData* app, GtkNotebook* cur_nb, EditorMoveDirection dir) {
@@ -214,25 +231,22 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
 
     gboolean vim = (tab->mode == EDITOR_MODE_VIM);
     gboolean emacs = (tab->mode == EDITOR_MODE_EMACS || org);
-    tab_menu_item(box, popover, app, tab,
-                  diff_gutter_get_line_numbers(tab->view) ? _("Hide Line Numbers") : _("Show Line Numbers"),
-                  "Ctrl+Alt+N", TAB_ACTION_LINE_NUMBERS);
-    tab_menu_item(box, popover, app, tab, editor_mode_get_wrap(tab) ? _("Don't Wrap Lines") : _("Wrap Lines"),
-                  NULL, TAB_ACTION_WRAP);
+    tab_menu_toggle_item(box, popover, app, tab, _("Line Numbers"), "Ctrl+Alt+N",
+                         diff_gutter_get_line_numbers(tab->view), TAB_ACTION_LINE_NUMBERS);
+    tab_menu_toggle_item(box, popover, app, tab, _("Wrap Lines"), NULL,
+                         editor_mode_get_wrap(tab), TAB_ACTION_WRAP);
     if (editor_tagbar_available(tab)) {
         const gchar* key = vim ? ":TagbarToggle" : emacs ? "M-x imenu-list" : "Ctrl+K Ctrl+O";
-        tab_menu_item(box, popover, app, tab, editor_tagbar_shown(tab) ? _("Hide Tagbar") : _("Show Tagbar"), key,
-                      TAB_ACTION_TAGBAR);
+        tab_menu_toggle_item(box, popover, app, tab, _("Tagbar"), key,
+                             editor_tagbar_shown(tab), TAB_ACTION_TAGBAR);
     }
     if (tab->minimap != NULL) {
-        tab_menu_item(box, popover, app, tab,
-                      minimap_view_enabled(tab->minimap) ? _("Hide Minimap") : _("Show Minimap"), NULL,
-                      TAB_ACTION_MINIMAP);
+        tab_menu_toggle_item(box, popover, app, tab, _("Minimap"), NULL,
+                             minimap_view_enabled(tab->minimap), TAB_ACTION_MINIMAP);
     }
     if (editor_tab_updates_preview(tab)) {
-        tab_menu_item(box, popover, app, tab,
-                      editor_preview_paused(app, tab->path) ? _("Update Preview") : _("Don't Update Preview"), NULL,
-                      TAB_ACTION_PREVIEW_UPDATES);
+        tab_menu_toggle_item(box, popover, app, tab, _("Update Preview"), NULL,
+                             !editor_preview_paused(app, tab->path), TAB_ACTION_PREVIEW_UPDATES);
     }
 
     GtkWidget* sep_split = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);

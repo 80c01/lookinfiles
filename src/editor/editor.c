@@ -1065,7 +1065,7 @@ void editor_save_all_buffers(AppData* app) {
 }
 
 /* A save updates the preview of the file, unless its tab says not to (tab
- * menu: Don't Update Preview). A file with a rendered preview is then shown
+ * menu: Update Preview unchecked). A file with a rendered preview is then shown
  * there even when the preview showed another file (a LaTeX document: its PDF
  * once built). */
 static void update_preview_after_save(AppData* app, EditorTab* tab) {

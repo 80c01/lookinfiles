@@ -81,8 +81,8 @@ apparaît dans chaque aperçu de l’espace de travail qui a des titres ou des
 symboles ; chaque espace de travail garde son propre choix, et les
 nouveaux espaces de travail et le prochain démarrage suivent le dernier
 fait avec `o` (aussi dans les Préférences, page Éditeur, qui règle tous
-les espaces de travail). **Afficher / Masquer la barre de symboles** dans
-le menu du clic droit de l’onglet Aperçu le fait pour l’espace de travail courant
+les espaces de travail). **Barre de symboles** dans
+le menu du clic droit de l’onglet Aperçu la bascule pour l’espace de travail courant
 seulement, sans le garder. Dans un gros fichier, seule la partie affichée
 en premier est listée.
 
@@ -97,7 +97,7 @@ absolu (**Copier le chemin**).
 À droite, la **minicarte** montre tout le document en petit, avec les
 barres de modification git le long de son bord. Cliquez ou faites glisser
 dedans pour faire défiler. Pour la masquer (et retrouver la barre de
-défilement), choisissez **Masquer la minicarte** dans le menu du clic droit
+défilement), décochez **Minicarte** dans le menu du clic droit
 de l’onglet Aperçu (l’espace de travail courant seulement, sans le garder), ou
 décochez **Afficher la minicarte** dans les Préférences, page Éditeur
 (toutes les minicartes et tous les espaces de travail, gardé).

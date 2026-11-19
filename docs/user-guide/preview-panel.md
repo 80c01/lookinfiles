@@ -76,8 +76,8 @@ It follows the scrolling; a click or `Enter` scrolls to a heading or symbol,
 preview of the workspace that has headings or symbols; each workspace keeps
 its own choice, and new workspaces and the next start follow the last one
 made with `o` (also in Preferences, Editor page, which sets every
-workspace). **Show / Hide Tagbar** in the right-click menu of the Preview
-tab does it for the current workspace only, not kept. In a large file, only
+workspace). **Tagbar** in the right-click menu of the Preview
+tab toggles it for the current workspace only, not kept. In a large file, only
 the part first shown is listed.
 
 The right-click menu of the Preview tab copies the previewed file's name
@@ -90,7 +90,7 @@ Path**).
 
 On the right, the **minimap** shows the whole document in small, with the
 git change bars along its edge. Click or drag in it to scroll. To hide it
-(and get the scrollbar back), choose **Hide Minimap** in the right-click
+(and get the scrollbar back), turn off **Minimap** in the right-click
 menu of the Preview tab (the current workspace only, not kept), or untick
 **Show the minimap** in the Preferences, Editor page (every minimap and
 workspace, kept).

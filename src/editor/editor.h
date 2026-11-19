@@ -82,7 +82,7 @@ gboolean editor_save_current(AppData* app);
  * LaTeX PDF...), which follows the saves of its editor tabs */
 gboolean editor_tab_updates_preview(const EditorTab* tab);
 /* TRUE if an editor tab of path stops its saves from updating the preview
- * (tab menu: Don't Update Preview) */
+ * (tab menu: Update Preview unchecked) */
 gboolean editor_preview_paused(AppData* app, const gchar* path);
 /* Let the saves of tab update the preview again, or not: the preview is
  * brought up to date when they do */

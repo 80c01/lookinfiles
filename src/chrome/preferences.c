@@ -161,7 +161,7 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->update_preview), p->app->settings.update_preview);
     gtk_widget_set_tooltip_text(p->update_preview, _("Saving a file, selecting its tab or clicking into it shows it in "
                                                    "the preview, in every tab, the tabs already open too (a tab: "
-                                                   "Don't Update Preview in its right-click menu)"));
+                                                   "Update Preview in its right-click menu)"));
     gtk_box_append(GTK_BOX(box), p->update_preview);
 
     p->tagbar = gtk_check_button_new_with_mnemonic(_("Show the _tagbar"));

@@ -206,10 +206,9 @@ sélectionner l’onglet d’un tel fichier, ou y revenir depuis
 l’explorateur, l’y affiche aussi (tel
 qu’enregistré ; un document LaTeX : son PDF, s’il a été compilé) ;
 revenir dans l’explorateur affiche de nouveau sa sélection. Pour
-garder l’aperçu tel quel pendant que vous travaillez, choisissez **Ne pas
-mettre à jour l’aperçu** dans le menu contextuel de l’onglet ; **Mettre à
-jour l’aperçu** le remet à jour et laisse de nouveau les enregistrements le
-mettre à jour.
+garder l’aperçu tel quel pendant que vous travaillez, décochez **Mettre à
+jour l’aperçu** dans le menu contextuel de l’onglet ; le recocher remet
+l’aperçu à jour et laisse de nouveau les enregistrements le mettre à jour.
 
 ## Choisir le mode d’un onglet
 
@@ -225,8 +224,8 @@ ligne de commande l’emporte pour un lancement), et si les onglets de code
 et Markdown affichent la barre de symboles (les onglets ouverts aussi), et
 si les onglets d’édition (les onglets ouverts aussi), l’aperçu et l’aide
 affichent la minicarte. **Mettre à jour l’aperçu depuis l’éditeur**
-décoché fait démarrer chaque onglet, les onglets ouverts aussi, avec **Ne
-pas mettre à jour l’aperçu**.
+décoché fait démarrer chaque onglet, les onglets ouverts aussi, avec
+**Mettre à jour l’aperçu** désactivé.
 
 En mode Emacs, `M-x org-mode` active l’édition Org-mode pour n’importe quel
 fichier, et `M-x text-mode` la désactive.

@@ -6,6 +6,7 @@
 #include "preview/preview_state.h"
 #include "core/path_copy.h"
 #include "core/i18n.h"
+#include "theme/icons.h"
 
 typedef enum {
     PREVIEW_ACTION_COPY_VALUE_PATH,
@@ -66,6 +67,22 @@ static void menu_item(GtkWidget* box, AppData* app, const gchar* label, const gc
     gtk_box_append(GTK_BOX(box), btn);
 }
 
+/* A toggle row of the menu: a leading checkmark marks an enabled option
+ * (transparent when off so the labels stay aligned) */
+static void menu_toggle_item(GtkWidget* box, AppData* app, const gchar* label, const gchar* shortcut,
+                             gboolean active, PreviewMenuAction action) {
+    menu_item(box, app, label, shortcut, action);
+    GtkWidget* btn = gtk_widget_get_last_child(box);
+    GtkWidget* row = gtk_button_get_child(GTK_BUTTON(btn));
+    GtkWidget* check = icon_image_new("object-select");
+    gtk_widget_set_opacity(check, active ? 1.0 : 0.0);
+    gtk_box_prepend(GTK_BOX(row), check);
+    gtk_box_set_spacing(GTK_BOX(row), 6);
+    if (shortcut != NULL) {
+        gtk_widget_set_margin_start(gtk_widget_get_last_child(row), 6);
+    }
+}
+
 /* A line between two groups of items, when the box already has some */
 static void menu_separator(GtkWidget* box) {
     if (gtk_widget_get_first_child(box) == NULL) return;
@@ -75,8 +92,8 @@ static void menu_separator(GtkWidget* box) {
     gtk_box_append(GTK_BOX(box), sep);
 }
 
-/* Right click on the tab title: only the items that apply, labels following
- * the current state */
+/* Right click on the tab title: only the items that apply, toggles marked when
+ * enabled */
 static void on_tab_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
@@ -103,12 +120,10 @@ static void on_tab_right_click(GtkGestureClick* gesture, gint n_press, gdouble x
     gboolean tagbar = preview_tagbar_available(app);
     if (tagbar || app->viewer_minimap != NULL) menu_separator(box);
     if (tagbar) {
-        menu_item(box, app, preview_tagbar_shown(app) ? _("Hide Tagbar") : _("Show Tagbar"), "o",
-                  PREVIEW_ACTION_TAGBAR);
+        menu_toggle_item(box, app, _("Tagbar"), "o", preview_tagbar_shown(app), PREVIEW_ACTION_TAGBAR);
     }
     if (app->viewer_minimap != NULL) {
-        menu_item(box, app, minimap_viewer_enabled(app) ? _("Hide Minimap") : _("Show Minimap"), NULL,
-                  PREVIEW_ACTION_MINIMAP);
+        menu_toggle_item(box, app, _("Minimap"), NULL, minimap_viewer_enabled(app), PREVIEW_ACTION_MINIMAP);
     }
     if (gtk_widget_get_first_child(box) == NULL) {
         g_object_ref_sink(box);

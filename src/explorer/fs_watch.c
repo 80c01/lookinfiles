@@ -58,7 +58,7 @@ static gboolean deferred_refresh(gpointer data) {
         app->file_dirty = FALSE;
         /* Do not overwrite preview if the viewed file is an open buffer being edited */
         gboolean keep_preview = FALSE;
-        /* Nor when its editor tab keeps it (tab menu: Don't Update Preview) */
+        /* Nor when its editor tab keeps it (tab menu: Update Preview unchecked) */
         for (GList* l = app->editors; l != NULL && preview_state_path(app) != NULL; l = l->next) {
             EditorTab* tab = (EditorTab*)l->data;
             if (tab != NULL && tab->preview_paused && g_strcmp0(tab->path, preview_state_path(app)) == 0) {

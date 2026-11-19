@@ -2101,45 +2101,21 @@ msgstr "Déplacer en haut"
 msgid "Tab Mode"
 msgstr "Mode de l’onglet"
 
-#: src/editor/editor.c:586
-msgid "Hide Line Numbers"
-msgstr "Masquer les numéros de ligne"
+#: src/editor/editor_tab_menu.c
+msgid "Line Numbers"
+msgstr "Numéros de ligne"
 
-#: src/editor/editor.c:586
-msgid "Show Line Numbers"
-msgstr "Afficher les numéros de ligne"
-
-#: src/editor/editor.c:588
-msgid "Don't Wrap Lines"
-msgstr "Ne pas renvoyer à la ligne"
-
-#: src/editor/editor.c:588
+#: src/editor/editor_tab_menu.c
 msgid "Wrap Lines"
 msgstr "Renvoyer à la ligne"
 
-#: src/editor/editor_tab_menu.c:204 src/preview/preview_menu.c:56
-msgid "Show Tagbar"
-msgstr "Afficher la barre de symboles"
-
-#: src/editor/editor_tab_menu.c:204 src/preview/preview_menu.c:56
-msgid "Hide Tagbar"
-msgstr "Masquer la barre de symboles"
-
-#: src/editor/editor_tab_menu.c:214 src/preview/preview_menu.c:59
-msgid "Hide Minimap"
-msgstr "Masquer la minicarte"
-
-#: src/editor/editor_tab_menu.c:214 src/preview/preview_menu.c:59
-msgid "Show Minimap"
-msgstr "Afficher la minicarte"
+#: src/editor/editor_tab_menu.c src/preview/preview_menu.c
+msgid "Minimap"
+msgstr "Minicarte"
 
 #: src/editor/editor_tab_menu.c
 msgid "Update Preview"
 msgstr "Mettre à jour l’aperçu"
-
-#: src/editor/editor_tab_menu.c
-msgid "Don't Update Preview"
-msgstr "Ne pas mettre à jour l’aperçu"
 
 #: src/editor/editor.c:598
 msgid "Split Right"
@@ -4908,7 +4884,7 @@ msgstr "Barre de symboles (édition)"
 msgid "Tagbar (preview)"
 msgstr "Barre de symboles (aperçu)"
 
-#: src/workspace/layout_store.c:92
+#: src/workspace/layout_store.c:92 src/editor/editor_tab_menu.c src/preview/preview_menu.c
 msgid "Tagbar"
 msgstr "Barre de symboles"
 
@@ -6269,12 +6245,12 @@ msgstr "Mettre à jo_ur l’aperçu depuis l’éditeur"
 #: src/chrome/preferences.c
 msgid ""
 "Saving a file, selecting its tab or clicking into it shows it in the "
-"preview, in every tab, the tabs already open too (a tab: Don't Update "
-"Preview in its right-click menu)"
+"preview, in every tab, the tabs already open too (a tab: Update Preview in "
+"its right-click menu)"
 msgstr ""
 "Enregistrer un fichier, sélectionner son onglet ou cliquer dedans "
 "l’affiche dans l’aperçu, dans chaque onglet, les onglets déjà ouverts aussi "
-"(un onglet : Ne pas mettre à jour l’aperçu dans son menu contextuel)"
+"(un onglet : Mettre à jour l’aperçu dans son menu contextuel)"
 
 #: src/chrome/preferences.c:139
 msgid "Show the _tagbar"

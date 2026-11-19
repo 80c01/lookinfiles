@@ -13,7 +13,7 @@
  *   minimap=true         # editor tabs, the preview and Help show a minimap
  *   update-preview=true  # saving, selecting or focusing an editor tab shows
  *                        # its file in the preview (false: every tab starts
- *                        # with Don't Update Preview)
+ *                        # with Update Preview unchecked)
  *   [Preview]
  *   tagbar=false         # previews with headings show the tagbar
  *   [Layouts]
