@@ -3,6 +3,7 @@
 #include "core/i18n.h"
 
 #include <glib/gstdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -22,6 +23,10 @@ typedef struct {
     GArray* chars;    /* fuzzy: the current line (gunichar) */
     GArray* offsets;  /* fuzzy: byte offset of each char of the line, then its length */
     gboolean failed;  /* the regular expression gave up on the current text */
+    guint max_count;  /* one file (text_matcher_search_file()): count the
+                         matches up to this, keep the first; 0: keep all */
+    guint count;      /* matches counted (max_count mode) */
+    gint line_base;   /* line of the text searched in the file (max_count mode) */
 } Matcher;
 
 static gboolean is_ascii(const gchar* s) {
@@ -113,19 +118,24 @@ static void cursor_move(Cursor* c, const gchar* to) {
 
 /* A match of len bytes at hit (on the cursor's line, cut at its end); FALSE
  * when the limit is reached */
-static gboolean add_ref(GPtrArray* out, const gchar* path, const Cursor* c, const gchar* hit, gsize len,
+static gboolean add_ref(Matcher* m, GPtrArray* out, const gchar* path, const Cursor* c, const gchar* hit, gsize len,
                         const gchar* end) {
-    if (out->len >= TEXT_SEARCH_MAX_RESULTS) return FALSE;
+    if (m->max_count > 0) {
+        m->count++;
+        if (out->len > 0) return m->count < m->max_count; /* only the first is kept */
+    } else if (out->len >= TEXT_SEARCH_MAX_RESULTS) {
+        return FALSE;
+    }
     const gchar* nl = memchr(hit, '\n', MIN(len, (gsize)(end - hit)));
     if (nl != NULL) len = (gsize)(nl - hit);
     CodeReference* ref = g_new0(CodeReference, 1);
     ref->path = g_strdup(path);
-    ref->line = c->line;
+    ref->line = m->line_base + c->line;
     ref->column = (gint)(hit - c->line_start);
     ref->length = (gint)len;
     ref->text = shown_line(c->line_start, end);
     g_ptr_array_add(out, ref);
-    return TRUE;
+    return m->max_count == 0 || m->count < m->max_count;
 }
 
 static gboolean search_literal(Matcher* m, const gchar* path, const gchar* text, gsize len, GPtrArray* out) {
@@ -140,7 +150,7 @@ static gboolean search_literal(Matcher* m, const gchar* path, const gchar* text,
                              : (g_ascii_tolower(*q) == first_lo && g_ascii_strncasecmp(q, query, n) == 0);
         if (!hit) continue;
         cursor_move(&c, q);
-        if (!add_ref(out, path, &c, q, n, end)) return FALSE;
+        if (!add_ref(m, out, path, &c, q, n, end)) return FALSE;
         q += n - 1; /* the next occurrence starts after this one (no overlaps) */
     }
     return TRUE;
@@ -162,7 +172,7 @@ static gboolean search_regex(Matcher* m, const gchar* path, const gchar* text, g
         gint s = 0, e = 0;
         if (g_match_info_fetch_pos(info, 0, &s, &e) && e > s) {
             cursor_move(&c, text + s);
-            if (!add_ref(out, path, &c, text + s, (gsize)(e - s), text + len)) {
+            if (!add_ref(m, out, path, &c, text + s, (gsize)(e - s), text + len)) {
                 go_on = FALSE;
                 break;
             }
@@ -240,7 +250,7 @@ static gboolean search_fuzzy(Matcher* m, const gchar* path, const gchar* text, g
         if (shortest_span(m, &from, &to)) {
             const guint* off = (const guint*)(gpointer)m->offsets->data;
             cursor_move(&c, line);
-            if (!add_ref(out, path, &c, line + off[from], off[to] - off[from], end)) return FALSE;
+            if (!add_ref(m, out, path, &c, line + off[from], off[to] - off[from], end)) return FALSE;
         }
         if (nl == NULL) break;
         line = nl + 1;
@@ -346,4 +356,127 @@ GPtrArray* text_search_files(const gchar* query, const TextSearchOptions* opts, 
     g_ptr_array_unref(sorted);
     matcher_clear(&m);
     return out;
+}
+
+/* One file, by blocks */
+
+#define FILE_BLOCK (1024 * 1024)        /* bytes read at a time */
+#define FILE_LONG_LINE (16 * 1024 * 1024) /* a line longer than this is cut */
+
+struct TextMatcher {
+    gchar* query;
+    TextSearchOptions opts;
+    Matcher m;
+};
+
+TextMatcher* text_matcher_new(const gchar* query, const TextSearchOptions* opts) {
+    if (query == NULL || query[0] == '\0' || opts == NULL) return NULL;
+    TextMatcher* tm = g_new0(TextMatcher, 1);
+    tm->query = g_strdup(query);
+    tm->opts = *opts;
+    if (!matcher_init(&tm->m, tm->query, &tm->opts)) {
+        text_matcher_free(tm);
+        return NULL;
+    }
+    return tm;
+}
+
+void text_matcher_free(TextMatcher* tm) {
+    if (tm == NULL) return;
+    matcher_clear(&tm->m);
+    g_free(tm->query);
+    g_free(tm);
+}
+
+void text_file_match_clear(TextFileMatch* fm) {
+    if (fm == NULL) return;
+    g_free(fm->text);
+    memset(fm, 0, sizeof(*fm));
+}
+
+static gint count_lines(const gchar* text, gsize len) {
+    gint n = 0;
+    const gchar* end = text + len;
+    for (const gchar* p = text; (p = memchr(p, '\n', (gsize)(end - p))) != NULL; p++) n++;
+    return n;
+}
+
+/* Search len bytes of text (whole lines) for the matcher; FALSE once
+ * max_count is reached */
+static gboolean search_block(Matcher* m, const gchar* path, const gchar* text, gsize len, GPtrArray* out) {
+    m->failed = FALSE;
+    gboolean go_on = search_text(m, path, text, len, out);
+    m->line_base += count_lines(text, len);
+    return go_on;
+}
+
+gboolean text_matcher_search_file(TextMatcher* tm, const gchar* path, guint max_count, GCancellable* cancellable,
+                                  TextFileMatch* out) {
+    memset(out, 0, sizeof(*out));
+    if (tm == NULL || path == NULL) return FALSE;
+    FILE* f = g_fopen(path, "rb");
+    if (f == NULL) {
+        out->unreadable = TRUE;
+        return FALSE;
+    }
+    Matcher* m = &tm->m;
+    m->max_count = MAX(max_count, 1);
+    m->count = 0;
+    m->line_base = 0;
+    GPtrArray* refs = g_ptr_array_new_with_free_func((GDestroyNotify)code_reference_free);
+    GByteArray* buf = g_byte_array_sized_new(FILE_BLOCK);
+    gboolean first = TRUE, eof = FALSE, go_on = TRUE;
+    while (go_on && !eof) {
+        if (g_cancellable_is_cancelled(cancellable)) break;
+        guint have = buf->len;
+        g_byte_array_set_size(buf, have + FILE_BLOCK);
+        gsize got = fread(buf->data + have, 1, FILE_BLOCK, f);
+        g_byte_array_set_size(buf, have + (guint)got);
+        out->bytes_read += got;
+        if (got < FILE_BLOCK) {
+            if (ferror(f)) out->unreadable = TRUE;
+            eof = TRUE;
+        }
+        if (first) {
+            first = FALSE;
+            if (is_binary((const gchar*)buf->data, buf->len)) {
+                out->binary = TRUE;
+                break;
+            }
+        }
+        /* Whole lines only, but the last bytes at the end of the file and a
+         * line too long to keep */
+        gsize upto = buf->len;
+        if (!eof) {
+            const guint8* nl = NULL;
+            for (gsize i = buf->len; i > 0; i--) {
+                if (buf->data[i - 1] == '\n') {
+                    nl = buf->data + i - 1;
+                    break;
+                }
+            }
+            if (nl != NULL) {
+                upto = (gsize)(nl - buf->data) + 1;
+            } else if (buf->len < FILE_LONG_LINE) {
+                continue; /* read on to the end of the line */
+            }
+        }
+        go_on = search_block(m, path, (const gchar*)buf->data, upto, refs);
+        if (m->failed) out->too_complex = TRUE;
+        g_byte_array_remove_range(buf, 0, (guint)upto);
+    }
+    fclose(f);
+    g_byte_array_unref(buf);
+    out->count = m->count;
+    out->capped = !go_on;
+    if (refs->len > 0) {
+        CodeReference* ref = g_ptr_array_index(refs, 0);
+        out->line = ref->line;
+        out->column = ref->column;
+        out->length = ref->length;
+        out->text = g_steal_pointer(&ref->text);
+    }
+    g_ptr_array_unref(refs);
+    m->max_count = 0;
+    return out->count > 0;
 }

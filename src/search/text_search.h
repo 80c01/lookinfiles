@@ -55,4 +55,32 @@ typedef struct {
 GPtrArray* text_search_files(const gchar* query, const TextSearchOptions* opts, GPtrArray* files,
                              GCancellable* cancellable, TextSearchStats* stats);
 
+/* One file at a time, however large (the deep search, deep_search.h): the
+ * query compiled once, the file read by blocks of whole lines, so neither
+ * its size nor TEXT_SEARCH_MAX_* limit it. NULL when there is nothing to
+ * search (an empty query, an invalid regular expression). One per thread. */
+typedef struct TextMatcher TextMatcher;
+TextMatcher* text_matcher_new(const gchar* query, const TextSearchOptions* opts);
+void text_matcher_free(TextMatcher* tm);
+
+/* What one file holds */
+typedef struct {
+    guint count;          /* matches, at most max_count */
+    gboolean capped;      /* max_count reached: there may be more */
+    gint line;            /* the first match: line (0-based), byte column, length */
+    gint column;
+    gint length;
+    gchar* text;          /* its line as shown (valid UTF-8), NULL without a match */
+    gboolean binary;      /* a NUL byte in its first 8 KB: not searched */
+    gboolean unreadable;  /* could not be opened or read to the end */
+    gboolean too_complex; /* the regular expression gave up somewhere */
+    guint64 bytes_read;
+} TextFileMatch;
+
+/* Search path; TRUE when it holds a match. Fills out (cleared first; free
+ * with text_file_match_clear()). */
+gboolean text_matcher_search_file(TextMatcher* tm, const gchar* path, guint max_count, GCancellable* cancellable,
+                                  TextFileMatch* out);
+void text_file_match_clear(TextFileMatch* fm);
+
 #endif /* TEXT_SEARCH_H */

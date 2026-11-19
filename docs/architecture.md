@@ -435,7 +435,21 @@ Layers, from bottom to top
   case, whole word, regex through `GRegex`, or letters in order; binary and
   large files skipped, its own higher limits `TEXT_SEARCH_MAX_*`), as
   `CodeReference`s with their length, and why it stopped
-  (`TextSearchStats`).
+  (`TextSearchStats`). Also one file at a time with no limit
+  (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
+  lines, the matches counted, the first one kept (the deep search).
+- `deep_query` — the criteria of a deep search (`DeepQuery`: name or
+  pattern, extensions, kind, sizes, dates of last change, content, folders
+  excluded with `path_globs`, hidden entries, depth, one filesystem), the
+  sizes and dates typed by the user (`500k`, `7d`, `2026-11-01`, `today`),
+  and `DeepFilter`, which tests an entry on its name and `lstat()` values.
+- `deep_search` — the deep search below a folder: every entry tested by a
+  `DeepFilter`, the content of the files passing it read through a
+  `TextMatcher`, with no limit on the files (only `DEEP_SEARCH_MAX_HITS`
+  entries kept); folders read one at a time, names first, in name order;
+  links not followed, `/proc` `/sys` `/dev` skipped. Run in a worker
+  (`deep_search_run()`, cancellable); `deep_search_take()` hands the
+  entries found so far (`DeepHit`) and the counters to any thread.
 - `jump_list` — back / forward history of navigation jumps across files
   (also the explorer's folder history, `nav_history`).
 - `session_store` — `session.ini` (workspaces at quit, with their explorer

@@ -183,11 +183,80 @@ static void test_fuzzy(void) {
     g_free(root);
 }
 
+/* One file read by blocks: counted, the first match kept, lines right
+ * across the blocks, binary files left */
+static void test_file(void) {
+    gchar* root = g_dir_make_tmp("text-search-file-XXXXXX", NULL);
+    /* 3 MB of lines, the matches near the end, over several blocks */
+    GString* big = g_string_new(NULL);
+    for (guint i = 0; i < 60000; i++) g_string_append(big, "lorem ipsum dolor sit amet consectetur adipiscing\n");
+    g_string_append(big, "first Needle here\nnothing\nneedle again, NEEDLE twice\n");
+    gchar* path = write_file(root, "big.txt", big->str, (gssize)big->len);
+    TextMatcher* tm = text_matcher_new("needle", &ANY);
+    g_assert_nonnull(tm);
+    TextFileMatch fm;
+    g_assert_true(text_matcher_search_file(tm, path, 100, NULL, &fm));
+    g_assert_cmpuint(fm.count, ==, 3);
+    g_assert_false(fm.capped);
+    g_assert_cmpint(fm.line, ==, 60000);
+    g_assert_cmpint(fm.column, ==, 6);
+    g_assert_cmpint(fm.length, ==, 6);
+    g_assert_cmpstr(fm.text, ==, "first Needle here");
+    g_assert_cmpuint(fm.bytes_read, ==, big->len);
+    text_file_match_clear(&fm);
+    /* Counted up to max_count */
+    g_assert_true(text_matcher_search_file(tm, path, 2, NULL, &fm));
+    g_assert_cmpuint(fm.count, ==, 2);
+    g_assert_true(fm.capped);
+    text_file_match_clear(&fm);
+    /* The matcher is reused: the next file starts again at line 0 */
+    gchar* small = write_file(root, "small.txt", "a\nb needle", -1);
+    g_assert_true(text_matcher_search_file(tm, small, 100, NULL, &fm));
+    g_assert_cmpint(fm.line, ==, 1);
+    g_assert_cmpuint(fm.count, ==, 1);
+    text_file_match_clear(&fm);
+    /* No match, binary, missing */
+    gchar* none = write_file(root, "none.txt", "nothing to see", -1);
+    g_assert_false(text_matcher_search_file(tm, none, 100, NULL, &fm));
+    g_assert_cmpuint(fm.count, ==, 0);
+    g_assert_null(fm.text);
+    gchar* bin = write_file(root, "bin.dat", "needle\0needle", 13);
+    g_assert_false(text_matcher_search_file(tm, bin, 100, NULL, &fm));
+    g_assert_true(fm.binary);
+    gchar* missing = g_build_filename(root, "missing", NULL);
+    g_assert_false(text_matcher_search_file(tm, missing, 100, NULL, &fm));
+    g_assert_true(fm.unreadable);
+    text_matcher_free(tm);
+    /* A regular expression, across the blocks too */
+    TextSearchOptions re = {FALSE, FALSE, TRUE, FALSE};
+    tm = text_matcher_new("^needle again", &re);
+    g_assert_true(text_matcher_search_file(tm, path, 100, NULL, &fm));
+    g_assert_cmpint(fm.line, ==, 60002);
+    text_file_match_clear(&fm);
+    text_matcher_free(tm);
+    /* Nothing to search */
+    g_assert_null(text_matcher_new("", &ANY));
+    g_assert_null(text_matcher_new("(", &re));
+    g_unlink(path);
+    g_unlink(small);
+    g_unlink(none);
+    g_unlink(bin);
+    g_rmdir(root);
+    g_free(path);
+    g_free(small);
+    g_free(none);
+    g_free(bin);
+    g_free(missing);
+    g_free(root);
+    g_string_free(big, TRUE);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/text_search/search", test_search);
     g_test_add_func("/text_search/options", test_options);
     g_test_add_func("/text_search/max_results", test_max_results);
     g_test_add_func("/text_search/fuzzy", test_fuzzy);
+    g_test_add_func("/text_search/file", test_file);
     return g_test_run();
 }
