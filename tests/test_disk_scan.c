@@ -115,7 +115,40 @@ static void test_sizes(void) {
     g_assert_cmpuint(st->sizes[DISK_SIZE_1K].count, ==, 1);
     g_assert_cmpuint(st->sizes[DISK_SIZE_1K].size, ==, 5000);
     g_assert_cmpuint(st->sizes[DISK_SIZE_EMPTY].count, ==, 0);
+    /* Each folder keeps the groups of its subtree */
+    for (gint g = 0; g < DISK_SIZE_COUNT; g++) {
+        g_assert_cmpuint(root->sizes[g].count, ==, st->sizes[g].count);
+        g_assert_cmpuint(root->sizes[g].size, ==, st->sizes[g].size);
+    }
+    g_assert_cmpuint(root->ages[DISK_AGE_DAY].count, ==, 4);
+    g_assert_cmpuint(docs->sizes[DISK_SIZE_TINY].count, ==, 1); /* r.md */
+    g_assert_cmpuint(docs->sizes[DISK_SIZE_1K].count, ==, 1);   /* deep/x/y.png */
+    g_assert_cmpuint(docs->sizes[DISK_SIZE_1K].size, ==, 5000);
+    g_assert_cmpuint(docs->ages[DISK_AGE_DAY].count, ==, 2);
     g_assert_cmpuint(g_hash_table_size(st->extensions), ==, 4);
+    disk_scan_free(s);
+    remove_tree(dir);
+    g_free(dir);
+}
+
+static void test_entries(void) {
+    gchar* dir = make_tree();
+    DiskScan* s = scan_dir(dir);
+    DiskNode* root = disk_scan_root(s);
+    GArray* e = disk_node_entries(root, 0);
+    g_assert_cmpuint(e->len, ==, 3); /* docs, a.txt, b.log ("empty" has no size) */
+    g_assert_true(g_array_index(e, DiskEntry, 0).dir == child_named(root, "docs"));
+    g_assert_cmpstr(g_array_index(e, DiskEntry, 1).file, ==, "a.txt");
+    g_assert_cmpuint(g_array_index(e, DiskEntry, 2).size, ==, 10);
+    g_array_unref(e);
+    e = disk_node_entries(root, 2); /* the smallest summed up */
+    g_assert_cmpuint(e->len, ==, 2);
+    const DiskEntry* rest = &g_array_index(e, DiskEntry, 1);
+    g_assert_null(rest->dir);
+    g_assert_null(rest->file);
+    g_assert_cmpuint(rest->size, ==, 110);
+    g_assert_cmpuint(rest->count, ==, 2);
+    g_array_unref(e);
     disk_scan_free(s);
     remove_tree(dir);
     g_free(dir);
@@ -285,7 +318,10 @@ static void test_ages(void) {
     g_assert_cmpint(disk_age_of(now - 400 * day, now), ==, DISK_AGE_3_YEARS);
     g_assert_cmpint(disk_age_of(now - 2000 * day, now), ==, DISK_AGE_OLDER);
     g_assert_cmpint(disk_age_of(0, now), ==, DISK_AGE_OLDER);
-    for (gint a = 0; a < DISK_AGE_COUNT; a++) g_assert_cmpstr(disk_age_name((DiskAge)a), !=, "");
+    for (gint a = 0; a < DISK_AGE_COUNT; a++) {
+        g_assert_cmpstr(disk_age_name((DiskAge)a), !=, "");
+        g_assert_cmpstr(disk_age_label((DiskAge)a), !=, "");
+    }
 }
 
 static void test_size_groups(void) {
@@ -434,6 +470,10 @@ static void test_remove(void) {
     g_assert_cmpuint(st->n_dirs, ==, 3);
     g_assert_cmpuint(st->largest->len, ==, 3);
     g_assert_cmpuint(st->n_excluded, ==, 1);
+    g_assert_cmpuint(docs->sizes[DISK_SIZE_1K].count, ==, 0); /* y.png went with x */
+    g_assert_cmpuint(root->sizes[DISK_SIZE_1K].count, ==, 0);
+    g_assert_cmpuint(st->sizes[DISK_SIZE_1K].count, ==, 0);
+    g_assert_cmpuint(st->ages[DISK_AGE_DAY].count, ==, 3);
 
     /* A listed file; then the folders are sorted again by size */
     gchar* r = g_build_filename(dir, "docs", "r.md", NULL);
@@ -444,6 +484,10 @@ static void test_remove(void) {
     g_assert_cmpuint(root->size, ==, 110);
     g_assert_cmpuint(st->n_files, ==, 2);
     g_assert_cmpuint(st->largest->len, ==, 2);
+    g_assert_cmpuint(docs->sizes[DISK_SIZE_TINY].count, ==, 0);
+    g_assert_cmpuint(root->sizes[DISK_SIZE_TINY].count, ==, 2);
+    g_assert_cmpuint(root->sizes[DISK_SIZE_TINY].size, ==, 110);
+    g_assert_cmpuint(st->ages[DISK_AGE_DAY].count, ==, 2);
     g_assert_cmpstr(((DiskNode*)g_ptr_array_index(root->children, 0))->name, ==, "docs");
 
     /* Not below the root, the root itself */
@@ -463,6 +507,7 @@ static void test_remove(void) {
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/disk_scan/sizes", test_sizes);
+    g_test_add_func("/disk_scan/entries", test_entries);
     g_test_add_func("/disk_scan/snapshot", test_snapshot);
     g_test_add_func("/disk_scan/other_files", test_other_files);
     g_test_add_func("/disk_scan/missing_root", test_missing_root);

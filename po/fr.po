@@ -10457,3 +10457,53 @@ msgstr "Dans un graphique : barre précédente / suivante, première / dernière
 
 msgid "On a bar of a chart: list only its files (again: every result)"
 msgstr "Sur une barre d’un graphique : ne lister que ses fichiers (de nouveau : tous les résultats)"
+
+#. TRANSLATORS: the views of the Disk Usage tab; v shows the next one
+msgid "Treemap"
+msgstr "Treemap"
+
+msgid "Wheel"
+msgstr "Roue"
+
+msgid "Histograms"
+msgstr "Histogrammes"
+
+msgid "Nested Rectangles (v: Next View)"
+msgstr "Rectangles imbriqués (v : vue suivante)"
+
+msgid "Rings Around the Folder (v: Next View)"
+msgstr "Anneaux autour du dossier (v : vue suivante)"
+
+msgid "Files by Size and by Age (v: Next View)"
+msgstr "Fichiers par taille et par âge (v : vue suivante)"
+
+msgid "The wheel comes once the folder is read"
+msgstr "La roue vient une fois le dossier lu"
+
+msgid "The charts come once the folder is read"
+msgstr "Les graphiques viennent une fois le dossier lu"
+
+msgid "(no file)"
+msgstr "(aucun fichier)"
+
+#. TRANSLATORS: short labels of the age groups under the bars of a chart: less than a day, a week...
+msgid "< 1 d"
+msgstr "< 1 j"
+
+msgid "< 1 w"
+msgstr "< 1 sem"
+
+msgid "< 1 mo"
+msgstr "< 1 mois"
+
+msgid "< 1 y"
+msgstr "< 1 an"
+
+msgid "1–3 y"
+msgstr "1–3 ans"
+
+msgid "3 y +"
+msgstr "3 ans +"
+
+msgid "Next view under the list: treemap, wheel, histograms"
+msgstr "Vue suivante sous la liste : treemap, roue, histogrammes"

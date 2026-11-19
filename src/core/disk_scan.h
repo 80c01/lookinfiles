@@ -24,23 +24,6 @@ typedef struct {
     gint64 mtime;  /* seconds since the epoch */
 } DiskFile;
 
-typedef struct DiskNode DiskNode;
-struct DiskNode {
-    gchar* name;          /* entry name; the root: its full path */
-    DiskNode* parent;     /* NULL for the root */
-    GPtrArray* children;  /* DiskNode*, largest first (NULL when it has no folder) */
-    GArray* files;        /* DiskFile, the largest files directly inside, largest
-                             first (DISK_SCAN_DIR_FILES at most; NULL if none) */
-    guint64 size;         /* apparent bytes of the whole subtree */
-    guint64 disk;         /* bytes allocated on disk, whole subtree */
-    guint64 files_size;   /* apparent bytes of the files directly inside */
-    guint64 files_count;  /* files directly inside */
-    guint64 n_files;      /* files of the whole subtree */
-    guint64 n_dirs;       /* folders of the whole subtree, itself not counted */
-    gint64 mtime;         /* newest file modification of the subtree, 0 if none */
-    gboolean unreadable;  /* could not be listed (its size is unknown) */
-};
-
 /* Size and number of files of a group (an age, an extension, a kind) */
 typedef struct {
     guint64 size;
@@ -73,6 +56,25 @@ typedef enum {
     DISK_SIZE_HUGE,       /* 10G and more */
     DISK_SIZE_COUNT
 } DiskSize;
+
+typedef struct DiskNode DiskNode;
+struct DiskNode {
+    gchar* name;          /* entry name; the root: its full path */
+    DiskNode* parent;     /* NULL for the root */
+    GPtrArray* children;  /* DiskNode*, largest first (NULL when it has no folder) */
+    GArray* files;        /* DiskFile, the largest files directly inside, largest
+                             first (DISK_SCAN_DIR_FILES at most; NULL if none) */
+    guint64 size;         /* apparent bytes of the whole subtree */
+    guint64 disk;         /* bytes allocated on disk, whole subtree */
+    guint64 files_size;   /* apparent bytes of the files directly inside */
+    guint64 files_count;  /* files directly inside */
+    guint64 n_files;      /* files of the whole subtree */
+    guint64 n_dirs;       /* folders of the whole subtree, itself not counted */
+    gint64 mtime;         /* newest file modification of the subtree, 0 if none */
+    gboolean unreadable;  /* could not be listed (its size is unknown) */
+    DiskTally sizes[DISK_SIZE_COUNT]; /* files of the whole subtree by size group */
+    DiskTally ages[DISK_AGE_COUNT];   /* and by age */
+};
 
 typedef struct {
     gchar* path;   /* full path */
@@ -161,11 +163,25 @@ DiskNode* disk_scan_find(DiskScan* scan, const gchar* path);
 
 /* Take path (a folder or a listed file below the root, full path) out of
  * the tree read: the sizes and counts of the folders above it and of the
- * statistics drop it, as do the largest files and the unreadable entries
- * below it; the groups by extension, age and size, the dates and the deepest
- * folder stay as read (a new reading with disk_scan_exclude() has them
- * exact). The nodes below it are freed. FALSE if path is not in the tree. */
+ * statistics drop it (also from their groups by age and size), as do the
+ * largest files and the unreadable entries below it; the groups by
+ * extension, the dates and the deepest folder stay as read (a new
+ * reading with disk_scan_exclude() has them exact). The nodes below it are freed. FALSE if path is not in the tree. */
 gboolean disk_scan_remove(DiskScan* scan, const gchar* path);
+
+/* An entry of a folder: a folder (dir), a listed file (file) or the files
+ * not listed summed up (count of them), or the smallest entries summed up
+ * (count of them) */
+typedef struct {
+    guint64 size;
+    DiskNode* dir;
+    const gchar* file;  /* borrowed from the tree */
+    guint64 count;
+} DiskEntry;
+
+/* The entries of node with a size, largest first, max at most (the smallest
+ * others summed up in the last one); free with g_array_unref() */
+GArray* disk_node_entries(DiskNode* node, guint max);
 
 /* Full path of a node (from the root's path) */
 gchar* disk_node_path(const DiskNode* node);

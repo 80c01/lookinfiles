@@ -246,6 +246,16 @@ folder or shows a file in the explorer, and the pointer resting on a
 rectangle gives its path and size. Drag the line between the list and the
 map to share the height.
 
+Three buttons above the map (**Treemap**, **Wheel**, **Histograms**), or
+`v` in turn, choose what shows the folder there. The wheel draws it in the
+centre with what it holds in rings around it (four levels), each entry an
+arc of its share; an entry and everything below it take one colour, files
+are grey. A click on an arc selects its row, a double click opens a folder
+or shows a file, a click in the centre goes back to the parent folder. The
+histograms count the files of the folder and of everything below it by
+size and by last change, one bar for their number and one for the room
+they take (the tooltip of a bar gives both); they follow the folder shown.
+
 Beside the list, once the folder is read, its statistics: sizes (and the
 room taken on the disk), files, folders, average file size, empty files
 and folders, links, the oldest and newest change, the deepest folder; then

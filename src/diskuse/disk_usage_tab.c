@@ -1,8 +1,8 @@
 /* The Disk Usage tab: the room a folder takes (see disk_usage_tab.h) */
 #include "diskuse/disk_usage_tab.h"
 #include "diskuse/disk_usage_list.h"
-#include "diskuse/disk_usage_map.h"
 #include "diskuse/disk_usage_stats.h"
+#include "diskuse/disk_usage_views.h"
 #include "core/app_events.h"
 #include "core/disk_scan.h"
 #include "core/disk_stats.h"
@@ -36,8 +36,8 @@ typedef struct {
     GtkWidget* current;  /* folder being read, then the folder shown */
     GtkWidget* list;     /* disk_usage_list */
     GtkWidget* stats;    /* disk_usage_stats */
-    GtkWidget* map;      /* disk_usage_map, under the list */
-    GtkWidget* split;    /* GtkPaned of the list and the map */
+    GtkWidget* views;    /* disk_usage_views (treemap, wheel, histograms), under the list */
+    GtkWidget* split;    /* GtkPaned of the list and the views */
     gboolean split_set;  /* its first position given */
 
     gchar* root;         /* folder analysed */
@@ -78,7 +78,9 @@ static void ensure_css(void) {
                   ".disk-usage .du-grid { color: @fg_text; }"
                   ".disk-usage .du-file { padding: 0 2px; min-height: 0; }"
                   ".disk-usage .du-map { font-size: @size_small; }"
-                  ".disk-usage .du-histogram { font-size: @size_small; margin-top: 4px; }");
+                  ".disk-usage .du-histogram { font-size: @size_small; margin-top: 4px; }"
+                  ".disk-usage .du-switcher { margin: 4px 8px 2px 8px; }"
+                  ".disk-usage .du-charts { padding: 0 12px 8px 12px; }");
 }
 
 static DiskUsageTab* tab_state(AppData* app) {
@@ -230,9 +232,9 @@ static void show_summary(DiskUsageTab* dt) {
 static void show_folder(DiskUsageTab* dt, DiskNode* node, const gchar* select) {
     dt->shown = node;
     disk_usage_list_show_node(dt->list, node, select);
-    disk_usage_map_show(dt->map, node);
+    disk_usage_views_show(dt->views, node);
     gchar* selected = disk_usage_list_selected_name(dt->list);
-    disk_usage_map_select(dt->map, selected);
+    disk_usage_views_select(dt->views, selected);
     g_free(selected);
     set_label(dt->current, disk_node_path(node));
     sync_buttons(dt);
@@ -314,7 +316,7 @@ static void start_scan(DiskUsageTab* dt, gboolean quiet) {
     if (!dt->quiet) {
         disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
         disk_usage_stats_show(dt->stats, NULL);
-        disk_usage_map_show(dt->map, NULL);
+        disk_usage_views_show(dt->views, NULL);
         dt->shown = NULL;
         g_clear_pointer(&dt->scan, disk_scan_free);
     }
@@ -379,10 +381,10 @@ static void on_row_exclude(gpointer data, const gchar* path) {
 
 static void on_row_selected(gpointer data, const gchar* name) {
     DiskUsageTab* dt = data;
-    disk_usage_map_select(dt->map, dt->shown != NULL ? name : NULL);
+    disk_usage_views_select(dt->views, dt->shown != NULL ? name : NULL);
 }
 
-/* The map: a click selects the row, a double click opens */
+/* The treemap and the wheel: a click selects the row, a double click opens */
 static void on_map_selected(gpointer data, const gchar* name) {
     disk_usage_list_select(((DiskUsageTab*)data)->list, name);
 }
@@ -443,6 +445,10 @@ static gboolean on_page_key(GtkEventControllerKey* controller, guint keyval, gui
     }
     if (keyval == GDK_KEY_Escape && dt->running != NULL) {
         stop_scan(dt);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_v) {
+        disk_usage_views_next(dt->views);
         return TRUE;
     }
     return FALSE;
@@ -595,15 +601,15 @@ static DiskUsageTab* ensure_page(AppData* app) {
 
     DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, on_row_exclude, on_row_selected, dt };
     dt->list = disk_usage_list_new(app, &handlers);
-    DiskUsageMapHandlers map_handlers = { on_map_selected, on_map_open, on_row_reveal, dt };
-    dt->map = disk_usage_map_new(&map_handlers);
-    /* The list over the map, both resizable */
+    DiskUsageViewsHandlers view_handlers = { on_map_selected, on_map_open, on_row_reveal, on_row_up, dt };
+    dt->views = disk_usage_views_new(&view_handlers);
+    /* The list over the views, both resizable */
     dt->split = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
     paned_use_thin_handle(dt->split);
     gtk_paned_set_start_child(GTK_PANED(dt->split), dt->list);
     gtk_paned_set_resize_start_child(GTK_PANED(dt->split), TRUE);
     gtk_paned_set_shrink_start_child(GTK_PANED(dt->split), FALSE);
-    gtk_paned_set_end_child(GTK_PANED(dt->split), dt->map);
+    gtk_paned_set_end_child(GTK_PANED(dt->split), dt->views);
     gtk_paned_set_resize_end_child(GTK_PANED(dt->split), TRUE);
     gtk_paned_set_shrink_end_child(GTK_PANED(dt->split), FALSE);
     g_signal_connect(dt->split, "notify::max-position", G_CALLBACK(on_split_sized), dt);

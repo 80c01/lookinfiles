@@ -45,20 +45,6 @@ typedef struct {
     gint laid_h;
 } Map;
 
-/* An entry of a folder, to lay out */
-typedef struct {
-    guint64 size;
-    DiskNode* dir;
-    const gchar* file;
-    guint64 count; /* TILE_OTHER */
-} Entry;
-
-static gint compare_entries(gconstpointer a, gconstpointer b) {
-    const Entry* x = a;
-    const Entry* y = b;
-    return x->size > y->size ? -1 : x->size < y->size ? 1 : 0;
-}
-
 static DiskKind kind_of_name(const gchar* name) {
     const gchar* dot = strrchr(name, '.');
     gchar ext[16] = "";
@@ -69,37 +55,8 @@ static DiskKind kind_of_name(const gchar* name) {
     return disk_kind_of_extension(ext);
 }
 
-/* The entries of node with a size, largest first, MAX_ENTRIES at most */
-static GArray* node_entries(DiskNode* node) {
-    GArray* entries = g_array_new(FALSE, FALSE, sizeof(Entry));
-    for (guint i = 0; node->children != NULL && i < node->children->len; i++) {
-        DiskNode* c = g_ptr_array_index(node->children, i);
-        Entry e = { c->size, c, NULL, 0 };
-        if (e.size > 0) g_array_append_val(entries, e);
-    }
-    for (guint i = 0; node->files != NULL && i < node->files->len; i++) {
-        const DiskFile* f = &g_array_index(node->files, DiskFile, i);
-        Entry e = { f->size, NULL, f->name, 0 };
-        if (e.size > 0) g_array_append_val(entries, e);
-    }
-    Entry other = { disk_node_other_files_size(node), NULL, NULL, disk_node_other_files_count(node) };
-    if (other.size > 0) g_array_append_val(entries, other);
-    g_array_sort(entries, compare_entries);
-    if (entries->len > MAX_ENTRIES) {
-        Entry rest = { 0, NULL, NULL, 0 };
-        for (guint i = MAX_ENTRIES - 1; i < entries->len; i++) {
-            const Entry* e = &g_array_index(entries, Entry, i);
-            rest.size += e->size;
-            rest.count += e->count > 0 ? e->count : 1;
-        }
-        g_array_set_size(entries, MAX_ENTRIES - 1);
-        g_array_append_val(entries, rest);
-    }
-    return entries;
-}
-
 static void lay_out(Map* m, DiskNode* node, TreemapRect area, guint depth, const gchar* top) {
-    GArray* entries = node_entries(node);
+    GArray* entries = disk_node_entries(node, MAX_ENTRIES);
     guint n = entries->len;
     if (n == 0) {
         g_array_unref(entries);
@@ -107,10 +64,10 @@ static void lay_out(Map* m, DiskNode* node, TreemapRect area, guint depth, const
     }
     gdouble* weights = g_new(gdouble, n);
     TreemapRect* rects = g_new(TreemapRect, n);
-    for (guint i = 0; i < n; i++) weights[i] = (gdouble)g_array_index(entries, Entry, i).size;
+    for (guint i = 0; i < n; i++) weights[i] = (gdouble)g_array_index(entries, DiskEntry, i).size;
     treemap_squarify(weights, n, area, rects);
     for (guint i = 0; i < n; i++) {
-        const Entry* e = &g_array_index(entries, Entry, i);
+        const DiskEntry* e = &g_array_index(entries, DiskEntry, i);
         const TreemapRect* r = &rects[i];
         if (r->w < 1.0 || r->h < 1.0) continue; /* too small to be seen */
         Tile t = { 0 };

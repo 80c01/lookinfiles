@@ -90,11 +90,16 @@ Layers, from bottom to top
   `YYYYMMDD` (local), grouped by day, month or year (the finest unit that
   fits a number of bars), their bounds, spans and labels (the dates chart
   of the Deep Search tab).
+- `sunburst_layout` — the geometry of a sunburst: the hole and the rings
+  fitting an area, arcs proportional to weights, the ring and angle of a
+  point (the wheel of the Disk Usage tab).
 - `disk_scan` — disk usage of a folder (the Disk Usage tab): the whole tree
   read in a worker thread (`disk_scan_run()`, cancellable; names read
   first, so a deep tree keeps no descriptor per level) into `DiskNode`
   folders (sizes rolled up, apparent and on disk, the 20 largest files of
-  each) and `DiskStats` (counts, the 50 largest files, sizes by extension,
+  each, the files of the subtree by size and age group;
+  `disk_node_entries()` lists what a folder holds for the treemap and the
+  wheel) and `DiskStats` (counts, the 50 largest files, sizes by extension,
   age and size group (`disk_size_of()`, decades of powers of 1024), deepest folder, unreadable entries); symbolic links not
   followed, hard links counted once, other filesystems skipped, the paths
   given to `disk_scan_exclude()` left out; `disk_scan_remove()` takes an
@@ -945,7 +950,12 @@ Layers, from bottom to top
   three folder levels, 300 rectangles per folder at most, laid out again
   only when the folder or the size changes), files coloured by kind with
   the `icon_*` roles; the selected row outlined, a click selects a row, a
-  double click opens a folder or shows a file.
+  double click opens a folder or shows a file. `disk_usage_wheel` — the
+  same folder as a sunburst (`sunburst_layout`, four rings, an entry of the
+  folder and its content in one palette colour, a click in the hole goes
+  up). `disk_usage_charts` — the files of the folder shown by size and age
+  (`DiskNode` groups) in two `histogram`s. `disk_usage_views` — the three
+  in a `GtkStack` under the list, chosen by linked toggle buttons or `v`.
 - `deep_search_tab` — the Deep Search tab in the preview notebook (one per
   workspace, kept like the Disk Usage tab; inserted after the result and
   tool pages), opened on a folder from the explorer (`Shift+F`, context

@@ -307,6 +307,9 @@ key ctrl+w;             shot help_guide_closed
 key ctrl+shift+b; sleep 1; shot browser_tab_empty    # address bar focused (or a notice without WebKit)
 key ctrl+w;             shot browser_tab_closed
 key shift+s; sleep 1;   shot disk_usage_tab        # the folder of plan.org, read in the background
+key v;                  shot disk_usage_wheel      # the wheel under the list
+key v;                  shot disk_usage_histograms # the files of the folder by size and age
+key v;                  shot disk_usage_treemap    # back to the treemap
 key ctrl+w;             shot disk_usage_closed
 key shift+f;            shot deep_search_tab       # the folder of plan.org, the name field focused
 xdotool type --delay 60 "plan"

@@ -142,6 +142,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Disk Usage tab"), "h", N_("Back to the parent folder"), VI},
     {N_("Disk Usage tab"), "C-b", N_("Back to the parent folder"), EM},
     {N_("Disk Usage tab"), "F5", N_("Read the folder again"), 0},
+    {N_("Disk Usage tab"), "v", N_("Next view under the list: treemap, wheel, histograms"), 0},
     {N_("Disk Usage tab"), "Escape", N_("Stop the reading (what was read stays)"), 0},
     {N_("Disk Usage tab"), "Ctrl+W", N_("Close the Disk Usage tab"), NP},
     {N_("Disk Usage tab"), "Ctrl+W c", N_("Close the Disk Usage tab"), VI},

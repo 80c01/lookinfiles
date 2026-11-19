@@ -252,6 +252,8 @@ navigation keys of the global mode move in the list)
 | `Enter` / double click, `Right` (Vim: also `l`; Emacs: `C-f`) | Open the selected folder; on a file, show it in the explorer |
 | `Backspace` / `Alt+Up`, `Left` (Vim: also `h`; Emacs: `C-b`) | Back to the parent folder |
 | `F5` | Read the folder again |
+| `v` | Next view under the list: treemap, wheel, histograms |
+| Click in the centre of the wheel | Back to the parent folder |
 | `Escape` | Stop the reading (what was read stays) |
 | Click on a column header | Sort by that column (again: reverse order) |
 | Right click on a row | Open the folder, show in the explorer, copy the path, exclude it from the calculation (out of the sizes at once, then the tree read again without it; the header button with the number excluded puts them back) |

@@ -96,6 +96,20 @@ const gchar* disk_size_label(DiskSize size) {
     return (guint)size < DISK_SIZE_COUNT ? labels[size] : labels[DISK_SIZE_HUGE];
 }
 
+const gchar* disk_age_label(DiskAge age) {
+    switch (age) {
+    /* TRANSLATORS: short labels of the age groups under the bars of a chart: less than a day, a week... */
+    case DISK_AGE_DAY: return _("< 1 d");
+    case DISK_AGE_WEEK: return _("< 1 w");
+    case DISK_AGE_MONTH: return _("< 1 mo");
+    case DISK_AGE_YEAR: return _("< 1 y");
+    case DISK_AGE_3_YEARS: return _("1–3 y");
+    case DISK_AGE_OLDER:
+    case DISK_AGE_COUNT: break;
+    }
+    return _("3 y +");
+}
+
 gdouble disk_percent(guint64 part, guint64 whole) {
     return whole > 0 ? 100.0 * (gdouble)part / (gdouble)whole : 0.0;
 }

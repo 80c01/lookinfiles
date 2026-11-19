@@ -234,12 +234,16 @@ static void add_file(DiskScan* s, DiskNode* node, const gchar* name, guint64 siz
     st->size += size;
     st->disk += disk;
     if (size == 0) st->n_empty_files++;
-    DiskTally* age = &st->ages[disk_age_of(mtime, st->now)];
-    age->size += size;
-    age->count++;
-    DiskTally* by_size = &st->sizes[disk_size_of(size)];
-    by_size->size += size;
-    by_size->count++;
+    DiskAge age = disk_age_of(mtime, st->now);
+    DiskSize group = disk_size_of(size);
+    st->ages[age].size += size;
+    st->ages[age].count++;
+    st->sizes[group].size += size;
+    st->sizes[group].count++;
+    node->ages[age].size += size;
+    node->ages[age].count++;
+    node->sizes[group].size += size;
+    node->sizes[group].count++;
     if (st->oldest == 0 || mtime < st->oldest) st->oldest = mtime;
     if (mtime > st->newest) st->newest = mtime;
     gchar ext[EXT_MAX + 1];
@@ -255,6 +259,19 @@ static void add_file(DiskScan* s, DiskNode* node, const gchar* name, guint64 siz
 }
 
 /* s->path becomes the path of name inside the folder of length base */
+/* The groups of from added to into (sign 1) or taken from it (-1) */
+static void tally_add(DiskTally* into, const DiskTally* from, guint n, gint sign) {
+    for (guint i = 0; i < n; i++) {
+        if (sign > 0) {
+            into[i].size += from[i].size;
+            into[i].count += from[i].count;
+        } else {
+            into[i].size = into[i].size > from[i].size ? into[i].size - from[i].size : 0;
+            into[i].count = into[i].count > from[i].count ? into[i].count - from[i].count : 0;
+        }
+    }
+}
+
 static void path_enter(DiskScan* s, gsize base, const gchar* name) {
     g_string_truncate(s->path, base);
     if (base > 0 && !G_IS_DIR_SEPARATOR(s->path->str[base - 1])) g_string_append_c(s->path, G_DIR_SEPARATOR);
@@ -402,6 +419,8 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
         node->disk += child->disk;
         node->n_files += child->n_files;
         node->n_dirs += child->n_dirs + 1;
+        tally_add(node->sizes, child->sizes, DISK_SIZE_COUNT, 1);
+        tally_add(node->ages, child->ages, DISK_AGE_COUNT, 1);
         if (child->mtime > node->mtime) node->mtime = child->mtime;
         if (node->children == NULL) node->children = g_ptr_array_new_with_free_func(node_free);
         g_ptr_array_add(node->children, child);
@@ -600,6 +619,8 @@ gboolean disk_scan_remove(DiskScan* s, const gchar* path) {
     DiskNode* parent = n > 0 ? walk(s, parts, n - 1) : NULL;
     const gchar* name = n > 0 ? parts[n - 1] : NULL;
     guint64 size = 0, disk = 0, files = 0, dirs = 0;
+    DiskTally sizes[DISK_SIZE_COUNT] = { { 0, 0 } };
+    DiskTally ages[DISK_AGE_COUNT] = { { 0, 0 } };
     gboolean found = FALSE;
     guint index = 0;
     DiskNode* folder = parent != NULL ? child_named(parent, name, &index) : NULL;
@@ -608,6 +629,8 @@ gboolean disk_scan_remove(DiskScan* s, const gchar* path) {
         disk = folder->disk;
         files = folder->n_files;
         dirs = folder->n_dirs + 1;
+        memcpy(sizes, folder->sizes, sizeof sizes);
+        memcpy(ages, folder->ages, sizeof ages);
         g_ptr_array_remove_index(parent->children, index); /* frees it */
         if (parent->children->len == 0) g_clear_pointer(&parent->children, g_ptr_array_unref);
         found = TRUE;
@@ -618,6 +641,9 @@ gboolean disk_scan_remove(DiskScan* s, const gchar* path) {
             size = f->size;
             disk = f->disk;
             files = 1;
+            DiskTally one = { f->size, 1 };
+            sizes[disk_size_of(f->size)] = one;
+            ages[disk_age_of(f->mtime, s->stats.now)] = one;
             parent->files_size = minus(parent->files_size, f->size);
             if (parent->files_count > 0) parent->files_count--;
             g_free(f->name);
@@ -633,6 +659,8 @@ gboolean disk_scan_remove(DiskScan* s, const gchar* path) {
             a->disk = minus(a->disk, disk);
             a->n_files = minus(a->n_files, files);
             a->n_dirs = minus(a->n_dirs, dirs);
+            tally_add(a->sizes, sizes, DISK_SIZE_COUNT, -1);
+            tally_add(a->ages, ages, DISK_AGE_COUNT, -1);
             if (a->parent != NULL) g_ptr_array_sort(a->parent->children, compare_size);
         }
         DiskStats* st = &s->stats;
@@ -640,6 +668,8 @@ gboolean disk_scan_remove(DiskScan* s, const gchar* path) {
         st->disk = minus(st->disk, disk);
         st->n_files = minus(st->n_files, files);
         st->n_dirs = minus(st->n_dirs, dirs);
+        tally_add(st->sizes, sizes, DISK_SIZE_COUNT, -1);
+        tally_add(st->ages, ages, DISK_AGE_COUNT, -1);
         st->n_excluded++;
         drop_stats_below(st, clean);
     }
@@ -671,4 +701,39 @@ guint64 disk_node_other_files_count(const DiskNode* node) {
     if (node == NULL) return 0;
     guint64 listed = node->files != NULL ? node->files->len : 0;
     return node->files_count > listed ? node->files_count - listed : 0;
+}
+
+static gint compare_entries(gconstpointer a, gconstpointer b) {
+    const DiskEntry* x = a;
+    const DiskEntry* y = b;
+    return x->size > y->size ? -1 : x->size < y->size ? 1 : 0;
+}
+
+GArray* disk_node_entries(DiskNode* node, guint max) {
+    GArray* entries = g_array_new(FALSE, FALSE, sizeof(DiskEntry));
+    if (node == NULL) return entries;
+    for (guint i = 0; node->children != NULL && i < node->children->len; i++) {
+        DiskNode* c = g_ptr_array_index(node->children, i);
+        DiskEntry e = { c->size, c, NULL, 0 };
+        if (e.size > 0) g_array_append_val(entries, e);
+    }
+    for (guint i = 0; node->files != NULL && i < node->files->len; i++) {
+        const DiskFile* f = &g_array_index(node->files, DiskFile, i);
+        DiskEntry e = { f->size, NULL, f->name, 0 };
+        if (e.size > 0) g_array_append_val(entries, e);
+    }
+    DiskEntry other = { disk_node_other_files_size(node), NULL, NULL, disk_node_other_files_count(node) };
+    if (other.size > 0) g_array_append_val(entries, other);
+    g_array_sort(entries, compare_entries);
+    if (max > 0 && entries->len > max) {
+        DiskEntry rest = { 0, NULL, NULL, 0 };
+        for (guint i = max - 1; i < entries->len; i++) {
+            const DiskEntry* e = &g_array_index(entries, DiskEntry, i);
+            rest.size += e->size;
+            rest.count += e->count > 0 ? e->count : 1;
+        }
+        g_array_set_size(entries, max - 1);
+        g_array_append_val(entries, rest);
+    }
+    return entries;
 }
