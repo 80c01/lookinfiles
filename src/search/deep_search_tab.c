@@ -408,6 +408,16 @@ static void on_option_toggled(GtkToggleButton* button, gpointer data) {
     gtk_widget_set_sensitive(dt->options[OPT_WORD], !option_on(dt, OPT_FUZZY));
 }
 
+/* Extensions or a category, not both: a category empties and greys out
+ * the extensions, "Any category" gives them back */
+static void on_family_changed(GObject* drop_down, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    DeepSearchTab* dt = data;
+    gboolean category = gtk_drop_down_get_selected(GTK_DROP_DOWN(drop_down)) > 0;
+    if (category) gtk_editable_set_text(GTK_EDITABLE(dt->extensions), "");
+    gtk_widget_set_sensitive(dt->extensions, !category);
+}
+
 static gboolean is_field(DeepSearchTab* dt, GtkWidget* w) {
     GtkWidget* fields[] = {dt->folder, dt->name,     dt->extensions, dt->content, dt->min_size, dt->max_size,
                            dt->after,  dt->before,   dt->exclude,    dt->depth};
@@ -605,8 +615,8 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     for (gint f = 0; f < FILE_FAMILY_OTHER; f++) families[f + 1] = file_family_name((FileFamily)f);
     families[FILE_FAMILY_OTHER + 1] = NULL;
     dt->family = gtk_drop_down_new_from_strings(families);
-    gtk_widget_set_tooltip_text(dt->family, _("A category of files, from their extension; with extensions too, either "
-                                              "one is enough"));
+    gtk_widget_set_tooltip_text(dt->family, _("A category of files, from their extension, instead of extensions"));
+    g_signal_connect(dt->family, "notify::selected", G_CALLBACK(on_family_changed), dt);
     gtk_box_append(GTK_BOX(box), dt->family);
 
     box = form_row(g, 2, 0, _("Contains"), 1);

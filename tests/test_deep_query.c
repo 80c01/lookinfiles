@@ -144,11 +144,12 @@ static void test_family(void) {
     g_assert_false(match(&q, "holiday.mp4", FALSE, 0, 0));
     g_assert_false(match(&q, "work.png", FALSE, 0, 0));
     g_clear_pointer(&q.name, g_free);
-    /* With extensions: either one */
+    /* Never with extensions */
     q.extensions = g_strdup("xcf");
-    g_assert_true(match(&q, "a.png", FALSE, 0, 0));
-    g_assert_true(match(&q, "a.xcf", FALSE, 0, 0));
-    g_assert_false(match(&q, "a.txt", FALSE, 0, 0));
+    gchar* why = deep_query_check(&q);
+    g_assert_nonnull(why);
+    g_free(why);
+    g_assert_null(deep_filter_new(&q));
     deep_query_clear(&q);
     q.family = FILE_FAMILY_VIDEOS;
     g_assert_true(match(&q, "clip.mkv", FALSE, 0, 0));

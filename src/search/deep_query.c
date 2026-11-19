@@ -149,6 +149,9 @@ gboolean deep_query_parse_date(const gchar* text, GDateTime* now, gboolean end_o
 }
 
 gchar* deep_query_check(const DeepQuery* q) {
+    if (q->family >= 0 && !blank(q->extensions)) {
+        return g_strdup(_("Give extensions or a category, not both"));
+    }
     if (q->min_size >= 0 && q->max_size >= 0 && q->min_size > q->max_size) {
         return g_strdup(_("The minimum size is over the maximum"));
     }
@@ -273,12 +276,10 @@ gboolean deep_filter_match_entry(const DeepFilter* f, const gchar* name, gboolea
     gboolean ok = TRUE;
     if (f->name_fold != NULL) ok = strstr(folded, f->name_fold) != NULL;
     if (ok && f->name_glob != NULL) ok = g_pattern_spec_match(f->name_glob, len, folded, NULL);
-    /* The kind of file: one of the extensions or the category */
-    if (ok && (f->exts != NULL || family)) {
-        ok = family && file_family_from_name(name) == (FileFamily)q->family;
-        for (guint i = 0; f->exts != NULL && i < f->exts->len && !ok; i++) {
-            ok = ends_with(folded, len, g_ptr_array_index(f->exts, i));
-        }
+    if (ok && family) ok = file_family_from_name(name) == (FileFamily)q->family;
+    if (ok && f->exts != NULL) {
+        ok = FALSE;
+        for (guint i = 0; i < f->exts->len && !ok; i++) ok = ends_with(folded, len, g_ptr_array_index(f->exts, i));
     }
     g_free(folded);
     return ok;

@@ -22,7 +22,7 @@ typedef struct {
                           of the whole name ("*.tar.gz", "IMG_????.jpg") */
     gchar* extensions; /* "c, h, .md, tar.gz", any case: one of them ends the name */
     gint family;       /* FileFamily from the name (file_family_from_name()), -1:
-                          any; with extensions too, either one is enough */
+                          any; never with extensions (deep_query_check()) */
     gchar* exclude;    /* paths left out, folders not entered (path_globs.h) */
     gchar* content;    /* text the file holds (text_search.h), or NULL */
     TextSearchOptions content_opts;
@@ -54,7 +54,7 @@ gboolean deep_query_parse_size(const gchar* text, gint64* out);
 gboolean deep_query_parse_date(const gchar* text, GDateTime* now, gboolean end_of_day, gint64* out);
 
 /* Why the query cannot run (an invalid regular expression, a minimum over
- * the maximum...), or NULL. Free with g_free(). */
+ * the maximum, both extensions and a category...), or NULL. Free with g_free(). */
 gchar* deep_query_check(const DeepQuery* q);
 
 /* The query compiled for testing entries; NULL when deep_query_check()

@@ -442,7 +442,7 @@ Layers, from bottom to top
   (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
   lines, the matches counted, the first one kept (the deep search).
 - `deep_query` — the criteria of a deep search (`DeepQuery`: name or
-  pattern, extensions or a `FileFamily`, kind, sizes, dates of last change, content, folders
+  pattern, extensions or else a `FileFamily`, kind, sizes, dates of last change, content, folders
   excluded with `path_globs`, hidden entries, depth, one filesystem), the
   sizes and dates typed by the user (`500k`, `7d`, `2026-11-01`, `today`),
   and `DeepFilter`, which tests an entry on its name and `lstat()` values.
