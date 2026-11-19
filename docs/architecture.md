@@ -608,7 +608,9 @@ Layers, from bottom to top
   its largest group, a legend, a label under each group, the group under
   the pointer lit with its tooltip; with an activate handler, a click or
   `Enter` on a group (`Left` / `Right` move the focus) and a group chosen
-  outlined. Used by the Disk Usage statistics and Deep Search.
+  outlined; `histogram_pair_new()` lays two charts side by side when each
+  gets 280 px, else one over the other (a `GtkCustomLayout`). Used by the
+  Disk Usage statistics and views, and Deep Search.
 - `add_button` — the "+" add button drawn with the palette (rounded box,
   accent border on hover): `add_button_draw()` for the workspace switcher,
   `add_button_new()` (a `GtkButton`) for the tab bars (`new_tab_menu`).

@@ -301,3 +301,74 @@ void histogram_set_selected(GtkWidget* chart, gint bin) {
     if (hg->selected >= 0) hg->cursor = hg->selected;
     gtk_widget_queue_draw(hg->area);
 }
+
+/* The pair */
+
+#define PAIR_SPACING 16
+
+static gboolean pair_side_by_side(int width) {
+    return width < 0 || width >= 2 * HISTOGRAM_PAIR_MIN_WIDTH + PAIR_SPACING;
+}
+
+static GtkSizeRequestMode pair_request_mode(GtkWidget* widget) {
+    (void)widget;
+    return GTK_SIZE_REQUEST_HEIGHT_FOR_WIDTH;
+}
+
+static void pair_measure(GtkWidget* widget, GtkOrientation orientation, int for_size, int* minimum, int* natural,
+                         int* minimum_baseline, int* natural_baseline) {
+    GtkWidget* kids[2] = { gtk_widget_get_first_child(widget), gtk_widget_get_last_child(widget) };
+    int mins[2] = { 0, 0 }, nats[2] = { 0, 0 };
+    gboolean side = orientation == GTK_ORIENTATION_VERTICAL && pair_side_by_side(for_size);
+    for (int i = 0; i < 2; i++) {
+        if (kids[i] == NULL || !gtk_widget_should_layout(kids[i])) continue;
+        int each = orientation == GTK_ORIENTATION_VERTICAL && for_size >= 0 && side
+                       ? MAX((for_size - PAIR_SPACING) / 2, 0)
+                       : for_size;
+        gtk_widget_measure(kids[i], orientation, each, &mins[i], &nats[i], NULL, NULL);
+    }
+    if (orientation == GTK_ORIENTATION_HORIZONTAL) {
+        /* Narrow: one over the other; natural: side by side (the width
+         * taken from the panel, never asked for) */
+        *minimum = MAX(mins[0], mins[1]);
+        *natural = nats[0] + nats[1] + PAIR_SPACING;
+    } else if (side) {
+        *minimum = MAX(mins[0], mins[1]);
+        *natural = MAX(nats[0], nats[1]);
+    } else {
+        *minimum = mins[0] + mins[1] + PAIR_SPACING;
+        *natural = nats[0] + nats[1] + PAIR_SPACING;
+    }
+    *minimum_baseline = -1;
+    *natural_baseline = -1;
+}
+
+static void pair_allocate(GtkWidget* widget, int width, int height, int baseline) {
+    (void)baseline;
+    GtkWidget* kids[2] = { gtk_widget_get_first_child(widget), gtk_widget_get_last_child(widget) };
+    gboolean side = pair_side_by_side(width);
+    int w = side ? MAX((width - PAIR_SPACING) / 2, 0) : width;
+    int h = side ? height : MAX((height - PAIR_SPACING) / 2, 0);
+    for (int i = 0; i < 2; i++) {
+        if (kids[i] == NULL || !gtk_widget_should_layout(kids[i])) continue;
+        int x = side ? i * (w + PAIR_SPACING) : 0;
+        int y = side ? 0 : i * (h + PAIR_SPACING);
+        if (i == 1) {
+            /* The second takes what the halves leave over */
+            if (side) w = width - x;
+            else h = height - y;
+        }
+        gtk_widget_size_allocate(kids[i], &(GtkAllocation){ x, y, MAX(w, 0), MAX(h, 0) }, -1);
+    }
+}
+
+GtkWidget* histogram_pair_new(GtkWidget* first, GtkWidget* second) {
+    /* A box for its children, laid out by the pair (no box setters used) */
+    GtkWidget* pair = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_layout_manager(pair, gtk_custom_layout_new(pair_request_mode, pair_measure, pair_allocate));
+    gtk_widget_add_css_class(pair, "histogram-pair");
+    gtk_widget_set_hexpand(pair, TRUE);
+    gtk_box_append(GTK_BOX(pair), first);
+    gtk_box_append(GTK_BOX(pair), second);
+    return pair;
+}

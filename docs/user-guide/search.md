@@ -114,7 +114,8 @@ goes to the results; there, `Enter` or a double click shows the entry in
 the explorer, `Ctrl+Enter` opens a file in an editor tab at its first
 match, and a right click also copies the path.
 
-Under the results, two charts follow them as they come: the files by size
+Under the results, two charts (side by side when the panel is wide
+enough, else one over the other) follow them as they come: the files by size
 (empty, under 1k, 1k to 10k... 10G and more) and by last change (by day,
 month or year, whichever fits; the oldest years together in the first
 bar), each with one bar for the number of files and one for the room they

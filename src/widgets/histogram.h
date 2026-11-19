@@ -31,4 +31,10 @@ void histogram_set_activate(GtkWidget* chart, void (*activate)(gpointer data, gu
 /* Outline group bin as the one chosen; -1: none */
 void histogram_set_selected(GtkWidget* chart, gint bin);
 
+/* Two charts (or boxes holding one) side by side when each can be at least
+ * HISTOGRAM_PAIR_MIN_WIDTH wide, else one over the other; the width (side
+ * by side) or the height (one over the other) shared in halves */
+#define HISTOGRAM_PAIR_MIN_WIDTH 280
+GtkWidget* histogram_pair_new(GtkWidget* first, GtkWidget* second);
+
 #endif /* HISTOGRAM_H */

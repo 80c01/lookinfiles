@@ -123,7 +123,8 @@ ou un double clic montre l’entrée dans l’explorateur, `Ctrl+Enter` ouvre
 un fichier dans un onglet d’édition à sa première occurrence, et un clic
 droit permet aussi de copier le chemin.
 
-Sous les résultats, deux graphiques les suivent à mesure qu’ils arrivent :
+Sous les résultats, deux graphiques (côte à côte quand le panneau est
+assez large, sinon l’un sur l’autre) les suivent à mesure qu’ils arrivent :
 les fichiers par taille (vides, moins de 1k, 1k à 10k… 10G et plus) et par
 dernière modification (par jour, mois ou année, selon ce qui tient ; les
 années les plus anciennes ensemble dans la première barre), chacun avec une

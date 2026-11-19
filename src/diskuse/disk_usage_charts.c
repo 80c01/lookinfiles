@@ -65,17 +65,15 @@ GtkWidget* disk_usage_charts_new(void) {
     gtk_label_set_wrap(GTK_LABEL(c->note), TRUE);
     gtk_widget_add_css_class(c->note, "du-muted");
     gtk_box_append(GTK_BOX(box), c->note);
-    c->charts = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
-    gtk_box_set_homogeneous(GTK_BOX(c->charts), TRUE);
-    gtk_widget_set_vexpand(c->charts, TRUE);
     GtkWidget* left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     GtkWidget* right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     c->sizes = titled(left, _("By Size"), histogram_new());
     c->ages = titled(right, _("By Last Change"), histogram_new());
     gtk_widget_add_css_class(c->sizes, "du-histogram");
     gtk_widget_add_css_class(c->ages, "du-histogram");
-    gtk_box_append(GTK_BOX(c->charts), left);
-    gtk_box_append(GTK_BOX(c->charts), right);
+    /* Side by side in a wide panel, else one over the other */
+    c->charts = histogram_pair_new(left, right);
+    gtk_widget_set_vexpand(c->charts, TRUE);
     gtk_box_append(GTK_BOX(box), c->charts);
     g_object_set_data_full(G_OBJECT(box), CHARTS_KEY, c, g_free);
     disk_usage_charts_show(box, NULL);

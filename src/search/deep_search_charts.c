@@ -221,15 +221,14 @@ GtkWidget* deep_search_charts_new(void (*changed)(gpointer data, const DeepSearc
     gtk_box_append(GTK_BOX(head), c->show_all);
     gtk_box_append(GTK_BOX(c->box), head);
 
-    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 16);
-    gtk_box_set_homogeneous(GTK_BOX(row), TRUE);
     c->sizes_chart = histogram_new();
     histogram_set_activate(c->sizes_chart, on_size_bar, c);
-    gtk_box_append(GTK_BOX(row), column(_("By Size"), c->sizes_chart));
+    GtkWidget* sizes = column(_("By Size"), c->sizes_chart);
     c->dates_chart = histogram_new();
     histogram_set_activate(c->dates_chart, on_date_bar, c);
-    gtk_box_append(GTK_BOX(row), column(_("By Last Change"), c->dates_chart));
-    gtk_box_append(GTK_BOX(c->box), row);
+    GtkWidget* dates = column(_("By Last Change"), c->dates_chart);
+    /* Side by side in a wide panel, else one over the other */
+    gtk_box_append(GTK_BOX(c->box), histogram_pair_new(sizes, dates));
     g_object_set_data_full(G_OBJECT(c->box), CHARTS_KEY, c, charts_free);
     return c->box;
 }

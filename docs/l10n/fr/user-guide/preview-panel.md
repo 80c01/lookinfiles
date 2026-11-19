@@ -279,7 +279,8 @@ qu’elle contient prennent une couleur, les fichiers sont gris. Un clic sur
 un arc sélectionne sa ligne, un double clic ouvre un dossier ou montre un
 fichier, un clic au centre revient au dossier parent. Les histogrammes
 comptent les fichiers du dossier et de tout ce qu’il contient par taille et
-par dernière modification, une barre pour leur nombre et une pour la place
+par dernière modification (côte à côte s’il y a la place, sinon l’un sur
+l’autre), une barre pour leur nombre et une pour la place
 qu’ils prennent (l’infobulle d’une barre donne les deux) ; ils suivent le
 dossier affiché.
 
