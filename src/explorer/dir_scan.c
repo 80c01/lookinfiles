@@ -142,6 +142,26 @@ DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSo
     return node;
 }
 
+gboolean dir_scan_is_self(const gchar* name) {
+    return g_strcmp0(name, DIR_SCAN_SELF) == 0;
+}
+
+void dir_scan_add_self(DirScanNode* node) {
+    if (node == NULL || node->unreadable || node->entries == NULL ||
+        (node->entries->len > 0 && dir_scan_is_self(g_array_index(node->entries, DirScanEntry, 0).name))) {
+        return;
+    }
+    GStatBuf st;
+    DirScanEntry e = {
+        .name = g_strdup(DIR_SCAN_SELF),
+        .is_dir = TRUE,
+        .mtime = (g_stat(node->dirname, &st) == 0) ? (gint64)st.st_mtime : 0,
+        .name_key = g_utf8_collate_key(DIR_SCAN_SELF, -1),
+    };
+    g_array_prepend_val(node->entries, e);
+    g_ptr_array_insert(node->children, 0, NULL);
+}
+
 typedef struct {
     gchar* dirname;
     gboolean show_hidden;

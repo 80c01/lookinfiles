@@ -99,6 +99,8 @@ les restaurer depuis celle-ci.
   restent en premier.
 - `i` (ou `I`) affiche ou masque les fichiers cachés (noms commençant par
   `.`).
+  Quand ils sont affichés, une ligne `.` ouvre la liste : le dossier affiché
+  lui-même (son aperçu, son menu de dossier sur un clic droit).
 
 Le tri et l’affichage des fichiers cachés appartiennent à l’espace de
 travail et sont restaurés au lancement suivant.

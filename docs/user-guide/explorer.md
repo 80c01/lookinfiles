@@ -90,6 +90,8 @@ Recycle Bin on Windows), so they can also be restored from there.
 
 - `o` cycles the sort: name, date, size, extension. Folders stay first.
 - `i` (or `I`) shows or hides hidden files (names starting with `.`).
+  While they are shown, a `.` row heads the list: the folder shown itself
+  (its preview, its folder menu on a right-click).
 
 The sort and the hidden state belong to the workspace and are restored at
 the next launch.

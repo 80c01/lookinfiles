@@ -241,9 +241,27 @@ static const DirScanNode* entry_child_node(const DirScanNode* node, guint i) {
     return (node->children != NULL && i < node->children->len) ? g_ptr_array_index(node->children, i) : NULL;
 }
 
-/* Canonical path of entry i (node->dirname is canonical, a name has no '/') */
+/* Canonical path of entry i (node->dirname is canonical, a name has no '/';
+ * the "." entry is the directory itself) */
 static gchar* entry_path(const DirScanNode* node, guint i) {
-    return g_build_filename(node->dirname, g_array_index(node->entries, DirScanEntry, i).name, NULL);
+    const gchar* name = g_array_index(node->entries, DirScanEntry, i).name;
+    if (dir_scan_is_self(name)) {
+        return g_strdup(node->dirname);
+    }
+    return g_build_filename(node->dirname, name, NULL);
+}
+
+/* The "." row of the top level, standing for the directory shown */
+static gboolean row_is_self(ExplorerRow* row) {
+    return row != NULL && explorer_row_is(row, "dir") && dir_scan_is_self(row->name);
+}
+
+/* The top level listing of the files view: with its "." entry when the
+ * hidden entries are shown */
+static void add_self_entry(DirScanNode* node, gboolean show_hidden) {
+    if (show_hidden) {
+        dir_scan_add_self(node);
+    }
 }
 
 static void apply_dir_node_to_rows(ExplorerRow* parent, AppData* app, const DirScanNode* node);
@@ -261,7 +279,13 @@ static ExplorerRow* make_entry_row(ExplorerRow* parent, AppData* app, const DirS
         git_badge = b;
     }
     ExplorerRow* row;
-    if (e->is_dir) {
+    if (e->is_dir && dir_scan_is_self(e->name)) {
+        /* The directory shown: no expander (its rows are the level itself) */
+        row = explorer_row_new_child(parent, FALSE, "dir", e->name, e->name, can_full);
+        explorer_row_set_glyph(row, "folder");
+        explorer_row_set_badge(row, git_badge);
+        explorer_row_set_loaded(row, TRUE);
+    } else if (e->is_dir) {
         /* Bare names: the tree draws the icons (explorer_tree.c) */
         gboolean is_expanded = (child_node != NULL);
         row = explorer_row_new_child(parent, TRUE, "dir", e->name, e->name, can_full);
@@ -348,6 +372,9 @@ static void populate_level(ExplorerRow* parent, AppData* app, const gchar* dirna
     GHashTable* exp = (app != NULL) ? app->expanded_paths : NULL;
     gint64 start = profile_start();
     DirScanNode* node = dir_scan_read(dirname, show_hidden, (DirScanSort)sort_mode, exp, NULL);
+    if (parent->is_root) {
+        add_self_entry(node, show_hidden);
+    }
     profile_done(start, "scan %s: %u entries (UI thread)", dirname,
                  node != NULL && node->entries != NULL ? node->entries->len : 0);
     start = profile_start();
@@ -490,7 +517,7 @@ static gboolean rows_list_dir(AppData* app, const gchar* dirname) {
         app->sidebar_view != SIDEBAR_VIEW_FILES) {
         return FALSE;
     }
-    gchar* parent = g_path_get_dirname(first->path);
+    gchar* parent = row_is_self(first) ? g_strdup(first->path) : g_path_get_dirname(first->path);
     gchar* dir = g_canonicalize_filename(dirname, NULL);
     gboolean same = (g_strcmp0(parent, dir) == 0);
     g_free(dir);
@@ -674,6 +701,7 @@ static void dir_scan_thread_func(GTask* task, gpointer source_object,
     }
     td->root_node = dir_scan_read(td->dirname, td->show_hidden, (DirScanSort)td->sort_mode,
                                   td->expanded_snapshot, cancellable);
+    add_self_entry(td->root_node, td->show_hidden);
 
     if (g_task_return_error_if_cancelled(task)) {
         return;
@@ -711,7 +739,7 @@ static gboolean rows_match_node(AppData* app, ExplorerRow* parent, const DirScan
         if (!same_path) {
             return FALSE;
         }
-        if (e->is_dir) {
+        if (e->is_dir && !row_is_self(row)) {
             const DirScanNode* child_node = (node->children != NULL && i < node->children->len)
                                                 ? g_ptr_array_index(node->children, i)
                                                 : NULL;

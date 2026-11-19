@@ -176,6 +176,34 @@ static void test_expanded_and_unreadable(void) {
     g_free(dir);
 }
 
+static void test_add_self(void) {
+    gchar* dir = fixture_dir();
+    put(dir, "adir", NULL);
+    put(dir, "a.txt", "a");
+
+    DirScanNode* node = dir_scan_read(dir, TRUE, DIR_SCAN_SORT_NAME, NULL, NULL);
+    dir_scan_add_self(node);
+    dir_scan_add_self(node); /* once only */
+    g_assert_cmpuint(node->entries->len, ==, 3);
+    g_assert_cmpuint(node->children->len, ==, 3);
+    g_assert_true(dir_scan_is_self(name_at(node, 0)));
+    g_assert_true(g_array_index(node->entries, DirScanEntry, 0).is_dir);
+    g_assert_null(g_ptr_array_index(node->children, 0));
+    g_assert_cmpstr(name_at(node, 1), ==, "adir");
+    g_assert_cmpstr(name_at(node, 2), ==, "a.txt");
+    dir_scan_node_free(node);
+
+    gchar* missing = g_build_filename(dir, "missing", NULL);
+    node = dir_scan_read(missing, TRUE, DIR_SCAN_SORT_NAME, NULL, NULL);
+    dir_scan_add_self(node);
+    g_assert_null(node->entries);
+    dir_scan_node_free(node);
+    g_free(missing);
+
+    remove_tree(dir);
+    g_free(dir);
+}
+
 static void test_cancelled(void) {
     gchar* dir = fixture_dir();
     put(dir, "a.txt", "a");
@@ -225,6 +253,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/dir_scan/sort_keys", test_sort_keys);
     g_test_add_func("/dir_scan/read_async", test_read_async);
     g_test_add_func("/dir_scan/expanded_and_unreadable", test_expanded_and_unreadable);
+    g_test_add_func("/dir_scan/add_self", test_add_self);
     g_test_add_func("/dir_scan/cancelled", test_cancelled);
     g_test_add_func("/dir_scan/expand_all", test_expand_all);
     return g_test_run();

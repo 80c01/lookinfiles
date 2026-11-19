@@ -222,8 +222,11 @@ static void on_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gd
     ExplorerRow* row = explorer_tree_row_at(app->tree, x, y);
     gboolean entry = (explorer_row_is(row, "dir") || explorer_row_is(row, "file")) &&
                      row->path[0] != '\0';
+    /* The "." row is the folder shown: its menu, not an entry's */
+    gboolean self = entry && g_strcmp0(row->path, app->base_dir) == 0;
     if (entry) {
         select_row(app, row);
+        entry = !self;
     } else {
         explorer_tree_unselect_all(app->tree);
     }

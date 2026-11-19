@@ -43,6 +43,17 @@ DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSo
 
 void dir_scan_node_free(DirScanNode* node);
 
+/* Name of the entry standing for the directory itself */
+#define DIR_SCAN_SELF "."
+
+/* Put a DIR_SCAN_SELF entry (a folder, never expanded) first in node, a
+ * readable top level shown with its hidden entries. Does nothing when node is
+ * unreadable or already has it. */
+void dir_scan_add_self(DirScanNode* node);
+
+/* name is DIR_SCAN_SELF */
+gboolean dir_scan_is_self(const gchar* name);
+
 /* dir_scan_read() on a worker thread (expanded, may be NULL, is copied);
  * callback runs in the calling thread's main context and gets the listing
  * with dir_scan_read_finish() (free it with dir_scan_node_free()) */
