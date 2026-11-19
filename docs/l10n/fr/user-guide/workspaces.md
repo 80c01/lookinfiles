@@ -50,7 +50,9 @@ enregistrées avant cela gardent les barres de symboles actuelles). Elle ne gard
 fichier : l’appliquer déplace les fichiers ouverts dans les volets
 d’édition qui contenaient des fichiers (un volet vide en prend un au plus
 rempli), réutilise les terminaux en cours et démarre les shells qui
-manquent.
+manquent ; les terminaux en cours pour lesquels elle n’a pas de place
+deviennent des onglets de son dernier panneau de terminal, si bien
+qu’appliquer une disposition n’en ferme jamais.
 
 `Alt+L` (ou le bouton grille de la barre du haut) ouvre la liste des
 dispositions sous le bouton : l’agencement actuel, la disposition par
@@ -58,11 +60,10 @@ défaut, celles enregistrées, puis les dispositions intégrées. Se déplacer d
 souris, flèches, ou `Alt+L` à nouveau pour la suivante) montre chaque
 disposition exactement comme elle serait appliquée : panneaux, divisions et
 onglets d’édition, panneaux de terminal. Rien ne se ferme entre-temps : les
-terminaux pour lesquels une disposition n’a pas de place sont seulement mis
-de côté, et les shells démarrés pour un aperçu s’arrêtent avec lui. `Enter`
-ou un clic applique la disposition (en demandant d’abord quand elle ferme
-des terminaux en cours) ; `Escape` remet tout comme avant, les mêmes
-onglets aux mêmes endroits et les mêmes terminaux.
+terminaux pour lesquels une disposition n’a pas de place sont empilés en
+onglets, et les shells démarrés pour un aperçu s’arrêtent avec lui. `Enter`
+ou un clic applique la disposition ; `Escape` remet tout comme avant, les
+mêmes onglets aux mêmes endroits et les mêmes terminaux.
 
 **Modifier les dispositions…**, en bas de la liste, ouvre le dialogue des
 dispositions :

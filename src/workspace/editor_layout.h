@@ -20,14 +20,13 @@ guint editor_layout_wanted_terminals(const gchar* text);
  * file tabs go to the panes that held files, each source pane to its own
  * pane in order, an empty files pane taking a tab from the fullest one;
  * running terminals fill the terminal tabs in order, missing ones get a new
- * shell, those beyond close (the caller confirmed it). With no terminal in
+ * shell, those beyond are stacked after the last terminal tab. With no terminal in
  * text, the running ones stay in the first pane. Panes left without a tab
  * are removed. */
 void editor_layout_apply(AppData* app, const gchar* text);
-/* The same, nothing closed (layout previews): two views of a file may share
- * a pane, terminals of spare (out of any notebook, referenced) fill the
- * terminal tabs after the running ones, before new shells, and terminals
- * beyond the shape go to spare */
+/* The same for layout previews (no view closed): two views of a file may
+ * share a pane, terminals of spare (out of any notebook, referenced) fill the
+ * terminal tabs after the running ones, before new shells */
 void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare);
 
 /* Exact arrangement of the editor tabs: the panel's splits, which tab is in

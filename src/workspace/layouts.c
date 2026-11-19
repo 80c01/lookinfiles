@@ -114,45 +114,9 @@ static void save_tagbars(AppData* app, const SavedLayout* l) {
     g_free(path);
 }
 
-/* Running terminals (term_running in the terminal panel, editor_running in
- * the editor panel) that applying l closes: those beyond its terminals (a
- * layout without terminals keeps them) */
-static guint closing_terminals(const SavedLayout* l, guint term_running, guint editor_running) {
-    guint closing = 0;
-#ifdef HAVE_VTE
-    TermLayoutNode* tree = l->term_vis ? term_layout_parse(l->terminals) : NULL;
-    guint wanted = term_layout_count(tree);
-    term_layout_free(tree);
-    closing += (wanted > 0 && term_running > wanted) ? term_running - wanted : 0;
-    gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
-    guint editor_wanted = splits ? editor_layout_wanted_terminals(l->editor_splits) : 0;
-    closing += (editor_wanted > 0 && editor_running > editor_wanted) ? editor_running - editor_wanted : 0;
-#else
-    (void)l;
-    (void)term_running;
-    (void)editor_running;
-#endif
-    return closing;
-}
-
-static gboolean confirm_closing(AppData* app, const SavedLayout* l, guint closing) {
-    if (closing == 0) {
-        return TRUE;
-    }
-    gchar* msg = g_strdup_printf(ngettext("The layout “%1$s” has fewer terminals than are running; %2$u "
-                                          "running terminal will be closed.",
-                                          "The layout “%1$s” has fewer terminals than are running; %2$u "
-                                          "running terminals will be closed.",
-                                          closing),
-                                 l->name, closing);
-    gboolean ok = confirm(app, _("Close Terminals"), msg, _("_Apply Layout"));
-    g_free(msg);
-    return ok;
-}
-
 /* Arrange the editor tabs, terminals and panels of l (shown by the caller).
- * With spares, nothing closes: extra terminals go there, missing ones come
- * from there first. */
+ * Nothing closes: running terminals l has no room for are stacked as tabs;
+ * with spares, missing ones come from there first. */
 static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, GPtrArray* editor_spare) {
     /* The editor panel's shape, when the layout saved one */
     gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
@@ -175,23 +139,10 @@ static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, G
     set_tagbars(app, l);
 }
 
-static guint running_terminals(AppData* app) {
-#ifdef HAVE_VTE
-    return term_pane_count(app);
-#else
-    (void)app;
-    return 0;
-#endif
-}
-
-gboolean layouts_apply(AppData* app, const SavedLayout* l) {
-    if (!confirm_closing(app, l, closing_terminals(l, running_terminals(app), editor_layout_terminal_count(app)))) {
-        return FALSE;
-    }
+void layouts_apply(AppData* app, const SavedLayout* l) {
     arrange(app, l, NULL, NULL);
     workspace_switch(app, app->current_ws); /* re-applies the current workspace */
     save_tagbars(app, l);
-    return TRUE;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -208,8 +159,6 @@ struct LayoutsPreview {
 #endif
     GPtrArray* term_spare;    /* terminals out of the panels meanwhile (referenced) */
     GPtrArray* editor_spare;
-    guint term_running;       /* terminals at the start */
-    guint editor_running;
 };
 
 LayoutsPreview* layouts_preview_begin(AppData* app) {
@@ -223,8 +172,6 @@ LayoutsPreview* layouts_preview_begin(AppData* app) {
 #endif
     p->term_spare = g_ptr_array_new_with_free_func(g_object_unref);
     p->editor_spare = g_ptr_array_new_with_free_func(g_object_unref);
-    p->term_running = running_terminals(app);
-    p->editor_running = editor_layout_terminal_count(app);
     return p;
 }
 
@@ -249,9 +196,7 @@ void layouts_preview_show(LayoutsPreview* p, const SavedLayout* l) {
 
 gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
     AppData* app = p->app;
-    /* Asked while the layout is shown: the terminals it closes are those
-     * running at the start */
-    gboolean apply = (l != NULL) && confirm_closing(app, l, closing_terminals(l, p->term_running, p->editor_running));
+    gboolean apply = (l != NULL);
     restore_start(p);
     /* The shells started for the previews end here */
     g_ptr_array_unref(p->term_spare);

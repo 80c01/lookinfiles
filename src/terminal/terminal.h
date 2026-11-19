@@ -40,11 +40,12 @@ gchar* term_layout_capture_box(GtkWidget* term_box);
 /* Terminals of the current workspace (every tab of every pane) */
 guint term_pane_count(AppData* app);
 /* Rebuild the panes as described: running terminals are kept, in order;
- * missing panes get a new shell; terminals beyond the tree are closed */
+ * missing panes get a new shell; running terminals beyond the tree become
+ * the last tabs of the last pane (nothing closes) */
 void term_layout_apply(AppData* app, const gchar* text);
-/* The same, nothing closed (layout previews): the terminals of spare (out
- * of any notebook, referenced) fill the panes after the running ones, before
- * new shells; terminals beyond the tree go to spare */
+/* The same for layout previews: the terminals of spare (out of any
+ * notebook, referenced) fill the panes after the running ones, before new
+ * shells; those of spare beyond the tree go back to spare */
 void term_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare);
 
 /* Exact arrangement of the terminal panel: its splits, which terminal is in
@@ -53,7 +54,8 @@ typedef struct TermSnapshot TermSnapshot;
 /* NULL without terminals */
 TermSnapshot* term_snapshot_take(AppData* app);
 /* Put the panel back as taken, with the terminals of the panel or of spare;
- * the other terminals of the panel go to spare */
+ * the other terminals of the panel go to spare, or without spare become the
+ * last tabs of the last pane */
 void term_snapshot_restore(AppData* app, const TermSnapshot* snap, GPtrArray* spare);
 void term_snapshot_free(TermSnapshot* snap);
 

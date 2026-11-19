@@ -288,6 +288,14 @@ for f in $(grep -lE '#include "([a-z]+/)?notes_private.h"' $SRC_CH); do
     esac
 done
 
+# terminal_private.h is internal to the terminal panel files
+for f in $(grep -lE '#include "([a-z]+/)?terminal_private.h"' $SRC_CH); do
+    case "$(basename "$f")" in
+        terminal.c|term_layout.c|terminal_private.h) ;;
+        *) echo "layering: $f includes terminal_private.h (internal to terminal.c, term_layout.c)"; status=1 ;;
+    esac
+done
+
 # editor_private.h is internal to the editor tab files
 for f in $(grep -lE '#include "([a-z]+/)?editor_private.h"' $SRC_CH); do
     case "$(basename "$f")" in

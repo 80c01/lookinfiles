@@ -318,6 +318,7 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
 #ifdef HAVE_VTE
     /* Running terminals fill the terminal tabs in order, new shells the rest */
     guint next = 0;
+    GtkNotebook* last_term_nb = NULL;
     for (guint i = 0; wanted > 0 && i < leaves->len; i++) {
         const TabTreeNode* node = g_ptr_array_index(nodes, i);
         GtkNotebook* nb = g_ptr_array_index(leaves, i);
@@ -325,6 +326,7 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
             if (g_array_index(node->tabs, guint, t) != TAB_TREE_TERMINAL) {
                 continue;
             }
+            last_term_nb = nb;
             if (next < terms->len) {
                 terminal_move_tab(g_ptr_array_index(terms, next++), nb);
             } else if (spare != NULL && spare->len > 0) {
@@ -357,19 +359,14 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
     }
 
 #ifdef HAVE_VTE
-    /* Terminals beyond the layout's close with their tab (the caller
-     * confirmed it), or go to spare */
-    for (; wanted > 0 && next < terms->len; next++) {
-        GtkWidget* vte = g_ptr_array_index(terms, next);
-        terminal_forget(app, vte);
-        if (spare != NULL) {
-            GtkWidget* kept = terminal_detach_tab(vte);
-            if (kept != NULL) {
-                g_ptr_array_add(spare, kept);
-            }
-        } else {
-            editor_remove_page(app, vte);
+    /* Terminals beyond the layout's are stacked after the last terminal tab,
+     * the arranged tab staying in front: nothing closes */
+    if (last_term_nb != NULL && next < terms->len) {
+        gint current = gtk_notebook_get_current_page(last_term_nb);
+        for (; next < terms->len; next++) {
+            terminal_move_tab(g_ptr_array_index(terms, next), last_term_nb);
         }
+        gtk_notebook_set_current_page(last_term_nb, current);
     }
 #endif
     editor_remove_empty_notebooks(app);

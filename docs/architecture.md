@@ -1116,8 +1116,8 @@ Layers, from bottom to top
   `editor_layout_capture()` (splits, sizes, panes of files, terminal tabs),
   `editor_layout_apply()` rebuilds the splits and places the open file tabs
   and running terminals in them (`terminal_move_tab()`; missing shells
-  started, extra ones closed after the caller's confirmation, or kept in a
-  spare list for previews); `editor_layout_snapshot()` / `_restore()` put
+  started, or taken first from a spare list for previews; extra ones stacked
+  after the last terminal tab); `editor_layout_snapshot()` / `_restore()` put
   back the exact tabs of the panel and the preview notebook.
 - `editor_view` — the widgets of an editor tab around its buffer (view,
   scroll, minimap, mode lines, view controllers); `editor_view_release()`
@@ -1244,6 +1244,10 @@ Layers, from bottom to top
   `term_snapshot_take()` / `_restore()` put back the exact panes of the
   panel after a layout preview; `terminal_detach_tab()` /
   `terminal_attach_tab()` keep a terminal running out of any notebook.
+  `term_layout.c` holds the layout half (pane tree of saved layouts,
+  `term_layout_apply()` stacking the terminals beyond the tree in the last
+  pane, the snapshots); it shares `terminal_private.h` with `terminal.c`,
+  the public API stays `terminal.h`.
 - `web_engine` — the web view of a browser tab, whatever engine shows it
   (`web_engine_new()` with `WebEngineCallbacks`: changes, new window, close,
   addresses for the default application, notices). With WebKitGTK 6.0
@@ -1383,13 +1387,14 @@ Layers, from bottom to top
   and terminals with their panes, places and current pages; each preview
   restores the start, then arranges the layout with spares
   (`editor_layout_apply_spare()`, `term_layout_apply_spare()`): extra
-  terminals are set aside instead of closed, two views of a file may share a
-  pane, and the shells started for previews end with them. Applying asks
-  over the preview, restores the start, then runs the normal apply.
+  terminals are stacked as tabs, two views of a file may share a pane, and
+  the shells started for previews end with them. Applying restores the
+  start, then runs the normal apply.
 - `layouts` — saved workspace layouts (Edit Layouts dialog): capture
   the current workspace's panels and editor splits (`editor_layout`), apply
-  one from a list in an `AppDialog` (running terminals are kept; closing extra
-  ones, in the terminal panel or the editor panel, asks first). The list starts
+  one from a list in an `AppDialog` (running terminals are kept; extra ones,
+  in the terminal panel or the editor panel, become tabs of the last terminal
+  pane: applying never closes one). The list starts
   with the default layout of new workspaces, which can be replaced (save
   under the name "Default") or reset, and ends with the built-in presets
   (not deletable; saving under a preset's name replaces it). A click selects a row; double click,

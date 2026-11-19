@@ -13,21 +13,21 @@ void layouts_show_dialog(AppData* app);
 
 /* The current workspace's panels, editor splits and terminals. Caller frees. */
 SavedLayout* layouts_capture(AppData* app, const gchar* name);
-/* Apply a layout to the current workspace, asking before closing terminals.
- * FALSE if the user cancelled. */
-gboolean layouts_apply(AppData* app, const SavedLayout* layout);
+/* Apply a layout to the current workspace. Nothing closes: running
+ * terminals it has no room for become tabs of its last terminal pane. */
+void layouts_apply(AppData* app, const SavedLayout* layout);
 
 /* Previews: layouts shown in full, then the start put back exactly (the
  * same tabs in the same panes and places, the same terminals) or one of
  * them applied. Nothing closes meanwhile: terminals a layout has no room
- * for are set aside, the shells started for it end with the preview. */
+ * for are stacked as tabs, the shells started for it end with the preview. */
 typedef struct LayoutsPreview LayoutsPreview;
 /* Take the current workspace's arrangement as the start */
 LayoutsPreview* layouts_preview_begin(AppData* app);
 /* Show layout in full (NULL: the start) */
 void layouts_preview_show(LayoutsPreview* preview, const SavedLayout* layout);
-/* End the preview: apply layout (asking before closing terminals running at
- * the start), or with NULL put the start back. Frees preview; TRUE if applied. */
+/* End the preview: apply layout, or with NULL put the start back. Frees
+ * preview; TRUE if applied. */
 gboolean layouts_preview_end(LayoutsPreview* preview, const SavedLayout* layout);
 
 /* A list row: the title above the layout's summary */
