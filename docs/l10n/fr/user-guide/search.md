@@ -93,6 +93,7 @@ lequel ».
 | **Dossier** | Où chercher, avec tout ce qu’il contient (`~` est votre dossier personnel) |
 | **Nom** | Une partie du nom, sans tenir compte de la casse (`rapport`) ; avec `*` ou `?`, un motif du nom entier (`IMG_????.jpg`, `*.tar.gz`) |
 | **Extensions** | Séparées par des virgules, sans tenir compte de la casse : `c, h, md`, `tar.gz` |
+| **ou** une catégorie | Au lieu des extensions, un genre de fichier : documents, images, vidéos, audio, archives, texte et code, programmes (d’après l’extension, comme dans l’[Espace disque](preview-panel.md#espace-disque)) ; avec des extensions en plus, l’un ou l’autre suffit (images ou `xcf`) |
 | **Contient** | Un texte dans le fichier, avec les mêmes boutons que la recherche dans les fichiers (`Aa`, `ab`, `.*`, `a…z` ; `Alt+M`, `Alt+W`, `Alt+R`, `Alt+L`) ; les fichiers binaires sont ignorés, les gros fichiers sont lus en entier |
 | **Type** | Fichiers et dossiers, fichiers seulement (les liens comptent comme des fichiers) ou dossiers seulement |
 | **Taille** | De / à, bornes comprises : `42`, `500k`, `10M`, `2G` (puissances de 1024) ; fichiers seulement |

@@ -2,11 +2,13 @@
 #define DEEP_QUERY_H
 
 /* The criteria of a deep search (deep_search.h): name, extensions, kind,
- * size, date of last change, content and where to look, as typed in the
+ * category (images, videos...), size, date of last change, content and
+ * where to look, as typed in the
  * Deep Search tab, and the test of one entry against them. The cheap
  * criteria (everything but the content) are tested on the name and the
  * lstat() values; the content is read only for the files that pass them.
  * Pure GLib, unit-tested. */
+#include "core/file_types.h"
 #include "search/text_search.h"
 
 typedef enum {
@@ -19,6 +21,8 @@ typedef struct {
     gchar* name;       /* part of the name, any case; with * or ? a pattern
                           of the whole name ("*.tar.gz", "IMG_????.jpg") */
     gchar* extensions; /* "c, h, .md, tar.gz", any case: one of them ends the name */
+    gint family;       /* FileFamily from the name (file_family_from_name()), -1:
+                          any; with extensions too, either one is enough */
     gchar* exclude;    /* paths left out, folders not entered (path_globs.h) */
     gchar* content;    /* text the file holds (text_search.h), or NULL */
     TextSearchOptions content_opts;

@@ -308,6 +308,21 @@ static void test_kind_predicates(void) {
     g_assert_false(file_kind_is_media(FILE_KIND_DOCUMENT));
 }
 
+static void test_families(void) {
+    g_assert_cmpint(file_family_from_name("photo.JPG"), ==, FILE_FAMILY_IMAGES);
+    g_assert_cmpint(file_family_from_name("clip.mkv"), ==, FILE_FAMILY_VIDEOS);
+    g_assert_cmpint(file_family_from_name("song.flac"), ==, FILE_FAMILY_AUDIO);
+    g_assert_cmpint(file_family_from_name("report.pdf"), ==, FILE_FAMILY_DOCUMENTS);
+    g_assert_cmpint(file_family_from_name("notes.md"), ==, FILE_FAMILY_DOCUMENTS);
+    g_assert_cmpint(file_family_from_name("backup.tar.gz"), ==, FILE_FAMILY_ARCHIVES);
+    g_assert_cmpint(file_family_from_name("main.c"), ==, FILE_FAMILY_CODE);
+    g_assert_cmpint(file_family_from_name("Foo.class"), ==, FILE_FAMILY_PROGRAMS);
+    g_assert_cmpint(file_family_from_name("font.ttf"), ==, FILE_FAMILY_OTHER);
+    g_assert_cmpint(file_family_from_name("README"), ==, FILE_FAMILY_OTHER); /* no extension */
+    g_assert_cmpint(file_family_from_name(".bashrc"), ==, FILE_FAMILY_OTHER);
+    for (gint f = 0; f <= FILE_FAMILY_COUNT; f++) g_assert_nonnull(file_family_name((FileFamily)f));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/file_types/extension", test_extension);
@@ -323,5 +338,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/file_types/kind_labels", test_kind_labels);
     g_test_add_func("/file_types/kind_of_path", test_kind_of_path);
     g_test_add_func("/file_types/kind_predicates", test_kind_predicates);
+    g_test_add_func("/file_types/families", test_families);
     return g_test_run();
 }

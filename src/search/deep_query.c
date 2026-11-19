@@ -8,6 +8,7 @@
 
 void deep_query_init(DeepQuery* q) {
     memset(q, 0, sizeof(*q));
+    q->family = -1;
     q->min_size = -1;
     q->max_size = -1;
 }
@@ -256,8 +257,9 @@ gboolean deep_filter_match_entry(const DeepFilter* f, const gchar* name, gboolea
     if (f == NULL || name == NULL) return FALSE;
     const DeepQuery* q = &f->q;
     /* Criteria of files only: folders never pass them */
-    gboolean files_only = q->kind == DEEP_KIND_FILES || f->exts != NULL || f->content || q->min_size >= 0 ||
-                          q->max_size >= 0;
+    gboolean family = q->family >= 0 && q->family < FILE_FAMILY_COUNT;
+    gboolean files_only = q->kind == DEEP_KIND_FILES || f->exts != NULL || family || f->content ||
+                          q->min_size >= 0 || q->max_size >= 0;
     if (is_dir ? files_only : q->kind == DEEP_KIND_FOLDERS) return FALSE;
     if (!is_dir) {
         if (q->min_size >= 0 && size < (guint64)q->min_size) return FALSE;
@@ -265,15 +267,18 @@ gboolean deep_filter_match_entry(const DeepFilter* f, const gchar* name, gboolea
     }
     if (q->after > 0 && mtime < q->after) return FALSE;
     if (q->before > 0 && mtime >= q->before) return FALSE;
-    if (f->name_fold == NULL && f->name_glob == NULL && f->exts == NULL) return TRUE;
+    if (f->name_fold == NULL && f->name_glob == NULL && f->exts == NULL && !family) return TRUE;
     gchar* folded = fold(name);
     gsize len = strlen(folded);
     gboolean ok = TRUE;
     if (f->name_fold != NULL) ok = strstr(folded, f->name_fold) != NULL;
     if (ok && f->name_glob != NULL) ok = g_pattern_spec_match(f->name_glob, len, folded, NULL);
-    if (ok && f->exts != NULL) {
-        ok = FALSE;
-        for (guint i = 0; i < f->exts->len && !ok; i++) ok = ends_with(folded, len, g_ptr_array_index(f->exts, i));
+    /* The kind of file: one of the extensions or the category */
+    if (ok && (f->exts != NULL || family)) {
+        ok = family && file_family_from_name(name) == (FileFamily)q->family;
+        for (guint i = 0; f->exts != NULL && i < f->exts->len && !ok; i++) {
+            ok = ends_with(folded, len, g_ptr_array_index(f->exts, i));
+        }
     }
     g_free(folded);
     return ok;

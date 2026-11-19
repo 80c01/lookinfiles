@@ -257,8 +257,8 @@ navigation keys of the global mode move in the list)
 | Right click on a row | Open the folder, show in the explorer, copy the path |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Disk Usage tab (also its cross) |
 
-**Deep Search tab** (the entries below a folder found by name, extensions,
-type, size, last change and content, with no limit, searched in the
+**Deep Search tab** (the entries below a folder found by name, extensions
+or category (images, videos...), type, size, last change and content, with no limit, searched in the
 background; opened by `Shift+F`, the context menu of the explorer or the
 **Search** button of a folder's preview; the navigation keys of the global
 mode move in the list)

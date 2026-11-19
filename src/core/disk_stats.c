@@ -3,71 +3,22 @@
 #include "core/file_types.h"
 #include "core/i18n.h"
 
+/* A kind is a family of file_types.h, in the same order */
+G_STATIC_ASSERT((gint)DISK_KIND_DOCUMENTS == (gint)FILE_FAMILY_DOCUMENTS);
+G_STATIC_ASSERT((gint)DISK_KIND_PROGRAMS == (gint)FILE_FAMILY_PROGRAMS);
+G_STATIC_ASSERT((gint)DISK_KIND_OTHER == (gint)FILE_FAMILY_OTHER);
+G_STATIC_ASSERT((gint)DISK_KIND_COUNT == (gint)FILE_FAMILY_COUNT);
+
 DiskKind disk_kind_of_extension(const gchar* ext) {
     if (ext == NULL || ext[0] == '\0') return DISK_KIND_OTHER;
     gchar* name = g_strconcat("x.", ext, NULL);
     FileKind kind = file_kind_from_name(name);
     g_free(name);
-    switch (kind) {
-    case FILE_KIND_MARKDOWN:
-    case FILE_KIND_HTML:
-    case FILE_KIND_ORG:
-    case FILE_KIND_PDF:
-    case FILE_KIND_DOCUMENT:
-    case FILE_KIND_SPREADSHEET:
-    case FILE_KIND_PRESENTATION:
-    case FILE_KIND_EBOOK:
-    case FILE_KIND_NOTEBOOK:
-    case FILE_KIND_RTF:
-    case FILE_KIND_OLE:
-    case FILE_KIND_MAIL:
-        return DISK_KIND_DOCUMENTS;
-    case FILE_KIND_IMAGE:
-        return DISK_KIND_IMAGES;
-    case FILE_KIND_VIDEO:
-        return DISK_KIND_VIDEOS;
-    case FILE_KIND_AUDIO:
-        return DISK_KIND_AUDIO;
-    case FILE_KIND_ARCHIVE:
-        return DISK_KIND_ARCHIVES;
-    case FILE_KIND_EXECUTABLE:
-    case FILE_KIND_CLASS:
-    case FILE_KIND_WASM:
-    case FILE_KIND_PYC:
-        return DISK_KIND_PROGRAMS;
-    case FILE_KIND_TEXT:
-    case FILE_KIND_CSV:
-    case FILE_KIND_JSON:
-    case FILE_KIND_XML:
-    case FILE_KIND_TOML:
-    case FILE_KIND_YAML:
-    case FILE_KIND_DIFF:
-    case FILE_KIND_LOG:
-    case FILE_KIND_DESKTOP:
-    case FILE_KIND_MANPAGE:
-    case FILE_KIND_TRANSLATION:
-    case FILE_KIND_CALENDAR:
-    case FILE_KIND_CONTACT:
-    case FILE_KIND_CERTIFICATE:
-        return DISK_KIND_CODE;
-    default:
-        return DISK_KIND_OTHER;
-    }
+    return (DiskKind)file_family_of_kind(kind);
 }
 
 const gchar* disk_kind_name(DiskKind kind) {
-    switch (kind) {
-    case DISK_KIND_DOCUMENTS: return _("Documents");
-    case DISK_KIND_IMAGES: return _("Images");
-    case DISK_KIND_VIDEOS: return _("Videos");
-    case DISK_KIND_AUDIO: return _("Audio");
-    case DISK_KIND_ARCHIVES: return _("Archives");
-    case DISK_KIND_CODE: return _("Text and code");
-    case DISK_KIND_PROGRAMS: return _("Programs");
-    case DISK_KIND_OTHER:
-    case DISK_KIND_COUNT: break;
-    }
-    return _("Other");
+    return file_family_name((FileFamily)kind);
 }
 
 void disk_stats_kinds(const DiskStats* stats, DiskTally out[DISK_KIND_COUNT]) {

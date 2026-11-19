@@ -33,6 +33,7 @@ typedef struct {
     GtkWidget* folder;
     GtkWidget* name;
     GtkWidget* extensions;
+    GtkWidget* family;    /* GtkDropDown: any, then the FileFamily values */
     GtkWidget* content;
     GtkWidget* options[OPT_COUNT];
     GtkWidget* kind;      /* GtkDropDown: DeepKind */
@@ -264,6 +265,7 @@ static gboolean read_form(DeepSearchTab* dt, DeepQuery* q) {
     deep_query_init(q);
     q->name = g_strdup(field_text(dt->name));
     q->extensions = g_strdup(field_text(dt->extensions));
+    q->family = (gint)gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->family)) - 1; /* 0: any */
     q->exclude = g_strdup(field_text(dt->exclude));
     if (field_text(dt->content)[0] != '\0') q->content = g_strdup(field_text(dt->content));
     q->content_opts.match_case = option_on(dt, OPT_CASE);
@@ -565,8 +567,8 @@ static GtkWidget* option_new(DeepSearchTab* dt, gint opt, const gchar* label, co
     return b;
 }
 
-static GtkWidget* between_label(void) {
-    GtkWidget* l = gtk_label_new(_("to"));
+static GtkWidget* between_label(const gchar* text) {
+    GtkWidget* l = gtk_label_new(text);
     gtk_widget_add_css_class(l, "ds-field");
     return l;
 }
@@ -596,6 +598,16 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     box = form_row(g, 1, 2, _("Extensions"), 1);
     dt->extensions = field_new(dt, _("c, h, md"), _("Extensions separated by commas, any case"), 0);
     gtk_box_append(GTK_BOX(box), dt->extensions);
+    /* TRANSLATORS: between the extensions and the category of file */
+    gtk_box_append(GTK_BOX(box), between_label(_("or")));
+    const gchar* families[FILE_FAMILY_OTHER + 2];
+    families[0] = _("Any category");
+    for (gint f = 0; f < FILE_FAMILY_OTHER; f++) families[f + 1] = file_family_name((FileFamily)f);
+    families[FILE_FAMILY_OTHER + 1] = NULL;
+    dt->family = gtk_drop_down_new_from_strings(families);
+    gtk_widget_set_tooltip_text(dt->family, _("A category of files, from their extension; with extensions too, either "
+                                              "one is enough"));
+    gtk_box_append(GTK_BOX(box), dt->family);
 
     box = form_row(g, 2, 0, _("Contains"), 1);
     dt->content = field_new(dt, _("Text in the file"), _("A text the file holds (files only; binary files are skipped)"),
@@ -619,7 +631,7 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     box = form_row(g, 3, 0, _("Size"), 1);
     dt->min_size = field_new(dt, _("any"), size_tip, 8);
     gtk_box_append(GTK_BOX(box), dt->min_size);
-    gtk_box_append(GTK_BOX(box), between_label());
+    gtk_box_append(GTK_BOX(box), between_label(_("to")));
     dt->max_size = field_new(dt, _("any"), size_tip, 8);
     gtk_box_append(GTK_BOX(box), dt->max_size);
     const gchar* date_tip = _("A day (2026-11-01, 2026-11-01 14:30, today, yesterday) or a time ago (30min, 3h, 7d, 2w, "
@@ -627,7 +639,7 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     box = form_row(g, 3, 2, _("Last change"), 1);
     dt->after = field_new(dt, _("any"), date_tip, 10);
     gtk_box_append(GTK_BOX(box), dt->after);
-    gtk_box_append(GTK_BOX(box), between_label());
+    gtk_box_append(GTK_BOX(box), between_label(_("to")));
     dt->before = field_new(dt, _("any"), date_tip, 10);
     gtk_box_append(GTK_BOX(box), dt->before);
 

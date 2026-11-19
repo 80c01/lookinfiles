@@ -10353,3 +10353,17 @@ msgstr "Fermer la recherche approfondie"
 
 msgid "Fill in the criteria, then press Enter"
 msgstr "Remplissez les critères, puis appuyez sur Enter"
+
+#. TRANSLATORS: between the extensions and the category of file
+msgid "or"
+msgstr "ou"
+
+msgid "Any category"
+msgstr "Toute catégorie"
+
+msgid ""
+"A category of files, from their extension; with extensions too, either one "
+"is enough"
+msgstr ""
+"Une catégorie de fichiers, d’après leur extension ; avec des extensions en "
+"plus, l’une ou l’autre suffit"

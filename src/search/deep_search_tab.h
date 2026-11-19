@@ -2,8 +2,8 @@
 #define DEEP_SEARCH_TAB_H
 
 /* The Deep Search tab: the entries below a folder found by name,
- * extensions, kind, size, date of last change and content, with no limit
- * (deep_search.h), in a page of the preview notebook (after the result
+ * extensions or category (images, videos...), kind, size, date of last
+ * change and content, with no limit (deep_search.h), in a page of the preview notebook (after the result
  * pages). Opened on a folder from the explorer (Shift+F, the context menu)
  * or the button of the folder preview (dir_preview.c). The criteria are a
  * form over the results (deep_search_list.h); Enter in a field starts the

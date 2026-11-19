@@ -129,6 +129,32 @@ static void test_extensions(void) {
     deep_query_clear(&q);
 }
 
+static void test_family(void) {
+    DeepQuery q;
+    deep_query_init(&q);
+    g_assert_cmpint(q.family, ==, -1);
+    q.family = FILE_FAMILY_IMAGES;
+    g_assert_true(match(&q, "IMG_0042.JPG", FALSE, 0, 0));
+    g_assert_true(match(&q, "drawing.svg", FALSE, 0, 0));
+    g_assert_false(match(&q, "clip.mp4", FALSE, 0, 0));
+    g_assert_false(match(&q, "pictures", TRUE, 0, 0)); /* folders have none */
+    /* With the name: both */
+    q.name = g_strdup("holiday");
+    g_assert_true(match(&q, "holiday-1.png", FALSE, 0, 0));
+    g_assert_false(match(&q, "holiday.mp4", FALSE, 0, 0));
+    g_assert_false(match(&q, "work.png", FALSE, 0, 0));
+    g_clear_pointer(&q.name, g_free);
+    /* With extensions: either one */
+    q.extensions = g_strdup("xcf");
+    g_assert_true(match(&q, "a.png", FALSE, 0, 0));
+    g_assert_true(match(&q, "a.xcf", FALSE, 0, 0));
+    g_assert_false(match(&q, "a.txt", FALSE, 0, 0));
+    deep_query_clear(&q);
+    q.family = FILE_FAMILY_VIDEOS;
+    g_assert_true(match(&q, "clip.mkv", FALSE, 0, 0));
+    deep_query_clear(&q);
+}
+
 static void test_kind_size_date(void) {
     DeepQuery q;
     deep_query_init(&q);
@@ -219,6 +245,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/deep_query/date", test_date);
     g_test_add_func("/deep_query/name", test_name);
     g_test_add_func("/deep_query/extensions", test_extensions);
+    g_test_add_func("/deep_query/family", test_family);
     g_test_add_func("/deep_query/kind_size_date", test_kind_size_date);
     g_test_add_func("/deep_query/exclude", test_exclude);
     g_test_add_func("/deep_query/check", test_check);

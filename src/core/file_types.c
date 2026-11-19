@@ -873,3 +873,71 @@ FileKind file_kind_of_path(const gchar* path, const gchar* name) {
     return file_kind_detect(name, head, len);
 }
 
+
+FileFamily file_family_of_kind(FileKind kind) {
+    switch (kind) {
+    case FILE_KIND_MARKDOWN:
+    case FILE_KIND_HTML:
+    case FILE_KIND_ORG:
+    case FILE_KIND_PDF:
+    case FILE_KIND_DOCUMENT:
+    case FILE_KIND_SPREADSHEET:
+    case FILE_KIND_PRESENTATION:
+    case FILE_KIND_EBOOK:
+    case FILE_KIND_NOTEBOOK:
+    case FILE_KIND_RTF:
+    case FILE_KIND_OLE:
+    case FILE_KIND_MAIL:
+        return FILE_FAMILY_DOCUMENTS;
+    case FILE_KIND_IMAGE:
+        return FILE_FAMILY_IMAGES;
+    case FILE_KIND_VIDEO:
+        return FILE_FAMILY_VIDEOS;
+    case FILE_KIND_AUDIO:
+        return FILE_FAMILY_AUDIO;
+    case FILE_KIND_ARCHIVE:
+        return FILE_FAMILY_ARCHIVES;
+    case FILE_KIND_EXECUTABLE:
+    case FILE_KIND_CLASS:
+    case FILE_KIND_WASM:
+    case FILE_KIND_PYC:
+        return FILE_FAMILY_PROGRAMS;
+    case FILE_KIND_TEXT:
+    case FILE_KIND_CSV:
+    case FILE_KIND_JSON:
+    case FILE_KIND_XML:
+    case FILE_KIND_TOML:
+    case FILE_KIND_YAML:
+    case FILE_KIND_DIFF:
+    case FILE_KIND_LOG:
+    case FILE_KIND_DESKTOP:
+    case FILE_KIND_MANPAGE:
+    case FILE_KIND_TRANSLATION:
+    case FILE_KIND_CALENDAR:
+    case FILE_KIND_CONTACT:
+    case FILE_KIND_CERTIFICATE:
+        return FILE_FAMILY_CODE;
+    default:
+        return FILE_FAMILY_OTHER;
+    }
+}
+
+FileFamily file_family_from_name(const gchar* name) {
+    if (name == NULL || file_extension(name)[0] == '\0') return FILE_FAMILY_OTHER;
+    return file_family_of_kind(file_kind_from_name(name));
+}
+
+const gchar* file_family_name(FileFamily family) {
+    switch (family) {
+    case FILE_FAMILY_DOCUMENTS: return _("Documents");
+    case FILE_FAMILY_IMAGES: return _("Images");
+    case FILE_FAMILY_VIDEOS: return _("Videos");
+    case FILE_FAMILY_AUDIO: return _("Audio");
+    case FILE_FAMILY_ARCHIVES: return _("Archives");
+    case FILE_FAMILY_CODE: return _("Text and code");
+    case FILE_FAMILY_PROGRAMS: return _("Programs");
+    case FILE_FAMILY_OTHER:
+    case FILE_FAMILY_COUNT: break;
+    }
+    return _("Other");
+}

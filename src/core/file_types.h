@@ -108,5 +108,24 @@ gboolean file_content_is_text(const guchar* head, gsize len);
  * g_dpgettext2(NULL, "file kind", label) */
 const gchar* file_kind_label(FileKind kind);
 
+/* Broad families of files, for people (the Disk Usage statistics, the
+ * category of a deep search) */
+typedef enum {
+    FILE_FAMILY_DOCUMENTS = 0,
+    FILE_FAMILY_IMAGES,
+    FILE_FAMILY_VIDEOS,
+    FILE_FAMILY_AUDIO,
+    FILE_FAMILY_ARCHIVES,
+    FILE_FAMILY_CODE,     /* text, source code, data formats */
+    FILE_FAMILY_PROGRAMS, /* executables, libraries, bytecode */
+    FILE_FAMILY_OTHER,    /* fonts, databases, unknown or binary */
+    FILE_FAMILY_COUNT
+} FileFamily;
+
+FileFamily file_family_of_kind(FileKind kind);
+/* Family of a file from its name only (no I/O); no extension: other */
+FileFamily file_family_from_name(const gchar* name);
+/* Translated plural name: "Documents", "Images"... */
+const gchar* file_family_name(FileFamily family);
 
 #endif /* FILE_TYPES_H */

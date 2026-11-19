@@ -54,7 +54,10 @@ Layers, from bottom to top
   `file_kind_detect()` on the first `FILE_SNIFF_BYTES`: magic numbers, text vs
   binary; `file_kind_of_path()`). The preview
   detects the kind in its worker thread (`preview_state_kind()`): decide on
-  the displayed file with it, not with its name.
+  the displayed file with it, not with its name. The kinds are grouped in
+  broad families for people (`FileFamily`: documents, images, videos,
+  audio, archives, text and code, programs, other; `file_family_from_name()`),
+  shared by the Disk Usage statistics and the deep search.
 - `text_encoding` — text encodings of previewed files: byte order marks
   (UTF-8, UTF-16, UTF-32), UTF-16 without a mark, UTF-8, and Windows-1252
   for legacy 8-bit text (`text_encoding_detect()`), and the text converted
@@ -439,7 +442,7 @@ Layers, from bottom to top
   (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
   lines, the matches counted, the first one kept (the deep search).
 - `deep_query` — the criteria of a deep search (`DeepQuery`: name or
-  pattern, extensions, kind, sizes, dates of last change, content, folders
+  pattern, extensions or a `FileFamily`, kind, sizes, dates of last change, content, folders
   excluded with `path_globs`, hidden entries, depth, one filesystem), the
   sizes and dates typed by the user (`500k`, `7d`, `2026-11-01`, `today`),
   and `DeepFilter`, which tests an entry on its name and `lstat()` values.
