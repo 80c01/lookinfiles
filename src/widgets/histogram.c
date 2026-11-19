@@ -7,6 +7,8 @@
 #define LEGEND_H 18.0  /* strip of the legend, at the top */
 #define LABEL_H 16.0   /* strip of the labels, at the bottom */
 #define BAR_MAX_W 16.0 /* widest bar */
+#define MIN_HEIGHT 48  /* a chart squeezed */
+#define NATURAL_HEIGHT 120
 #define SWATCH 9.0     /* square of a colour in the legend */
 #define COUNT_ROLE PAL_ICON_BLUE
 #define SIZE_ROLE PAL_ICON_ORANGE
@@ -229,6 +231,25 @@ static void on_focus_changed(GtkEventControllerFocus* focus, gpointer data) {
     gtk_widget_queue_draw(((Histogram*)data)->area);
 }
 
+/* Its height: squeezed to MIN_HEIGHT, NATURAL_HEIGHT when there is room */
+static void chart_measure(GtkWidget* widget, GtkOrientation orientation, int for_size, int* minimum, int* natural,
+                          int* minimum_baseline, int* natural_baseline) {
+    (void)widget;
+    (void)for_size;
+    gboolean vertical = orientation == GTK_ORIENTATION_VERTICAL;
+    *minimum = vertical ? MIN_HEIGHT : 0;
+    *natural = vertical ? NATURAL_HEIGHT : 0;
+    *minimum_baseline = -1;
+    *natural_baseline = -1;
+}
+
+static void chart_allocate(GtkWidget* widget, int width, int height, int baseline) {
+    (void)widget; /* no child */
+    (void)width;
+    (void)height;
+    (void)baseline;
+}
+
 static void histogram_free(gpointer data) {
     Histogram* hg = data;
     g_array_unref(hg->bins);
@@ -244,7 +265,7 @@ GtkWidget* histogram_new(void) {
     hg->area = gtk_drawing_area_new();
     gtk_widget_add_css_class(hg->area, "histogram");
     gtk_widget_set_hexpand(hg->area, TRUE);
-    gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(hg->area), 120);
+    gtk_widget_set_layout_manager(hg->area, gtk_custom_layout_new(NULL, chart_measure, chart_allocate));
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(hg->area), on_draw, hg, NULL);
     gtk_widget_set_has_tooltip(hg->area, TRUE);
     g_signal_connect(hg->area, "query-tooltip", G_CALLBACK(on_query_tooltip), hg);
@@ -305,9 +326,30 @@ void histogram_set_selected(GtkWidget* chart, gint bin) {
 /* The pair */
 
 #define PAIR_SPACING 16
+#define PAIR_KEY "lookin-histogram-pair"
+
+typedef struct {
+    gint side;  /* last layout: 1 side by side, 0 one over the other, -1 none yet */
+    guint idle; /* the handler to call */
+    void (*changed)(gpointer data, gboolean side_by_side);
+    gpointer data;
+} Pair;
 
 static gboolean pair_side_by_side(int width) {
     return width < 0 || width >= 2 * HISTOGRAM_PAIR_MIN_WIDTH + PAIR_SPACING;
+}
+
+static gboolean pair_changed_idle(gpointer data) {
+    Pair* p = data;
+    p->idle = 0;
+    if (p->changed != NULL) p->changed(p->data, p->side == 1);
+    return G_SOURCE_REMOVE;
+}
+
+static void pair_free(gpointer data) {
+    Pair* p = data;
+    if (p->idle != 0) g_source_remove(p->idle);
+    g_free(p);
 }
 
 static GtkSizeRequestMode pair_request_mode(GtkWidget* widget) {
@@ -347,6 +389,26 @@ static void pair_allocate(GtkWidget* widget, int width, int height, int baseline
     (void)baseline;
     GtkWidget* kids[2] = { gtk_widget_get_first_child(widget), gtk_widget_get_last_child(widget) };
     gboolean side = pair_side_by_side(width);
+    if (!side) {
+        /* Not tall enough for one over the other: side by side, squeezed,
+         * rather than cut */
+        int need = PAIR_SPACING;
+        for (int i = 0; i < 2; i++) {
+            int min = 0;
+            if (kids[i] != NULL && gtk_widget_should_layout(kids[i])) {
+                gtk_widget_measure(kids[i], GTK_ORIENTATION_VERTICAL, width, &min, NULL, NULL, NULL);
+            }
+            need += min;
+        }
+        side = height < need;
+    }
+    Pair* p = g_object_get_data(G_OBJECT(widget), PAIR_KEY);
+    if (p != NULL && p->side != (gint)side) {
+        gboolean first = p->side < 0;
+        p->side = side;
+        /* Told once the layout is over (the handler may move a pane) */
+        if (!first && p->changed != NULL && p->idle == 0) p->idle = g_idle_add(pair_changed_idle, p);
+    }
     int w = side ? MAX((width - PAIR_SPACING) / 2, 0) : width;
     int h = side ? height : MAX((height - PAIR_SPACING) / 2, 0);
     for (int i = 0; i < 2; i++) {
@@ -370,5 +432,16 @@ GtkWidget* histogram_pair_new(GtkWidget* first, GtkWidget* second) {
     gtk_widget_set_hexpand(pair, TRUE);
     gtk_box_append(GTK_BOX(pair), first);
     gtk_box_append(GTK_BOX(pair), second);
+    Pair* p = g_new0(Pair, 1);
+    p->side = -1;
+    g_object_set_data_full(G_OBJECT(pair), PAIR_KEY, p, pair_free);
     return pair;
+}
+
+void histogram_pair_set_changed(GtkWidget* pair, void (*changed)(gpointer data, gboolean side_by_side),
+                                gpointer data) {
+    Pair* p = pair != NULL ? g_object_get_data(G_OBJECT(pair), PAIR_KEY) : NULL;
+    if (p == NULL) return;
+    p->changed = changed;
+    p->data = data;
 }

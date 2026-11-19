@@ -8,7 +8,8 @@
  * and of their room (histogram.h), filled while the search runs. A click
  * on a bar (or Enter on it) shows only its files in the list, a second
  * one shows them all again, as does the Show All button; a size and a
- * date chosen together both apply. Folders are not counted. */
+ * date chosen together both apply. Folders are not counted. The two charts
+ * are side by side in a wide panel, else one over the other. */
 #include "search/deep_search.h"
 #include "search/deep_search_list.h"
 
@@ -25,5 +26,11 @@ void deep_search_charts_add(GtkWidget* charts, const GPtrArray* hits);
 
 /* Redraw with what was counted since the last time */
 void deep_search_charts_refresh(GtkWidget* charts);
+
+/* changed(data, side_by_side): the two charts went side by side or one
+ * over the other (the panel width crossed the threshold), so that what holds
+ * them may give them their height again */
+void deep_search_charts_on_layout(GtkWidget* charts, void (*changed)(gpointer data, gboolean side_by_side),
+                                  gpointer data);
 
 #endif /* DEEP_SEARCH_CHARTS_H */

@@ -177,6 +177,7 @@ static void show_sizes(DuStats* ds, const DiskStats* st) {
     }
     GtkWidget* chart = histogram_new();
     gtk_widget_add_css_class(chart, "du-histogram");
+    gtk_widget_set_size_request(chart, -1, 120); /* a scrolled window gives the least height */
     histogram_set(chart, bins, DISK_SIZE_COUNT);
     for (gint g = 0; g < DISK_SIZE_COUNT; g++) g_free(tips[g]);
     gtk_box_append(GTK_BOX(ds->box), chart);

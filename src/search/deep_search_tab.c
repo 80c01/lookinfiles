@@ -55,6 +55,8 @@ typedef struct {
     GtkWidget* current;   /* folder being read */
     GtkWidget* list;      /* deep_search_list */
     GtkWidget* charts;    /* deep_search_charts, under the list */
+    GtkWidget* split;     /* GtkPaned of the list and the charts */
+    gboolean split_set;   /* its first position given */
     gchar* status_text;   /* the status without the rows listed */
     gboolean ranged;      /* the charts limit the rows listed */
 
@@ -407,6 +409,33 @@ static void on_charts_changed(gpointer data, const DeepSearchRange* range) {
     dt->ranged = range != NULL;
     deep_search_list_set_range(dt->list, range);
     set_status(dt, NULL);
+}
+
+/* The charts at their natural height (twice as much one over the other) */
+static void charts_natural_height(DeepSearchTab* dt) {
+    gint width = gtk_widget_get_width(dt->split), natural = 0, max = 0;
+    if (width <= 0) return;
+    gtk_widget_measure(dt->charts, GTK_ORIENTATION_VERTICAL, width, NULL, &natural, NULL, NULL);
+    g_object_get(dt->split, "max-position", &max, NULL);
+    gtk_paned_set_position(GTK_PANED(dt->split), MAX(max - natural, 0));
+}
+
+/* The charts went side by side or one over the other: their height again,
+ * whatever the pane was dragged to */
+static void on_charts_layout(gpointer data, gboolean side_by_side) {
+    (void)side_by_side;
+    charts_natural_height(data);
+}
+
+/* The first time the list and the charts have a height */
+static void on_split_sized(GObject* split, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    DeepSearchTab* dt = data;
+    gint max = 0;
+    g_object_get(split, "max-position", &max, NULL);
+    if (dt->split_set || max < 100) return;
+    dt->split_set = TRUE;
+    charts_natural_height(dt);
 }
 
 /* Buttons and keys */
@@ -938,7 +967,9 @@ static DeepSearchTab* ensure_page(AppData* app) {
     dt->charts = deep_search_charts_new(on_charts_changed, dt);
     /* The results over their charts, which keep their height (dragged to
      * nothing when not wanted) */
+    deep_search_charts_on_layout(dt->charts, on_charts_layout, dt);
     GtkWidget* split = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
+    dt->split = split;
     paned_use_thin_handle(split);
     gtk_widget_set_vexpand(split, TRUE);
     gtk_paned_set_start_child(GTK_PANED(split), dt->list);
@@ -947,6 +978,7 @@ static DeepSearchTab* ensure_page(AppData* app) {
     gtk_paned_set_end_child(GTK_PANED(split), dt->charts);
     gtk_paned_set_resize_end_child(GTK_PANED(split), FALSE);
     gtk_paned_set_shrink_end_child(GTK_PANED(split), TRUE);
+    g_signal_connect(split, "notify::max-position", G_CALLBACK(on_split_sized), dt);
     gtk_box_append(GTK_BOX(page), split);
 
     GtkEventController* keys = gtk_event_controller_key_new();

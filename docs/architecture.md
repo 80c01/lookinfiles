@@ -608,8 +608,10 @@ Layers, from bottom to top
   its largest group, a legend, a label under each group, the group under
   the pointer lit with its tooltip; with an activate handler, a click or
   `Enter` on a group (`Left` / `Right` move the focus) and a group chosen
-  outlined; `histogram_pair_new()` lays two charts side by side when each
-  gets 280 px, else one over the other (a `GtkCustomLayout`). Used by the
+  outlined; a chart is 120 px high when there is room, 48 at least.
+  `histogram_pair_new()` lays two charts side by side when each gets
+  280 px, else one over the other when the height holds them (a
+  `GtkCustomLayout`), and tells when it switches. Used by the
   Disk Usage statistics and views, and Deep Search.
 - `add_button` — the "+" add button drawn with the palette (rounded box,
   accent border on hover): `add_button_draw()` for the workspace switcher,
@@ -975,7 +977,9 @@ Layers, from bottom to top
   chosen. `deep_search_charts` — under the list (a `GtkPaned`), the files
   found by size (`disk_size_of()`) and by day of last change (`date_bins`)
   in two `histogram`s, counted as the results come; a bar clicked sets the
-  range of the list.
+  range of the list. The pane gives the charts their natural height at
+  first and again when they switch layout (one over the other takes twice
+  as much), whatever it was dragged to.
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and

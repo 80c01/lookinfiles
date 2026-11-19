@@ -32,9 +32,16 @@ void histogram_set_activate(GtkWidget* chart, void (*activate)(gpointer data, gu
 void histogram_set_selected(GtkWidget* chart, gint bin);
 
 /* Two charts (or boxes holding one) side by side when each can be at least
- * HISTOGRAM_PAIR_MIN_WIDTH wide, else one over the other; the width (side
- * by side) or the height (one over the other) shared in halves */
+ * HISTOGRAM_PAIR_MIN_WIDTH wide, else one over the other (when the height
+ * holds them both, else still side by side, squeezed); the width (side by
+ * side) or the height (one over the other) shared in halves. A chart is
+ * 120 px high when there is room, 48 at least. */
 #define HISTOGRAM_PAIR_MIN_WIDTH 280
 GtkWidget* histogram_pair_new(GtkWidget* first, GtkWidget* second);
+
+/* changed(data, side_by_side) is called when the pair goes from one layout
+ * to the other (after the layout, so that it may resize what holds it) */
+void histogram_pair_set_changed(GtkWidget* pair, void (*changed)(gpointer data, gboolean side_by_side),
+                                gpointer data);
 
 #endif /* HISTOGRAM_H */

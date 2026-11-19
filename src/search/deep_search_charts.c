@@ -22,6 +22,7 @@ typedef struct {
 
 typedef struct {
     GtkWidget* box;
+    GtkWidget* pair;  /* the two charts, side by side or one over the other */
     GtkWidget* sizes_chart;
     GtkWidget* dates_chart;
     GtkWidget* show_all;
@@ -185,6 +186,7 @@ static GtkWidget* column(const gchar* title, GtkWidget* chart) {
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_add_css_class(label, "ds-chart-title");
     gtk_box_append(GTK_BOX(box), label);
+    gtk_widget_set_vexpand(chart, TRUE);
     gtk_box_append(GTK_BOX(box), chart);
     gtk_widget_set_hexpand(box, TRUE);
     return box;
@@ -228,7 +230,11 @@ GtkWidget* deep_search_charts_new(void (*changed)(gpointer data, const DeepSearc
     histogram_set_activate(c->dates_chart, on_date_bar, c);
     GtkWidget* dates = column(_("By Last Change"), c->dates_chart);
     /* Side by side in a wide panel, else one over the other */
-    gtk_box_append(GTK_BOX(c->box), histogram_pair_new(sizes, dates));
+    c->pair = histogram_pair_new(sizes, dates);
+    gtk_widget_set_vexpand(c->pair, TRUE); /* the height the pane gives */
+    gtk_widget_set_vexpand(sizes, TRUE);
+    gtk_widget_set_vexpand(dates, TRUE);
+    gtk_box_append(GTK_BOX(c->box), c->pair);
     g_object_set_data_full(G_OBJECT(c->box), CHARTS_KEY, c, charts_free);
     return c->box;
 }
@@ -283,4 +289,10 @@ void deep_search_charts_refresh(GtkWidget* charts) {
     c->dirty = FALSE;
     show_sizes(c);
     show_dates(c);
+}
+
+void deep_search_charts_on_layout(GtkWidget* charts, void (*changed)(gpointer data, gboolean side_by_side),
+                                  gpointer data) {
+    Charts* c = of_charts(charts);
+    if (c != NULL) histogram_pair_set_changed(c->pair, changed, data);
 }
