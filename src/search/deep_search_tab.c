@@ -70,7 +70,6 @@ static void ensure_css(void) {
                   ".deep-search .ds-error { color: @error; padding: 0 12px 4px 12px; }"
                   ".deep-search .ds-status { color: @fg_text; padding: 2px 12px 0 12px; }"
                   ".deep-search .ds-current { color: @fg_subtle; font-size: @size_small; padding: 0 12px 6px 12px; }"
-                  ".deep-search .ds-muted { color: @fg_subtle; }"
                   ".deep-search .ds-off { opacity: 0.45; }"
                   ".deep-search .ds-num { font-feature-settings: \"tnum\"; }"
                   ".deep-search .ds-code { font-family: @font_code; }");

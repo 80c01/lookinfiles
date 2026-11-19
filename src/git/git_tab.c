@@ -468,11 +468,12 @@ void git_tab_init(AppData* app) {
     GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(g->selection));
     focus_route_attach_list(app, tree_view, g->selection);
     gtk_widget_set_name(tree_view, "git-tree");
+    gtk_widget_add_css_class(tree_view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
     git_add_column(tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
     git_add_column(tree_view, _("Message"), G_STRUCT_OFFSET(GitCommitInfo, subject), "git-subject", TRUE);
     git_add_column(tree_view, _("Author"), G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
-    git_add_column(tree_view, _("Date"), G_STRUCT_OFFSET(GitCommitInfo, date), "git-date", FALSE);
+    git_add_column(tree_view, _("Date"), G_STRUCT_OFFSET(GitCommitInfo, date), "cell-muted", FALSE);
 
     GtkWidget* tree_scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(tree_scroll, TRUE);

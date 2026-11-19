@@ -169,9 +169,9 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
         }
         gtk_widget_set_tooltip_text(label, r->path);
         if (r->kind == ROW_OTHER || r->unreadable) {
-            gtk_widget_add_css_class(label, "du-muted");
+            gtk_widget_add_css_class(label, "cell-muted");
         } else {
-            gtk_widget_remove_css_class(label, "du-muted");
+            gtk_widget_remove_css_class(label, "cell-muted");
         }
     } else if (col == COL_SHARE) {
         GtkWidget* bar = gtk_widget_get_first_child(child);
@@ -414,6 +414,7 @@ GtkWidget* disk_usage_list_new(AppData* app, const DiskUsageListHandlers* handle
 
     dl->view = gtk_column_view_new(NULL);
     gtk_widget_set_name(dl->view, "disk-usage-list");
+    gtk_widget_add_css_class(dl->view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(dl->view), FALSE);
     add_column(dl->view, _("Name"), COL_NAME, TRUE);
     add_column(dl->view, _("Share"), COL_SHARE, TRUE);

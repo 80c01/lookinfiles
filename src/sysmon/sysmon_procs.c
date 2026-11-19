@@ -213,6 +213,7 @@ GtkWidget* sysmon_procs_new(AppData* app) {
 
     ps->view = gtk_column_view_new(NULL);
     gtk_widget_set_name(ps->view, "sysmon-procs");
+    gtk_widget_add_css_class(ps->view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(ps->view), FALSE);
     add_column(ps->view, _("Process"), COL_NAME, TRUE);
     add_column(ps->view, _("PID"), COL_PID, FALSE);

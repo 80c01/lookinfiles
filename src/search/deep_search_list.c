@@ -140,7 +140,7 @@ static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer da
         gtk_label_set_xalign(GTK_LABEL(label), right ? 1.0f : 0.0f);
         gtk_label_set_ellipsize(GTK_LABEL(label), col == COL_LINE ? PANGO_ELLIPSIZE_END : PANGO_ELLIPSIZE_MIDDLE);
         if (right || col == COL_DATE) gtk_widget_add_css_class(label, "ds-num");
-        if (col == COL_FOLDER) gtk_widget_add_css_class(label, "ds-muted");
+        if (col == COL_FOLDER) gtk_widget_add_css_class(label, "cell-muted");
         if (col == COL_LINE) gtk_widget_add_css_class(label, "ds-code");
     }
     g_object_set_data(G_OBJECT(child), ITEM_KEY, item);
@@ -366,6 +366,7 @@ GtkWidget* deep_search_list_new(AppData* app, const DeepSearchListHandlers* hand
 
     dl->view = gtk_column_view_new(NULL);
     gtk_widget_set_name(dl->view, "deep-search-list");
+    gtk_widget_add_css_class(dl->view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(dl->view), FALSE);
     add_column(dl->view, _("Name"), COL_NAME, TRUE);
     add_column(dl->view, _("Folder"), COL_FOLDER, TRUE);
