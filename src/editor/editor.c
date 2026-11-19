@@ -955,11 +955,44 @@ void editor_set_tab_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     editor_modes_apply_mode(app, tab, mode);
 }
 
+/* The movable page shown in nb, NULL if none (the preview itself) */
+static GtkWidget* movable_current_page(GtkNotebook* nb) {
+    gint p = nb != NULL ? gtk_notebook_get_current_page(nb) : -1;
+    GtkWidget* child = p >= 0 ? gtk_notebook_get_nth_page(nb, p) : NULL;
+    return child != NULL && editor_page_is_movable(child) ? child : NULL;
+}
+
+/* The tab that a dock / undock (dedicated: the one to come) must keep in
+ * front: the one shown in the notebook that has the focus, else the one
+ * shown in the preview notebook (dock) or the editor tab used last */
+static GtkWidget* dock_page_to_keep(AppData* app, gboolean dedicated) {
+    FocusInfo info;
+    focus_route_get(app, &info);
+    GtkWidget* nb = info.notebook != NULL ? GTK_WIDGET(info.notebook) : NULL;
+    gboolean from_panel = nb != NULL && app->editor_box != NULL && gtk_widget_is_ancestor(nb, app->editor_box);
+    if (nb != NULL && (dedicated ? nb == app->notebook : from_panel)) {
+        GtkWidget* page = movable_current_page(GTK_NOTEBOOK(nb));
+        if (page != NULL) return page;
+    }
+    if (dedicated) {
+        GtkWidget* page = movable_current_page(GTK_NOTEBOOK(app->notebook));
+        if (page != NULL) return page;
+    }
+    EditorTab* tab = editor_current_tab(app);
+    return tab != NULL ? tab->container : NULL;
+}
+
 void editor_set_dedicated(AppData* app, gboolean dedicated) {
-    if (app == NULL) return;
+    if (app == NULL || app->notebook == NULL) return;
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     /* Each move makes the moved tab current: keep the current one instead */
-    EditorTab* keep = editor_current_tab(app);
+    GtkWidget* keep_page = dock_page_to_keep(app, dedicated);
+    if (keep_page != NULL) g_object_ref(keep_page);
+    EditorTab* keep = NULL;
+    for (GList* l = app->editors; l != NULL && keep_page != NULL; l = l->next) {
+        EditorTab* t = (EditorTab*)l->data;
+        if (t != NULL && t->container == keep_page) keep = t;
+    }
 
     if (dedicated) {
         GList* to_move = NULL;
@@ -989,22 +1022,28 @@ void editor_set_dedicated(AppData* app, gboolean dedicated) {
     /* Canvas, terminal and video tabs go with them */
     editor_move_other_pages(app, dedicated);
 
-    if (keep != NULL && keep->nb != NULL) {
-        GtkNotebook* nb = GTK_NOTEBOOK(keep->nb);
-        gint page = gtk_notebook_page_num(nb, keep->container);
-        if (page >= 0) gtk_notebook_set_current_page(nb, page);
-        app->last_focused_editor = keep;
+    GtkNotebook* keep_nb = keep_page != NULL ? editor_notebook_of_page(keep_page) : NULL;
+    if (keep_nb != NULL) {
+        gint page = gtk_notebook_page_num(keep_nb, keep_page);
+        if (page >= 0) gtk_notebook_set_current_page(keep_nb, page);
     }
+    if (keep != NULL) app->last_focused_editor = keep;
 
     editor_update_panel_visibilities(app);
     app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     minimap_update_visibility(app);
 
-    EditorTab* cur = editor_current_tab(app);
-    if (cur != NULL && cur->view != NULL) {
-        gtk_widget_grab_focus(cur->view);
-        minimap_view_update_visibility(cur->minimap);
+    if (keep_nb != NULL) {
+        focus_route_focus_page(app, keep_page);
+        if (keep != NULL) minimap_view_update_visibility(keep->minimap);
+    } else {
+        EditorTab* cur = editor_current_tab(app);
+        if (cur != NULL && cur->view != NULL) {
+            gtk_widget_grab_focus(cur->view);
+            minimap_view_update_visibility(cur->minimap);
+        }
     }
+    if (keep_page != NULL) g_object_unref(keep_page);
 }
 
 void editor_toggle_dedicated(AppData* app) {
