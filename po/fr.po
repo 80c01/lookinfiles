@@ -1123,6 +1123,9 @@ msgstr "Onglets Références, Recherche, Problèmes et LaTeX"
 msgid "Close the tab (also its cross or a middle click)"
 msgstr "Fermer l’onglet (aussi sa croix ou un clic milieu)"
 
+msgid "References: back to where the lookup started (also from the reference opened)"
+msgstr "Références : retour là où la recherche a commencé (aussi depuis la référence ouverte)"
+
 #: src/chrome/help.c:139
 msgctxt "key"
 msgid "Drag / right-click tab"

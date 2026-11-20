@@ -42,6 +42,10 @@ gboolean code_nav_find(AppData* app, EditorTab* tab, const gchar* name, CodeNavF
  * (byte index); the tab of the destination, NULL when it cannot be opened */
 EditorTab* code_nav_jump(AppData* app, EditorTab* from, const gchar* path, gint line, gint index);
 
+/* Remember path:line (byte index) in the history, as the start of a jump
+ * made elsewhere (a reference opened from the References tab) */
+void code_nav_remember(AppData* app, const gchar* path, gint line, gint index);
+
 /* Ctrl+Click in the read-only preview of a source file: open the file in
  * an editor tab at the place clicked, then go to the definition there.
  * Installed once on app->text_view (main.c). */

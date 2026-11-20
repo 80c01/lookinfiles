@@ -425,7 +425,8 @@ and how many there are.
 
 The references are listed in a **References** tab next to **Git Commits**
 (grouped by file, `Enter` or a double click opens one, the cross closes the
-tab). The other occurrences of the identifier under the cursor are
+tab). Back (`Ctrl+O`, `M-,`, `Ctrl+Alt+-`), in the list or in the reference
+opened, returns to where the lookup started. The other occurrences of the identifier under the cursor are
 highlighted. `Ctrl+Click` on a name in the preview of a source file opens it
 at its definition. With a language server, errors and warnings are underlined
 (red, yellow), counted in the bar of the editor tab, and explained when the mouse rests

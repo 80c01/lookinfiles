@@ -8,6 +8,7 @@
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "widgets/focus_route.h"
+#include "widgets/panels.h"
 #include "git/git_tab.h"
 #include <stdarg.h>
 #include <string.h>
@@ -67,6 +68,9 @@ typedef struct {
     GListStore* store;
     GtkSingleSelection* selection;
     const SearchArea* area; /* how its files show and open (NULL: as files) */
+    gchar* origin;     /* References: where the lookup started (NULL: unknown) */
+    gint origin_line;
+    gint origin_column;
 } RefsPage;
 
 #define PAGE_KEY "code-refs-page"
@@ -169,7 +173,33 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
 /* An occurrence: the area's way first, else in an editor tab */
 static void open_at(RefsPage* rp, const gchar* path, gint line, gint column) {
     if (rp->area != NULL && rp->area->open != NULL && rp->area->open(rp->app, path, line, column)) return;
-    editor_open_at(rp->app, path, line, column);
+    /* The jump starts where the lookup did: back (Ctrl-O...) returns there */
+    if (editor_open_at(rp->app, path, line, column) != NULL && rp->origin != NULL) {
+        code_nav_remember(rp->app, rp->origin, rp->origin_line, rp->origin_column);
+    }
+}
+
+/* The back key of the global mode: Vim Ctrl-O, Emacs M-, Notepad Ctrl+Alt+- */
+static gboolean is_back_key(NavStyle style, guint keyval, GdkModifierType state) {
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    switch (style) {
+    case NAV_STYLE_VIM: return mods == GDK_CONTROL_MASK && (keyval == GDK_KEY_o || keyval == GDK_KEY_O);
+    case NAV_STYLE_EMACS: return mods == GDK_ALT_MASK && keyval == GDK_KEY_comma;
+    default:
+        return mods == (GDK_CONTROL_MASK | GDK_ALT_MASK) && (keyval == GDK_KEY_minus || keyval == GDK_KEY_KP_Subtract);
+    }
+}
+
+/* The back key in the list: to the tab and place of the lookup */
+static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, guint keycode,
+                            GdkModifierType state, gpointer data) {
+    (void)controller;
+    (void)keycode;
+    RefsPage* rp = data;
+    if (rp->origin == NULL || !is_back_key(app_nav_style(rp->app), keyval, state)) return FALSE;
+    rp->app->nav_prefix = NAV_PREFIX_NONE;
+    editor_open_at(rp->app, rp->origin, rp->origin_line, rp->origin_column);
+    return TRUE;
 }
 
 static void open_item(RefsPage* rp, CodeRefItem* it) {
@@ -260,6 +290,7 @@ static void page_free(gpointer p) {
     if (rp->slot != NULL && *rp->slot == rp->page) *rp->slot = NULL;
     g_object_unref(rp->store);
     g_clear_object(&rp->label);
+    g_free(rp->origin);
     g_free(rp);
 }
 
@@ -314,6 +345,10 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
     rp->selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(rp->store)));
     rp->list = gtk_list_view_new(GTK_SELECTION_MODEL(rp->selection), factory);
     g_signal_connect(rp->list, "activate", G_CALLBACK(on_activate), rp);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_list_key), rp);
+    gtk_widget_add_controller(rp->list, keys);
     focus_route_attach_list(app, rp->list, rp->selection);
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -403,6 +438,14 @@ static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc mes
                             GPtrArray* refs, const gchar* root, const gchar* source, gboolean truncated) {
     RefsPage* rp = ensure_page(app, &app->refs_page, _("References"));
     if (rp == NULL) return;
+    g_clear_pointer(&rp->origin, g_free);
+    if (tab != NULL && g_list_find(app->editors, tab) != NULL && tab->path != NULL && tab->buffer != NULL) {
+        GtkTextIter it;
+        gtk_text_buffer_get_iter_at_mark(tab->buffer, &it, gtk_text_buffer_get_insert(tab->buffer));
+        rp->origin = g_strdup(tab->path);
+        rp->origin_line = gtk_text_iter_get_line(&it);
+        rp->origin_column = gtk_text_iter_get_line_index(&it);
+    }
     guint files = fill_page(rp, refs, root, strlen(name), NULL);
     gchar* bold = g_markup_printf_escaped("<b>%s</b>", name);
     gchar* sentence = NULL;

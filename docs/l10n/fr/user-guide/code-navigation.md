@@ -26,7 +26,9 @@ dans les trois modes.
   la ligne de message dit lequel est affiché et combien il y en a.
 - L’onglet **Références**, à côté de **Commits Git**, liste les
   utilisations regroupées par fichier. `Enter` ou un double-clic en ouvre
-  une ; la croix ferme l’onglet.
+  une ; la croix ferme l’onglet. Le retour (`Ctrl-O` en Vim, `M-,` en
+  Emacs, `Ctrl+Alt+-` en Notepad), depuis la liste ou depuis la référence
+  ouverte, ramène là où la recherche a commencé.
 - Les autres utilisations du nom sous le curseur sont surlignées.
 - `Ctrl+clic` marche aussi dans l’aperçu d’un fichier source.
 - Les symboles du projet se cherchent aussi depuis l’explorateur :

@@ -202,6 +202,13 @@ EditorTab* code_nav_jump(AppData* app, EditorTab* from, const gchar* path, gint 
     return jump(app, from, path, line, index);
 }
 
+void code_nav_remember(AppData* app, const gchar* path, gint line, gint index) {
+    if (app == NULL || path == NULL) return;
+    gchar* canon = g_canonicalize_filename(path, NULL);
+    jump_list_push(nav_of(app)->jumps, canon, line, index);
+    g_free(canon);
+}
+
 static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)source;
     Lookup* lk = data;

@@ -88,6 +88,9 @@ Notes:
 - Vim: `gd` / `gD` keep their local meaning (first occurrence in the
   buffer) when the file is not code. `Ctrl-O` / `Tab` walk the engine's
   jump list in the buffer, then continue in the shared history across files.
+- Opening a reference from the References tab records where the lookup
+  started (`gr`, `Shift+F12`, `M-?`): back returns there. The back key of
+  the global mode also works in the list itself.
 - `Ctrl+Click` also works in the read-only preview of source files.
 - Symbols of the project also work outside editor tabs (`Ctrl+Alt+O`,
   Emacs `M-g s`): the project of the explorer's folder, every language,

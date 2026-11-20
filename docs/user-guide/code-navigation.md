@@ -25,6 +25,9 @@ it is used, and show what it is, in all three modes.
   the message line says which one is shown and how many there are.
 - The **References** tab, next to **Git Commits**, lists the uses grouped
   by file. `Enter` or a double click opens one; the cross closes the tab.
+  Back (`Ctrl-O` in Vim, `M-,` in Emacs, `Ctrl+Alt+-` in Notepad), from
+  the list or from the reference opened, returns to where the search
+  started.
 - The other uses of the name under the cursor are highlighted.
 - `Ctrl+Click` also works in the preview of a source file.
 - The symbols of the project can also be searched from the explorer:
