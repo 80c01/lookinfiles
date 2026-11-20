@@ -64,6 +64,7 @@ typedef struct {
     gboolean show_warnings;
     gboolean show_info;
     gchar* needle;
+    gchar* base_dir; /* workspace folder the list was built for */
 } ProblemsPage;
 
 static ProblemsPage* page_state(GtkWidget* page) {
@@ -96,6 +97,7 @@ static void page_free(gpointer data) {
     g_object_unref(pp->store);
     g_clear_object(&pp->label);
     g_free(pp->needle);
+    g_free(pp->base_dir);
     g_free(pp);
 }
 
@@ -162,14 +164,48 @@ static gchar* rel_path_for(AppData* app, const gchar* path) {
     return g_strdup(path);
 }
 
+/* TRUE when path is dir or inside it */
+static gboolean path_under(const gchar* dir, const gchar* path) {
+    gsize n = strlen(dir);
+    while (n > 0 && dir[n - 1] == '/') n--;
+    if (n == 0) return TRUE; /* "/" */
+    return strncmp(path, dir, n) == 0 && (path[n] == '/' || path[n] == '\0');
+}
+
+/* Files of the shown workspace: those under its folder and those open in its
+ * editor tabs (canonical paths, as the diagnostics are keyed) */
+static GHashTable* workspace_open_paths(AppData* app) {
+    GHashTable* set = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t != NULL && t->path != NULL) g_hash_table_add(set, g_canonicalize_filename(t->path, NULL));
+    }
+    return set;
+}
+
+static gboolean in_workspace(const gchar* base, GHashTable* open, const gchar* path) {
+    if (path == NULL) return FALSE;
+    if (base != NULL && path_under(base, path)) return TRUE;
+    return g_hash_table_contains(open, path);
+}
+
 static void populate(ProblemsPage* pp) {
     if (pp == NULL || pp->app == NULL) return;
     GPtrArray* all = code_intel_all_diagnostics(pp->app);
-    guint total_err = 0, total_warn = 0, total_info = 0;
+    guint total_err = 0, total_warn = 0, total_info = 0, total = 0;
     GPtrArray* kept = g_ptr_array_new();
+
+    g_free(pp->base_dir);
+    pp->base_dir = g_strdup(pp->app->base_dir);
+    gchar* base = pp->base_dir != NULL && g_path_is_absolute(pp->base_dir)
+                      ? g_canonicalize_filename(pp->base_dir, NULL)
+                      : NULL;
+    GHashTable* open = workspace_open_paths(pp->app);
 
     for (guint i = 0; i < all->len; i++) {
         CodeDiagEntry* e = g_ptr_array_index(all, i);
+        if (!in_workspace(base, open, e->path)) continue;
+        total++;
         if (e->diag.severity == LSP_SEVERITY_ERROR) total_err++;
         else if (e->diag.severity == LSP_SEVERITY_WARNING) total_warn++;
         else total_info++;
@@ -205,10 +241,13 @@ static void populate(ProblemsPage* pp) {
         g_object_unref(it);
     }
 
-    if (all->len == 0) {
+    g_free(base);
+    g_hash_table_destroy(open);
+
+    if (total == 0) {
         gchar* m = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>",
                                            palette_color(PAL_FG_SUBTLE),
-                                           _("No problems detected in open files"));
+                                           _("No problems detected in this workspace's files"));
         gtk_label_set_markup(GTK_LABEL(pp->summary), m);
         g_free(m);
     } else {
@@ -348,6 +387,17 @@ static void ensure_css(void) {
     theme_add_css(CSS);
 }
 
+/* Put the page in app->notebook, after the Git, References and Search tabs */
+static void insert_page(AppData* app, ProblemsPage* pp) {
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    GtkWidget* git_page = git_tab_page(app);
+    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
+    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
+    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
+    gtk_notebook_insert_page(nb, pp->page, pp->label, after + 1);
+    app->problems_page = pp->page;
+}
+
 static ProblemsPage* ensure_page(AppData* app) {
     ProblemsPage* pp = page_state(app->problems_page);
     if (pp != NULL) return pp;
@@ -427,13 +477,7 @@ static ProblemsPage* ensure_page(AppData* app) {
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), pp);
     gtk_widget_add_controller(pp->label, GTK_EVENT_CONTROLLER(mclick));
 
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    GtkWidget* git_page = git_tab_page(app);
-    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
-    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
-    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
-    gtk_notebook_insert_page(nb, pp->page, pp->label, after + 1);
-    app->problems_page = pp->page;
+    insert_page(app, pp);
     return pp;
 }
 
@@ -458,6 +502,53 @@ void code_problems_refresh(AppData* app) {
     if (app == NULL || app->problems_page == NULL) return;
     ProblemsPage* pp = page_state(app->problems_page);
     if (pp != NULL) populate(pp);
+}
+
+void code_problems_folder_changed(AppData* app) {
+    if (app == NULL || app->problems_page == NULL) return;
+    ProblemsPage* pp = page_state(app->problems_page);
+    if (pp != NULL && g_strcmp0(pp->base_dir, app->base_dir) != 0) populate(pp);
+}
+
+/* Take the Problems page out of the notebook, keeping it (owned ref), or NULL */
+static GtkWidget* detach_page(AppData* app) {
+    GtkWidget* page = app->problems_page;
+    if (page == NULL || app->notebook == NULL) return NULL;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    g_object_ref(page);
+    app->problems_page = NULL;
+    gint num = gtk_notebook_page_num(nb, page);
+    if (num >= 0) gtk_notebook_remove_page(nb, num);
+    return page;
+}
+
+void code_problems_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    GtkWidget* page = detach_page(app);
+    if (page == NULL) return;
+    if (ws->problems_page != NULL) g_object_unref(ws->problems_page);
+    ws->problems_page = page;
+}
+
+void code_problems_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->problems_page == NULL) return;
+    GtkWidget* page = ws->problems_page;
+    ws->problems_page = NULL;
+    ProblemsPage* pp = page_state(page);
+    if (pp != NULL && app->notebook != NULL && app->problems_page == NULL) {
+        insert_page(app, pp);
+        populate(pp);
+    }
+    g_object_unref(page);
+}
+
+void code_problems_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        GtkWidget* page = detach_page(app);
+        if (page != NULL) g_object_unref(page);
+    }
+    g_clear_object(&ws->problems_page);
 }
 
 gboolean code_problems_close_shown(AppData* app) {

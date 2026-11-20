@@ -13,6 +13,17 @@ void code_problems_show(AppData* app, EditorTab* tab);
  * APP_EVENT_DIAGNOSTICS_CHANGED in main.c) */
 void code_problems_refresh(AppData* app);
 
+/* Rebuild the Problems tab if the workspace folder changed since it was
+ * built (subscribed to APP_EVENT_CHROME_CHANGED in main.c): it lists the
+ * diagnostics of the files under that folder or open in the workspace */
+void code_problems_folder_changed(AppData* app);
+
+/* Each workspace has its own Problems tab: set it aside in ws when ws is
+ * hidden, put it back (refreshed) when ws is shown, drop it with ws */
+void code_problems_workspace_hidden(AppData* app, VirtualLayout* ws);
+void code_problems_workspace_shown(AppData* app, VirtualLayout* ws);
+void code_problems_workspace_removed(AppData* app, VirtualLayout* ws);
+
 /* Close the Problems tab if it is the current page of app->notebook (Ctrl+W).
  * Returns TRUE when closed. */
 gboolean code_problems_close_shown(AppData* app);

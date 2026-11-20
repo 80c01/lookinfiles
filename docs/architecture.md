@@ -1293,7 +1293,9 @@ Layers, from bottom to top
   with fallback to `ctags` / `code_index_search_symbols()` in a worker).
 - `code_problems` — **Problems** tab in `app->notebook` (severity filters,
   text filter, live updates via `APP_EVENT_DIAGNOSTICS_CHANGED`) and next /
-  previous diagnostic stepping.
+  previous diagnostic stepping. One tab per workspace (set aside in
+  `VirtualLayout.problems_page`), listing the diagnostics of the files under
+  the workspace folder or open in its editor tabs.
 - `code_complete` — non-focus-stealing completion `GtkPopover` anchored at
   the cursor (LSP `textDocument/completion` with buffer-identifier fallback).
 - `code_rename` — multi-file LSP symbol rename (`prepareRename` + `rename`),

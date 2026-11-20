@@ -530,6 +530,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_PREVIEW_PATH, preview_show_requested);
     app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, editor_modes_refresh_bars);
     app_events_subscribe(app, APP_EVENT_DIAGNOSTICS_CHANGED, code_problems_refresh);
+    app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, code_problems_folder_changed);
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, editor_modes_refresh_git);
     app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, workspace_save_current);
     app_events_subscribe(app, APP_EVENT_LAYOUT_CHANGED, layout_history_on_change);
