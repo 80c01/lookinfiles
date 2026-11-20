@@ -145,6 +145,11 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
     (void)keycode;
     (void)state;
     Picker* p = data;
+    /* Escape closes the picker (the search entry would only clear its text) */
+    if (keyval == GDK_KEY_Escape) {
+        app_dialog_response(APP_DIALOG(p->dialog), APP_RESPONSE_CANCEL);
+        return TRUE;
+    }
     gint delta = list_key_delta(keyval);
     if (delta == 0) return FALSE;
     guint n = g_list_model_get_n_items(G_LIST_MODEL(p->filtered));
