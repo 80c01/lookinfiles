@@ -4,9 +4,12 @@
 #include "theme/icons.h"
 #include "widgets/panels.h"
 #include "theme/text_style.h"
+#include "git/git_refs.h"
 #include "git/git_utils.h"
 #include "widgets/focus_route.h"
 #include <string.h>
+
+#define GIT_ROW_MAX_REFS 6
 
 /* Git commits tab state (app->git), created by git_tab_init() */
 typedef struct GitTab GitTab;
@@ -14,6 +17,7 @@ struct GitTab {
     GtkWidget* page;            /* notebook page of the tab */
     GListStore* store;          /* commit list (GitCommit items) */
     GtkSingleSelection* selection; /* selection over store */
+    GtkWidget* header_refs_box; /* branch/tag pills of the selected commit */
     GtkWidget* header_label;    /* summary of the selected commit */
     GtkTextBuffer* detail_buf;  /* diff of the selected commit */
     gchar* current_root;        /* repository shown, or NULL */
@@ -29,12 +33,15 @@ G_DECLARE_FINAL_TYPE(GitCommit, git_commit, GIT, COMMIT, GObject)
 struct _GitCommit {
     GObject parent_instance;
     GitCommitInfo* info; /* owned */
+    GPtrArray* refs;     /* owned array of GitRefInfo*, or NULL */
 };
 
 G_DEFINE_FINAL_TYPE(GitCommit, git_commit, G_TYPE_OBJECT)
 
 static void git_commit_finalize(GObject* object) {
-    git_commit_info_free(GIT_COMMIT(object)->info);
+    GitCommit* self = GIT_COMMIT(object);
+    git_commit_info_free(self->info);
+    g_clear_pointer(&self->refs, g_ptr_array_unref);
     G_OBJECT_CLASS(git_commit_parent_class)->finalize(object);
 }
 
@@ -46,10 +53,11 @@ static void git_commit_init(GitCommit* self) {
     (void)self;
 }
 
-/* Takes ownership of info */
-static GitCommit* git_commit_new(GitCommitInfo* info) {
+/* Takes ownership of info and refs (refs may be NULL) */
+static GitCommit* git_commit_new(GitCommitInfo* info, GPtrArray* refs) {
     GitCommit* self = g_object_new(GIT_TYPE_COMMIT, NULL);
     self->info = info;
+    self->refs = refs;
     return self;
 }
 
@@ -65,7 +73,8 @@ static GitCommitInfo* git_commit_at(GitTab* g, guint i) {
 typedef struct {
     AppData* app;
     gchar* git_root;
-    GPtrArray* commits; /* array of GitCommitInfo* */
+    GPtrArray* commits;  /* array of GitCommitInfo* */
+    GHashTable* refs_map; /* sha -> GPtrArray* of GitRefInfo* */
 } GitLogTaskData;
 
 static void git_log_task_data_free(gpointer data) {
@@ -74,6 +83,9 @@ static void git_log_task_data_free(gpointer data) {
     g_free(td->git_root);
     if (td->commits != NULL) {
         g_ptr_array_unref(td->commits);
+    }
+    if (td->refs_map != NULL) {
+        g_hash_table_unref(td->refs_map);
     }
     g_free(td);
 }
@@ -86,14 +98,20 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
     if (g_task_return_error_if_cancelled(task)) return;
 
     GPtrArray* commits = git_read_log(td->git_root, 100);
+    GHashTable* refs_map = NULL;
+    if (!g_cancellable_is_cancelled(cancellable) && commits != NULL && commits->len > 0) {
+        refs_map = git_read_refs(td->git_root);
+    }
 
     if (g_cancellable_is_cancelled(cancellable)) {
         if (commits != NULL) g_ptr_array_unref(commits);
+        if (refs_map != NULL) g_hash_table_unref(refs_map);
         g_task_return_error_if_cancelled(task);
         return;
     }
 
     td->commits = commits != NULL ? commits : g_ptr_array_new_with_free_func(git_commit_info_free);
+    td->refs_map = refs_map;
     g_task_return_boolean(task, TRUE);
 }
 
@@ -243,6 +261,83 @@ static void on_git_show_ready(GObject* source_object, GAsyncResult* res, gpointe
     }
 }
 
+static const gchar* ref_css_class(GitRefKind kind) {
+    switch (kind) {
+    case GIT_REF_HEAD:   return "git-ref-head";
+    case GIT_REF_BRANCH: return "git-ref-branch";
+    case GIT_REF_TAG:    return "git-ref-tag";
+    case GIT_REF_REMOTE: return "git-ref-remote";
+    default:             return "git-ref-branch";
+    }
+}
+
+static gchar* ref_tooltip(const GitRefInfo* ref) {
+    if (ref == NULL || ref->name == NULL) return NULL;
+    switch (ref->kind) {
+    case GIT_REF_HEAD:
+        if (ref->detached) return g_strdup(_("Detached HEAD"));
+        return g_strdup_printf(_("Current branch: %s"), ref->name);
+    case GIT_REF_BRANCH:
+        return g_strdup_printf(_("Branch: %s"), ref->name);
+    case GIT_REF_TAG:
+        return g_strdup_printf(_("Tag: %s"), ref->name);
+    case GIT_REF_REMOTE:
+        return g_strdup_printf(_("Remote branch: %s"), ref->name);
+    default:
+        return g_strdup(ref->name);
+    }
+}
+
+/* Fill box with compact branch/tag pills (max_badges == 0 shows all) */
+static void populate_refs_box(GtkWidget* box, GPtrArray* refs, guint max_badges) {
+    if (box == NULL) return;
+    GtkWidget* ch;
+    while ((ch = gtk_widget_get_first_child(box)) != NULL) {
+        gtk_box_remove(GTK_BOX(box), ch);
+    }
+    if (refs == NULL || refs->len == 0) {
+        gtk_widget_set_visible(box, FALSE);
+        return;
+    }
+    gtk_widget_set_visible(box, TRUE);
+    guint limit = (max_badges > 0 && refs->len > max_badges) ? max_badges : refs->len;
+    for (guint i = 0; i < limit; i++) {
+        const GitRefInfo* ref = g_ptr_array_index(refs, i);
+        gchar* text = git_ref_display_name(ref);
+        GtkWidget* pill = gtk_label_new(text);
+        g_free(text);
+        gtk_widget_add_css_class(pill, "git-ref");
+        gtk_widget_add_css_class(pill, ref_css_class(ref->kind));
+        gtk_widget_set_valign(pill, GTK_ALIGN_CENTER);
+        gchar* tip = ref_tooltip(ref);
+        if (tip != NULL) {
+            gtk_widget_set_tooltip_text(pill, tip);
+            g_free(tip);
+        }
+        gtk_box_append(GTK_BOX(box), pill);
+    }
+    if (refs->len > limit) {
+        guint extra = refs->len - limit;
+        gchar* more = g_strdup_printf("+%u", extra);
+        GtkWidget* pill = gtk_label_new(more);
+        g_free(more);
+        gtk_widget_add_css_class(pill, "git-ref");
+        gtk_widget_add_css_class(pill, "git-ref-more");
+        gtk_widget_set_valign(pill, GTK_ALIGN_CENTER);
+        GString* tip = g_string_new(NULL);
+        for (guint i = limit; i < refs->len; i++) {
+            const GitRefInfo* ref = g_ptr_array_index(refs, i);
+            gchar* d = git_ref_display_name(ref);
+            if (tip->len > 0) g_string_append_c(tip, '\n');
+            g_string_append(tip, d);
+            g_free(d);
+        }
+        gtk_widget_set_tooltip_text(pill, tip->str);
+        g_string_free(tip, TRUE);
+        gtk_box_append(GTK_BOX(box), pill);
+    }
+}
+
 static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* pspec, gpointer user_data) {
     (void)pspec;
     AppData* app = (AppData*)user_data;
@@ -262,6 +357,7 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
     g_free(g->selected_hash);
     g->selected_hash = g_strdup(hash);
 
+    populate_refs_box(g->header_refs_box, item->refs, 0);
     gchar* header_text = g_strdup_printf("[%s] %s  •  %s  (%s)",
                                         short_hash ? short_hash : "",
                                         subject ? subject : "",
@@ -303,10 +399,20 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 
     g_list_store_remove_all(g->store);
     if (td->commits != NULL) {
-        /* The store takes the commits over */
+        /* The store takes the commits (and their ref arrays) over */
         g_ptr_array_set_free_func(td->commits, NULL);
         for (guint i = 0; i < td->commits->len; i++) {
-            GitCommit* item = git_commit_new(g_ptr_array_index(td->commits, i));
+            GitCommitInfo* ci = g_ptr_array_index(td->commits, i);
+            GPtrArray* refs = NULL;
+            if (td->refs_map != NULL && ci->hash != NULL) {
+                gpointer orig_key = NULL;
+                gpointer val = NULL;
+                if (g_hash_table_steal_extended(td->refs_map, ci->hash, &orig_key, &val)) {
+                    g_free(orig_key);
+                    refs = (GPtrArray*)val;
+                }
+            }
+            GitCommit* item = git_commit_new(ci, refs);
             g_list_store_append(g->store, item);
             g_object_unref(item);
         }
@@ -330,6 +436,7 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         }
         gtk_single_selection_set_selected(sel, target); /* shows its diff */
     } else {
+        populate_refs_box(g->header_refs_box, NULL, 0);
         gtk_label_set_text(GTK_LABEL(g->header_label), _("No commits in this repository."));
         gtk_text_buffer_set_text(g->detail_buf, "", -1);
     }
@@ -412,9 +519,6 @@ static void on_git_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* it
     GtkWidget* label = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_add_css_class(label, (const gchar*)data);
-    if (g_strcmp0((const gchar*)data, "git-subject") == 0) {
-        gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
-    }
     gtk_list_item_set_child(item, label);
 }
 
@@ -436,6 +540,59 @@ static void git_add_column(GtkWidget* view, const gchar* title, gsize field_offs
     GtkColumnViewColumn* column = gtk_column_view_column_new(title, factory);
     gtk_column_view_column_set_resizable(column, TRUE);
     gtk_column_view_column_set_expand(column, expand);
+    gtk_column_view_append_column(GTK_COLUMN_VIEW(view), column);
+    g_object_unref(column);
+}
+
+/* Message column: branch/tag pills followed by the commit subject */
+static void on_msg_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)factory;
+    (void)data;
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget* refs = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_widget_set_valign(refs, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(refs, FALSE);
+    gtk_box_append(GTK_BOX(box), refs);
+
+    GtkWidget* subject = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(subject), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(subject), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(subject, TRUE);
+    gtk_widget_add_css_class(subject, "git-subject");
+    gtk_box_append(GTK_BOX(box), subject);
+
+    gtk_list_item_set_child(item, box);
+}
+
+static void on_msg_cell_bind(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)factory;
+    (void)data;
+    GitCommit* commit = gtk_list_item_get_item(item);
+    GtkWidget* box = gtk_list_item_get_child(item);
+    GtkWidget* refs = gtk_widget_get_first_child(box);
+    GtkWidget* subject = gtk_widget_get_last_child(box);
+    populate_refs_box(refs, commit != NULL ? commit->refs : NULL, GIT_ROW_MAX_REFS);
+    const gchar* text = (commit != NULL && commit->info != NULL) ? commit->info->subject : NULL;
+    gtk_label_set_text(GTK_LABEL(subject), text != NULL ? text : "");
+}
+
+static void on_msg_cell_unbind(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)factory;
+    (void)data;
+    GtkWidget* box = gtk_list_item_get_child(item);
+    if (box != NULL) {
+        populate_refs_box(gtk_widget_get_first_child(box), NULL, 0);
+    }
+}
+
+static void git_add_message_column(GtkWidget* view) {
+    GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
+    g_signal_connect(factory, "setup", G_CALLBACK(on_msg_cell_setup), NULL);
+    g_signal_connect(factory, "bind", G_CALLBACK(on_msg_cell_bind), NULL);
+    g_signal_connect(factory, "unbind", G_CALLBACK(on_msg_cell_unbind), NULL);
+    GtkColumnViewColumn* column = gtk_column_view_column_new(_("Message"), factory);
+    gtk_column_view_column_set_resizable(column, TRUE);
+    gtk_column_view_column_set_expand(column, TRUE);
     gtk_column_view_append_column(GTK_COLUMN_VIEW(view), column);
     g_object_unref(column);
 }
@@ -471,7 +628,7 @@ void git_tab_init(AppData* app) {
     gtk_widget_add_css_class(tree_view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
     git_add_column(tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
-    git_add_column(tree_view, _("Message"), G_STRUCT_OFFSET(GitCommitInfo, subject), "git-subject", TRUE);
+    git_add_message_column(tree_view);
     git_add_column(tree_view, _("Author"), G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
     git_add_column(tree_view, _("Date"), G_STRUCT_OFFSET(GitCommitInfo, date), "cell-muted", FALSE);
 
@@ -490,6 +647,11 @@ void git_tab_init(AppData* app) {
 
     GtkWidget* header_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_set_name(header_bar, "git-header-bar");
+    GtkWidget* header_refs = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_widget_set_valign(header_refs, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(header_refs, FALSE);
+    gtk_box_append(GTK_BOX(header_bar), header_refs);
+    g->header_refs_box = header_refs;
     GtkWidget* header_lbl = gtk_label_new(_("Select a commit to view diff"));
     gtk_label_set_xalign(GTK_LABEL(header_lbl), 0.0f);
     gtk_label_set_ellipsize(GTK_LABEL(header_lbl), PANGO_ELLIPSIZE_END);

@@ -45,7 +45,8 @@ left edge.
 
 The **Git Commits** tab, next to the **Preview** tab, appears when the
 current folder is in a repository. It lists the history, newest first, with
-the commit, message, author and date of each commit. Select one to see its
+the commit, message (preceded by coloured badges for `HEAD`, local and remote
+branches, and tags), author and date of each commit. Select one to see its
 full diff below.
 
 The navigation keys of the global mode move in the list (`j` / `k` in Vim,

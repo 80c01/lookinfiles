@@ -63,6 +63,7 @@ i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
 git_utils:palette,i18n
+git_refs:
 line_diff:
 latex_log:
 latex_root:

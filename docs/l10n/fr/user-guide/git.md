@@ -47,8 +47,9 @@ minicarte les montre le long de son bord gauche.
 
 L’onglet **Commits Git**, à côté de l’onglet **Aperçu**, apparaît quand le
 dossier courant est dans un dépôt. Il liste l’historique, du plus récent au
-plus ancien, avec le commit, le message, l’auteur et la date de chaque
-commit. Sélectionnez-en un pour voir son diff complet en dessous.
+plus ancien, avec le commit, le message (précédé de badges colorés pour
+`HEAD`, les branches locales et distantes, et les tags), l’auteur et la date
+de chaque commit. Sélectionnez-en un pour voir son diff complet en dessous.
 
 Les touches de navigation du mode global se déplacent dans la liste
 (`j` / `k` en Vim, les flèches dans tous les modes).

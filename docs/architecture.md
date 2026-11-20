@@ -174,6 +174,10 @@ Layers, from bottom to top
   `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
   --patch`), `git_list_files()` (like `git ls-files --cached --others`;
   `git_list_files_by_kind()` says tracked, untracked or ignored).
+- `git_refs` — reads branch, `HEAD` and tag (lightweight and annotated)
+  decorations per commit SHA through libgit2 (`git_read_refs()`,
+  `git_ref_display_name()`), displayed as badges in `git_tab`. Worker thread,
+  unit-tested.
 - `git_space` — the room of a git work tree in a finished `disk_scan`
   (Disk Usage statistics): tracked and untracked files from
   `git_list_files_by_kind()` (an `lstat` each, the files the scan left out

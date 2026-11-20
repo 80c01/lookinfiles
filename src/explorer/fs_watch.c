@@ -9,13 +9,15 @@
 
 /* Private to this file */
 struct FsWatch {
-    GHashTable* dir_monitors;  /* watched directories: full_path -> GFileMonitor* */
-    GFileMonitor* file_monitor; /* file shown in the preview */
-    GFileMonitor* git_monitor;  /* .git directory of base_dir */
-    gchar* git_monitored_path;  /* the .git directory git_monitor watches */
-    gboolean dir_dirty;         /* pending directory event */
-    gboolean git_dirty;         /* pending git status update */
-    guint refresh_source;       /* debounce timeout id, 0 = idle */
+    GHashTable* dir_monitors;        /* watched directories: full_path -> GFileMonitor* */
+    GFileMonitor* file_monitor;      /* file shown in the preview */
+    GFileMonitor* git_monitor;       /* .git directory of base_dir */
+    GFileMonitor* git_heads_monitor; /* .git/refs/heads (local branches) */
+    GFileMonitor* git_tags_monitor;  /* .git/refs/tags (tags) */
+    gchar* git_monitored_path;       /* the .git directory git_monitor watches */
+    gboolean dir_dirty;              /* pending directory event */
+    gboolean git_dirty;              /* pending git status update */
+    guint refresh_source;            /* debounce timeout id, 0 = idle */
 };
 
 static struct FsWatch* watch_get(AppData* app) {
@@ -199,8 +201,29 @@ static void on_git_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_
     schedule_refresh(app);
 }
 
+static GFileMonitor* watch_git_subdir(AppData* app, const gchar* git_dir, const gchar* sub) {
+    gchar* path = g_build_filename(git_dir, sub, NULL);
+    GFileMonitor* mon = NULL;
+    if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        GFile* gf = g_file_new_for_path(path);
+        GError* err = NULL;
+        mon = g_file_monitor_directory(gf, G_FILE_MONITOR_NONE, NULL, &err);
+        if (err != NULL) {
+            g_error_free(err);
+            mon = NULL;
+        } else if (mon != NULL) {
+            g_signal_connect(mon, "changed", G_CALLBACK(on_git_dir_changed), app);
+        }
+        g_object_unref(gf);
+    }
+    g_free(path);
+    return mon;
+}
+
 static void stop_git_monitor(struct FsWatch* w) {
     cancel_monitor(&w->git_monitor);
+    cancel_monitor(&w->git_heads_monitor);
+    cancel_monitor(&w->git_tags_monitor);
     g_free(w->git_monitored_path);
     w->git_monitored_path = NULL;
 }
@@ -236,6 +259,8 @@ static void sync_git_monitor(AppData* app) {
         g_signal_connect(w->git_monitor, "changed", G_CALLBACK(on_git_dir_changed), app);
     }
     g_object_unref(gf);
+    w->git_heads_monitor = watch_git_subdir(app, git_dir, "refs/heads");
+    w->git_tags_monitor = watch_git_subdir(app, git_dir, "refs/tags");
 }
 
 static void add_single_dir_monitor(AppData* app, const gchar* path) {
