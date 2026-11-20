@@ -668,6 +668,15 @@ static void on_server_notify(LspClient* client, const LspMessage* msg, gpointer 
     }
     gchar* canon = g_canonicalize_filename(path, NULL);
     g_free(path);
+    if (editor_find_tab(app, canon) == NULL) {
+        g_ptr_array_unref(diags);
+        if (g_hash_table_remove(intel_of(app)->diagnostics, canon)) {
+            app_emit(app, APP_EVENT_STATUS_CHANGED);
+            app_emit(app, APP_EVENT_DIAGNOSTICS_CHANGED);
+        }
+        g_free(canon);
+        return;
+    }
     gboolean utf8 = utf8_positions(client);
     for (guint i = 0; i < diags->len; i++) {
         LspDiagnostic* d = g_ptr_array_index(diags, i);
@@ -1018,4 +1027,26 @@ void code_intel_attach(AppData* app, EditorTab* tab) {
         code_lint_source_name(tab->path) != NULL) {
         schedule_sync(ss, 50);
     }
+}
+
+void code_intel_detach(AppData* app, EditorTab* tab) {
+    if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL) return;
+    gchar* canon = g_canonicalize_filename(tab->path, NULL);
+    gboolean still_open = FALSE;
+    for (GList* l = app->editors; l != NULL && !still_open; l = l->next) {
+        EditorTab* t = l->data;
+        if (t == NULL || t == tab || t->path == NULL) continue;
+        gchar* have = g_canonicalize_filename(t->path, NULL);
+        still_open = (g_strcmp0(have, canon) == 0);
+        g_free(have);
+    }
+    if (!still_open) {
+        Server* s = server_for(app, tab, FALSE);
+        if (s != NULL) lsp_client_close_document(s->client, canon);
+        if (g_hash_table_remove(intel_of(app)->diagnostics, canon)) {
+            app_emit(app, APP_EVENT_STATUS_CHANGED);
+            app_emit(app, APP_EVENT_DIAGNOSTICS_CHANGED);
+        }
+    }
+    g_free(canon);
 }

@@ -65,6 +65,9 @@ gboolean code_intel_rename(AppData* app, EditorTab* tab, gint line, gint index, 
  * diagnostics come), edits are sent after a short pause, and diagnostics
  * are underlined (errors red, warnings yellow, others blue) */
 void code_intel_attach(AppData* app, EditorTab* tab);
+/* Stop following a closed editor tab: if no other view of its file remains
+ * open, close the LSP document and drop its diagnostics. */
+void code_intel_detach(AppData* app, EditorTab* tab);
 
 /* Diagnostics at the position (line, byte index) of tab as Markdown, or
  * NULL when there is none */
