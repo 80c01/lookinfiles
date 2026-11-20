@@ -17,8 +17,9 @@ the size while you drag. Point at a border and a small bar appears beside
 its middle (for a second once the pointer leaves it): its end buttons collapse the panel on that side (or
 expand it back to its size, once collapsed), the middle ones put the border
 at a third, a half or two thirds. A double click on a border splits it in
-half. The border between the preview and the editor panel only collapses
-the editor panel: the preview has its own button in the top bar. `f`
+half. The preview, the explorer and the terminal panel do not collapse
+from a border (they have their own buttons in the top bar): the border
+between the preview and the editor panel only collapses the editor panel. `f`
 toggles fullscreen.
 
 ## Workspaces

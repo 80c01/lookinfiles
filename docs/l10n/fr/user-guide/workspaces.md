@@ -20,8 +20,10 @@ séparation et une petite barre apparaît à côté de son milieu (encore une
 seconde après que le pointeur l’a quittée) : ses boutons aux extrémités replient le panneau de ce côté (ou le déplient à sa
 taille, une fois replié), ceux du milieu placent la séparation au tiers, à
 la moitié ou aux deux tiers. Un double clic sur une séparation la met à la
-moitié. La séparation entre l’aperçu et le panneau d’édition ne replie que
-le panneau d’édition : l’aperçu a son propre bouton dans la barre du haut.
+moitié. L’aperçu, l’explorateur et le panneau du terminal ne se replient
+pas depuis une séparation (ils ont leur propre bouton dans la barre du
+haut) : la séparation entre l’aperçu et le panneau d’édition ne replie que
+le panneau d’édition.
 `f` bascule le plein écran.
 
 ## Espaces de travail

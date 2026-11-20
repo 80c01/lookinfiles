@@ -335,8 +335,10 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget, gboolean exac
     }
 }
 
-/* The split handle menu: every side collapses, but the preview, which keeps
- * its own toggles (the editor side of the preview / editor split only) */
+/* The split handle menu: every side collapses, but the panels with their own
+ * toggle in the top bar (the preview, the explorer, the terminal panel): the
+ * preview / editor split collapses the editor only, the explorer split the
+ * right side only, the terminal split the top (or left) side only */
 static gint split_menu_sides(GtkWidget* paned, gpointer data) {
     AppData* app = data;
     if (panels_is_resizing(app)) return -1;
@@ -345,6 +347,8 @@ static gint split_menu_sides(GtkWidget* paned, gpointer data) {
                                 app->workspaces[app->current_ws].editor_first;
         return editor_first ? SPLIT_SIDE_START : SPLIT_SIDE_END;
     }
+    if (paned == app->main_paned) return SPLIT_SIDE_END;    /* the explorer is the start side */
+    if (paned == app->right_paned) return SPLIT_SIDE_START; /* the terminal panel is the end side */
     return SPLIT_SIDE_START | SPLIT_SIDE_END;
 }
 

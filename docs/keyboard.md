@@ -55,7 +55,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs) | (In help panel) Filter the shortcuts: only those whose section, key or description hold every word typed (case and accents ignored); `Enter` / `Esc` go back to the list, `Esc` again closes it |
 | `Up Up Down Down Left Right Left Right A B Enter` | (In help panel) Unlock Game Mode in this workspace |
 | `f` | Toggle fullscreen |
-| Pointer on a split border, double click on it | A bar beside the middle of the border (for a second once the pointer leaves it) collapses the panel on either side (or expands it back), or puts the border at 1/3, 1/2 or 2/3; a double click splits it in half (the preview / editor border only collapses the editor panel) |
+| Pointer on a split border, double click on it | A bar beside the middle of the border (for a second once the pointer leaves it) collapses the panel on either side (or expands it back), or puts the border at 1/3, 1/2 or 2/3; a double click splits it in half (the preview, the explorer and the terminal panel do not collapse from a border: they have their top-bar buttons) |
 | `Alt+Left` / `Alt+Right` | Move the focus between the open panels (a tagbar on screen comes right after its text) |
 | `Ctrl+W w` / `Ctrl+W W` (Vim), `C-x o` (Emacs), `F6` / `Shift+F6` (Notepad) | Focus the next / previous panel (global mode, or the mode of the focused editor tab) |
 | `Ctrl+W c` (Vim), `Ctrl+W` (Notepad) | Close the focused editor tab, or the current one if it is on screen (global mode, or the mode of the focused editor tab; asks first when there are unsaved changes); in a terminal, `Ctrl+W` goes to the shell |
