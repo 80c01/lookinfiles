@@ -263,7 +263,8 @@ avec un serveur de langage, le nombre d’erreurs et d’avertissements.
 - Vim (style airline) : `NORMAL  ᚠ main  src/main.c [+]` à gauche, puis
   `word  c  utf-8[unix]    42% ☰   42/100 ㏑ :  7` à droite (le mot sous le
   curseur, le type de fichier, l’encodage et le format, le pourcentage,
-  ligne/total, colonne).
+  ligne/total, colonne) ; le mode et le pourcentage, la ligne et la colonne
+  sont dans la couleur du mode.
 
 ## Mode Notepad
 

@@ -192,8 +192,12 @@ static void on_state_changed(gpointer data) {
     static const gchar* const CLASSES[] = {
         "vim-mode-normal", "vim-mode-insert", "vim-mode-replace", "vim-mode-visual", "vim-mode-command",
     };
-    for (gsize i = 0; i < G_N_ELEMENTS(CLASSES); i++) gtk_widget_remove_css_class(st->vim_sl_mode, CLASSES[i]);
+    for (gsize i = 0; i < G_N_ELEMENTS(CLASSES); i++) {
+        gtk_widget_remove_css_class(st->vim_sl_mode, CLASSES[i]);
+        gtk_widget_remove_css_class(st->vim_sl_ruler, CLASSES[i]);
+    }
     gtk_widget_add_css_class(st->vim_sl_mode, badge_class(m));
+    gtk_widget_add_css_class(st->vim_sl_ruler, badge_class(m));
     gtk_label_set_text(GTK_LABEL(st->vim_sl_mode), badge_text(m, label));
 
     gchar* pending = vim_engine_pending_keys(st->vim);
@@ -881,19 +885,28 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     g_signal_connect(vim_info_click, "released", G_CALLBACK(on_vim_info_clicked), tab);
     gtk_widget_add_controller(st->vim_sl_info, GTK_EVENT_CONTROLLER(vim_info_click));
 
+    /* The ruler in the mode's colour, as Vim airline's last section: a
+     * badge as wide as its text, at the right end of a fixed-width slot (the
+     * line/column text changes on every focus or cursor move and must not
+     * change the statusline's requested width) */
+    GtkWidget* ruler_width = gtk_label_new(NULL);
+    editor_bar_label_shrinkable(ruler_width, PANGO_ELLIPSIZE_START);
+    gtk_label_set_width_chars(GTK_LABEL(ruler_width), 30);
+    gtk_label_set_max_width_chars(GTK_LABEL(ruler_width), 30);
+    GtkWidget* ruler_slot = gtk_overlay_new();
+    gtk_overlay_set_child(GTK_OVERLAY(ruler_slot), ruler_width);
     st->vim_sl_ruler = gtk_label_new("  0% ☰    1/1 ㏑ :  1");
-    gtk_label_set_xalign(GTK_LABEL(st->vim_sl_ruler), 1.0f);
-    /* Fixed width: the line/column text changes on every focus or cursor
-     * move and must not change the statusline's requested width */
     editor_bar_label_shrinkable(st->vim_sl_ruler, PANGO_ELLIPSIZE_START);
-    gtk_label_set_width_chars(GTK_LABEL(st->vim_sl_ruler), 28);
-    gtk_label_set_max_width_chars(GTK_LABEL(st->vim_sl_ruler), 28);
+    gtk_widget_set_halign(st->vim_sl_ruler, GTK_ALIGN_END);
+    gtk_widget_add_css_class(st->vim_sl_ruler, "vim-ruler-badge");
+    gtk_widget_add_css_class(st->vim_sl_ruler, "vim-mode-normal");
+    gtk_overlay_add_overlay(GTK_OVERLAY(ruler_slot), st->vim_sl_ruler);
 
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_mode);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_file);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_showcmd);
     gtk_box_append(GTK_BOX(statusline), st->vim_sl_info);
-    gtk_box_append(GTK_BOX(statusline), st->vim_sl_ruler);
+    gtk_box_append(GTK_BOX(statusline), ruler_slot);
     st->vim_wild_label = gtk_label_new("");
     editor_bar_label_shrinkable(st->vim_wild_label, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->vim_wild_label), 0.0f);

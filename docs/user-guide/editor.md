@@ -228,7 +228,8 @@ server, the number of errors and warnings.
 - Emacs: `-U:**-  src/main.c  Top (0%)  L3 C7  Git-main  (C clangd Flymake[1 0])`.
 - Vim (airline style): `NORMAL  ᚠ main  src/main.c [+]` on the left, then
   `word  c  utf-8[unix]    42% ☰   42/100 ㏑ :  7` on the right (the word under
-  the cursor, filetype, encoding and format, percent, line/total, column).
+  the cursor, filetype, encoding and format, percent, line/total, column);
+  the mode and the percent, line and column are in the mode's colour.
 
 ## Notepad mode
 
