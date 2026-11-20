@@ -392,7 +392,7 @@ done
 DIR_DEPS="
 canvas:core,editor,explorer,theme,widgets
 clock:core,theme
-chrome:canvas,clock,core,diskuse,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
+chrome:canvas,clock,code,core,diskuse,editor,explorer,games,git,jupyter,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
 code:core,editor,formats,git,markup,preview,theme,widgets
 core:explorer,git,notes,terminal
 diskuse:core,explorer,git,theme,widgets

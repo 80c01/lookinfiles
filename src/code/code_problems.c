@@ -71,12 +71,35 @@ static ProblemsPage* page_state(GtkWidget* page) {
     return page != NULL ? g_object_get_data(G_OBJECT(page), PAGE_KEY) : NULL;
 }
 
+/* The notebook holding page (the preview notebook, an editor notebook or a
+ * terminal pane), or NULL when it is out of every notebook */
+static GtkNotebook* page_notebook(GtkWidget* page) {
+    GtkWidget* parent = page != NULL ? gtk_widget_get_parent(page) : NULL;
+    GtkWidget* nb = parent != NULL ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    return (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), page) >= 0) ? GTK_NOTEBOOK(nb) : NULL;
+}
+
+/* Take page out of the notebook holding it (an editor notebook left empty goes) */
+static void remove_page(AppData* app, GtkWidget* page) {
+    GtkNotebook* nb = page_notebook(page);
+    if (nb == NULL) return;
+    if (GTK_WIDGET(nb) == app->notebook) {
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
+    } else {
+        editor_remove_page(app, page);
+    }
+}
+
 static void close_page(ProblemsPage* pp) {
-    if (pp == NULL || pp->app == NULL || pp->app->notebook == NULL) return;
-    GtkNotebook* nb = GTK_NOTEBOOK(pp->app->notebook);
-    gint num = gtk_notebook_page_num(nb, pp->page);
-    pp->app->problems_page = NULL;
-    if (num >= 0) gtk_notebook_remove_page(nb, num);
+    if (pp == NULL || pp->app == NULL || pp->page == NULL) return;
+    AppData* app = pp->app;
+    GtkWidget* page = pp->page;
+    GtkWidget* focus_back = focus_route_return_target(app, page);
+    g_object_ref(page);
+    if (app->problems_page == page) app->problems_page = NULL;
+    remove_page(app, page);
+    focus_route_return(app, focus_back, page);
+    g_object_unref(page); /* frees pp */
 }
 
 static void on_close_clicked(GtkButton* btn, gpointer data) {
@@ -87,6 +110,19 @@ static void on_close_clicked(GtkButton* btn, gpointer data) {
 static void on_label_middle_click(GtkGestureClick* g, gint n, gdouble x, gdouble y, gpointer data) {
     (void)g; (void)n; (void)x; (void)y;
     close_page(data);
+}
+
+static void on_menu_close(GtkWidget* child, gpointer data) {
+    (void)child;
+    close_page(data);
+}
+
+/* The tab menu, as for an editor tab: move, close */
+static void on_label_right_click(GtkGestureClick* g, gint n, gdouble x, gdouble y, gpointer data) {
+    (void)n; (void)x; (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(g), GTK_EVENT_SEQUENCE_CLAIMED);
+    ProblemsPage* pp = data;
+    editor_page_show_context_menu(pp->app, pp->page, pp->label, on_menu_close, pp);
 }
 
 static void page_free(gpointer data) {
@@ -387,7 +423,8 @@ static void ensure_css(void) {
     theme_add_css(CSS);
 }
 
-/* Put the page in app->notebook, after the Git, References and Search tabs */
+/* Put the page in app->notebook, after the Git, References and Search tabs;
+ * it moves from there like an editor tab (drag, tab menu) */
 static void insert_page(AppData* app, ProblemsPage* pp) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     GtkWidget* git_page = git_tab_page(app);
@@ -395,6 +432,8 @@ static void insert_page(AppData* app, ProblemsPage* pp) {
     if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
     if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
     gtk_notebook_insert_page(nb, pp->page, pp->label, after + 1);
+    gtk_notebook_set_tab_reorderable(nb, pp->page, TRUE);
+    gtk_notebook_set_tab_detachable(nb, pp->page, TRUE);
     app->problems_page = pp->page;
 }
 
@@ -476,6 +515,11 @@ static ProblemsPage* ensure_page(AppData* app) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), pp);
     gtk_widget_add_controller(pp->label, GTK_EVENT_CONTROLLER(mclick));
+    GtkGesture* rclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(rclick), GDK_BUTTON_SECONDARY);
+    g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), pp);
+    gtk_widget_add_controller(pp->label, GTK_EVENT_CONTROLLER(rclick));
+    editor_page_set_movable(page);
 
     insert_page(app, pp);
     return pp;
@@ -487,10 +531,12 @@ void code_problems_show(AppData* app, EditorTab* tab) {
     ProblemsPage* pp = ensure_page(app);
     if (pp == NULL) return;
     populate(pp);
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+    GtkNotebook* nb = page_notebook(pp->page);
+    if (nb == NULL) return;
+    /* The preview panel shows when the tab is there and the panel hidden */
+    if (GTK_WIDGET(nb) == app->notebook && app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
         gtk_widget_set_visible(app->viewer_box, TRUE);
     }
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, pp->page));
     if (g_list_model_get_n_items(G_LIST_MODEL(pp->store)) > 1) {
         gtk_single_selection_set_selected(pp->selection, 1);
@@ -510,15 +556,19 @@ void code_problems_folder_changed(AppData* app) {
     if (pp != NULL && g_strcmp0(pp->base_dir, app->base_dir) != 0) populate(pp);
 }
 
-/* Take the Problems page out of the notebook, keeping it (owned ref), or NULL */
+/* The page of the workspace left, an owned ref (or NULL): taken out of the
+ * preview notebook with its tab; in the editor panel or a terminal pane, it
+ * already left with them (editor_detach_tabs()) */
 static GtkWidget* detach_page(AppData* app) {
     GtkWidget* page = app->problems_page;
-    if (page == NULL || app->notebook == NULL) return NULL;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    if (page == NULL) return NULL;
+    GtkRoot* root = gtk_widget_get_root(page);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
     g_object_ref(page);
     app->problems_page = NULL;
-    gint num = gtk_notebook_page_num(nb, page);
-    if (num >= 0) gtk_notebook_remove_page(nb, num);
+    GtkNotebook* nb = page_notebook(page);
+    if (nb != NULL && GTK_WIDGET(nb) == app->notebook) gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
     return page;
 }
 
@@ -536,7 +586,11 @@ void code_problems_workspace_shown(AppData* app, VirtualLayout* ws) {
     ws->problems_page = NULL;
     ProblemsPage* pp = page_state(page);
     if (pp != NULL && app->notebook != NULL && app->problems_page == NULL) {
-        insert_page(app, pp);
+        if (page_notebook(page) != NULL) {
+            app->problems_page = page; /* back with the editor panel or the terminal panes */
+        } else {
+            insert_page(app, pp);
+        }
         populate(pp);
     }
     g_object_unref(page);
@@ -546,17 +600,23 @@ void code_problems_workspace_removed(AppData* app, VirtualLayout* ws) {
     if (app == NULL || ws == NULL) return;
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
         GtkWidget* page = detach_page(app);
-        if (page != NULL) g_object_unref(page);
+        if (page != NULL) {
+            remove_page(app, page); /* still in the editor panel shown */
+            g_object_unref(page);
+        }
     }
     g_clear_object(&ws->problems_page);
 }
 
 gboolean code_problems_close_shown(AppData* app) {
     if (app == NULL || app->notebook == NULL || app->problems_page == NULL) return FALSE;
+    GtkWidget* page = app->problems_page;
+    GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
+    gboolean focused = focus != NULL && (focus == page || gtk_widget_is_ancestor(focus, page));
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint cur = gtk_notebook_get_current_page(nb);
-    if (cur < 0 || gtk_notebook_get_nth_page(nb, cur) != app->problems_page) return FALSE;
-    close_page(page_state(app->problems_page));
+    if (!focused && gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, page)) return FALSE;
+    if (!gtk_widget_get_mapped(page)) return FALSE;
+    close_page(page_state(page));
     return TRUE;
 }
 

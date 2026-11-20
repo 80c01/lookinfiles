@@ -1295,7 +1295,9 @@ Layers, from bottom to top
   text filter, live updates via `APP_EVENT_DIAGNOSTICS_CHANGED`) and next /
   previous diagnostic stepping. One tab per workspace (set aside in
   `VirtualLayout.problems_page`), listing the diagnostics of the files under
-  the workspace folder or open in its editor tabs.
+  the workspace folder or open in its editor tabs. A movable page: it is
+  dragged or moved (tab menu) to the editor panel or a terminal pane like an
+  editor tab.
 - `code_complete` — non-focus-stealing completion `GtkPopover` anchored at
   the cursor (LSP `textDocument/completion` with buffer-identifier fallback).
 - `code_rename` — multi-file LSP symbol rename (`prepareRename` + `rename`),

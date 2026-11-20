@@ -29,6 +29,7 @@
 #include "search/quick_open.h"
 #include "search/project_search.h"
 #include "search/deep_search_tab.h"
+#include "code/code_problems.h"
 #include "workspace/session.h"
 
 
@@ -177,14 +178,8 @@ void close_shown_tab(AppData* app) {
         if (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app)) {
             return;
         }
-        if (app->notebook != NULL && app->problems_page != NULL) {
-            GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-            gint cur = gtk_notebook_get_current_page(nb);
-            if (cur >= 0 && gtk_notebook_get_nth_page(nb, cur) == app->problems_page) {
-                app->problems_page = NULL;
-                gtk_notebook_remove_page(nb, cur);
-                return;
-            }
+        if (code_problems_close_shown(app)) {
+            return;
         }
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);

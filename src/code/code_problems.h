@@ -24,8 +24,8 @@ void code_problems_workspace_hidden(AppData* app, VirtualLayout* ws);
 void code_problems_workspace_shown(AppData* app, VirtualLayout* ws);
 void code_problems_workspace_removed(AppData* app, VirtualLayout* ws);
 
-/* Close the Problems tab if it is the current page of app->notebook (Ctrl+W).
- * Returns TRUE when closed. */
+/* Close the Problems tab if it has the focus or is the current page of
+ * app->notebook (Ctrl+W). Returns TRUE when closed. */
 gboolean code_problems_close_shown(AppData* app);
 
 /* Jump to the next (forward == TRUE) or previous diagnostic in tab and report
