@@ -95,6 +95,19 @@ gchar* find_git_root(const gchar* start_dir) {
     return NULL;
 }
 
+gchar* git_path_prefix(const gchar* top, const gchar* path) {
+    gsize n = strlen(top);
+    if (strcmp(path, top) == 0 || strncmp(path, top, n) != 0) return g_strdup("");
+    const gchar* rel = path + n;
+    while (G_IS_DIR_SEPARATOR(*rel)) rel++;
+    if (*rel == '\0') return g_strdup("");
+    gchar* prefix = g_strconcat(rel, "/", NULL);
+    for (gchar* p = prefix; *p != '\0'; p++) {
+        if (G_IS_DIR_SEPARATOR(*p)) *p = '/';
+    }
+    return prefix;
+}
+
 gchar* git_relative_path(const gchar* path) {
     if (path == NULL || !g_path_is_absolute(path)) {
         return NULL;

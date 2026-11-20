@@ -439,6 +439,37 @@ static void test_exclude(void) {
     g_free(dir);
 }
 
+/* docs kept and filtered, docs/deep read whole, empty and a.txt and
+ * docs/r.md left out */
+static DiskFilterVerdict filter_some(const gchar* rel, gboolean dir, gpointer data) {
+    g_ptr_array_add(data, g_strdup_printf("%s%s", rel, dir ? "/" : ""));
+    gchar* norm = g_strdelimit(g_strdup(rel), G_DIR_SEPARATOR_S, '/');
+    DiskFilterVerdict v = DISK_FILTER_KEEP;
+    if (strcmp(norm, "docs/deep") == 0) v = DISK_FILTER_ALL;
+    else if (strcmp(norm, "empty") == 0 || strcmp(norm, "a.txt") == 0 || strcmp(norm, "docs/r.md") == 0)
+        v = DISK_FILTER_SKIP;
+    g_free(norm);
+    return v;
+}
+
+static void test_filter(void) {
+    gchar* dir = make_tree();
+    DiskScan* s = disk_scan_new(dir, TRUE);
+    GPtrArray* seen = g_ptr_array_new_with_free_func(g_free);
+    disk_scan_set_filter(s, filter_some, seen);
+    disk_scan_run(s, NULL);
+    DiskNode* root = disk_scan_root(s);
+    g_assert_cmpuint(root->size, ==, 5010);
+    g_assert_cmpuint(root->n_files, ==, 2);
+    g_assert_cmpuint(root->n_dirs, ==, 3); /* docs, deep, x */
+    g_assert_null(child_named(root, "empty"));
+    g_assert_cmpuint(seen->len, ==, 6); /* a.txt b.log docs/ empty/ docs/r.md docs/deep/: not below deep */
+    disk_scan_free(s);
+    g_ptr_array_unref(seen);
+    remove_tree(dir);
+    g_free(dir);
+}
+
 /* Taken out of the tree read */
 static void test_remove(void) {
     gchar* dir = make_tree();
@@ -514,6 +545,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/disk_scan/cancelled", test_cancelled);
     g_test_add_func("/disk_scan/root_path", test_root_path);
     g_test_add_func("/disk_scan/exclude", test_exclude);
+    g_test_add_func("/disk_scan/filter", test_filter);
     g_test_add_func("/disk_scan/remove", test_remove);
 #ifdef G_OS_UNIX
     g_test_add_func("/disk_scan/links", test_links);

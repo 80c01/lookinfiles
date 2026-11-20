@@ -2,6 +2,7 @@
 #include "diskuse/disk_usage_stats.h"
 #include "core/disk_stats.h"
 #include "core/i18n.h"
+#include "git/git_filter.h"
 #include "git/git_space.h"
 #include "theme/icons.h"
 #include "widgets/histogram.h"
@@ -10,6 +11,7 @@
 
 #define STATS_KEY "lookin-disk-usage-stats"
 #define PATH_KEY "lookin-disk-usage-path"
+#define MODE_KEY "lookin-disk-usage-mode"
 #define TOP_EXTENSIONS 12
 #define TOP_FILES 25 /* largest files shown (the scan keeps more) */
 #define ERRORS_SHOWN 20
@@ -17,6 +19,7 @@
 typedef struct {
     GtkWidget* box; /* the sections, rebuilt for each scan */
     void (*reveal)(gpointer data, const gchar* path);
+    void (*filter)(gpointer data, GitFilterMode mode);
     gpointer data;
 } DuStats;
 
@@ -79,11 +82,8 @@ static GtkWidget* share_bar(guint64 part, guint64 whole) {
     return bar;
 }
 
-/* "Name  [bar]  size  files", the bar the part of whole */
-static void tally_row(GtkWidget* grid, gint row, const gchar* name, const DiskTally* t, guint64 whole) {
-    GtkWidget* n = label_new(name, NULL, 0.0f);
-    gtk_label_set_ellipsize(GTK_LABEL(n), PANGO_ELLIPSIZE_END);
-    gtk_widget_set_tooltip_text(n, name);
+/* "name  [bar]  size  files", the bar the part of whole */
+static void tally_row_with(GtkWidget* grid, gint row, GtkWidget* n, const DiskTally* t, guint64 whole) {
     gtk_grid_attach(GTK_GRID(grid), n, 0, row, 1, 1);
     GtkWidget* bar = share_bar(t->size, whole);
     gchar* pct = disk_format_percent(t->size, whole);
@@ -92,6 +92,13 @@ static void tally_row(GtkWidget* grid, gint row, const gchar* name, const DiskTa
     gtk_grid_attach(GTK_GRID(grid), bar, 1, row, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), number_take(g_format_size(t->size), "du-num"), 2, row, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), number_take(disk_format_files(t->count), "du-muted"), 3, row, 1, 1);
+}
+
+static void tally_row(GtkWidget* grid, gint row, const gchar* name, const DiskTally* t, guint64 whole) {
+    GtkWidget* n = label_new(name, NULL, 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(n), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_tooltip_text(n, name);
+    tally_row_with(grid, row, n, t, whole);
 }
 
 static gchar* date_text(gint64 t) {
@@ -245,6 +252,44 @@ static void show_largest(DuStats* ds, const DiskStats* st, const gchar* root) {
     }
 }
 
+static void on_mode_clicked(GtkButton* button, gpointer data) {
+    DuStats* ds = data;
+    if (ds->filter != NULL) ds->filter(ds->data, (GitFilterMode)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), MODE_KEY)));
+}
+
+/* A flat button that counts the files of mode only (GIT_FILTER_NONE: all) */
+static GtkWidget* mode_button(DuStats* ds, const gchar* text, const gchar* tip, GitFilterMode mode) {
+    GtkWidget* button = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(button), FALSE);
+    gtk_widget_add_css_class(button, "du-file");
+    GtkWidget* l = label_new(text, NULL, 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(l), PANGO_ELLIPSIZE_END);
+    gtk_button_set_child(GTK_BUTTON(button), l);
+    gtk_widget_set_tooltip_text(button, tip);
+    g_object_set_data(G_OBJECT(button), MODE_KEY, GINT_TO_POINTER(mode));
+    g_signal_connect(button, "clicked", G_CALLBACK(on_mode_clicked), ds);
+    return button;
+}
+
+/* A tally of the work tree whose name counts the files of mode only */
+static void git_row(DuStats* ds, GtkWidget* grid, gint row, const gchar* name, GitFilterMode mode, const DiskTally* t,
+                    guint64 whole) {
+    const gchar* tip = mode == GIT_FILTER_REPO ? _("Count Only the Repository Files (Tracked and Untracked)")
+                                               : _("Count Only the Ignored Files");
+    tally_row_with(grid, row, mode_button(ds, name, tip, mode), t, whole);
+}
+
+/* A tree read with a git filter: what it holds, and the way back */
+static void show_git_filter(DuStats* ds, GitFilterMode mode) {
+    GtkWidget* g = section(ds, _("Git Repository"));
+    /* TRANSLATORS: the files counted in the Disk Usage tab */
+    fact(g, 0, _("Counted"),
+         g_strdup(mode == GIT_FILTER_REPO ? _("The repository files (tracked and untracked)") : _("The ignored files")));
+    GtkWidget* all = mode_button(ds, _("Count All Files"), _("Count All Files Again"), GIT_FILTER_NONE);
+    gtk_widget_set_halign(all, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(g), all, 0, 1, 4, 1);
+}
+
 /* The room of the work tree: tracked, untracked, ignored, history, nested */
 static void show_git(DuStats* ds, const GitSpace* git, const DiskStats* st) {
     GtkWidget* g = section(ds, _("Git Repository"));
@@ -254,11 +299,13 @@ static void show_git(DuStats* ds, const GitSpace* git, const DiskStats* st) {
         fact(g, row++, _("Repository"), g_strdup(git->top));
     }
     /* TRANSLATORS: files of the git index */
-    tally_row(g, row++, _("Tracked"), &git->tracked, st->size);
+    git_row(ds, g, row++, _("Tracked"), GIT_FILTER_REPO, &git->tracked, st->size);
     /* TRANSLATORS: files of the work tree not in the git index and not ignored */
-    if (git->untracked.size > 0 || git->untracked.count > 0) tally_row(g, row++, _("Untracked"), &git->untracked, st->size);
+    if (git->untracked.size > 0 || git->untracked.count > 0) {
+        git_row(ds, g, row++, _("Untracked"), GIT_FILTER_REPO, &git->untracked, st->size);
+    }
     /* TRANSLATORS: files left out of git by .gitignore */
-    tally_row(g, row++, _("Ignored"), &git->ignored, st->size);
+    git_row(ds, g, row++, _("Ignored"), GIT_FILTER_IGNORED, &git->ignored, st->size);
     /* TRANSLATORS: the .git folder: the commits, the objects, the index */
     if (git->history.size > 0) tally_row(g, row++, _("History (.git)"), &git->history, st->size);
     if (git->nested.size > 0) tally_row(g, row++, _("Submodules, nested repositories"), &git->nested, st->size);
@@ -295,7 +342,7 @@ static void show_errors(DuStats* ds, const DiskStats* st) {
     }
 }
 
-void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpace* git) {
+void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpace* git, GitFilterMode mode) {
     DuStats* ds = stats != NULL ? g_object_get_data(G_OBJECT(stats), STATS_KEY) : NULL;
     if (ds == NULL) return;
     GtkWidget* child;
@@ -310,7 +357,11 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpac
     const DiskStats* st = disk_scan_stats(scan);
     const gchar* root = disk_scan_root_path(scan);
     show_overview(ds, st, root);
-    if (git != NULL) show_git(ds, git, st);
+    if (git != NULL) {
+        show_git(ds, git, st);
+    } else if (mode != GIT_FILTER_NONE) {
+        show_git_filter(ds, mode);
+    }
     if (st->n_files > 0) {
         show_kinds(ds, st);
         show_sizes(ds, st);
@@ -325,9 +376,11 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpac
     show_errors(ds, st);
 }
 
-GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path), gpointer data) {
+GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path),
+                                void (*filter)(gpointer data, GitFilterMode mode), gpointer data) {
     DuStats* ds = g_new0(DuStats, 1);
     ds->reveal = reveal;
+    ds->filter = filter;
     ds->data = data;
     ds->box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_add_css_class(ds->box, "du-stats");
@@ -336,6 +389,6 @@ GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path)
     gtk_widget_set_vexpand(scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), ds->box);
     g_object_set_data_full(G_OBJECT(scroll), STATS_KEY, ds, g_free);
-    disk_usage_stats_show(scroll, NULL, NULL);
+    disk_usage_stats_show(scroll, NULL, NULL, GIT_FILTER_NONE);
     return scroll;
 }

@@ -11,6 +11,11 @@ gchar* find_git_root(const gchar* start_dir);
  * root itself), NULL if path is not in a repository. Caller frees. */
 gchar* git_relative_path(const gchar* path);
 
+/* path (a folder at or below top, both canonical) as a prefix of the
+ * paths git lists: '/'-separated with a final '/', "" when it is top.
+ * Caller frees. */
+gchar* git_path_prefix(const gchar* top, const gchar* path);
+
 /* Git directory of a repository root ("<root>/.git" or the "gitdir:" target
  * for worktrees and submodules), NULL if none. Caller frees. */
 gchar* git_resolve_dir(const gchar* git_root);

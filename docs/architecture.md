@@ -102,7 +102,9 @@ Layers, from bottom to top
   wheel) and `DiskStats` (counts, the 50 largest files, sizes by extension,
   age and size group (`disk_size_of()`, decades of powers of 1024), deepest folder, unreadable entries); symbolic links not
   followed, hard links counted once, other filesystems skipped, the paths
-  given to `disk_scan_exclude()` left out (`disk_scan_is_excluded()`); `disk_scan_remove()` takes an
+  given to `disk_scan_exclude()` left out (`disk_scan_is_excluded()`), and
+  only the entries a `disk_scan_set_filter()` callback keeps (a folder can
+  be kept whole, unfiltered below); `disk_scan_remove()` takes an
   entry out of a tree read (sizes and counts rolled up again). Any thread
   reads the progress with `disk_scan_snapshot()` (counters, the folders of
   the root done so far). `disk_stats` groups the statistics for display:
@@ -179,6 +181,11 @@ Layers, from bottom to top
   scan's tree, the ignored room as what is left; the largest ignored
   entries (folders holding nothing listed, unlisted files among those the
   scan kept) and tracked files. Worker thread, unit-tested.
+- `git_filter` — a `disk_scan` filter by git, built in the worker from
+  `git_list_files_by_kind()`: the repository files (listed files, their
+  folders, nested repositories whole) or the ignored ones (the rest, a
+  folder holding nothing listed kept whole, without `.git`). Unit-tested
+  (`tests/git_repo_fixture.h` makes the repository for it and `git_space`).
 - `git_state` — `GitState`, the result of the explorer's git scan: badge of
   each changed path, repository root, uncommitted changes, upstream ahead /
   behind counts, and comparisons that skip a redraw when nothing changed. The
@@ -966,7 +973,10 @@ Layers, from bottom to top
   (`disk_stats`): overview, room by kind, by age and by extension with
   bars, the files by size (a `histogram`), the largest files (a click shows one in the explorer), the
   unreadable entries; in a git work tree, the room of its files
-  (`git_space`, computed in the scan's worker once the tree is read). `disk_usage_map` — the treemap under the list (a
+  (`git_space`, computed in the scan's worker once the tree is read). A
+  drop-down in the header (shown in a work tree) or a click on a git row
+  of the statistics reads the folder again with a `git_filter` (built in
+  the worker before the reading); the git room is then not computed. `disk_usage_map` — the treemap under the list (a
   `GtkPaned`): the folder shown in nested rectangles (`treemap_layout`,
   three folder levels, 300 rectangles per folder at most, laid out again
   only when the folder or the size changes), files coloured by kind with

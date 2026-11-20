@@ -144,6 +144,22 @@ void disk_scan_exclude(DiskScan* scan, const gchar* path);
 /* TRUE when path (full path) was given to disk_scan_exclude() */
 gboolean disk_scan_is_excluded(const DiskScan* scan, const gchar* path);
 
+/* What a filter does with an entry */
+typedef enum {
+    DISK_FILTER_KEEP = 0, /* read it (a folder: its entries filtered too) */
+    DISK_FILTER_SKIP,     /* leave it out */
+    DISK_FILTER_ALL       /* read it, a folder with everything below unfiltered */
+} DiskFilterVerdict;
+
+/* rel: the entry below the root (native separators); dir: a folder (not a
+ * link to one). Called from disk_scan_run()'s thread. */
+typedef DiskFilterVerdict (*DiskScanFilter)(const gchar* rel, gboolean dir, gpointer data);
+
+/* Only the entries filter keeps are read (data borrowed: it outlives the
+ * scan's reading); call it before disk_scan_run(). The entries it leaves
+ * out are not counted anywhere. */
+void disk_scan_set_filter(DiskScan* scan, DiskScanFilter filter, gpointer data);
+
 /* Read the tree: blocks until it is read or cancel is triggered (a cancelled
  * scan keeps what it read). Call it once, in a worker thread. */
 void disk_scan_run(DiskScan* scan, GCancellable* cancel);

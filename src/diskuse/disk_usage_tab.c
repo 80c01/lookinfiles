@@ -8,6 +8,7 @@
 #include "core/disk_stats.h"
 #include "core/i18n.h"
 #include "explorer/file_list.h"
+#include "git/git_filter.h"
 #include "git/git_space.h"
 #include "git/git_tab.h"
 #include "theme/icons.h"
@@ -24,7 +25,10 @@
 /* One reading of the tree: the scan lives as long as its worker */
 typedef struct {
     DiskScan* scan; /* owned until the tab adopts it */
-    GitSpace* git;  /* the room of its work tree, NULL outside one */
+    GitSpace* git;  /* the room of its work tree, NULL outside one or filtered */
+    GitFilterMode mode;  /* the files to read */
+    GitFilter* filter;   /* its filter, NULL for every file */
+    gboolean dropped;    /* a filter asked outside a work tree: every file read */
 } ScanJob;
 
 typedef struct {
@@ -36,6 +40,8 @@ typedef struct {
     GtkWidget* refresh;
     GtkWidget* stop;
     GtkWidget* include;  /* the excluded entries back in */
+    GtkWidget* filter_dd;/* GtkDropDown: every file, the repository's, the ignored ones */
+    gboolean syncing;    /* filter_dd set from the code */
     GtkWidget* progress; /* GtkProgressBar, while the tree is read */
     GtkWidget* status;   /* counters, then the summary */
     GtkWidget* current;  /* folder being read, then the folder shown */
@@ -49,6 +55,9 @@ typedef struct {
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
     GitSpace* git;       /* the room of its work tree (owned), NULL outside one */
+    GitFilterMode filter;    /* the files asked (filter_dd) */
+    GitFilterMode scan_mode; /* the files the tree read holds */
+    gboolean in_repo;    /* root is in a git work tree (known once read) */
     DiskScan* running;   /* the scan being read (owned by its job), else NULL */
     gboolean quiet;      /* the reading running keeps the tree read shown */
     GPtrArray* excluded; /* full paths left out of the calculation */
@@ -133,6 +142,12 @@ static void sync_buttons(DiskUsageTab* dt) {
     gtk_widget_set_sensitive(dt->up, dt->shown != NULL && dt->shown->parent != NULL);
     gtk_widget_set_visible(dt->stop, dt->running != NULL);
     gtk_widget_set_visible(dt->refresh, dt->running == NULL);
+    gtk_widget_set_visible(dt->filter_dd, dt->in_repo || dt->filter != GIT_FILTER_NONE);
+    if (gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->filter_dd)) != (guint)dt->filter) {
+        dt->syncing = TRUE;
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->filter_dd), (guint)dt->filter);
+        dt->syncing = FALSE;
+    }
     guint n = dt->excluded->len;
     gtk_widget_set_visible(dt->include, n > 0);
     if (n > 0) {
@@ -228,6 +243,10 @@ static void show_summary(DiskUsageTab* dt) {
         g_string_append_printf(text, ngettext("%s excluded", "%s excluded", (gulong)MIN(st->n_excluded, G_MAXULONG)), n);
         g_free(n);
     }
+    if (dt->scan_mode != GIT_FILTER_NONE) {
+        g_string_append(text, " · ");
+        g_string_append(text, dt->scan_mode == GIT_FILTER_REPO ? _("repository files only") : _("ignored files only"));
+    }
     if (disk_scan_cancelled(dt->scan)) {
         g_string_append(text, " · ");
         g_string_append(text, _("stopped before the end"));
@@ -251,14 +270,20 @@ static void job_free(gpointer data) {
     ScanJob* job = data;
     disk_scan_free(job->scan);
     git_space_free(job->git);
+    git_filter_free(job->filter);
     g_free(job);
 }
 
 static void scan_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancel) {
     (void)source;
     ScanJob* job = data;
+    if (job->mode != GIT_FILTER_NONE) {
+        job->filter = git_filter_new(disk_scan_root_path(job->scan), job->mode, cancel);
+        job->dropped = job->filter == NULL && !g_cancellable_is_cancelled(cancel);
+        git_filter_apply(job->filter, job->scan);
+    }
     disk_scan_run(job->scan, cancel);
-    if (!disk_scan_cancelled(job->scan)) job->git = git_space_compute(job->scan, cancel);
+    if (!disk_scan_cancelled(job->scan) && job->filter == NULL) job->git = git_space_compute(job->scan, cancel);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -274,9 +299,13 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
         dt->timer = 0;
     }
     gtk_widget_set_visible(dt->progress, FALSE);
+    if (job->dropped) dt->filter = GIT_FILTER_NONE; /* not a work tree (any more) */
+    if (job->git != NULL || job->filter != NULL) dt->in_repo = TRUE;
+    else if (!disk_scan_cancelled(job->scan)) dt->in_repo = FALSE;
     if (dt->quiet && dt->scan != NULL) {
         dt->quiet = FALSE;
         if (disk_scan_cancelled(job->scan)) { /* stopped: the tree read stays */
+            dt->filter = dt->scan_mode;
             sync_buttons(dt);
             return;
         }
@@ -288,10 +317,11 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
         job->scan = NULL;
         git_space_free(dt->git);
         dt->git = g_steal_pointer(&job->git);
+        dt->scan_mode = job->filter != NULL ? job->mode : GIT_FILTER_NONE;
         dt->elapsed = g_get_monotonic_time() - dt->started;
         DiskNode* node = disk_scan_find(dt->scan, path);
         show_summary(dt);
-        disk_usage_stats_show(dt->stats, dt->scan, dt->git);
+        disk_usage_stats_show(dt->stats, dt->scan, dt->git, dt->scan_mode);
         show_folder(dt, node != NULL ? node : disk_scan_root(dt->scan), select);
         disk_scan_free(old); /* nothing shown points into it any more */
         g_free(select);
@@ -303,9 +333,10 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
     job->scan = NULL;
     git_space_free(dt->git);
     dt->git = g_steal_pointer(&job->git);
+    dt->scan_mode = job->filter != NULL ? job->mode : GIT_FILTER_NONE;
     dt->elapsed = g_get_monotonic_time() - dt->started;
     show_summary(dt);
-    disk_usage_stats_show(dt->stats, dt->scan, dt->git);
+    disk_usage_stats_show(dt->stats, dt->scan, dt->git, dt->scan_mode);
     gchar* select = disk_usage_list_selected_name(dt->list);
     show_folder(dt, disk_scan_root(dt->scan), select);
     g_free(select);
@@ -328,7 +359,7 @@ static void start_scan(DiskUsageTab* dt, gboolean quiet) {
     dt->quiet = quiet && dt->scan != NULL;
     if (!dt->quiet) {
         disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
-        disk_usage_stats_show(dt->stats, NULL, NULL);
+        disk_usage_stats_show(dt->stats, NULL, NULL, GIT_FILTER_NONE);
         disk_usage_views_show(dt->views, NULL);
         dt->shown = NULL;
         g_clear_pointer(&dt->scan, disk_scan_free);
@@ -337,6 +368,7 @@ static void start_scan(DiskUsageTab* dt, gboolean quiet) {
 
     ScanJob* job = g_new0(ScanJob, 1);
     job->scan = disk_scan_new(dt->root, TRUE);
+    job->mode = dt->filter;
     for (guint i = 0; i < dt->excluded->len; i++) disk_scan_exclude(job->scan, g_ptr_array_index(dt->excluded, i));
     dt->running = job->scan;
     dt->started = g_get_monotonic_time();
@@ -387,7 +419,7 @@ static void on_row_exclude(gpointer data, const gchar* path) {
     }
     if (dt->shown != NULL && disk_scan_remove(dt->scan, path)) {
         show_summary(dt);
-        disk_usage_stats_show(dt->stats, dt->scan, dt->git);
+        disk_usage_stats_show(dt->stats, dt->scan, dt->git, dt->scan_mode);
         show_folder(dt, dt->shown, NULL);
     }
     start_scan(dt, TRUE);
@@ -440,6 +472,27 @@ static void on_include_clicked(GtkButton* button, gpointer data) {
     DiskUsageTab* dt = data;
     g_ptr_array_set_size(dt->excluded, 0);
     start_scan(dt, TRUE);
+}
+
+/* Read the files of mode only (GIT_FILTER_NONE: every file) */
+static void set_filter(DiskUsageTab* dt, GitFilterMode mode) {
+    if (mode == dt->filter) return;
+    dt->filter = mode;
+    sync_buttons(dt);
+    start_scan(dt, TRUE);
+}
+
+static void on_filter_selected(GObject* dd, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    DiskUsageTab* dt = data;
+    if (dt->syncing) return;
+    guint selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(dd));
+    if (selected <= GIT_FILTER_IGNORED) set_filter(dt, (GitFilterMode)selected);
+}
+
+/* A row of the git statistics clicked */
+static void on_stats_filter(gpointer data, GitFilterMode mode) {
+    set_filter(data, mode);
 }
 
 static void on_stop_clicked(GtkButton* button, gpointer data) {
@@ -607,6 +660,15 @@ static DiskUsageTab* ensure_page(AppData* app) {
     g_signal_connect(dt->include, "clicked", G_CALLBACK(on_include_clicked), dt);
     gtk_widget_set_visible(dt->include, FALSE);
     gtk_box_append(GTK_BOX(bar), dt->include);
+    /* Same order as GitFilterMode */
+    const gchar* modes[] = { _("All Files"), _("Repository Files"), _("Ignored Files"), NULL };
+    dt->filter_dd = gtk_drop_down_new_from_strings(modes);
+    gtk_widget_set_tooltip_text(dt->filter_dd, _("The files counted: all of them, those of the git repository "
+                                                 "(tracked and untracked, not ignored), or the ignored ones"));
+    gtk_widget_set_valign(dt->filter_dd, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(dt->filter_dd, FALSE);
+    g_signal_connect(dt->filter_dd, "notify::selected", G_CALLBACK(on_filter_selected), dt);
+    gtk_box_append(GTK_BOX(bar), dt->filter_dd);
     dt->stop = icon_button_new("process-stop", _("Stop Reading (Escape)"));
     icon_button_set_content(dt->stop, "process-stop", _("Stop")); /* not taken for the close button */
     g_signal_connect(dt->stop, "clicked", G_CALLBACK(on_stop_clicked), dt);
@@ -642,7 +704,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
     gtk_paned_set_shrink_end_child(GTK_PANED(dt->split), FALSE);
     g_signal_connect(dt->split, "notify::max-position", G_CALLBACK(on_split_sized), dt);
     gtk_widget_set_size_request(dt->split, BREAKDOWN_MIN_WIDTH, -1);
-    dt->stats = disk_usage_stats_new(on_row_reveal, dt);
+    dt->stats = disk_usage_stats_new(on_row_reveal, on_stats_filter, dt);
     gtk_widget_set_size_request(dt->stats, STATS_MIN_WIDTH, -1);
     /* The breakdown takes the room, the statistics keep their width */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
@@ -676,7 +738,11 @@ void disk_usage_tab_show(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return;
     DiskUsageTab* dt = ensure_page(app);
     if (dt == NULL) return;
-    if (g_strcmp0(dt->root, path) != 0) g_ptr_array_set_size(dt->excluded, 0); /* another folder */
+    if (g_strcmp0(dt->root, path) != 0) { /* another folder */
+        g_ptr_array_set_size(dt->excluded, 0);
+        dt->filter = GIT_FILTER_NONE;
+        dt->in_repo = FALSE;
+    }
     g_free(dt->root);
     dt->root = g_strdup(path);
     start_scan(dt, FALSE);

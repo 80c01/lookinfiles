@@ -181,18 +181,6 @@ static void find_ignored(Ctx* c, DiskNode* node, const gchar* rel, GArray* out) 
     }
 }
 
-/* The root below the top, '/'-separated with a final '/' ("" at the top) */
-static gchar* root_prefix(const gchar* canon, const gchar* top) {
-    if (strcmp(canon, top) == 0) return g_strdup("");
-    const gchar* rel = canon + strlen(top);
-    while (G_IS_DIR_SEPARATOR(*rel)) rel++;
-    gchar* prefix = g_strconcat(rel, "/", NULL);
-    for (gchar* p = prefix; *p != '\0'; p++) {
-        if (G_IS_DIR_SEPARATOR(*p)) *p = '/';
-    }
-    return prefix;
-}
-
 GitSpace* git_space_compute(DiskScan* scan, GCancellable* cancel) {
     DiskNode* root_node = disk_scan_root(scan);
     const gchar* root = disk_scan_root_path(scan);
@@ -211,7 +199,7 @@ GitSpace* git_space_compute(DiskScan* scan, GCancellable* cancel) {
     Ctx c = { 0 };
     c.scan = scan;
     c.root = root;
-    c.prefix = root_prefix(canon, top);
+    c.prefix = git_path_prefix(top, canon);
     c.prefix_len = strlen(c.prefix);
     c.cancel = cancel;
     c.space = sp;

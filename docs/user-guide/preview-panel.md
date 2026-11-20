@@ -281,6 +281,17 @@ tracked files; a click shows one in the explorer. For a folder inside a
 repository, only what lies in that folder counts, and the top of the
 repository is given.
 
+In a repository, a list in the header chooses the files counted: **All
+Files**, **Repository Files** (tracked and untracked, not ignored, with
+the submodules and nested repositories whole; neither the history nor the
+ignored files) or **Ignored Files** (build output, dependencies, caches:
+what can be cleaned). A click on **Tracked** or **Untracked** in the
+statistics counts the repository files, on **Ignored** the ignored ones.
+The folder is read again with the files chosen; the list, the map and the
+statistics hold only them, and the summary says so. **Count All Files**
+in the statistics, or **All Files** in the list, comes back. Another
+folder counts all its files again.
+
 Symbolic links are not followed, a file with several hard links counts
 once, and other disks mounted inside the folder are left out. The summary
 under the title gives the room really taken on the disk too, and the

@@ -22,6 +22,8 @@ struct DiskScan {
     GString* path;          /* path of the folder being read (worker only) */
     GHashTable* inodes;     /* InodeKey of the files with several links (worker only) */
     GHashTable* excluded;   /* full paths left out of the reading */
+    DiskScanFilter filter;  /* NULL: every entry read */
+    gpointer filter_data;
     guint64 root_dev;
     GCancellable* cancel;   /* borrowed during disk_scan_run() */
     gboolean cancelled;
@@ -317,8 +319,9 @@ static gboolean is_symlink(const GStatBuf* st) {
 #endif
 }
 
-/* Read the folder of node (its path in s->path), depth 0 for the root */
-static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
+/* Read the folder of node (its path in s->path), depth 0 for the root;
+ * filtered: its entries go through s->filter */
+static void scan_dir(DiskScan* s, DiskNode* node, guint depth, gboolean filtered) {
     if (g_cancellable_is_cancelled(s->cancel)) {
         s->cancelled = TRUE;
         return;
@@ -346,7 +349,9 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
 
     gsize base = s->path->len;
     gboolean excluded = g_hash_table_size(s->excluded) > 0;
+    gsize root_len = strlen(s->root_path);
     GPtrArray* subdirs = g_ptr_array_new(); /* names borrowed from names */
+    GArray* subdir_all = g_array_new(FALSE, FALSE, sizeof(gboolean)); /* read unfiltered */
     GArray* subdir_disk = g_array_new(FALSE, FALSE, sizeof(guint64)); /* their own blocks */
     guint64 files = 0, size = 0, disk = 0;
     for (guint i = 0; i < names->len; i++) {
@@ -361,6 +366,15 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
             add_error(s, s->path->str, g_strerror(errno));
             continue;
         }
+        gboolean all = !filtered;
+        if (filtered) {
+            gboolean dir = S_ISDIR(st.st_mode) && !is_symlink(&st);
+            const gchar* rel = s->path->str + root_len; /* the entry below the root */
+            while (G_IS_DIR_SEPARATOR(*rel)) rel++;
+            DiskFilterVerdict v = s->filter(rel, dir, s->filter_data);
+            if (v == DISK_FILTER_SKIP) continue;
+            all = v == DISK_FILTER_ALL;
+        }
         if (is_symlink(&st)) {
             s->stats.n_symlinks++;
         } else if (S_ISDIR(st.st_mode)) {
@@ -368,6 +382,7 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
                 s->stats.n_mounts++;
             } else {
                 g_ptr_array_add(subdirs, (gpointer)name);
+                g_array_append_val(subdir_all, all);
                 guint64 bytes = disk_bytes(&st);
                 g_array_append_val(subdir_disk, bytes);
             }
@@ -412,7 +427,7 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
             g_free(s->stats.deepest);
             s->stats.deepest = g_strdup(s->path->str);
         }
-        scan_dir(s, child, d);
+        scan_dir(s, child, d, !g_array_index(subdir_all, gboolean, i));
         g_string_truncate(s->path, base);
 
         node->size += child->size;
@@ -434,6 +449,7 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth) {
     }
     if (node->children != NULL) g_ptr_array_sort(node->children, compare_size);
     g_ptr_array_unref(subdirs);
+    g_array_unref(subdir_all);
     g_array_unref(subdir_disk);
     g_ptr_array_unref(names);
 }
@@ -480,6 +496,12 @@ gboolean disk_scan_is_excluded(const DiskScan* s, const gchar* path) {
     return found;
 }
 
+void disk_scan_set_filter(DiskScan* s, DiskScanFilter filter, gpointer data) {
+    if (s == NULL) return;
+    s->filter = filter;
+    s->filter_data = data;
+}
+
 void disk_scan_run(DiskScan* s, GCancellable* cancel) {
     if (s == NULL) return;
     s->cancel = cancel;
@@ -500,7 +522,7 @@ void disk_scan_run(DiskScan* s, GCancellable* cancel) {
             s->progress.fs_used = used;
             g_mutex_unlock(&s->lock);
         }
-        scan_dir(s, s->root, 0);
+        scan_dir(s, s->root, 0, s->filter != NULL);
     }
     g_hash_table_remove_all(s->inodes);
     s->cancel = NULL;
