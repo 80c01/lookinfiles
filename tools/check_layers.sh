@@ -217,6 +217,7 @@ web_engine_module:web_engine
 web_engine_webkit:web_engine_module,web_engine,i18n,web_address
 web_engine_win:web_engine,web_keys,web_address,dialog,app_paths,i18n
 path_globs:
+xml_text:
 text_search:code_index,i18n
 deep_query:text_search,path_globs,file_types,i18n
 deep_search:deep_query

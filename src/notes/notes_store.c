@@ -328,3 +328,20 @@ void notes_store_free(NotesManager* mgr) {
     g_free(mgr->root);
     g_free(mgr);
 }
+
+gboolean notes_store_find_path(const NotesManager* mgr, const gchar* path, NotebookItem** nb, NoteItem** note) {
+    if (mgr == NULL || path == NULL) return FALSE;
+    for (GList* l = mgr->notebooks; l != NULL; l = l->next) {
+        NotebookItem* b = l->data;
+        for (GList* n = b->notes; n != NULL; n = n->next) {
+            NoteItem* it = n->data;
+            gsize len = it->path != NULL ? strlen(it->path) : 0;
+            if (len > 0 && strncmp(path, it->path, len) == 0 && (path[len] == '\0' || path[len] == '/')) {
+                if (nb != NULL) *nb = b;
+                if (note != NULL) *note = it;
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}

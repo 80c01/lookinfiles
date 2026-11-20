@@ -23,7 +23,9 @@ struct _CodeRefItem {
     GObject parent;
     gboolean header;   /* file row */
     gchar* path;
-    gchar* shown;      /* path shown (relative to the project) */
+    gchar* shown;      /* path shown (relative to the project; SearchArea: the detail) */
+    gchar* title;      /* header: bold name (NULL: the file name) */
+    gchar* icon_name;  /* header: file name of its type icon (NULL: the file's) */
     gint line;         /* occurrence: line and byte column of the name */
     gint column;
     gint length;       /* bytes of the name */
@@ -37,6 +39,8 @@ static void code_ref_item_finalize(GObject* obj) {
     CodeRefItem* it = CODE_REF_ITEM(obj);
     g_free(it->path);
     g_free(it->shown);
+    g_free(it->title);
+    g_free(it->icon_name);
     g_free(it->text);
     G_OBJECT_CLASS(code_ref_item_parent_class)->finalize(obj);
 }
@@ -62,6 +66,7 @@ typedef struct {
     GtkWidget* list;
     GListStore* store;
     GtkSingleSelection* selection;
+    const SearchArea* area; /* how its files show and open (NULL: as files) */
 } RefsPage;
 
 #define PAGE_KEY "code-refs-page"
@@ -137,9 +142,10 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     gtk_widget_set_visible(icon, it->header);
     if (it->header) {
         gchar* base = g_path_get_basename(it->path);
-        file_type_image_set(icon, base, FALSE);
+        file_type_image_set(icon, it->icon_name != NULL ? it->icon_name : base, FALSE);
         markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">%s · %u</span>",
-                                         base, palette_color(PAL_FG_SUBTLE), it->shown, it->count);
+                                         it->title != NULL ? it->title : base, palette_color(PAL_FG_SUBTLE),
+                                         it->shown, it->count);
         g_free(base);
     } else {
         /* Leading spaces dropped, the name in bold on a highlight */
@@ -160,6 +166,12 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
     g_free(markup);
 }
 
+/* An occurrence: the area's way first, else in an editor tab */
+static void open_at(RefsPage* rp, const gchar* path, gint line, gint column) {
+    if (rp->area != NULL && rp->area->open != NULL && rp->area->open(rp->app, path, line, column)) return;
+    editor_open_at(rp->app, path, line, column);
+}
+
 static void open_item(RefsPage* rp, CodeRefItem* it) {
     if (it == NULL) return;
     if (it->header) {
@@ -171,14 +183,14 @@ static void open_item(RefsPage* rp, CodeRefItem* it) {
             g_object_unref(x);
             if (found) {
                 CodeRefItem* next = g_list_model_get_item(G_LIST_MODEL(rp->store), i + 1);
-                editor_open_at(rp->app, next->path, next->line, next->column);
+                open_at(rp, next->path, next->line, next->column);
                 g_object_unref(next);
                 return;
             }
         }
         return;
     }
-    editor_open_at(rp->app, it->path, it->line, it->column);
+    open_at(rp, it->path, it->line, it->column);
 }
 
 static void on_activate(GtkListView* view, guint position, gpointer data) {
@@ -290,8 +302,9 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
 /* Fill the page: a header row per file then the occurrences (CodeReference*,
  * grouped by file), their length (else length) bytes highlighted. Returns the
  * files. */
-static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize length) {
+static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize length, const SearchArea* area) {
     g_list_store_remove_all(rp->store);
+    rp->area = area;
     guint files = 0;
     const gchar* header_path = NULL;
     for (guint i = 0; i < refs->len; i++) {
@@ -307,8 +320,15 @@ static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize l
             header->path = g_strdup(r->path);
             header->count = count;
             gsize n = root != NULL ? strlen(root) : 0;
-            header->shown = g_strdup(n > 0 && strncmp(r->path, root, n) == 0 && r->path[n] == '/' ? r->path + n + 1
-                                                                                                : r->path);
+            gchar* detail = NULL;
+            if (area != NULL && area->describe != NULL &&
+                area->describe(rp->app, r->path, &header->title, &detail, &header->icon_name)) {
+                header->shown = detail != NULL ? detail : g_strdup("");
+            } else {
+                header->shown = g_strdup(n > 0 && strncmp(r->path, root, n) == 0 && r->path[n] == '/'
+                                             ? r->path + n + 1
+                                             : r->path);
+            }
             g_list_store_append(rp->store, header);
             g_object_unref(header);
             header_path = r->path;
@@ -342,7 +362,7 @@ static void show_references(AppData* app, EditorTab* tab, CodeNavMessageFunc mes
                             GPtrArray* refs, const gchar* root, const gchar* source, gboolean truncated) {
     RefsPage* rp = ensure_page(app, &app->refs_page, _("References"));
     if (rp == NULL) return;
-    guint files = fill_page(rp, refs, root, strlen(name));
+    guint files = fill_page(rp, refs, root, strlen(name), NULL);
     gchar* bold = g_markup_printf_escaped("<b>%s</b>", name);
     gchar* sentence = NULL;
     gchar* hint = NULL;
@@ -402,8 +422,8 @@ void code_refs_show_searching(AppData* app, const gchar* query, const gchar* roo
 
 /* Fill the Search page with the results, without showing it */
 static void set_search(RefsPage* rp, const gchar* query, GPtrArray* refs, const gchar* root, const gchar* how,
-                       const gchar* note) {
-    guint files = fill_page(rp, refs, root, strlen(query));
+                       const gchar* note, const SearchArea* area) {
+    guint files = fill_page(rp, refs, root, strlen(query), area);
     /* Why the search stopped early first: the header is ellipsized */
     gchar* warn = note != NULL ? g_markup_printf_escaped(" <span foreground=\"%s\">· %s</span>",
                                                          palette_color(PAL_WARNING), note)
@@ -433,17 +453,17 @@ static void set_search(RefsPage* rp, const gchar* query, GPtrArray* refs, const 
 }
 
 void code_refs_show_search(AppData* app, const gchar* query, GPtrArray* refs, const gchar* root,
-                           const gchar* how, const gchar* note) {
+                           const gchar* how, const gchar* note, const SearchArea* area) {
     RefsPage* rp = ensure_page(app, &app->search_page, _("Search"));
     if (rp == NULL) return;
-    set_search(rp, query, refs, root, how, note);
+    set_search(rp, query, refs, root, how, note, area);
     present_page(app, rp, refs->len > 0);
 }
 
 void code_refs_set_search(GtkWidget* page, const gchar* query, GPtrArray* refs, const gchar* root,
-                          const gchar* how, const gchar* note) {
+                          const gchar* how, const gchar* note, const SearchArea* area) {
     RefsPage* rp = page_state(page);
-    if (rp != NULL) set_search(rp, query, refs, root, how, note);
+    if (rp != NULL) set_search(rp, query, refs, root, how, note, area);
 }
 
 GtkWidget* code_refs_detach_search(AppData* app) {

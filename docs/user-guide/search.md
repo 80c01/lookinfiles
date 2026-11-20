@@ -37,7 +37,10 @@ recent first, from every session. Type to filter.
 project, in the background. The selection of the current editor tab (or
 your last search) is filled in. On the **Notes** page of the explorer it
 searches the text of your notes instead (**Search in Notes**: every note,
-not the trash, without the file patterns below).
+not the trash, without the file patterns below). The results are listed
+by note, with its notebook; a Canvas note is searched in its text, and
+`Enter` opens a note as from the Notes page (a Canvas in its Canvas view,
+the others in an editor tab on the line found).
 
 - The search ignores the case. The buttons right of the text change how
   it matches:

@@ -15,10 +15,11 @@
 
 void project_search_show(AppData* app);
 /* The same search in the text of the notes under notes_root (Ctrl+Shift+F
- * on the Notes page): no file filters, but the files matching skip
- * (path_globs: the trash, the manifest) are not searched; the text and the
- * options are shared with the project search */
-void project_search_show_notes(AppData* app, const gchar* notes_root, const gchar* skip);
+ * on the Notes page), the way area says (notes_search_area(): files
+ * skipped, Canvas text, results shown and opened as notes), without the
+ * file filters; the text and the options are shared with the project
+ * search */
+void project_search_show_notes(AppData* app, const gchar* notes_root, const SearchArea* area);
 
 /* Workspace switch (workspace.c): the Search tab of the workspace left is
  * put aside, that of the workspace shown comes back; a search still running

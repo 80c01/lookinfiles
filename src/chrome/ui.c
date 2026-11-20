@@ -18,7 +18,7 @@
 #include "explorer/file_list.h"
 #include "terminal/terminal.h"
 #include "notes/notes.h"
-#include "notes/notes_store.h"
+#include "notes/notes_search.h"
 #include "editor/editor.h"
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
@@ -278,7 +278,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         (keyval == GDK_KEY_f || keyval == GDK_KEY_F)) {
         if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             gchar* root = notes_get_root_dir();
-            project_search_show_notes(app, root, NOTES_STORE_TRASH "/, " NOTES_STORE_MANIFEST);
+            project_search_show_notes(app, root, notes_search_area());
             g_free(root);
         } else {
             project_search_show(app);

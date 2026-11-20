@@ -467,6 +467,9 @@ Layers, from bottom to top
 - `path_globs` — comma-separated path patterns matched like `.gitignore`
   (name at any depth, anchored, folders only), for the files to include /
   exclude of a search in files.
+- `xml_text` — the visible text of one XML line (tags removed, entities
+  decoded) with a match moved onto it, NULL when the match is in markup
+  (Canvas notes searched in their text).
 - `text_search` — search of a text in a project's files (literal, match
   case, whole word, regex through `GRegex`, or letters in order; binary and
   large files skipped, its own higher limits `TEXT_SEARCH_MAX_*`), as
@@ -527,7 +530,8 @@ Layers, from bottom to top
   name stored in `notes.xml` (the former `rich` reads as Markdown).
 - `notes_store` — the notes on disk: notebooks (directories), notes in user
   order, the trash, and the `notes.xml` manifest (`notes_store_load()`
-  reconciles it with the disk, `notes_store_save()`). The Notes view is `notes`.
+  reconciles it with the disk, `notes_store_save()`; `notes_store_find_path()`
+  the note of a file). The Notes view is `notes`.
 - `canvas_doc` — Canvas notes (`<title>.canvas/`: `page.xml` and
   `media/`): text boxes with styled runs and pictures placed freely, read and
   written as XML (each block with a page-unique `id`; line and arrow ends
@@ -818,7 +822,8 @@ Layers, from bottom to top
   `remote_store`). The notes view is `notes.c` (rows, selection, keys, menu),
   `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`;
   `notes_new_canvas()` makes and opens a Canvas note without a dialog (the
-  **+** button of `new_tab_menu`).
+  **+** button of `new_tab_menu`). `notes_search` is the `SearchArea` of
+  Ctrl+Shift+F on the Notes page (results by note, opened as notes).
 - `canvas_view` — the **Canvas** tabs (`app->canvas_pages`, every workspace):
   each edits one Canvas note (`canvas_doc`), one tab per note, text boxes and pictures on a
   `GtkFixed`; move / resize by dragging, pictures pasted (`Ctrl+V`) or dropped
@@ -1237,7 +1242,9 @@ Layers, from bottom to top
   previous one) and lists the results in the Search page of `code_refs`
   (`code_refs_show_search()`, same rows and keys as References).
   On the Notes page `project_search_show_notes()` searches the notes
-  folder instead (fixed scope: no trash, no `notes.xml`, no filters).
+  folder instead, the way a `SearchArea` (`app_types.h`) says: fixed
+  scope, XML files searched in their text (`xml_text`), and the Search
+  page shows and opens their files through its hooks.
   Per workspace (`VirtualLayout.search_state`): the last search, the
   running one and the Search page, taken out of the notebook on a switch
   (`code_refs_detach_search()` / `code_refs_attach_search()`); a search

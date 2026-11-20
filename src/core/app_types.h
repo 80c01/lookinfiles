@@ -154,6 +154,18 @@ typedef struct {
     const gchar* exclude;    /* path_globs.h: "/build, /a/b.c" */
 } DeepSearchRequest;
 
+/* A folder searched in its own way (Ctrl+Shift+F on the Notes page): the
+ * files never searched, the XML files of which only the text is searched,
+ * and how the files of the results are shown and opened (describe: title
+ * in bold, detail after it, icon_name a file name for its type icon; both
+ * return FALSE to treat the file as a plain one). A static table. */
+typedef struct {
+    const gchar* exclude;  /* path_globs.h */
+    const gchar* xml_name; /* files of this name: their text, not their markup */
+    gboolean (*describe)(struct AppData* app, const gchar* path, gchar** title, gchar** detail, gchar** icon_name);
+    gboolean (*open)(struct AppData* app, const gchar* path, gint line, gint column);
+} SearchArea;
+
 /* Shared application state */
 typedef struct AppData {
     GtkTextBuffer* buffer;

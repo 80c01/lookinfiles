@@ -70,6 +70,11 @@ gboolean notes_store_save(const NotesManager* mgr, GError** error);
 /* <root>/.trash, created if missing. Caller frees. */
 gchar* notes_store_trash_dir(const NotesManager* mgr);
 
+/* The listed note at path, or whose folder holds it (a file of a Canvas
+ * note), and its notebook (either out pointer may be NULL); FALSE when
+ * none (the trash is not looked at) */
+gboolean notes_store_find_path(const NotesManager* mgr, const gchar* path, NotebookItem** nb, NoteItem** note);
+
 void notes_store_free(NotesManager* mgr);
 
 #endif /* NOTES_STORE_H */

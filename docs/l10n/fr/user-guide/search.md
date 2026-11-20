@@ -39,7 +39,10 @@ projet, en arrière-plan. La sélection de l’onglet d’édition actuel (ou
 votre dernière recherche) est déjà remplie. Sur la page **Notes** de
 l’explorateur, il cherche plutôt dans le texte de vos notes (**Rechercher
 dans les notes** : toutes les notes, pas la corbeille, sans les motifs de
-fichiers ci-dessous).
+fichiers ci-dessous). Les résultats sont listés par note, avec son carnet ;
+une note Canvas est cherchée dans son texte, et `Entrée` ouvre une note
+comme depuis la page Notes (un Canvas dans sa vue Canvas, les autres dans
+un onglet d’édition sur la ligne trouvée).
 
 - La recherche ignore la casse. Les boutons à droite du texte changent la
   façon de chercher :

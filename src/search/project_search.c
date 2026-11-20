@@ -7,6 +7,7 @@
 #include "editor/editor.h"
 #include "core/path_globs.h"
 #include "search/text_search.h"
+#include "core/xml_text.h"
 
 #include <string.h>
 
@@ -57,6 +58,7 @@ typedef struct {
     TextSearchOptions opts;
     Scope scope;
     gchar* root;
+    const SearchArea* area; /* the notes (NULL: the project) */
     GPtrArray* refs;
     gboolean cut_files; /* TEXT_SEARCH_MAX_FILES listed */
     TextSearchStats stats;
@@ -83,6 +85,24 @@ static gboolean keep_file(const gchar* rel, gpointer data) {
            (f->exclude == NULL || !path_globs_match(f->exclude, rel));
 }
 
+/* In the files named xml_name, the occurrences in the text only, shown
+ * without the markup */
+static void only_xml_text(GPtrArray* refs, const gchar* xml_name) {
+    if (refs == NULL) return;
+    for (guint i = refs->len; i-- > 0;) {
+        CodeReference* r = g_ptr_array_index(refs, i);
+        const gchar* base = strrchr(r->path, '/');
+        if (strcmp(base != NULL ? base + 1 : r->path, xml_name) != 0) continue;
+        gchar* text = xml_text_line(r->text, &r->column, &r->length);
+        if (text == NULL) {
+            g_ptr_array_remove_index(refs, i); /* keeps the order */
+        } else {
+            g_free(r->text);
+            r->text = text;
+        }
+    }
+}
+
 static void search_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)task;
     (void)source;
@@ -94,6 +114,7 @@ static void search_thread(GTask* task, gpointer source, gpointer data, GCancella
     path_globs_free(f.exclude);
     s->refs = text_search_files(s->query, &s->opts, files, cancellable, &s->stats);
     g_ptr_array_unref(files);
+    if (s->area != NULL && s->area->xml_name != NULL) only_xml_text(s->refs, s->area->xml_name);
 }
 
 static void add_note(GString* s, const gchar* note) {
@@ -170,18 +191,18 @@ static void search_done(GObject* source, GAsyncResult* res, gpointer data) {
     gchar* note = stop_note(s);
     VirtualLayout* cur = current_ws(s->app);
     if (cur != NULL && cur->search_state == st) {
-        code_refs_show_search(s->app, s->query, s->refs, s->root, how, note);
+        code_refs_show_search(s->app, s->query, s->refs, s->root, how, note, s->area);
     } else if (st->page != NULL) {
-        code_refs_set_search(st->page, s->query, s->refs, s->root, how, note); /* seen on return */
+        code_refs_set_search(st->page, s->query, s->refs, s->root, how, note, s->area); /* seen on return */
     }
     g_free(note);
     g_free(how);
 }
 
 /* A search of the files under root; the scope is kept for the next project
- * search unless it is the notes' fixed one */
+ * search, not the fixed one of an area (the notes) */
 static void start_search(AppData* app, const gchar* root, const gchar* query, const TextSearchOptions* opts,
-                         const Scope* scope, gboolean keep_scope) {
+                         const Scope* scope, const SearchArea* area) {
     VirtualLayout* ws = current_ws(app);
     if (ws == NULL) return;
     WsSearch* st = ws_search(ws);
@@ -192,7 +213,7 @@ static void start_search(AppData* app, const gchar* root, const gchar* query, co
     g_free(st->query);
     st->query = g_strdup(query);
     st->opts = *opts;
-    if (keep_scope) {
+    if (area == NULL) {
         scope_clear(&st->scope);
         scope_copy(&st->scope, scope);
     }
@@ -205,6 +226,7 @@ static void start_search(AppData* app, const gchar* root, const gchar* query, co
     s->opts = *opts;
     scope_copy(&s->scope, scope);
     s->root = g_strdup(root);
+    s->area = area;
     st->running = g_object_ref(s->cancellable);
     code_refs_show_searching(app, s->query, s->root);
 
@@ -242,15 +264,13 @@ typedef struct {
     GtkWidget* exclude;
     GtkWidget* ignored;
     GtkWidget* search;
-    gchar* root;    /* the folder searched */
-    gboolean notes; /* the notes (fixed scope, no file filters) */
-    gchar* skip;    /* the notes: path_globs of the files not searched */
+    gchar* root;            /* the folder searched */
+    const SearchArea* area; /* the notes (fixed scope, no file filters), else NULL */
 } Prompt;
 
 static void prompt_free(gpointer data) {
     Prompt* p = data;
     g_free(p->root);
-    g_free(p->skip);
     g_free(p);
 }
 
@@ -330,11 +350,12 @@ static void on_response(AppDialog* dialog, gint response, gpointer data) {
     gchar* query = response == RESPONSE_SEARCH ? g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->entry))) : NULL;
     TextSearchOptions opts = prompt_options(p);
     Scope scope = {0};
-    if (p->notes) {
-        /* every note file (the folder may sit in a git repository of
-         * dotfiles: ignored files too) */
+    const SearchArea* area = p->area;
+    if (area != NULL) {
+        /* every file but the area's exclusions (the notes folder may sit in
+         * a git repository of dotfiles: ignored files too) */
         scope.include = g_strdup("");
-        scope.exclude = g_strdup(p->skip != NULL ? p->skip : "");
+        scope.exclude = g_strdup(area->exclude != NULL ? area->exclude : "");
         scope.ignored = TRUE;
     } else {
         scope.include = g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->include)));
@@ -343,10 +364,9 @@ static void on_response(AppDialog* dialog, gint response, gpointer data) {
     }
     AppData* app = p->app;
     gchar* root = g_strdup(p->root);
-    gboolean keep_scope = !p->notes;
     app_dialog_destroy(dialog); /* frees p */
     if (query != NULL && query[0] != '\0') {
-        start_search(app, root, query, &opts, &scope, keep_scope);
+        start_search(app, root, query, &opts, &scope, area);
     }
     g_free(root);
     scope_clear(&scope);
@@ -384,15 +404,15 @@ static GtkWidget* filter_row(GtkGrid* grid, gint row, const gchar* label, const 
     _("Patterns separated by commas: *.c (a name at any depth), src/ui (from the project root), build/ (folders " \
     "only)")
 
-/* The prompt for a search of the files under root (owned), or of the notes
- * but the skip files (owned) */
-static void show_prompt(AppData* app, gchar* root, gboolean notes, gchar* skip) {
+/* The prompt for a search of the files under root (owned): the project's,
+ * or the notes' (area) */
+static void show_prompt(AppData* app, gchar* root, const SearchArea* area) {
+    gboolean notes = area != NULL;
     const WsSearch* last = ws_search(current_ws(app));
     Prompt* p = g_new0(Prompt, 1);
     p->app = app;
     p->root = root;
-    p->notes = notes;
-    p->skip = skip;
+    p->area = area;
     GtkWidget* dlg = app_dialog_new(notes ? _("Search in Notes") : _("Search in Files"), app->window, _("_Cancel"),
                                     APP_RESPONSE_CANCEL, NULL);
     p->search = app_dialog_add_button(APP_DIALOG(dlg), _("_Search"), RESPONSE_SEARCH);
@@ -481,12 +501,12 @@ static gboolean can_prompt(AppData* app) {
 
 void project_search_show(AppData* app) {
     if (!can_prompt(app) || app->base_dir == NULL) return;
-    show_prompt(app, code_index_project_root(app->base_dir), FALSE, NULL);
+    show_prompt(app, code_index_project_root(app->base_dir), NULL);
 }
 
-void project_search_show_notes(AppData* app, const gchar* notes_root, const gchar* skip) {
-    if (!can_prompt(app) || notes_root == NULL) return;
-    show_prompt(app, g_strdup(notes_root), TRUE, g_strdup(skip));
+void project_search_show_notes(AppData* app, const gchar* notes_root, const SearchArea* area) {
+    if (!can_prompt(app) || notes_root == NULL || area == NULL) return;
+    show_prompt(app, g_strdup(notes_root), area);
 }
 
 void project_search_workspace_hidden(AppData* app, VirtualLayout* ws) {

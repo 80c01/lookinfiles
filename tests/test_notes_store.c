@@ -192,6 +192,28 @@ static void test_malformed_manifest(void) {
     g_free(root);
 }
 
+/* A note found by its path, a file of a Canvas note by its folder */
+static void test_find_path(void) {
+    NotesManager mgr = {0};
+    NotebookItem* work = notebook_item_new("Work", NULL, "/n/Work");
+    NoteItem* plan = note_item_new("Plan.md", "Plan", "/n/Work/Plan.md", NOTE_TYPE_MARKDOWN);
+    NoteItem* board = note_item_new("Board.canvas", "Board", "/n/Work/Board.canvas", NOTE_TYPE_CANVAS);
+    work->notes = g_list_append(g_list_append(NULL, plan), board);
+    mgr.notebooks = g_list_append(NULL, work);
+
+    NotebookItem* nb = NULL;
+    NoteItem* note = NULL;
+    g_assert_true(notes_store_find_path(&mgr, "/n/Work/Plan.md", &nb, &note));
+    g_assert_true(nb == work && note == plan);
+    g_assert_true(notes_store_find_path(&mgr, "/n/Work/Board.canvas/page.xml", NULL, &note));
+    g_assert_true(note == board);
+    g_assert_false(notes_store_find_path(&mgr, "/n/Work/Plan.md.bak", NULL, NULL));
+    g_assert_false(notes_store_find_path(&mgr, "/n/Work/Other.md", NULL, NULL));
+    g_assert_false(notes_store_find_path(NULL, "/n/Work/Plan.md", NULL, NULL));
+
+    g_list_free_full(mgr.notebooks, (GDestroyNotify)notebook_item_free);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/notes_store/empty_root", test_empty_root);
@@ -199,5 +221,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/notes_store/save_load", test_save_load);
     g_test_add_func("/notes_store/missing_note", test_missing_note);
     g_test_add_func("/notes_store/malformed_manifest", test_malformed_manifest);
+    g_test_add_func("/notes_store/find_path", test_find_path);
     return g_test_run();
 }
