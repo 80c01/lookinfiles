@@ -4736,6 +4736,10 @@ msgstr "Roue"
 msgid "Rings Around the Folder (v: Next View)"
 msgstr "Anneaux autour du dossier (v : vue suivante)"
 
+#: src/diskuse/disk_usage_charts.c
+msgid "List These Files in Deep Search (Click / Enter)"
+msgstr "Lister ces fichiers dans la Recherche approfondie (clic / Entrée)"
+
 #: src/diskuse/disk_usage_views.c:67
 msgid "Histograms"
 msgstr "Histogrammes"

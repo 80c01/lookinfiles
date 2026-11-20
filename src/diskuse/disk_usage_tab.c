@@ -16,6 +16,8 @@
 #include "widgets/focus_route.h"
 #include "widgets/panels.h"
 
+#include <string.h>
+
 #define PAGE_KEY "lookin-disk-usage-tab"
 #define TICK_MS 200 /* progress shown again while the tree is read */
 #define STATS_WIDTH 380 /* the statistics at first */
@@ -249,7 +251,7 @@ static void show_summary(DiskUsageTab* dt) {
 static void show_folder(DiskUsageTab* dt, DiskNode* node, const gchar* select) {
     dt->shown = node;
     disk_usage_list_show_node(dt->list, node, select);
-    disk_usage_views_show(dt->views, node);
+    disk_usage_views_show(dt->views, node, dt->scan_mode == GIT_FILTER_NONE);
     gchar* selected = disk_usage_list_selected_name(dt->list);
     disk_usage_views_select(dt->views, selected);
     g_free(selected);
@@ -349,7 +351,7 @@ static void start_scan(DiskUsageTab* dt, gboolean quiet) {
     if (!dt->quiet) {
         disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
         disk_usage_stats_show(dt->stats, NULL, NULL, GIT_FILTER_NONE);
-        disk_usage_views_show(dt->views, NULL);
+        disk_usage_views_show(dt->views, NULL, FALSE);
         dt->shown = NULL;
         g_clear_pointer(&dt->scan, disk_scan_free);
         g_clear_pointer(&dt->git, git_space_free);
@@ -441,6 +443,40 @@ static void on_row_reveal(gpointer data, const gchar* path) {
     DiskUsageTab* dt = data;
     reveal_path_in_tree(dt->app, path);
     if (dt->app->tree_view != NULL) gtk_widget_grab_focus(dt->app->tree_view);
+}
+
+/* The entries excluded below folder as Deep Search patterns from it
+ * ("/build, /a/b.c"), NULL when none. A name holding a comma or a
+ * wildcard cannot be written as a pattern: it is searched. */
+static gchar* excluded_patterns(DiskUsageTab* dt, const gchar* folder) {
+    GString* out = g_string_new(NULL);
+    gsize len = strlen(folder);
+    while (len > 1 && G_IS_DIR_SEPARATOR(folder[len - 1])) len--;
+    for (guint i = 0; i < dt->excluded->len; i++) {
+        const gchar* path = g_ptr_array_index(dt->excluded, i);
+        if (strncmp(path, folder, len) != 0 || !G_IS_DIR_SEPARATOR(path[len])) continue;
+        const gchar* rel = path + len;
+        while (G_IS_DIR_SEPARATOR(*rel)) rel++;
+        if (*rel == '\0' || strpbrk(rel, ",*?") != NULL) continue;
+        if (out->len > 0) g_string_append(out, ", ");
+        g_string_append_c(out, '/');
+        g_string_append(out, rel);
+    }
+    return g_string_free(out, out->len == 0);
+}
+
+/* A group of the statistics or the histograms clicked: its files in the
+ * Deep Search tab, without the entries excluded here */
+static void on_group_search(gpointer data, DeepSearchRequest* request) {
+    DiskUsageTab* dt = data;
+    if (request == NULL || request->folder == NULL) return;
+    gchar* exclude = excluded_patterns(dt, request->folder);
+    request->exclude = exclude;
+    dt->app->deep_search_request = request;
+    app_emit(dt->app, APP_EVENT_RUN_DEEP_SEARCH);
+    dt->app->deep_search_request = NULL;
+    request->exclude = NULL;
+    g_free(exclude);
 }
 
 /* Header buttons and keys */
@@ -663,7 +699,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
 
     DiskUsageListHandlers handlers = { on_row_activate, on_row_up, on_row_reveal, on_row_exclude, on_row_selected, dt };
     dt->list = disk_usage_list_new(app, &handlers);
-    DiskUsageViewsHandlers view_handlers = { on_map_selected, on_map_open, on_row_reveal, on_row_up, dt };
+    DiskUsageViewsHandlers view_handlers = { on_map_selected, on_map_open, on_row_reveal, on_row_up, on_group_search, dt };
     dt->views = disk_usage_views_new(&view_handlers);
     /* The list over the views, both resizable */
     dt->split = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
@@ -676,7 +712,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
     gtk_paned_set_shrink_end_child(GTK_PANED(dt->split), FALSE);
     g_signal_connect(dt->split, "notify::max-position", G_CALLBACK(on_split_sized), dt);
     gtk_widget_set_size_request(dt->split, BREAKDOWN_MIN_WIDTH, -1);
-    dt->stats = disk_usage_stats_new(on_row_reveal, on_stats_filter, dt);
+    dt->stats = disk_usage_stats_new(on_row_reveal, on_stats_filter, on_group_search, dt);
     gtk_widget_set_size_request(dt->stats, STATS_MIN_WIDTH, -1);
     /* The breakdown takes the room, the statistics keep their width */
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);

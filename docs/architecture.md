@@ -984,7 +984,13 @@ Layers, from bottom to top
   same folder as a sunburst (`sunburst_layout`, four rings, an entry of the
   folder and its content in one palette colour, a click in the hole goes
   up). `disk_usage_charts` — the files of the folder shown by size and age
-  (`DiskNode` groups) in two `histogram`s. `disk_usage_views` — the three
+  (`DiskNode` groups) in two `histogram`s. A bar of these, a size bar,
+  an age or an extension of the statistics clicked lists those files in
+  the Deep Search tab: the tab turns the group into criteria
+  (`disk_size_criteria()` / `disk_age_criteria()`, plus its excluded
+  entries as patterns) and emits `APP_EVENT_RUN_DEEP_SEARCH` with
+  `app->deep_search_request` (`diskuse` may not include `search`); not
+  for a tree read with a git filter. `disk_usage_views` — the three
   in a `GtkStack` under the list, chosen by linked toggle buttons or `v`.
   The statistics start 380 px wide and give way down to 200 in a narrow
   panel, after the breakdown has come down to 270 (a notebook is as wide
@@ -1020,6 +1026,9 @@ Layers, from bottom to top
   (`APP_EVENT_SAVE_SEARCH_BOOKMARK`, with name, bookmark folder and "use
   current folder" option) and replaying a saved search
   (`APP_EVENT_OPEN_SEARCH_BOOKMARK`, fills the form and starts searching).
+  `deep_search_request` — a search asked by the Disk Usage tab
+  (`APP_EVENT_RUN_DEEP_SEARCH`: `app->deep_search_request` into the form,
+  files only, hidden entries included, then searched).
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and
@@ -1463,6 +1472,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
 | `APP_EVENT_SAVE_SEARCH_BOOKMARK` / `APP_EVENT_OPEN_SEARCH_BOOKMARK` | Deep Search / bookmarks view: save criteria as a bookmark / run a saved search | `deep_search_bookmark_save()` / `deep_search_bookmark_open()` |
+| `APP_EVENT_RUN_DEEP_SEARCH` | Disk Usage: list the files of a group in the Deep Search tab (`app->deep_search_request`, borrowed) | `deep_search_request_run()` |
 | `APP_EVENT_ADD_BOOKMARK`         | browser tab: bookmark `app->bookmark_add_target` (name `app->bookmark_add_name`) | `bookmarks_add_requested()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
 | `APP_EVENT_QUIT`                 | `Ctrl+Q` in a popover (branches, layout switcher) | `ui_quit()`               |

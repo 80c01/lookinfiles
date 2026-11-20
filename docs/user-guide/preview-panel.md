@@ -269,6 +269,15 @@ week, a month, a year, 1 to 3 years, more) and by extension, the largest
 files of the whole folder (a click shows one in the explorer), and the
 entries that could not be read.
 
+A click on a bar of a histogram (or `Enter` on the one with the focus), on
+an age or on an extension of the statistics lists those files in the
+[Deep Search](search.md#deep-search-shiftf) tab: the files below the folder
+(the one shown for the histograms under the list, the folder read for the
+statistics) of that size, that age or that extension, hidden ones included,
+without the entries excluded from the calculation. The other criteria of
+the form are cleared. Once the folder is read with a git filter (below),
+the groups cannot be clicked: the Deep Search does not know that filter.
+
 In a git repository, the statistics also give the room of its files
 under the overview: the tracked files (those of the index), the untracked
 ones that are not ignored, the ignored ones (what is left: build output,

@@ -52,7 +52,7 @@ GtkWidget* disk_usage_views_new(const DiskUsageViewsHandlers* handlers) {
     DiskUsageWheelHandlers wheel_handlers = { h.selected, h.open, h.reveal, h.up, h.data };
     v->map = disk_usage_map_new(&map_handlers);
     v->wheel = disk_usage_wheel_new(&wheel_handlers);
-    v->charts = disk_usage_charts_new();
+    v->charts = disk_usage_charts_new(h.search, h.data);
 
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(box, "du-views");
@@ -78,12 +78,12 @@ GtkWidget* disk_usage_views_new(const DiskUsageViewsHandlers* handlers) {
     return box;
 }
 
-void disk_usage_views_show(GtkWidget* views, DiskNode* node) {
+void disk_usage_views_show(GtkWidget* views, DiskNode* node, gboolean searchable) {
     Views* v = views_state(views);
     if (v == NULL) return;
     disk_usage_map_show(v->map, node);
     disk_usage_wheel_show(v->wheel, node);
-    disk_usage_charts_show(v->charts, node);
+    disk_usage_charts_show(v->charts, node, searchable);
 }
 
 void disk_usage_views_select(GtkWidget* views, const gchar* name) {

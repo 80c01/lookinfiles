@@ -32,6 +32,7 @@
 #include "widgets/minimap.h"
 #include "search/search.h"
 #include "search/deep_search_bookmark.h"
+#include "search/deep_search_request.h"
 #include "search/deep_search_tab.h"
 #include "chrome/ui.h"
 #include "editor/editor.h"
@@ -542,6 +543,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_OPEN_WORKSPACE_BOOKMARK, session_bookmark_open);
     app_events_subscribe(app, APP_EVENT_SAVE_SEARCH_BOOKMARK, deep_search_bookmark_save);
     app_events_subscribe(app, APP_EVENT_OPEN_SEARCH_BOOKMARK, deep_search_bookmark_open);
+    app_events_subscribe(app, APP_EVENT_RUN_DEEP_SEARCH, deep_search_request_run);
     app_events_subscribe(app, APP_EVENT_ADD_BOOKMARK, bookmarks_add_requested);
     app->window = GTK_WINDOW(window);
     app->main_loop = loop;

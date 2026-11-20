@@ -25,6 +25,7 @@
  *   APP_EVENT_OPEN_WORKSPACE_BOOKMARK -> session_bookmark_open() (session_bookmark.c)
  *   APP_EVENT_SAVE_SEARCH_BOOKMARK -> deep_search_bookmark_save() (deep_search_bookmark.c)
  *   APP_EVENT_OPEN_SEARCH_BOOKMARK -> deep_search_bookmark_open() (deep_search_bookmark.c)
+ *   APP_EVENT_RUN_DEEP_SEARCH -> deep_search_request_run()    (deep_search_request.c)
  *   APP_EVENT_ADD_BOOKMARK    -> bookmarks_add_requested()    (bookmarks.c)
  *   APP_EVENT_PREVIEW_LOCATION -> status_bar_show_location()  (status_bar.c)
  *   APP_EVENT_PREVIEW_PATH    -> preview_show_requested()     (preview_show.c)
@@ -65,6 +66,9 @@ typedef enum {
      * (taken by the handler) */
     APP_EVENT_SAVE_SEARCH_BOOKMARK,
     APP_EVENT_OPEN_SEARCH_BOOKMARK,
+    /* The Disk Usage tab asked to list the files of a group in the Deep
+     * Search tab: app->deep_search_request (borrowed while it runs) */
+    APP_EVENT_RUN_DEEP_SEARCH,
     /* A browser tab asked to bookmark app->bookmark_add_target, named
      * app->bookmark_add_name (both taken by the handler) */
     APP_EVENT_ADD_BOOKMARK,

@@ -12,6 +12,8 @@
 #define STATS_KEY "lookin-disk-usage-stats"
 #define PATH_KEY "lookin-disk-usage-path"
 #define MODE_KEY "lookin-disk-usage-mode"
+#define GROUP_KEY "lookin-disk-usage-group"
+#define EXT_KEY "lookin-disk-usage-ext"
 #define TOP_EXTENSIONS 12
 #define TOP_FILES 25 /* largest files shown (the scan keeps more) */
 #define ERRORS_SHOWN 20
@@ -20,7 +22,10 @@ typedef struct {
     GtkWidget* box; /* the sections, rebuilt for each scan */
     void (*reveal)(gpointer data, const gchar* path);
     void (*filter)(gpointer data, GitFilterMode mode);
+    DiskUsageSearch search;
     gpointer data;
+    gchar* root;      /* folder of the scan shown, NULL when its groups cannot be searched */
+    DiskTally sizes[DISK_SIZE_COUNT]; /* its files by size */
 } DuStats;
 
 static GtkWidget* label_new(const gchar* text, const gchar* css, gfloat xalign) {
@@ -174,6 +179,61 @@ static void show_kinds(DuStats* ds, const DiskStats* st) {
     }
 }
 
+/* The files of the scan within criteria, in the Deep Search tab */
+static void search(DuStats* ds, DeepSearchRequest* r) {
+    if (ds->root == NULL || ds->search == NULL) return;
+    r->folder = ds->root;
+    ds->search(ds->data, r);
+}
+
+static void on_size_bar(gpointer data, guint bin) {
+    DuStats* ds = data;
+    if (bin >= DISK_SIZE_COUNT || ds->sizes[bin].count == 0) return;
+    gchar *min = NULL, *max = NULL;
+    disk_size_criteria((DiskSize)bin, &min, &max);
+    DeepSearchRequest r = { .min_size = min, .max_size = max };
+    search(ds, &r);
+    g_free(min);
+    g_free(max);
+}
+
+static void on_age_clicked(GtkButton* button, gpointer data) {
+    gchar *after = NULL, *before = NULL;
+    disk_age_criteria((DiskAge)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), GROUP_KEY)), &after, &before);
+    DeepSearchRequest r = { .after = after, .before = before };
+    search(data, &r);
+    g_free(after);
+    g_free(before);
+}
+
+static void on_ext_clicked(GtkButton* button, gpointer data) {
+    DeepSearchRequest r = { .extensions = g_object_get_data(G_OBJECT(button), EXT_KEY) };
+    search(data, &r);
+}
+
+/* A row of a group of files: its name a flat button that lists them in the
+ * Deep Search tab when they can be searched */
+static void group_row(DuStats* ds, GtkWidget* grid, gint row, const gchar* name, const DiskTally* t, guint64 whole,
+                      GCallback clicked, const gchar* key, gpointer value, GDestroyNotify free_value) {
+    if (ds->root == NULL || t->count == 0 || clicked == NULL) {
+        if (free_value != NULL && value != NULL) free_value(value);
+        tally_row(grid, row, name, t, whole);
+        return;
+    }
+    GtkWidget* button = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(button), FALSE);
+    gtk_widget_add_css_class(button, "du-file");
+    GtkWidget* l = label_new(name, NULL, 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(l), PANGO_ELLIPSIZE_END);
+    gtk_button_set_child(GTK_BUTTON(button), l);
+    gchar* tip = disk_usage_charts_search_tip(name);
+    gtk_widget_set_tooltip_text(button, tip);
+    g_free(tip);
+    g_object_set_data_full(G_OBJECT(button), key, value, free_value);
+    g_signal_connect(button, "clicked", clicked, ds);
+    tally_row_with(grid, row, button, t, whole);
+}
+
 /* The files by size: a histogram of their number and of their room */
 static void show_sizes(DuStats* ds, const DiskStats* st) {
     section_title(ds, _("By Size"));
@@ -181,19 +241,28 @@ static void show_sizes(DuStats* ds, const DiskStats* st) {
     gchar* tips[DISK_SIZE_COUNT];
     for (gint g = 0; g < DISK_SIZE_COUNT; g++) {
         tips[g] = disk_format_group(disk_size_name((DiskSize)g), &st->sizes[g], st->n_files, st->size);
+        if (ds->root != NULL && st->sizes[g].count > 0) {
+            gchar* tip = disk_usage_charts_search_tip(tips[g]);
+            g_free(tips[g]);
+            tips[g] = tip;
+        }
         bins[g] = (HistogramBin){ disk_size_label((DiskSize)g), tips[g], st->sizes[g].count, st->sizes[g].size };
     }
     GtkWidget* chart = histogram_new();
     gtk_widget_add_css_class(chart, "du-histogram");
     gtk_widget_set_size_request(chart, -1, 120); /* a scrolled window gives the least height */
     histogram_set(chart, bins, DISK_SIZE_COUNT);
+    if (ds->root != NULL) histogram_set_activate(chart, on_size_bar, ds);
     for (gint g = 0; g < DISK_SIZE_COUNT; g++) g_free(tips[g]);
     gtk_box_append(GTK_BOX(ds->box), chart);
 }
 
 static void show_ages(DuStats* ds, const DiskStats* st) {
     GtkWidget* g = section(ds, _("By Last Change"));
-    for (gint a = 0; a < DISK_AGE_COUNT; a++) tally_row(g, a, disk_age_name((DiskAge)a), &st->ages[a], st->size);
+    for (gint a = 0; a < DISK_AGE_COUNT; a++) {
+        group_row(ds, g, a, disk_age_name((DiskAge)a), &st->ages[a], st->size, G_CALLBACK(on_age_clicked), GROUP_KEY,
+                  GINT_TO_POINTER(a), NULL);
+    }
 }
 
 static void show_extensions(DuStats* ds, const DiskStats* st) {
@@ -201,8 +270,10 @@ static void show_extensions(DuStats* ds, const DiskStats* st) {
     GtkWidget* g = section(ds, _("By Extension"));
     for (guint i = 0; i < top->len; i++) {
         const DiskExtension* e = &g_array_index(top, DiskExtension, i);
-        gchar* name = e->ext[0] != '\0' ? g_strconcat(".", e->ext, NULL) : g_strdup(_("(none)"));
-        tally_row(g, (gint)i, name, &e->tally, st->size);
+        gboolean any = e->ext[0] != '\0'; /* "(none)": the Deep Search has no criterion for it */
+        gchar* name = any ? g_strconcat(".", e->ext, NULL) : g_strdup(_("(none)"));
+        group_row(ds, g, (gint)i, name, &e->tally, st->size, any ? G_CALLBACK(on_ext_clicked) : NULL, EXT_KEY,
+                  any ? g_strdup(e->ext) : NULL, g_free);
         g_free(name);
     }
     g_array_unref(top);
@@ -348,6 +419,7 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpac
     GtkWidget* child;
     while ((child = gtk_widget_get_first_child(ds->box)) != NULL) gtk_box_remove(GTK_BOX(ds->box), child);
     if (scan == NULL) {
+        g_clear_pointer(&ds->root, g_free);
         GtkWidget* note = label_new(_("The statistics come once the folder is read"), "du-muted", 0.0f);
         gtk_label_set_wrap(GTK_LABEL(note), TRUE);
         gtk_label_set_ellipsize(GTK_LABEL(note), PANGO_ELLIPSIZE_NONE);
@@ -356,6 +428,10 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpac
     }
     const DiskStats* st = disk_scan_stats(scan);
     const gchar* root = disk_scan_root_path(scan);
+    /* A git filter cannot be repeated by the Deep Search: its groups stay put */
+    g_free(ds->root);
+    ds->root = mode == GIT_FILTER_NONE && ds->search != NULL ? g_strdup(root) : NULL;
+    memcpy(ds->sizes, st->sizes, sizeof ds->sizes);
     show_overview(ds, st, root);
     if (git != NULL) {
         show_git(ds, git, st);
@@ -376,11 +452,19 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpac
     show_errors(ds, st);
 }
 
+static void stats_free(gpointer data) {
+    DuStats* ds = data;
+    g_free(ds->root);
+    g_free(ds);
+}
+
 GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path),
-                                void (*filter)(gpointer data, GitFilterMode mode), gpointer data) {
+                                void (*filter)(gpointer data, GitFilterMode mode), DiskUsageSearch search,
+                                gpointer data) {
     DuStats* ds = g_new0(DuStats, 1);
     ds->reveal = reveal;
     ds->filter = filter;
+    ds->search = search;
     ds->data = data;
     ds->box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
     gtk_widget_add_css_class(ds->box, "du-stats");
@@ -388,7 +472,7 @@ GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path)
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), ds->box);
-    g_object_set_data_full(G_OBJECT(scroll), STATS_KEY, ds, g_free);
+    g_object_set_data_full(G_OBJECT(scroll), STATS_KEY, ds, stats_free);
     disk_usage_stats_show(scroll, NULL, NULL, GIT_FILTER_NONE);
     return scroll;
 }

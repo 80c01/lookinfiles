@@ -49,6 +49,15 @@ const gchar* disk_size_name(DiskSize size);
 /* Short label of a size group, under its bar: "0", "<1k", "1k"... "10G+" */
 const gchar* disk_size_label(DiskSize size);
 
+/* The Deep Search criteria (raw text, as typed in its form) that find the
+ * files of a size group: *min and *max in bytes ("1024", "10239"), *max
+ * NULL for the last group. Free with g_free(). */
+void disk_size_criteria(DiskSize group, gchar** min, gchar** max);
+
+/* And of an age group, from now: *after and *before as times ago ("7d",
+ * "1d"), NULL for no bound. Free with g_free(). */
+void disk_age_criteria(DiskAge age, gchar** after, gchar** before);
+
 /* part of whole as a percentage, 0 when whole is 0 */
 gdouble disk_percent(guint64 part, guint64 whole);
 

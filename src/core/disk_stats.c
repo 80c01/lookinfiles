@@ -128,6 +128,22 @@ gchar* disk_format_files(guint64 n) {
     return text;
 }
 
+void disk_size_criteria(DiskSize group, gchar** min, gchar** max) {
+    gint64 lo = 0, hi = -1;
+    disk_size_bounds(group, &lo, &hi);
+    *min = g_strdup_printf("%" G_GINT64_FORMAT, lo);
+    *max = hi >= 0 ? g_strdup_printf("%" G_GINT64_FORMAT, hi) : NULL;
+}
+
+void disk_age_criteria(DiskAge age, gchar** after, gchar** before) {
+    /* The tops of the groups in days, as disk_age_of() counts them */
+    static const gint days[] = { 1, 7, 30, 365, 3 * 365 };
+    G_STATIC_ASSERT(G_N_ELEMENTS(days) == DISK_AGE_COUNT - 1);
+    gint a = CLAMP((gint)age, 0, DISK_AGE_COUNT - 1);
+    *after = a < DISK_AGE_COUNT - 1 ? g_strdup_printf("%dd", days[a]) : NULL;
+    *before = a > 0 ? g_strdup_printf("%dd", days[a - 1]) : NULL;
+}
+
 gchar* disk_format_group(const gchar* name, const DiskTally* t, guint64 all_count, guint64 all_size) {
     gchar* files = disk_format_files(t->count);
     gchar* files_pct = disk_format_percent(t->count, all_count);

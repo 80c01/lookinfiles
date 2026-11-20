@@ -5,6 +5,7 @@
  * time: the treemap (disk_usage_map.h), the wheel (disk_usage_wheel.h)
  * and the histograms (disk_usage_charts.h), all of the folder shown,
  * chosen by three linked buttons above them or in turn with v. */
+#include "diskuse/disk_usage_charts.h"
 #include "core/disk_scan.h"
 
 #include <gtk/gtk.h>
@@ -19,14 +20,17 @@ typedef struct {
     void (*reveal)(gpointer data, const gchar* path);
     /* A click in the hole of the wheel: the parent folder */
     void (*up)(gpointer data);
+    /* A group of the histograms chosen (disk_usage_charts.h) */
+    DiskUsageSearch search;
     gpointer data;
 } DiskUsageViewsHandlers;
 
 GtkWidget* disk_usage_views_new(const DiskUsageViewsHandlers* handlers);
 
 /* Show node in every view (borrowed until the next call); NULL: their notes
- * that they come once the folder is read */
-void disk_usage_views_show(GtkWidget* views, DiskNode* node);
+ * that they come once the folder is read. searchable: the groups of the
+ * histograms can be chosen (disk_usage_charts_show()). */
+void disk_usage_views_show(GtkWidget* views, DiskNode* node, gboolean searchable);
 
 /* Outline the entry of the folder shown named name (NULL: none) */
 void disk_usage_views_select(GtkWidget* views, const gchar* name);

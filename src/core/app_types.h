@@ -140,6 +140,20 @@ typedef struct {
 #endif
 } VirtualLayout;
 
+/* A Deep Search asked by another tab (APP_EVENT_RUN_DEEP_SEARCH): the
+ * files below folder that meet the criteria, written as typed in the form
+ * of the Deep Search tab (NULL: none), hidden entries included, on the
+ * filesystem of the folder only */
+typedef struct {
+    const gchar* folder;
+    const gchar* extensions; /* "c, h" */
+    const gchar* min_size;   /* "1024" */
+    const gchar* max_size;
+    const gchar* after;      /* "7d" */
+    const gchar* before;
+    const gchar* exclude;    /* path_globs.h: "/build, /a/b.c" */
+} DeepSearchRequest;
+
 /* Shared application state */
 typedef struct AppData {
     GtkTextBuffer* buffer;
@@ -158,6 +172,7 @@ typedef struct AppData {
     gint session_save_ws;       /* workspace to save on APP_EVENT_SAVE_WORKSPACE_BOOKMARK */
     gchar* session_open_target; /* saved-workspace target to open on APP_EVENT_OPEN_WORKSPACE_BOOKMARK */
     gchar* deep_search_open_target; /* saved-search target to open on APP_EVENT_OPEN_SEARCH_BOOKMARK */
+    const DeepSearchRequest* deep_search_request; /* search to run on APP_EVENT_RUN_DEEP_SEARCH (borrowed while it runs) */
     gchar* bookmark_add_target; /* link to bookmark on APP_EVENT_ADD_BOOKMARK */
     gchar* bookmark_add_name;   /* its proposed name, or NULL */
     gchar* preview_request_path; /* file or folder to preview on APP_EVENT_PREVIEW_PATH (taken by the handler) */

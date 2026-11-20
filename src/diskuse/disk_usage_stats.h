@@ -8,16 +8,21 @@
  * explorer) and the entries that could not be read; in a git work tree,
  * the room of its tracked, untracked and ignored files, its history and
  * its nested repositories (a click on tracked, untracked or ignored counts
- * those files only), the largest ignored entries and tracked files. */
+ * those files only), the largest ignored entries and tracked files. A
+ * group of files (a size, an age, an extension) clicked is listed in the
+ * Deep Search tab, except for a tree read with a git filter. */
+#include "diskuse/disk_usage_charts.h"
 #include "core/app_types.h"
 #include "core/disk_scan.h"
 #include "git/git_filter.h"
 #include "git/git_space.h"
 
 /* The panel in its scrolled window; reveal(data, path): a largest file
- * clicked; filter(data, mode): count the files of mode only */
+ * clicked; filter(data, mode): count the files of mode only; search: a
+ * group of files clicked (disk_usage_charts.h) */
 GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path),
-                                void (*filter)(gpointer data, GitFilterMode mode), gpointer data);
+                                void (*filter)(gpointer data, GitFilterMode mode), DiskUsageSearch search,
+                                gpointer data);
 
 /* Show the statistics of a scan that is over (cancelled or not), with the
  * room of its work tree (git, NULL outside one or for a tree read with a

@@ -535,6 +535,40 @@ static void test_remove(void) {
     g_free(dir);
 }
 
+/* The Deep Search criteria of a group find its files */
+static void test_criteria(void) {
+    gchar *min = NULL, *max = NULL;
+    disk_size_criteria(DISK_SIZE_EMPTY, &min, &max);
+    g_assert_cmpstr(min, ==, "0");
+    g_assert_cmpstr(max, ==, "0");
+    g_free(min);
+    g_free(max);
+    disk_size_criteria(DISK_SIZE_1K, &min, &max);
+    g_assert_cmpstr(min, ==, "1024");
+    g_assert_cmpstr(max, ==, "10239");
+    g_free(min);
+    g_free(max);
+    disk_size_criteria(DISK_SIZE_HUGE, &min, &max);
+    g_assert_cmpstr(min, ==, "10737418240");
+    g_assert_null(max);
+    g_free(min);
+
+    gchar *after = NULL, *before = NULL;
+    disk_age_criteria(DISK_AGE_DAY, &after, &before);
+    g_assert_cmpstr(after, ==, "1d");
+    g_assert_null(before);
+    g_free(after);
+    disk_age_criteria(DISK_AGE_MONTH, &after, &before);
+    g_assert_cmpstr(after, ==, "30d");
+    g_assert_cmpstr(before, ==, "7d");
+    g_free(after);
+    g_free(before);
+    disk_age_criteria(DISK_AGE_OLDER, &after, &before);
+    g_assert_null(after);
+    g_assert_cmpstr(before, ==, "1095d");
+    g_free(before);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/disk_scan/sizes", test_sizes);
@@ -555,5 +589,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/disk_stats/size_groups", test_size_groups);
     g_test_add_func("/disk_stats/kinds", test_kinds);
     g_test_add_func("/disk_stats/format", test_format);
+    g_test_add_func("/disk_stats/criteria", test_criteria);
     return g_test_run();
 }

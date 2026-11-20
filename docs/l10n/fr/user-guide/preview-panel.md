@@ -297,6 +297,16 @@ semaine, d’un mois, d’un an, 1 à 3 ans, plus) et par extension, les plus
 gros fichiers de tout le dossier (un clic en montre un dans
 l’explorateur), et les éléments illisibles.
 
+Un clic sur une barre d’un histogramme (ou `Entrée` sur celle qui a le
+focus), sur un âge ou sur une extension des statistiques liste ces fichiers
+dans l’onglet [Recherche approfondie](search.md#recherche-approfondie--shiftf) : les
+fichiers sous le dossier (celui affiché pour les histogrammes sous la
+liste, le dossier lu pour les statistiques) de cette taille, de cet âge ou
+de cette extension, fichiers cachés compris, sans les éléments exclus du
+calcul. Les autres critères du formulaire sont effacés. Une fois le dossier
+lu avec un filtre git (plus bas), les groupes ne se cliquent pas : la
+Recherche approfondie ne connaît pas ce filtre.
+
 Dans un dépôt git, les statistiques donnent aussi la place de ses
 fichiers sous la vue d’ensemble : les fichiers suivis (ceux de l’index),
 les non suivis qui ne sont pas ignorés, les ignorés (le reste : sorties
