@@ -36,7 +36,10 @@ récents en premier, toutes sessions confondues. Tapez pour filtrer.
 
 `Ctrl+Shift+F` demande un texte et le cherche dans tous les fichiers du
 projet, en arrière-plan. La sélection de l’onglet d’édition actuel (ou
-votre dernière recherche) est déjà remplie.
+votre dernière recherche) est déjà remplie. Sur la page **Notes** de
+l’explorateur, il cherche plutôt dans le texte de vos notes (**Rechercher
+dans les notes** : toutes les notes, pas la corbeille, sans les motifs de
+fichiers ci-dessous).
 
 - La recherche ignore la casse. Les boutons à droite du texte changent la
   façon de chercher :

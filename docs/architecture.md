@@ -1236,6 +1236,8 @@ Layers, from bottom to top
   `code_index_some_files()` in a worker (a new search cancels the
   previous one) and lists the results in the Search page of `code_refs`
   (`code_refs_show_search()`, same rows and keys as References).
+  On the Notes page `project_search_show_notes()` searches the notes
+  folder instead (fixed scope: no trash, no `notes.xml`, no filters).
   Per workspace (`VirtualLayout.search_state`): the last search, the
   running one and the Search page, taken out of the notebook on a switch
   (`code_refs_detach_search()` / `code_refs_attach_search()`); a search

@@ -178,7 +178,10 @@ static void search_done(GObject* source, GAsyncResult* res, gpointer data) {
     g_free(how);
 }
 
-static void start_search(AppData* app, const gchar* query, const TextSearchOptions* opts, const Scope* scope) {
+/* A search of the files under root; the scope is kept for the next project
+ * search unless it is the notes' fixed one */
+static void start_search(AppData* app, const gchar* root, const gchar* query, const TextSearchOptions* opts,
+                         const Scope* scope, gboolean keep_scope) {
     VirtualLayout* ws = current_ws(app);
     if (ws == NULL) return;
     WsSearch* st = ws_search(ws);
@@ -189,8 +192,10 @@ static void start_search(AppData* app, const gchar* query, const TextSearchOptio
     g_free(st->query);
     st->query = g_strdup(query);
     st->opts = *opts;
-    scope_clear(&st->scope);
-    scope_copy(&st->scope, scope);
+    if (keep_scope) {
+        scope_clear(&st->scope);
+        scope_copy(&st->scope, scope);
+    }
 
     Search* s = g_new0(Search, 1);
     s->app = app;
@@ -199,7 +204,7 @@ static void start_search(AppData* app, const gchar* query, const TextSearchOptio
     s->query = g_strdup(query);
     s->opts = *opts;
     scope_copy(&s->scope, scope);
-    s->root = code_index_project_root(app->base_dir);
+    s->root = g_strdup(root);
     st->running = g_object_ref(s->cancellable);
     code_refs_show_searching(app, s->query, s->root);
 
@@ -237,7 +242,17 @@ typedef struct {
     GtkWidget* exclude;
     GtkWidget* ignored;
     GtkWidget* search;
+    gchar* root;    /* the folder searched */
+    gboolean notes; /* the notes (fixed scope, no file filters) */
+    gchar* skip;    /* the notes: path_globs of the files not searched */
 } Prompt;
+
+static void prompt_free(gpointer data) {
+    Prompt* p = data;
+    g_free(p->root);
+    g_free(p->skip);
+    g_free(p);
+}
 
 static gboolean is_on(Prompt* p, gint opt) {
     return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(p->options[opt]));
@@ -314,14 +329,26 @@ static void on_response(AppDialog* dialog, gint response, gpointer data) {
     }
     gchar* query = response == RESPONSE_SEARCH ? g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->entry))) : NULL;
     TextSearchOptions opts = prompt_options(p);
-    Scope scope = {g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->include))),
-                   g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->exclude))),
-                   gtk_check_button_get_active(GTK_CHECK_BUTTON(p->ignored))};
+    Scope scope = {0};
+    if (p->notes) {
+        /* every note file (the folder may sit in a git repository of
+         * dotfiles: ignored files too) */
+        scope.include = g_strdup("");
+        scope.exclude = g_strdup(p->skip != NULL ? p->skip : "");
+        scope.ignored = TRUE;
+    } else {
+        scope.include = g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->include)));
+        scope.exclude = g_strdup(gtk_editable_get_text(GTK_EDITABLE(p->exclude)));
+        scope.ignored = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->ignored));
+    }
     AppData* app = p->app;
+    gchar* root = g_strdup(p->root);
+    gboolean keep_scope = !p->notes;
     app_dialog_destroy(dialog); /* frees p */
     if (query != NULL && query[0] != '\0') {
-        start_search(app, query, &opts, &scope);
+        start_search(app, root, query, &opts, &scope, keep_scope);
     }
+    g_free(root);
     scope_clear(&scope);
     g_free(query);
 }
@@ -357,16 +384,17 @@ static GtkWidget* filter_row(GtkGrid* grid, gint row, const gchar* label, const 
     _("Patterns separated by commas: *.c (a name at any depth), src/ui (from the project root), build/ (folders " \
     "only)")
 
-void project_search_show(AppData* app) {
-    if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window) ||
-        current_ws(app) == NULL) {
-        return;
-    }
+/* The prompt for a search of the files under root (owned), or of the notes
+ * but the skip files (owned) */
+static void show_prompt(AppData* app, gchar* root, gboolean notes, gchar* skip) {
     const WsSearch* last = ws_search(current_ws(app));
-    gchar* root = code_index_project_root(app->base_dir);
     Prompt* p = g_new0(Prompt, 1);
     p->app = app;
-    GtkWidget* dlg = app_dialog_new(_("Search in Files"), app->window, _("_Cancel"), APP_RESPONSE_CANCEL, NULL);
+    p->root = root;
+    p->notes = notes;
+    p->skip = skip;
+    GtkWidget* dlg = app_dialog_new(notes ? _("Search in Notes") : _("Search in Files"), app->window, _("_Cancel"),
+                                    APP_RESPONSE_CANCEL, NULL);
     p->search = app_dialog_add_button(APP_DIALOG(dlg), _("_Search"), RESPONSE_SEARCH);
     gtk_widget_add_css_class(p->search, "suggested-action");
     app_dialog_set_default_response(APP_DIALOG(dlg), RESPONSE_SEARCH);
@@ -408,7 +436,7 @@ void project_search_show(AppData* app) {
     gtk_widget_set_visible(p->error, FALSE);
     gtk_box_append(GTK_BOX(box), p->error);
 
-    /* The files searched */
+    /* The files searched (the notes: all of them) */
     GtkWidget* grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
@@ -422,15 +450,16 @@ void project_search_show(AppData* app) {
     gtk_widget_set_tooltip_text(p->ignored, _("Also the files git ignores (.gitignore); outside git, hidden and build folders"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->ignored), last->scope.ignored);
     gtk_box_append(GTK_BOX(box), p->ignored);
+    gtk_widget_set_visible(grid, !notes);
+    gtk_widget_set_visible(p->ignored, !notes);
 
-    gchar* where = g_strdup_printf(_("In the files of %s"), root);
+    gchar* where = notes ? g_strdup_printf(_("In the notes (%s)"), root) : g_strdup_printf(_("In the files of %s"), root);
     GtkWidget* note = gtk_label_new(where);
     g_free(where);
     gtk_widget_add_css_class(note, "dim-label");
     gtk_label_set_xalign(GTK_LABEL(note), 0.0f);
     gtk_label_set_wrap(GTK_LABEL(note), TRUE);
     gtk_box_append(GTK_BOX(box), note);
-    g_free(root);
 
     GtkEventController* keys = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
@@ -439,11 +468,25 @@ void project_search_show(AppData* app) {
 
     g_signal_connect(p->entry, "changed", G_CALLBACK(on_entry_changed), p);
     g_signal_connect(dlg, "response", G_CALLBACK(on_response), p);
-    g_object_set_data_full(G_OBJECT(dlg), "prompt", p, g_free);
+    g_object_set_data_full(G_OBJECT(dlg), "prompt", p, prompt_free);
     update_prompt(p);
     app_dialog_present(APP_DIALOG(dlg));
     gtk_widget_grab_focus(p->entry);
     gtk_editable_select_region(GTK_EDITABLE(p->entry), 0, -1);
+}
+
+static gboolean can_prompt(AppData* app) {
+    return app != NULL && app->window != NULL && !app_dialog_is_open(app->window) && current_ws(app) != NULL;
+}
+
+void project_search_show(AppData* app) {
+    if (!can_prompt(app) || app->base_dir == NULL) return;
+    show_prompt(app, code_index_project_root(app->base_dir), FALSE, NULL);
+}
+
+void project_search_show_notes(AppData* app, const gchar* notes_root, const gchar* skip) {
+    if (!can_prompt(app) || notes_root == NULL) return;
+    show_prompt(app, g_strdup(notes_root), TRUE, g_strdup(skip));
 }
 
 void project_search_workspace_hidden(AppData* app, VirtualLayout* ws) {

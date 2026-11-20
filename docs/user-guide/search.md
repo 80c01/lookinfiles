@@ -35,7 +35,9 @@ recent first, from every session. Type to filter.
 
 `Ctrl+Shift+F` asks for a text and searches it in every file of the
 project, in the background. The selection of the current editor tab (or
-your last search) is filled in.
+your last search) is filled in. On the **Notes** page of the explorer it
+searches the text of your notes instead (**Search in Notes**: every note,
+not the trash, without the file patterns below).
 
 - The search ignores the case. The buttons right of the text change how
   it matches:

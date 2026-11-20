@@ -2212,11 +2212,12 @@ msgstr ""
 
 #: src/chrome/help.c:323
 msgid ""
-"Search the text in every file of the project (results in the Search tab, "
-"Enter opens; not in Emacs editor tabs)"
+"Search the text in every file of the project, on the Notes page in the notes "
+"(results in the Search tab, Enter opens; not in Emacs editor tabs)"
 msgstr ""
-"Rechercher le texte dans tous les fichiers du projet (résultats dans "
-"l’onglet Recherche, Enter ouvre ; pas dans les onglets d’édition Emacs)"
+"Rechercher le texte dans tous les fichiers du projet, sur la page Notes dans "
+"les notes (résultats dans l’onglet Recherche, Enter ouvre ; pas dans les "
+"onglets d’édition Emacs)"
 
 #: src/chrome/help.c:324
 msgid ""
@@ -10802,6 +10803,10 @@ msgstr ""
 msgid "Search in Files"
 msgstr "Rechercher dans les fichiers"
 
+#: src/search/project_search.c:392
+msgid "Search in Notes"
+msgstr "Rechercher dans les notes"
+
 #: src/search/project_search.c:370
 msgid "_Search"
 msgstr "_Rechercher"
@@ -10842,6 +10847,11 @@ msgstr ""
 #, c-format
 msgid "In the files of %s"
 msgstr "Dans les fichiers de %s"
+
+#: src/search/project_search.c:453
+#, c-format
+msgid "In the notes (%s)"
+msgstr "Dans les notes (%s)"
 
 #: src/search/quick_open.c:66
 msgid "Listing the project files…"
