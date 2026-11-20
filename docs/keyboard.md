@@ -322,6 +322,21 @@ mode move in the list)
 | Click | Org-mode: fold a heading, cycle a TODO, toggle a checkbox, open a link; JSON, XML, TOML, YAML tree: on a ▾ / ▸ twisty, fold or open the block |
 | `Esc` | Close the search bar (at the bottom of the preview) |
 
+### Diff tabs
+
+Side-by-side and unified file comparisons (opened from the explorer or an
+editor tab menu with **Select for Compare** / **Compare with…** / **Compare
+with HEAD** / **Compare with Saved**, or **Compare** on the disk-change
+banner); a Diff tab moves like an editor tab (`Ctrl+Alt+Arrow`, drag, tab
+menu).
+
+| Key | Action |
+|---|---|
+| `Alt+Down` / `Alt+Up` | Next / previous change hunk (Vim: `]c` / `[c`, Emacs: `M-n` / `M-p`) |
+| `Enter`, double-click | Open the file in an editor tab at the current line |
+| `F5` | Refresh the comparison from disk / `HEAD` |
+| `Ctrl+W` (Vim `Ctrl+W c`), middle click on the tab | Close the Diff tab |
+
 ### Browser tabs
 
 Web pages shown in tabs of the preview panel (built with WebKitGTK 6.0, or

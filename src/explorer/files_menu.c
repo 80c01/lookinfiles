@@ -17,6 +17,7 @@
 #include "explorer/tree_nav.h"
 #include "diskuse/disk_usage_tab.h"
 #include "search/deep_search_tab.h"
+#include "preview/diff_tab.h"
 
 typedef enum {
     FM_OPEN,
@@ -34,7 +35,10 @@ typedef enum {
     FM_DEEP_SEARCH,
     FM_NEW_FILE,
     FM_NEW_FOLDER,
-    FM_UNDO
+    FM_UNDO,
+    FM_COMPARE_SELECT,
+    FM_COMPARE_WITH,
+    FM_COMPARE_HEAD
 } FilesMenuAction;
 
 typedef struct {
@@ -96,6 +100,13 @@ static gboolean run_action(gpointer data) {
     case FM_NEW_FILE:         create_new_file_in_tree(app); break;
     case FM_NEW_FOLDER:       create_new_folder_in_tree(app); break;
     case FM_UNDO:             undo_last_file_move(app); break;
+    case FM_COMPARE_SELECT:   diff_tab_select_for_compare(app, r->path); break;
+    case FM_COMPARE_WITH: {
+        const gchar* sel = diff_tab_selected_for_compare(app);
+        if (sel != NULL) diff_tab_open_files(app, sel, r->path);
+        break;
+    }
+    case FM_COMPARE_HEAD:     diff_tab_open_head(app, r->path, NULL); break;
     }
     g_free(r->path);
     g_free(r);
@@ -195,6 +206,26 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
     menu_item(box, popover, app, _("Move to Trash…"), "Delete", FM_TRASH);
     menu_separator(box);
     copy_items(box, popover, app, row->path);
+    if (!is_dir) {
+        FileKind kind = (g_strcmp0(row->path, preview_state_path(app)) == 0)
+                            ? preview_state_kind(app)
+                            : file_kind_of_path(row->path, row->name);
+        if (file_kind_is_text(kind)) {
+            menu_separator(box);
+            menu_item(box, popover, app, _("Select for Compare"), NULL, FM_COMPARE_SELECT);
+            const gchar* sel = diff_tab_selected_for_compare(app);
+            if (sel != NULL && g_strcmp0(sel, row->path) != 0) {
+                gchar* base = g_path_get_basename(sel);
+                gchar* lbl = g_strdup_printf(_("Compare with “%s”"), base);
+                menu_item(box, popover, app, lbl, NULL, FM_COMPARE_WITH);
+                g_free(lbl);
+                g_free(base);
+            }
+            if (path_copy_has_relative(row->path)) {
+                menu_item(box, popover, app, _("Compare with HEAD"), NULL, FM_COMPARE_HEAD);
+            }
+        }
+    }
     menu_separator(box);
     menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);
 }

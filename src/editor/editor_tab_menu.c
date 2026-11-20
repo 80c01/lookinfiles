@@ -6,6 +6,7 @@
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
+#include "preview/diff_tab.h"
 #include "core/i18n.h"
 #include "core/path_copy.h"
 #include "theme/icons.h"
@@ -79,6 +80,47 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
     case TAB_ACTION_RELOAD:
         editor_watch_reload_interactive(app, tab);
         break;
+    case TAB_ACTION_COMPARE_SAVED:
+        if (tab->path != NULL && tab->buffer != NULL) {
+            gchar* disk = NULL;
+            gsize dlen = 0;
+            if (g_file_get_contents(tab->path, &disk, &dlen, NULL)) {
+                GtkTextIter s, e;
+                gtk_text_buffer_get_bounds(tab->buffer, &s, &e);
+                gchar* buf_txt = gtk_text_buffer_get_text(tab->buffer, &s, &e, TRUE);
+                const gchar* name = tab->name != NULL ? tab->name : tab->path;
+                gchar* title = g_strdup_printf(_("%s (Saved ↔ Buffer)"), name);
+                gchar* llabel = g_strdup_printf(_("%s (Saved)"), name);
+                gchar* rlabel = g_strdup_printf(_("%s (Buffer)"), name);
+                diff_tab_open_texts(app, title, llabel, tab->path, disk, rlabel, tab->path, buf_txt, name);
+                g_free(rlabel);
+                g_free(llabel);
+                g_free(title);
+                g_free(buf_txt);
+                g_free(disk);
+            }
+        }
+        break;
+    case TAB_ACTION_COMPARE_HEAD:
+        if (tab->path != NULL && tab->buffer != NULL) {
+            gchar* buf_txt = NULL;
+            if (gtk_text_buffer_get_modified(tab->buffer)) {
+                GtkTextIter s, e;
+                gtk_text_buffer_get_bounds(tab->buffer, &s, &e);
+                buf_txt = gtk_text_buffer_get_text(tab->buffer, &s, &e, TRUE);
+            }
+            diff_tab_open_head(app, tab->path, buf_txt);
+            g_free(buf_txt);
+        }
+        break;
+    case TAB_ACTION_COMPARE_SELECT:
+        if (tab->path != NULL) diff_tab_select_for_compare(app, tab->path);
+        break;
+    case TAB_ACTION_COMPARE_WITH: {
+        const gchar* sel = diff_tab_selected_for_compare(app);
+        if (sel != NULL && tab->path != NULL) diff_tab_open_files(app, sel, tab->path);
+        break;
+    }
     case TAB_ACTION_MODE_NOTEPAD:
         editor_set_tab_mode(app, tab, EDITOR_MODE_NOTEPAD);
         break;
@@ -271,6 +313,23 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
         gtk_box_append(GTK_BOX(box), sep_copy);
         tab_menu_item(box, popover, app, tab, _("Reload from Disk"),
                       vim ? ":e!" : emacs ? "M-x revert-buffer" : NULL, TAB_ACTION_RELOAD);
+        if (gtk_text_buffer_get_modified(tab->buffer)) {
+            tab_menu_item(box, popover, app, tab, _("Compare with Saved"), NULL, TAB_ACTION_COMPARE_SAVED);
+        }
+        if (path_copy_has_relative(tab->path)) {
+            tab_menu_item(box, popover, app, tab, _("Compare with HEAD"), NULL, TAB_ACTION_COMPARE_HEAD);
+        }
+        tab_menu_item(box, popover, app, tab, _("Select for Compare"), NULL, TAB_ACTION_COMPARE_SELECT);
+        {
+            const gchar* sel = diff_tab_selected_for_compare(app);
+            if (sel != NULL && g_strcmp0(sel, tab->path) != 0) {
+                gchar* base = g_path_get_basename(sel);
+                gchar* lbl = g_strdup_printf(_("Compare with “%s”"), base);
+                tab_menu_item(box, popover, app, tab, lbl, NULL, TAB_ACTION_COMPARE_WITH);
+                g_free(lbl);
+                g_free(base);
+            }
+        }
         tab_menu_item(box, popover, app, tab, _("Copy Name"), NULL, TAB_ACTION_COPY_NAME);
         if (path_copy_has_relative(tab->path)) {
             tab_menu_item(box, popover, app, tab, _("Copy Git Relative Path"), NULL, TAB_ACTION_COPY_RELATIVE);

@@ -6,6 +6,7 @@
 #include "diskuse/disk_usage_tab.h"
 #include "chrome/help_guide.h"
 #include "preview/browser.h"
+#include "preview/diff_tab.h"
 #include "games/games.h"
 #include "widgets/dialog.h"
 #include "workspace/layout_switcher.h"
@@ -173,7 +174,7 @@ void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
     if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
-        (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
+        (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
         return;
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);

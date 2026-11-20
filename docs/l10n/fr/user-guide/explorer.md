@@ -131,6 +131,8 @@ un terminal dans un dossier, son espace disque, y rechercher
 ([recherche approfondie](search.md#recherche-approfondie--shiftf)), renommer, mettre à la
 corbeille, copier le
 nom, le chemin relatif au dépôt git (dans un dépôt) ou le chemin absolu,
+comparer deux fichiers texte (**Sélectionner pour comparer** / **Comparer
+avec…**) ou comparer avec Git `HEAD` (**Comparer avec HEAD**),
 ajouter un signet, annuler. Sur une zone vide : nouveau fichier, nouveau
 dossier, terminal, espace disque, rechercher ici, et les trois mêmes copies pour le dossier courant.
 

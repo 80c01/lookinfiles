@@ -133,6 +133,7 @@ typedef struct {
     GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
     GPtrArray* video_pages;        /* its Video tabs of the preview notebook while another workspace is shown (owned refs, video_tab.c) */
     GPtrArray* ipynb_pages;        /* its Jupyter notebook tabs of the preview notebook while another workspace is shown (owned refs, ipynb_tab.c) */
+    GPtrArray* diff_pages;         /* its Diff tabs of the preview notebook while another workspace is shown (owned refs, diff_tab.c) */
     GPtrArray* game_pages;         /* its game tabs of the preview notebook while another workspace is shown (owned refs, games.c) */
     gboolean games_unlocked;       /* Game Mode unlocked in this workspace (Games view and its button) */
 #ifdef HAVE_VTE
@@ -232,6 +233,7 @@ typedef struct AppData {
     GPtrArray* canvas_pages;        /* Canvas tabs of every workspace (roots, not referenced; canvas_view.c), or NULL */
     GPtrArray* video_pages;         /* Video tabs of every workspace (roots, not referenced; video_tab.c), or NULL */
     GPtrArray* ipynb_pages;         /* Jupyter notebook tabs of every workspace (roots, not referenced; ipynb_tab.c), or NULL */
+    GPtrArray* diff_pages;          /* Diff tabs of every workspace (roots, not referenced; diff_tab.c), or NULL */
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
     GtkWidget* sysmon_page;         /* System Monitor page (sysmon_tab.c), or NULL */
     GtkWidget* disk_usage_page;     /* Disk Usage page (disk_usage_tab.c), or NULL */

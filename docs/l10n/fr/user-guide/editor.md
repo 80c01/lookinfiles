@@ -156,7 +156,7 @@ Un notebook nbformat 3 ou endommagé s’ouvre en texte.
 | `Ctrl+R` / `F2` | Renommer le fichier de l’onglet (seulement `F2` dans les onglets Emacs et Org-mode) |
 | `Ctrl+Alt+N` | Afficher ou masquer les numéros de ligne |
 | Clic du milieu sur le titre | Fermer l’onglet |
-| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), afficher la minicarte (cet onglet seulement), recharger depuis le disque, déplacer, diviser ou fermer l’onglet |
+| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), afficher la minicarte (cet onglet seulement), recharger depuis le disque, comparer avec le fichier enregistré / HEAD / un autre fichier, déplacer, diviser ou fermer l’onglet |
 
 ### Fichiers modifiés sur le disque
 
@@ -166,8 +166,9 @@ habitudes de leur mode :
 - **Notepad** : un tampon sans modification se recharge sur place, en gardant
   le curseur et le défilement. Si vous avez des modifications non enregistrées
   (ou si le fichier a été supprimé), un bandeau en haut de l’onglet propose
-  **Recharger** et **Garder le mien**, et enregistrer (`Ctrl+S`) demande
-  confirmation avant d’écraser les changements externes.
+  **Comparer** (diff côte à côte avec le disque), **Recharger** et **Garder le
+  mien**, et enregistrer (`Ctrl+S`) demande confirmation avant d’écraser les
+  changements externes.
 - **Vim** : avec `:set autoread` (actif par défaut ; `:set noautoread` le
   désactive), un tampon propre se recharge automatiquement. Sinon Vim prévient
   dans la ligne de commande (`W11` / `W12`) ; `:e!` recharge, `:checktime`

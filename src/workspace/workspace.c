@@ -4,6 +4,7 @@
 #include "preview/preview_state.h"
 #include "preview/pdf.h"
 #include "preview/preview_tagbar.h"
+#include "preview/diff_tab.h"
 #include "workspace/workspace_menu.h"
 #include "explorer/nav_history.h"
 #include "explorer/fs_watch.h"
@@ -472,6 +473,7 @@ void workspace_switch(AppData* app, gint idx) {
             canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
             video_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             ipynb_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            diff_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             games_workspace_hidden(app, &app->workspaces[app->current_ws]);
 #ifdef HAVE_VTE
             terminal_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -502,6 +504,7 @@ void workspace_switch(AppData* app, gint idx) {
         canvas_view_workspace_shown(app, ws);
         video_tab_workspace_shown(app, ws);
         ipynb_tab_workspace_shown(app, ws);
+        diff_tab_workspace_shown(app, ws);
         games_workspace_shown(app, ws);
 #ifdef HAVE_VTE
         terminal_workspace_shown(app, ws);
@@ -743,6 +746,7 @@ void workspace_remove(AppData* app, gint idx) {
     canvas_view_workspace_removed(app, rm); /* saved before the panel goes */
     video_tab_workspace_removed(app, rm);
     ipynb_tab_workspace_removed(app, rm); /* saved before the panel goes */
+    diff_tab_workspace_removed(app, rm);
     games_workspace_removed(app, rm);
     if (idx == app->current_ws) {
         GtkWidget* panel = editor_detach_tabs(app);

@@ -8,6 +8,7 @@
 #include "explorer/fs_watch.h"
 #include "editor/editor_watch.h"
 #include "preview/preview_state.h"
+#include "preview/diff_tab.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "theme/text_style.h"
@@ -793,6 +794,7 @@ int main(int argc, char** argv) {
     latex_sync_free(app);
     fs_watch_free(app);
     editor_watch_free(app);
+    diff_tab_free(app);
     git_tab_cleanup(app);
     panels_free(app);
     g_clear_pointer(&app->git_state, git_state_free);

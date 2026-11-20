@@ -8,6 +8,7 @@
 #include "core/text_encoding.h"
 #include "widgets/dialog.h"
 #include "widgets/diff_gutter.h"
+#include "preview/diff_tab.h"
 
 #include <string.h>
 
@@ -146,6 +147,7 @@ static void rearm_monitor(BufferWatch* bw, const gchar* path) {
 typedef struct {
     GtkWidget* bar;
     GtkWidget* label;
+    GtkWidget* compare_btn;
     GtkWidget* reload_btn;
     GtkWidget* keep_btn;
     EditorTab* tab;
@@ -168,6 +170,35 @@ static void dismiss_conflict(EditorTab* tab) {
     if (tab->view != NULL) {
         gtk_widget_grab_focus(tab->view);
     }
+}
+
+static void on_banner_compare_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    WatchBanner* wb = data;
+    if (wb == NULL || wb->tab == NULL || wb->tab->app == NULL ||
+        wb->tab->path == NULL || wb->tab->buffer == NULL) return;
+    EditorTab* tab = wb->tab;
+    gchar* disk = NULL;
+    gsize dlen = 0;
+    if (!g_file_get_contents(tab->path, &disk, &dlen, NULL)) return;
+    if (!g_utf8_validate(disk, (gssize)dlen, NULL)) {
+        gchar* utf8 = text_encoding_to_utf8(disk, dlen, NULL);
+        g_free(disk);
+        disk = utf8;
+    }
+    GtkTextIter s, e;
+    gtk_text_buffer_get_bounds(tab->buffer, &s, &e);
+    gchar* buf_txt = gtk_text_buffer_get_text(tab->buffer, &s, &e, TRUE);
+    const gchar* name = tab->name != NULL ? tab->name : tab->path;
+    gchar* title = g_strdup_printf(_("%s (Disk ↔ Buffer)"), name);
+    gchar* llabel = g_strdup_printf(_("%s (On Disk)"), name);
+    gchar* rlabel = g_strdup_printf(_("%s (Current Buffer)"), name);
+    diff_tab_open_texts(tab->app, title, llabel, tab->path, disk, rlabel, tab->path, buf_txt, name);
+    g_free(rlabel);
+    g_free(llabel);
+    g_free(title);
+    g_free(buf_txt);
+    g_free(disk);
 }
 
 static void on_banner_reload_clicked(GtkButton* button, gpointer data) {
@@ -207,6 +238,12 @@ static WatchBanner* ensure_banner(EditorTab* tab) {
     gtk_widget_set_hexpand(wb->label, TRUE);
     gtk_box_append(GTK_BOX(wb->bar), wb->label);
 
+    wb->compare_btn = gtk_button_new_with_label(_("Compare"));
+    gtk_widget_set_focusable(wb->compare_btn, FALSE);
+    gtk_widget_set_tooltip_text(wb->compare_btn, _("Compare File on Disk with Current Buffer"));
+    g_signal_connect(wb->compare_btn, "clicked", G_CALLBACK(on_banner_compare_clicked), wb);
+    gtk_box_append(GTK_BOX(wb->bar), wb->compare_btn);
+
     wb->reload_btn = gtk_button_new_with_label(_("Reload"));
     gtk_widget_set_focusable(wb->reload_btn, FALSE);
     gtk_widget_set_tooltip_text(wb->reload_btn, _("Reload File from Disk"));
@@ -241,10 +278,12 @@ void editor_watch_sync_view(EditorTab* tab) {
     if (wb == NULL) return;
     if (bw->removed) {
         gtk_label_set_text(GTK_LABEL(wb->label), _("This file was removed from disk."));
+        gtk_widget_set_visible(wb->compare_btn, FALSE);
         gtk_widget_set_visible(wb->reload_btn, FALSE);
         gtk_button_set_label(GTK_BUTTON(wb->keep_btn), _("Keep"));
     } else {
         gtk_label_set_text(GTK_LABEL(wb->label), _("This file changed on disk."));
+        gtk_widget_set_visible(wb->compare_btn, TRUE);
         gtk_widget_set_visible(wb->reload_btn, TRUE);
         gtk_button_set_label(GTK_BUTTON(wb->keep_btn), _("Keep Mine"));
     }

@@ -320,6 +320,8 @@ Layers, from bottom to top
     and headings: shared by `toml_view` and `yaml_view`), `xml_view`
     (re-indented, coloured XML), `toml_view`, `yaml_view` (a subset of
     YAML), `diff_view` (unified diffs: file summary, coloured hunks),
+    `side_diff` (side-by-side Myers line alignment with UTF-8 intra-line spans
+    and hunk index, used by `diff_tab`),
     `log_view` (timestamps dimmed, levels coloured, the end of large logs),
     `man_view` (roff man / mdoc pages), `gettext_view` (`.po`, `.pot`,
     `.mo` catalogs), `card_view` (iCalendar, vCard, `.desktop` entries),
@@ -1345,6 +1347,13 @@ Layers, from bottom to top
   New windows become tabs, downloads go to the default application, DevTools
   are off. COM handlers are written in C (one object type for every handler
   interface).
+- `diff_tab` — side-by-side and unified **Diff** tabs (`app->diff_pages`,
+  `VirtualLayout.diff_pages`, movable like Video / Canvas tabs): reads files
+  or Git `HEAD` (`git_read_head_blob()`) and runs `side_diff` in a `GTask`
+  worker; synchronized scrolling across two syntax-highlighted `GtkSourceView`s
+  with custom source line-number / change-bar gutters, instant Split / Unified
+  switch, hunk navigation (`Alt+Down`/`Up`, `]c`/`[c`, `M-n`/`M-p`), Swap,
+  Refresh, and `Enter` to open the file at that line (`editor_open_at()`).
 - `browser` — browser tabs, opened in the preview notebook and movable like
   editor tabs (`editor_page_set_movable()`) (`web_engine`; without one
   `browser_open()` hands the URI to the default browser): back / forward /

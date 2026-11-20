@@ -118,7 +118,9 @@ On a file or folder: open, open in the side panel (text files) or with the
 default application (other files), open a terminal in a folder, its disk
 usage, search in it ([deep search](search.md#deep-search-shiftf)), rename,
 move to the trash, copy the name, the path relative to the git repository
-(inside one) or the absolute path, bookmark, undo. On an empty area: new
+(inside one) or the absolute path, compare two text files (**Select for
+Compare** / **Compare with…**) or compare against Git `HEAD` (**Compare with
+HEAD**), bookmark, undo. On an empty area: new
 file, new folder, terminal, disk usage, search here, and the same three copies for the current
 folder.
 
