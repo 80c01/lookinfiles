@@ -425,6 +425,18 @@ static void on_entry_activate(GtkSearchEntry* entry, gpointer data) {
     go_to_selected(data);
 }
 
+/* Rows a key of the entry moves in the list: Up / Down one, Page Up /
+ * Page Down ten (as in Quick Open); 0 for the entry's own keys */
+static gint list_key_delta(guint keyval) {
+    switch (keyval) {
+    case GDK_KEY_Down: case GDK_KEY_KP_Down: return 1;
+    case GDK_KEY_Up: case GDK_KEY_KP_Up: return -1;
+    case GDK_KEY_Page_Down: case GDK_KEY_KP_Page_Down: return 10;
+    case GDK_KEY_Page_Up: case GDK_KEY_KP_Page_Up: return -10;
+    default: return 0;
+    }
+}
+
 static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                              gpointer data) {
     (void)ctrl; (void)keycode;
@@ -435,14 +447,14 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
         step_kind(p, (state & GDK_SHIFT_MASK) != 0 ? -1 : 1);
         return TRUE;
     }
+    gint delta = list_key_delta(keyval);
+    if (delta == 0) return FALSE;
     guint n = g_list_model_get_n_items(G_LIST_MODEL(p->store));
-    if (n == 0 || (keyval != GDK_KEY_Down && keyval != GDK_KEY_Up)) return FALSE;
+    if (n == 0) return TRUE;
     guint cur = gtk_single_selection_get_selected(p->selection);
-    if (cur == GTK_INVALID_LIST_POSITION) cur = 0;
-    else if (keyval == GDK_KEY_Down && cur + 1 < n) cur++;
-    else if (keyval == GDK_KEY_Up && cur > 0) cur--;
-    gtk_single_selection_set_selected(p->selection, cur);
-    gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), cur, GTK_LIST_SCROLL_NONE, NULL);
+    gint next = cur == GTK_INVALID_LIST_POSITION ? 0 : CLAMP((gint)cur + delta, 0, (gint)n - 1);
+    gtk_single_selection_set_selected(p->selection, (guint)next);
+    gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), (guint)next, GTK_LIST_SCROLL_NONE, NULL);
     return TRUE;
 }
 
