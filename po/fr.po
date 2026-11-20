@@ -11657,3 +11657,43 @@ msgstr ""
 "Impossible de créer un dossier privé où monter la machine. Vérifiez que "
 "$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et n’est pas "
 "accessible aux autres utilisateurs."
+
+#: src/code/code_problems.c
+msgid "Problems"
+msgstr "Problèmes"
+
+msgid "Errors"
+msgstr "Erreurs"
+
+msgid "Warnings"
+msgstr "Avertissements"
+
+msgid "Filter…"
+msgstr "Filtrer…"
+
+msgid "Close Problems"
+msgstr "Fermer l’onglet Problèmes"
+
+msgid "No problems detected in this workspace's files"
+msgstr "Aucun problème détecté dans les fichiers de cet espace de travail"
+
+#, c-format
+msgid "%u info"
+msgid_plural "%u infos"
+msgstr[0] "%u info"
+msgstr[1] "%u infos"
+
+msgid "error"
+msgstr "erreur"
+
+msgid "warning"
+msgstr "avertissement"
+
+msgid "info"
+msgstr "info"
+
+msgid "hint"
+msgstr "suggestion"
+
+msgid "No diagnostics in this file"
+msgstr "Aucun diagnostic dans ce fichier"
