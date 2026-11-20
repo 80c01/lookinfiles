@@ -407,6 +407,11 @@ Dart, Haskell, Elixir, Erlang, Julia, R and Tcl.
 | Signature of the call being typed | automatic after `(` and `,`, `Ctrl+Shift+Space` | automatic, in the echo area | automatic in Insert mode |
 | References (References tab) | `Shift+F12` | `M-?` | `gr`, `:References` |
 | Symbols of the file (filtered list; Markdown: headings) | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Symbols of the project (LSP / ctags / index) | `Ctrl+Alt+O` | `M-g s` | `:WSymbols` |
+| Problems panel (LSP diagnostics) | `Ctrl+Shift+M` (or click status counts) | `M-x flymake-show-buffer-diagnostics` (or click status) | `:Problems` (or click status) |
+| Next / previous diagnostic in the file | `F8` / `Shift+F8` | `M-g n` / `M-g p` | `]d` / `[d` |
+| Autocompletion (LSP or buffer fallback) | `Ctrl+Space` (and automatic on triggers / typing) | `C-M-i`, `M-/` (and automatic) | `Ctrl+Space` in Insert (and automatic) |
+| Rename symbol across files (LSP) | `Shift+F2`, `Ctrl+K Ctrl+R` | `M-x lsp-rename` | `:Rename` |
 | Tagbar: symbols or headings beside the text | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle`, `:Tagbar` |
 
 Repeated on a definition, the lookup goes to the next candidate (other

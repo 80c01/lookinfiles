@@ -591,7 +591,7 @@ Layers, from bottom to top
   markup; `FONT_SCALE_*` for headings, titles, captions and code in
   rendered documents; `fonts_math_family()` for TeX formulas (serif, not
   themed).
-- `lsp_protocol`, `lsp_client`, `lsp_config` — Language Server Protocol:
+- `lsp_protocol`, `lsp_edit`, `lsp_client`, `lsp_config` — Language Server Protocol:
   messages and results (positions: UTF-16 unless the server chose UTF-8,
   `lsp_column_to_byte()`), one server process spoken to asynchronously on the
   main context (`LspClient`: queued until initialized, server requests
@@ -1278,6 +1278,16 @@ Layers, from bottom to top
   scanner, or Markdown headings) collected in a worker, for the picker and
   the tagbar.
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
+- `code_workspace_symbols` — project-wide symbol search `AppDialog` (`workspace/symbol`
+  with fallback to `ctags` / `code_index_search_symbols()` in a worker).
+- `code_problems` — **Problems** tab in `app->notebook` (severity filters,
+  text filter, live updates via `APP_EVENT_DIAGNOSTICS_CHANGED`) and next /
+  previous diagnostic stepping.
+- `code_complete` — non-focus-stealing completion `GtkPopover` anchored at
+  the cursor (LSP `textDocument/completion` with buffer-identifier fallback).
+- `code_rename` — multi-file LSP symbol rename (`prepareRename` + `rename`),
+  applying edits to open buffers in one undo action and atomically to closed
+  files in a worker.
 - `editor_tagbar` — the tagbar of an editor tab: an `outline_pane` beside
   the view, fed by `code_outline` after a pause in the edits, following the
   cursor and jumping through `code_nav`.

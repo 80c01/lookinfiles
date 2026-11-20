@@ -10,6 +10,7 @@
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
 #include "code/code_workspace_symbols.h"
+#include "code/code_rename.h"
 #include "editor/editor_tagbar.h"
 #include "core/app_events.h"
 #include "theme/text_tags.h"
@@ -618,6 +619,8 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
             code_help_show(tab->app, tab);
         } else if (ctrl && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
             editor_tagbar_toggle(tab->app, tab, editor_mode_message);
+        } else if (ctrl && (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) {
+            code_rename_start(tab->app, tab, editor_mode_message);
         } else {
             gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K: no command for this key");
         }
@@ -707,6 +710,10 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (keyval == GDK_KEY_F8 && !ctrl && !alt) {
         code_problems_step(tab->app, tab, !shift, editor_mode_message);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_F2 && shift && !ctrl && !alt) {
+        code_rename_start(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (ctrl && shift && !alt && keyval == GDK_KEY_space) {

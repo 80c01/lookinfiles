@@ -15,6 +15,11 @@ dans les trois modes.
 | Signature de l’appel en cours de frappe | automatique, `Ctrl+Shift+Space` | dans la zone d’écho | automatique en mode Insertion |
 | Références | `Shift+F12` | `M-?` | `gr` |
 | Symboles du fichier | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Symboles du projet | `Ctrl+Alt+O` | `M-g s` | `:WSymbols` |
+| Panneau Problèmes (diagnostics) | `Ctrl+Shift+M` | `M-x flymake-show-buffer-diagnostics` | `:Problems` |
+| Diagnostic suivant / précédent | `F8` / `Shift+F8` | `M-g n` / `M-g p` | `]d` / `[d` |
+| Autocomplétion | `Ctrl+Space` (et auto) | `C-M-i`, `M-/` (et auto) | `Ctrl+Space` (Insertion) |
+| Renommer le symbole (LSP) | `Shift+F2`, `Ctrl+K Ctrl+R` | `M-x lsp-rename` | `:Rename` |
 | Barre de symboles (à côté du texte) | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle` |
 
 - Redemander la définition sur une définition passe au candidat suivant ;

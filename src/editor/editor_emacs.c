@@ -9,6 +9,7 @@
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
 #include "code/code_workspace_symbols.h"
+#include "code/code_rename.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
 #include "core/app_events.h"
@@ -499,6 +500,9 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
             } else if (g_strcmp0(cmd, "flymake-show-buffer-diagnostics") == 0) {
                 emacs_close_minibuffer(tab);
                 code_problems_show(tab->app, tab);
+            } else if (g_strcmp0(cmd, "lsp-rename") == 0) {
+                emacs_close_minibuffer(tab);
+                code_rename_start(tab->app, tab, editor_mode_message);
             } else if (strstr(cmd, "goto-line")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_GOTO_LINE, "Goto line: ", "");
             } else if (strstr(cmd, "query-replace")) {

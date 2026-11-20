@@ -39,6 +39,9 @@ while True:
     if method == "initialize":
         write({"jsonrpc": "2.0", "id": mid, "result": {
             "capabilities": {"definitionProvider": True, "hoverProvider": True,
+                             "workspaceSymbolProvider": True,
+                             "completionProvider": {"triggerCharacters": [".", ">"]},
+                             "renameProvider": {"prepareProvider": True},
                              "signatureHelpProvider": {"triggerCharacters": ["("]}},
             "serverInfo": {"name": "fake-lsp"}}})
     elif method == "initialized":
@@ -61,6 +64,30 @@ while True:
         uri = msg["params"]["textDocument"]["uri"]
         write({"jsonrpc": "2.0", "id": mid,
                "result": {"contents": {"kind": "plaintext", "value": docs.get(uri, "")}}})
+    elif method == "textDocument/completion":
+        write({"jsonrpc": "2.0", "id": mid,
+               "result": {"isIncomplete": False,
+                          "items": [{"label": "fake_fn", "kind": 3, "detail": "int fake_fn(void)"}]}})
+    elif method == "workspace/symbol":
+        q = msg["params"].get("query", "")
+        write({"jsonrpc": "2.0", "id": mid,
+               "result": [{"name": "ws_" + q, "kind": 12,
+                           "location": {"uri": "file:///p/a.c",
+                                        "range": {"start": {"line": 1, "character": 0},
+                                                  "end": {"line": 1, "character": 3}}}}]})
+    elif method == "textDocument/prepareRename":
+        pos = msg["params"]["position"]
+        write({"jsonrpc": "2.0", "id": mid,
+               "result": {"range": {"start": pos, "end": {"line": pos["line"], "character": pos["character"] + 3}},
+                          "placeholder": "foo"}})
+    elif method == "textDocument/rename":
+        p = msg["params"]
+        uri = p["textDocument"]["uri"]
+        pos = p["position"]
+        write({"jsonrpc": "2.0", "id": mid,
+               "result": {"changes": {uri: [{"range": {"start": pos,
+                                                       "end": {"line": pos["line"], "character": pos["character"] + 3}},
+                                             "newText": p["newName"]}]}}})
     elif method == "shutdown":
         write({"jsonrpc": "2.0", "id": mid, "result": None})
     elif method == "exit":

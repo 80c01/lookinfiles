@@ -13,6 +13,7 @@
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
 #include "code/code_workspace_symbols.h"
+#include "code/code_rename.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
 #include "vim/vim_engine.h"
@@ -413,6 +414,10 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
     }
     if (strcmp(name, "Problems") == 0) {
         code_problems_show(app, tab);
+        return TRUE;
+    }
+    if (strcmp(name, "Rename") == 0) {
+        code_rename_start(app, tab, editor_mode_message);
         return TRUE;
     }
     if (strcmp(name, "tag") == 0) {

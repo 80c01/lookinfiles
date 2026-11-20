@@ -40,8 +40,8 @@ Emacs, Vim). The modules are described in
 
 | Layer | Modules |
 |---|---|
-| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup), `code_tags` (ctags), `lsp_protocol`, `lsp_client`, `lsp_config`, `jump_list` |
-| 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (symbol picker), `editor_tagbar` (tagbar) |
+| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup, workspace symbol search), `code_tags` (ctags), `lsp_protocol`, `lsp_edit` (text edit application, buffer identifier extraction), `lsp_client`, `lsp_config`, `jump_list` |
+| 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_problems` (Problems tab, diagnostic stepping), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (file symbol picker), `code_workspace_symbols` (project symbol picker), `code_complete` (autocompletion popover), `code_rename` (multi-file LSP rename), `editor_tagbar` (tagbar) |
 
 ## Backends
 
@@ -74,6 +74,11 @@ Emacs, Vim). The modules are described in
 | Help | mouse hover, `Ctrl+K Ctrl+I` | `C-h .` | `K` |
 | Signature | automatic, `Ctrl+Shift+Space` | automatic in the echo area | automatic in Insert mode |
 | Symbols of the file | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Symbols of the project | `Ctrl+Alt+O` | `M-g s` | `:WSymbols` |
+| Problems panel | `Ctrl+Shift+M` | `M-x flymake-show-buffer-diagnostics` | `:Problems` |
+| Next / previous diagnostic | `F8` / `Shift+F8` | `M-g n` / `M-g p` | `]d` / `[d` |
+| Autocompletion | `Ctrl+Space` (and auto) | `C-M-i`, `M-/` (and auto) | `Ctrl+Space` (Insert, auto) |
+| Rename symbol (LSP) | `Shift+F2`, `Ctrl+K Ctrl+R` | `M-x lsp-rename` | `:Rename` |
 | Tagbar | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle`, `:Tagbar` |
 | By name | — | — | `:tag {name}` |
 
@@ -106,7 +111,7 @@ Notes:
 ## Known limits
 
 - References without a server are whole-word matches (comments and strings
-  included); workspace-wide symbol search is not offered.
+  included); multi-file rename requires a running language server.
 - Built-in index: no scopes or types, so `x->name` offers every `name`
   field of the project (best first: same file, same directory). Local
   variables come from the "first use in this scope" fallback.

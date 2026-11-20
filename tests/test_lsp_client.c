@@ -47,6 +47,52 @@ static void on_hover(LspClient* client, const LspMessage* msg, gpointer data) {
     ctx->answers++;
 }
 
+static void on_completion(LspClient* client, const LspMessage* msg, gpointer data) {
+    (void)client;
+    Ctx* ctx = data;
+    if (msg == NULL) {
+        ctx->failures++;
+        return;
+    }
+    LspCompletionList* cl = lsp_parse_completions(msg->result);
+    g_free(ctx->last);
+    LspCompletionItem* it = cl->items->len > 0 ? g_ptr_array_index(cl->items, 0) : NULL;
+    ctx->last = g_strdup(it != NULL ? it->label : "");
+    lsp_completion_list_free(cl);
+    ctx->answers++;
+}
+
+static void on_ws_symbols(LspClient* client, const LspMessage* msg, gpointer data) {
+    (void)client;
+    Ctx* ctx = data;
+    if (msg == NULL) {
+        ctx->failures++;
+        return;
+    }
+    GPtrArray* syms = lsp_parse_symbols(msg->result);
+    g_free(ctx->last);
+    LspSymbol* s = syms->len > 0 ? g_ptr_array_index(syms, 0) : NULL;
+    ctx->last = g_strdup(s != NULL ? s->name : "");
+    g_ptr_array_unref(syms);
+    ctx->answers++;
+}
+
+static void on_rename(LspClient* client, const LspMessage* msg, gpointer data) {
+    (void)client;
+    Ctx* ctx = data;
+    if (msg == NULL) {
+        ctx->failures++;
+        return;
+    }
+    LspWorkspaceEdit* ws = lsp_parse_workspace_edit(msg->result);
+    g_free(ctx->last);
+    LspFileEdits* fe = (ws != NULL && ws->files->len > 0) ? g_ptr_array_index(ws->files, 0) : NULL;
+    LspTextEdit* te = (fe != NULL && fe->edits->len > 0) ? g_ptr_array_index(fe->edits, 0) : NULL;
+    ctx->last = g_strdup(te != NULL ? te->new_text : "");
+    lsp_workspace_edit_free(ws);
+    ctx->answers++;
+}
+
 static void count_destroy(gpointer data) {
     ((Ctx*)data)->destroyed++;
 }
@@ -104,6 +150,11 @@ static void test_requests(void) {
     const LspCapabilities* caps = lsp_client_get_capabilities(c);
     g_assert_true(caps->definition);
     g_assert_false(caps->references);
+    g_assert_true(caps->workspace_symbol);
+    g_assert_true(caps->completion);
+    g_assert_cmpstr(caps->completion_triggers, ==, ".>");
+    g_assert_true(caps->rename);
+    g_assert_true(caps->prepare_rename);
     g_assert_cmpstr(caps->signature_triggers, ==, "(");
 
     /* The server sees the documents as synchronized */
@@ -123,19 +174,38 @@ static void test_requests(void) {
     docs = lsp_client_get_documents(c);
     g_assert_null(docs);
 
+    /* Completion, workspace/symbol, and rename round-trips */
+    gchar* comp_p = lsp_params_completion(doc, 0, 2, ".");
+    lsp_client_request(c, "textDocument/completion", comp_p, on_completion, &ctx, NULL);
+    WAIT_FOR(ctx.answers == 4);
+    g_assert_cmpstr(ctx.last, ==, "fake_fn");
+    g_free(comp_p);
+
+    gchar* ws_p = lsp_params_workspace_symbol("foo");
+    lsp_client_request(c, "workspace/symbol", ws_p, on_ws_symbols, &ctx, NULL);
+    WAIT_FOR(ctx.answers == 5);
+    g_assert_cmpstr(ctx.last, ==, "ws_foo");
+    g_free(ws_p);
+
+    gchar* ren_p = lsp_params_rename(doc, 0, 0, "bar");
+    lsp_client_request(c, "textDocument/rename", ren_p, on_rename, &ctx, NULL);
+    WAIT_FOR(ctx.answers == 6);
+    g_assert_cmpstr(ctx.last, ==, "bar");
+    g_free(ren_p);
+
     /* A cancelled request is never answered; an unknown method fails */
     id = lsp_client_request(c, "textDocument/definition", params, on_definition, &ctx, count_destroy);
     lsp_client_cancel(c, id);
     g_assert_cmpint(ctx.destroyed, ==, 2);
     lsp_client_request(c, "textDocument/unknown", params, on_definition, &ctx, NULL);
     WAIT_FOR(ctx.failures == 1);
-    g_assert_cmpint(ctx.answers, ==, 3);
+    g_assert_cmpint(ctx.answers, ==, 6);
 
     /* Freed with a request pending: dropped, destroy called */
     lsp_client_request(c, "textDocument/definition", params, on_definition, &ctx, count_destroy);
     lsp_client_free(c);
     g_assert_cmpint(ctx.destroyed, ==, 3);
-    g_assert_cmpint(ctx.answers, ==, 3);
+    g_assert_cmpint(ctx.answers, ==, 6);
     /* Let the exit / reaping run */
     for (gint i = 0; i < 50; i++) g_main_context_iteration(NULL, FALSE);
     g_free(hover);

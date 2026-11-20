@@ -14,6 +14,11 @@ it is used, and show what it is, in all three modes.
 | Signature of the call being typed | automatic, `Ctrl+Shift+Space` | in the echo area | automatic in Insert mode |
 | References | `Shift+F12` | `M-?` | `gr` |
 | Symbols of the file | `Ctrl+Shift+O` | `M-g i` | `:Symbols` |
+| Symbols of the project | `Ctrl+Alt+O` | `M-g s` | `:WSymbols` |
+| Problems panel (diagnostics) | `Ctrl+Shift+M` | `M-x flymake-show-buffer-diagnostics` | `:Problems` |
+| Next / previous diagnostic | `F8` / `Shift+F8` | `M-g n` / `M-g p` | `]d` / `[d` |
+| Autocompletion | `Ctrl+Space` (and auto) | `C-M-i`, `M-/` (and auto) | `Ctrl+Space` (Insert) |
+| Rename symbol across files (LSP) | `Shift+F2`, `Ctrl+K Ctrl+R` | `M-x lsp-rename` | `:Rename` |
 | Tagbar (symbols beside the text) | `Ctrl+K Ctrl+O` | `M-x imenu-list` | `:TagbarToggle` |
 
 - Pressing "definition" again on a definition goes to the next candidate;
