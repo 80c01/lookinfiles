@@ -398,7 +398,12 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     if (tab->minimap != NULL) {
         gtk_box_append(GTK_BOX(hbox), tab->minimap);
     }
-    gtk_box_append(GTK_BOX(container), editor_tagbar_wrap(app, tab, hbox));
+    /* Vim mode puts the window's status line under it (editor_vim.c) */
+    tab->window = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_hexpand(tab->window, TRUE);
+    gtk_widget_set_vexpand(tab->window, TRUE);
+    gtk_box_append(GTK_BOX(tab->window), hbox);
+    gtk_box_append(GTK_BOX(container), editor_tagbar_wrap(app, tab, tab->window));
 
     /* Status line for this editor */
     /* Status line for this editor */

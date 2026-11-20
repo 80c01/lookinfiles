@@ -490,6 +490,7 @@ static void toggle_sort(OutlinePane* p) {
     p->sort = p->sort == CODE_OUTLINE_BY_KIND ? CODE_OUTLINE_BY_LINE : CODE_OUTLINE_BY_KIND;
     update_sort_button(p);
     rebuild(p);
+    if (!p->detached && p->cb.sort_changed != NULL) p->cb.sort_changed(p->data);
 }
 
 static void on_sort_clicked(GtkButton* button, gpointer data) {
@@ -1060,4 +1061,12 @@ gboolean outline_pane_has_focus(OutlinePane* p) {
     GtkRoot* root = gtk_widget_get_root(p->list);
     GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
     return focus != NULL && (focus == p->list || gtk_widget_is_ancestor(focus, p->list));
+}
+
+gboolean outline_pane_grouped(OutlinePane* pane) {
+    return pane->sort == CODE_OUTLINE_BY_KIND && gtk_widget_get_visible(pane->sort_button);
+}
+
+void outline_pane_set_footer(OutlinePane* pane, GtkWidget* footer) {
+    gtk_box_append(GTK_BOX(pane->panel), footer);
 }

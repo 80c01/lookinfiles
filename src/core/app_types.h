@@ -72,6 +72,8 @@ typedef struct {
     GtkWidget* container; /* notebook page container (scroll + minimap) */
     GtkWidget* scroll;    /* scrolled window holding view */
     GtkWidget* view;      /* the editable text view */
+    GtkWidget* window;    /* view and minimap, and in Vim mode their status
+                           * line: Vim's window, beside the tagbar */
     GtkTextBuffer* buffer;
     GtkWidget* tab_label; /* tab title, with a bullet when unsaved */
     GtkWidget* minimap;   /* minimap_new_for_view() of view */

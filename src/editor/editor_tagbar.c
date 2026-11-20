@@ -19,6 +19,9 @@ typedef struct Tagbar {
     guint cursor_source;
     gboolean stale;          /* the buffer changed while the tagbar was hidden */
     gboolean wanted;         /* shown in this tab (when the file has an outline) */
+    GtkWidget* status;       /* Vim mode: the tagbar window's status line */
+    GtkWidget* status_order; /* "Name" (grouped by kind) or "Order" (file order) */
+    GtkWidget* status_file;
 } Tagbar;
 
 static void tagbar_free(Tagbar* tb) {
@@ -89,7 +92,38 @@ static void panel_action(gpointer data, NavAction action) {
     focus_route_panel_action(tb->app, outline_pane_list(tb->pane), action);
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, nav_style, panel_action};
+/* The status line of Vim's Tagbar window (airline style): "Tagbar", the
+ * sort ("Name" or "Order"), the file */
+static void update_status(Tagbar* tb) {
+    if (tb->tab == NULL || !gtk_widget_get_visible(tb->status)) return;
+    gtk_label_set_text(GTK_LABEL(tb->status_order), outline_pane_grouped(tb->pane) ? "Name" : "Order");
+    gtk_label_set_text(GTK_LABEL(tb->status_file), tb->tab->name != NULL ? tb->tab->name : "[No Name]");
+}
+
+static void sort_changed(gpointer data) {
+    update_status(data);
+}
+
+static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, nav_style, panel_action,
+                                               sort_changed};
+
+static GtkWidget* status_new(Tagbar* tb) {
+    GtkWidget* status = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_add_css_class(status, "vim-statusline");
+    GtkWidget* badge = gtk_label_new("Tagbar");
+    gtk_widget_add_css_class(badge, "vim-mode-badge");
+    gtk_widget_add_css_class(badge, "vim-mode-normal");
+    gtk_box_append(GTK_BOX(status), badge);
+    tb->status_order = gtk_label_new(NULL);
+    gtk_box_append(GTK_BOX(status), tb->status_order);
+    tb->status_file = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(tb->status_file), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(tb->status_file), PANGO_ELLIPSIZE_MIDDLE);
+    gtk_widget_set_hexpand(tb->status_file, TRUE);
+    gtk_box_append(GTK_BOX(status), tb->status_file);
+    gtk_widget_set_visible(status, FALSE);
+    return status;
+}
 
 /* ------------------------------------------------------------------------- */
 /* Cursor and outline                                                        */
@@ -114,6 +148,7 @@ static void on_outline(AppData* app, EditorTab* tab, GPtrArray* entries, const g
     (void)tab;
     Tagbar* tb = data;
     outline_pane_set_entries(tb->pane, entries, g_strcmp0(source, "Markdown headings") == 0, source);
+    update_status(tb); /* headings are in file order; the file may have a new name */
 }
 
 static void refresh_now(Tagbar* tb) {
@@ -165,6 +200,8 @@ GtkWidget* editor_tagbar_wrap(AppData* app, EditorTab* tab, GtkWidget* content) 
     tb->wanted = app->settings.tagbar; /* new tabs follow Preferences → Editor */
     tab->tagbar = tb;
     tb->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the symbols…"), &callbacks, tb);
+    tb->status = status_new(tb);
+    outline_pane_set_footer(tb->pane, tb->status);
     GtkWidget* paned = outline_pane_widget(tb->pane);
     g_object_set_data_full(G_OBJECT(paned), "editor-tagbar", tb, (GDestroyNotify)tagbar_free);
     g_signal_connect(tab->buffer, "mark-set", G_CALLBACK(on_mark_set), tb);
@@ -235,6 +272,13 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
         gtk_widget_grab_focus(tab->view);
     }
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
+}
+
+void editor_tagbar_set_vim_status(EditorTab* tab, gboolean shown) {
+    Tagbar* tb = tab != NULL ? tab->tagbar : NULL;
+    if (tb == NULL) return;
+    gtk_widget_set_visible(tb->status, shown);
+    update_status(tb);
 }
 
 gboolean editor_tagbar_available(EditorTab* tab) {

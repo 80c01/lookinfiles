@@ -89,7 +89,7 @@ static void panel_action(gpointer data, NavAction action) {
     if (tb->tab != NULL) focus_route_panel_action(tb->tab->app, outline_pane_list(tb->pane), action);
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, nav_style, panel_action};
+static const OutlinePaneCallbacks callbacks = {go_to, cursor_line, escape, close_tagbar, nav_style, panel_action, NULL};
 
 /* --- Headings and cursor --- */
 

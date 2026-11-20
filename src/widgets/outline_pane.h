@@ -32,6 +32,8 @@ typedef struct {
     /* A panel or tab key of that mode in the list (NAV_PANEL_NEXT / _PREV,
      * NAV_TAB_NEXT / _PREV, NAV_TAB_CLOSE: focus_route_panel_action()) */
     void (*panel_action)(gpointer data, NavAction action);
+    /* The list was sorted the other way (s, the sort button); may be NULL */
+    void (*sort_changed)(gpointer data);
 } OutlinePaneCallbacks;
 
 /* Put content and a hidden tagbar side by side. width holds the tagbar
@@ -64,5 +66,10 @@ gboolean outline_pane_has_focus(OutlinePane* pane);
 /* The list (the widget focused by outline_pane_focus()); mapped while the
  * tagbar is on screen with its entries */
 GtkWidget* outline_pane_list(OutlinePane* pane);
+/* TRUE when the symbols are grouped by kind, FALSE in file order (and for
+ * headings) */
+gboolean outline_pane_grouped(OutlinePane* pane);
+/* Put footer at the bottom of the tagbar, under the list (a status line) */
+void outline_pane_set_footer(OutlinePane* pane, GtkWidget* footer);
 
 #endif /* OUTLINE_PANE_H */

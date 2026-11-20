@@ -96,6 +96,9 @@ Notes:
   every tab, the current layout leaves them as they are; read again 600 ms after the last edit,
   only while shown; follows the cursor (last entry starting at or before its
   line); the rows the user collapsed stay collapsed across refreshes.
+  In Vim mode it has its own status line (`outline_pane_set_footer()`,
+  `editor_tagbar_set_vim_status()`), and the tab's Vim status line is in
+  `tab->window`, beside it; the command line spans both.
   A language server that has not answered within 2.5 s (starting,
   indexing, hung) is not waited for: the built-in scanner fills it.
   The widget is `outline_pane`, shared with the preview tagbar

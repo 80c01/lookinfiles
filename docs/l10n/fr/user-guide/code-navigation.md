@@ -43,6 +43,11 @@ sa largeur est partagée par les onglets.
 Dans un fichier Markdown, la liste des symboles et la barre de symboles
 affichent les titres.
 
+En mode Vim, comme dans Vim, la barre de symboles et le texte ont chacun
+leur ligne de statut : `Tagbar`, puis `Name` (groupé par type) ou `Order`
+(ordre du fichier) et le fichier sous la barre de symboles ; la ligne de
+commande reste sous les deux.
+
 ## D’où viennent les réponses
 
 LookinFiles utilise la meilleure source qu’il trouve pour le projet (le

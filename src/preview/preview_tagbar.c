@@ -238,7 +238,7 @@ static void panel_action(gpointer data, NavAction action) {
     focus_route_panel_action(pt->app, outline_pane_list(pt->pane), action);
 }
 
-static const OutlinePaneCallbacks callbacks = {go_to, top_line, escape, close_tagbar, nav_style, panel_action};
+static const OutlinePaneCallbacks callbacks = {go_to, top_line, escape, close_tagbar, nav_style, panel_action, NULL};
 
 static gboolean on_scroll_timeout(gpointer data) {
     PreviewTagbar* pt = data;

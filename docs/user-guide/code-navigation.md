@@ -39,6 +39,10 @@ shared by the tabs.
 
 In a Markdown file, the symbol list and the tagbar show the headings.
 
+In Vim mode, as in Vim, the tagbar and the text each have their own status
+line: `Tagbar`, then `Name` (grouped by kind) or `Order` (file order) and
+the file under the tagbar; the command line stays below both.
+
 ## Where the answers come from
 
 LookinFiles uses the best source it finds for the project (the git
