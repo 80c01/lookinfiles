@@ -7,6 +7,7 @@
 #include "code/code_refs.h"
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
+#include "code/code_workspace_symbols.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
 #include "core/app_events.h"
@@ -1054,6 +1055,10 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         if (keyval == GDK_KEY_i || keyval == GDK_KEY_I) {
             /* imenu: the symbols of the buffer */
             code_symbols_show(tab->app, tab, editor_mode_message);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_s || keyval == GDK_KEY_S) {
+            code_workspace_symbols_show(tab->app, tab, editor_mode_message);
             return TRUE;
         }
         if (keyval == GDK_KEY_n || keyval == GDK_KEY_N) {

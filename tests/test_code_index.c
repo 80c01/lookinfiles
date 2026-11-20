@@ -263,6 +263,34 @@ static void test_references(void) {
     g_free(root);
 }
 
+static void test_search_symbols(void) {
+    gchar* root = make_project();
+    GPtrArray* files = code_index_project_files(root, CODE_LANG_C, NULL, NULL);
+    GPtrArray* hits = code_index_search_symbols("shop", CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL);
+    g_assert_cmpuint(hits->len, >=, 2);
+    /* Exact/prefix definitions appear before declarations */
+    CodeMatch* first = g_ptr_array_index(hits, 0);
+    g_assert_true(g_ascii_strncasecmp(first->symbol->name, "shop", 4) == 0);
+    g_ptr_array_unref(hits);
+
+    /* Substring match ("total" -> "shop_total") */
+    hits = code_index_search_symbols("TOTAL", CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL);
+    g_assert_cmpuint(hits->len, >=, 1);
+    first = g_ptr_array_index(hits, 0);
+    g_assert_cmpstr(first->symbol->name, ==, "shop_total");
+    g_assert_false(first->symbol->declaration);
+    g_ptr_array_unref(hits);
+
+    /* Limit honoured */
+    hits = code_index_search_symbols("", CODE_LANG_C, NULL, NULL, files, 2, NULL, NULL);
+    g_assert_cmpuint(hits->len, ==, 2);
+    g_ptr_array_unref(hits);
+
+    g_ptr_array_unref(files);
+    remove_tree(root);
+    g_free(root);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/code_index/project_root", test_project_root);
@@ -272,5 +300,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/code_index/find_open_buffers", test_find_open_buffers);
     g_test_add_func("/code_index/find_cancelled", test_find_cancelled);
     g_test_add_func("/code_index/references", test_references);
+    g_test_add_func("/code_index/search_symbols", test_search_symbols);
     return g_test_run();
 }

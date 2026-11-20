@@ -403,3 +403,144 @@ GPtrArray* code_index_references(const gchar* name, CodeLang lang, const gchar* 
     g_ptr_array_sort_with_data(out, compare_refs, (gpointer)origin_path);
     return out;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Workspace symbol search                                                   */
+/* ------------------------------------------------------------------------- */
+
+typedef struct {
+    CodeMatch* match;
+    gint rank; /* 0 = exact, 1 = prefix, 2 = substring */
+} SearchRanked;
+
+static gint match_query_rank(const gchar* name, const gchar* q_low, gsize q_len) {
+    if (name == NULL || name[0] == '\0') return -1;
+    if (q_len == 0) return 1;
+    gchar* low = g_ascii_strdown(name, -1);
+    gint rank = -1;
+    if (strcmp(low, q_low) == 0) rank = 0;
+    else if (strncmp(low, q_low, q_len) == 0) rank = 1;
+    else if (strstr(low, q_low) != NULL) rank = 2;
+    g_free(low);
+    return rank;
+}
+
+static gint cmp_search_ranked(gconstpointer a, gconstpointer b) {
+    const SearchRanked* x = a;
+    const SearchRanked* y = b;
+    if (x->rank != y->rank) return x->rank - y->rank;
+    if (x->match->symbol->declaration != y->match->symbol->declaration) {
+        return x->match->symbol->declaration ? 1 : -1;
+    }
+    gint n = g_strcmp0(x->match->symbol->name, y->match->symbol->name);
+    if (n != 0) return n;
+    gint p = g_strcmp0(x->match->path, y->match->path);
+    if (p != 0) return p;
+    return x->match->symbol->line - y->match->symbol->line;
+}
+
+static void add_search_hit(GArray* ranked, const gchar* path, CodeSymbol* sym,
+                           const gchar* q_low, gsize q_len) {
+    gint rank = match_query_rank(sym->name, q_low, q_len);
+    if (rank < 0) {
+        code_symbol_free(sym);
+        return;
+    }
+    CodeMatch* m = g_new0(CodeMatch, 1);
+    m->path = g_strdup(path);
+    m->symbol = sym;
+    SearchRanked r = {.match = m, .rank = rank};
+    g_array_append_val(ranked, r);
+}
+
+GPtrArray* code_index_search_symbols(const gchar* query, CodeLang lang, CodeTagsIndex* tags, GHashTable* texts,
+                                     GPtrArray* files, guint limit, GCancellable* cancellable, gboolean* truncated) {
+    GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_match_free);
+    if (truncated != NULL) *truncated = FALSE;
+    if (limit == 0) return out;
+
+    const gchar* q = query != NULL ? query : "";
+    gsize q_len = strlen(q);
+    gchar* q_low = g_ascii_strdown(q, (gssize)q_len);
+    GArray* ranked = g_array_new(FALSE, FALSE, sizeof(SearchRanked));
+    gsize budget = CODE_INDEX_MAX_BYTES;
+
+    gboolean used_tags = FALSE;
+    if (tags != NULL && files != NULL && code_tags_index_update(tags, files, cancellable)) {
+        /* ctags search by prefix (empty prefix retrieves all up to cap) */
+        GPtrArray* hits = code_tags_index_search(tags, q, limit * 4);
+        if (hits != NULL && (hits->len > 0 || q_len == 0)) {
+            used_tags = TRUE;
+            for (guint i = 0; i < hits->len; i++) {
+                CodeTagsHit* h = g_ptr_array_index(hits, i);
+                if (texts != NULL && g_hash_table_contains(texts, h->path)) continue;
+                add_search_hit(ranked, h->path, code_symbol_copy(h->symbol), q_low, q_len);
+            }
+        }
+        if (hits != NULL) g_ptr_array_unref(hits);
+    }
+
+    if (used_tags) {
+        /* Also scan open buffers for unsaved symbols */
+        if (texts != NULL) {
+            GHashTableIter it;
+            gpointer key = NULL, val = NULL;
+            g_hash_table_iter_init(&it, texts);
+            while (g_hash_table_iter_next(&it, &key, &val)) {
+                if (g_cancellable_is_cancelled(cancellable)) break;
+                const gchar* path = key;
+                const gchar* text = val;
+                CodeLang fl = code_lang_from_name(path);
+                if (fl == CODE_LANG_NONE) fl = lang;
+                GPtrArray* syms = code_scan_text(text, strlen(text), fl, NULL);
+                for (guint i = 0; i < syms->len; i++) {
+                    add_search_hit(ranked, path, g_ptr_array_index(syms, i), q_low, q_len);
+                }
+                g_ptr_array_set_free_func(syms, NULL);
+                g_ptr_array_free(syms, TRUE);
+            }
+        }
+    } else {
+        for (guint i = 0; files != NULL && i < files->len; i++) {
+            if (g_cancellable_is_cancelled(cancellable)) break;
+            const gchar* path = g_ptr_array_index(files, i);
+            const gchar* text = texts != NULL ? g_hash_table_lookup(texts, path) : NULL;
+            gchar* owned = NULL;
+            gsize len = 0;
+            if (text != NULL) {
+                len = strlen(text);
+            } else {
+                GStatBuf st;
+                if (g_stat(path, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size > CODE_INDEX_MAX_FILE_BYTES) continue;
+                if ((gsize)st.st_size > budget) {
+                    if (truncated != NULL) *truncated = TRUE;
+                    break;
+                }
+                if (!g_file_get_contents(path, &owned, &len, NULL)) continue;
+                text = owned;
+            }
+            budget -= MIN(budget, len);
+            CodeLang fl = code_lang_from_name(path);
+            if (fl == CODE_LANG_NONE) fl = lang;
+            GPtrArray* syms = code_scan_text(text, len, fl, NULL);
+            for (guint j = 0; j < syms->len; j++) {
+                add_search_hit(ranked, path, g_ptr_array_index(syms, j), q_low, q_len);
+            }
+            g_ptr_array_set_free_func(syms, NULL);
+            g_ptr_array_free(syms, TRUE);
+            g_free(owned);
+        }
+    }
+
+    g_array_sort(ranked, cmp_search_ranked);
+    guint take = MIN(ranked->len, limit);
+    for (guint i = 0; i < take; i++) {
+        g_ptr_array_add(out, g_array_index(ranked, SearchRanked, i).match);
+    }
+    for (guint i = take; i < ranked->len; i++) {
+        code_match_free(g_array_index(ranked, SearchRanked, i).match);
+    }
+    g_array_free(ranked, TRUE);
+    g_free(q_low);
+    return out;
+}

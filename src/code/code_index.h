@@ -87,4 +87,11 @@ void code_reference_free(CodeReference* ref);
 GPtrArray* code_index_references(const gchar* name, CodeLang lang, const gchar* origin_path, GHashTable* texts,
                                  GPtrArray* files, GCancellable* cancellable, gboolean* truncated);
 
+/* Search project symbols matching query (case-insensitive substring; empty
+ * query matches all), ranked: exact > prefix > substring, definitions before
+ * declarations, capped at limit. Uses ctags (tags) when available, else the
+ * built-in scanners over files and open buffers (texts). Returns CodeMatch*. */
+GPtrArray* code_index_search_symbols(const gchar* query, CodeLang lang, CodeTagsIndex* tags, GHashTable* texts,
+                                     GPtrArray* files, guint limit, GCancellable* cancellable, gboolean* truncated);
+
 #endif /* CODE_INDEX_H */

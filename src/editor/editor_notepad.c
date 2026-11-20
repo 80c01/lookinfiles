@@ -8,6 +8,7 @@
 #include "code/code_refs.h"
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
+#include "code/code_workspace_symbols.h"
 #include "editor/editor_tagbar.h"
 #include "core/app_events.h"
 #include "theme/text_tags.h"
@@ -693,6 +694,10 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (ctrl && shift && !alt && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
         code_symbols_show(tab->app, tab, editor_mode_message);
+        return TRUE;
+    }
+    if (ctrl && alt && !shift && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
+        code_workspace_symbols_show(tab->app, tab, editor_mode_message);
         return TRUE;
     }
     if (ctrl && shift && !alt && (keyval == GDK_KEY_m || keyval == GDK_KEY_M)) {
