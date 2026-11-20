@@ -571,7 +571,8 @@ void apply_panel_borders(void) {
         "  padding: 4px 10px;\n"
         "}\n"
         /* ---- Tab strip (preview + editor notebooks) ---- */
-        "notebook, notebook stack {\n"
+        /* Only the page area: a drop-down in a page has a stack too */
+        "notebook, notebook > stack {\n"
         "  background-color: @bg_view;\n"
         "}\n"        /* GTK's own notebook frame, in the theme's border colour */
         "notebook.frame {\n"
