@@ -156,7 +156,27 @@ Un notebook nbformat 3 ou endommagé s’ouvre en texte.
 | `Ctrl+R` / `F2` | Renommer le fichier de l’onglet (seulement `F2` dans les onglets Emacs et Org-mode) |
 | `Ctrl+Alt+N` | Afficher ou masquer les numéros de ligne |
 | Clic du milieu sur le titre | Fermer l’onglet |
-| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), afficher la minicarte (cet onglet seulement), déplacer, diviser ou fermer l’onglet |
+| Clic droit sur le titre | Changer le mode, les numéros de ligne, afficher la barre de symboles (code et Markdown), afficher la minicarte (cet onglet seulement), recharger depuis le disque, déplacer, diviser ou fermer l’onglet |
+
+### Fichiers modifiés sur le disque
+
+Les onglets ouverts surveillent leur fichier sur le disque selon les
+habitudes de leur mode :
+
+- **Notepad** : un tampon sans modification se recharge sur place, en gardant
+  le curseur et le défilement. Si vous avez des modifications non enregistrées
+  (ou si le fichier a été supprimé), un bandeau en haut de l’onglet propose
+  **Recharger** et **Garder le mien**, et enregistrer (`Ctrl+S`) demande
+  confirmation avant d’écraser les changements externes.
+- **Vim** : avec `:set autoread` (actif par défaut ; `:set noautoread` le
+  désactive), un tampon propre se recharge automatiquement. Sinon Vim prévient
+  dans la ligne de commande (`W11` / `W12`) ; `:e!` recharge, `:checktime`
+  vérifie le disque, et `:w` refuse d’écraser tant que vous n’utilisez pas
+  `:w!`.
+- **Emacs** et **Org-mode** : le rechargement automatique est désactivé par
+  défaut (`M-x auto-revert-mode` le bascule pour l’onglet). Les changements
+  sont signalés dans la zone d’écho ; `M-x revert-buffer` recharge depuis le
+  disque, et `C-x C-s` demande `y/n` dans le minibuffer avant d’écraser.
 
 ### Le panneau d’édition dédié
 

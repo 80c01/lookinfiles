@@ -957,6 +957,16 @@ void apply_panel_borders(void) {
         "  color: @fg_muted;\n"
         "  font-size: @size_bar;\n"
         "}\n"
+        /* External file change banner above a Notepad editor tab (editor_watch.c) */
+        ".editor-watch-bar {\n"
+        "  background-color: @bg_bar;\n"
+        "  border-bottom: 1px solid @border;\n"
+        "  padding: 2px 4px 2px 8px;\n"
+        "}\n"
+        ".editor-watch-bar label {\n"
+        "  color: @warning;\n"
+        "  font-size: @size_bar;\n"
+        "}\n"
         /* "Rendering…" notice above the previous preview (preview_busy.c) */
         ".preview-busy {\n"
         "  background-color: @bg_bar;\n"

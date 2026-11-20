@@ -6,6 +6,7 @@
 #include "workspace/layout_switcher.h"
 #include "theme/icons.h"
 #include "explorer/fs_watch.h"
+#include "editor/editor_watch.h"
 #include "preview/preview_state.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
@@ -103,6 +104,7 @@ static void on_window_active_changed(GObject* object, GParamSpec* pspec, gpointe
     AppData* app = (AppData*)user_data;
     if (app != NULL && gtk_window_is_active(GTK_WINDOW(object))) {
         fs_watch_git_changed(app);
+        editor_watch_check_all(app);
     }
 }
 
@@ -535,6 +537,9 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, refresh_diff_gutters);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, refresh_diff_gutters);
     app_events_subscribe(app, APP_EVENT_FILES_CHANGED, themes_on_files_changed);
+    app_events_subscribe(app, APP_EVENT_FILES_CHANGED, editor_watch_check_all);
+    app_events_subscribe(app, APP_EVENT_GIT_STATUS_CHANGED, editor_watch_check_all);
+    editor_modes_init_watch_hooks();
     app_events_subscribe(app, APP_EVENT_FOCUS_NEXT_PANEL, focus_next_panel);
     app_events_subscribe(app, APP_EVENT_FOCUS_PREV_PANEL, focus_prev_panel);
     app_events_subscribe(app, APP_EVENT_CLOSE_TAB, close_shown_tab);
@@ -787,6 +792,7 @@ int main(int argc, char** argv) {
     latex_build_free(app);      /* a running compilation stopped */
     latex_sync_free(app);
     fs_watch_free(app);
+    editor_watch_free(app);
     git_tab_cleanup(app);
     panels_free(app);
     g_clear_pointer(&app->git_state, git_state_free);

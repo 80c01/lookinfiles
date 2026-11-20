@@ -5,6 +5,7 @@
 #include "editor/editor_swap.h"
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
+#include "editor/editor_watch.h"
 #include "core/i18n.h"
 #include "core/path_copy.h"
 #include "theme/icons.h"
@@ -74,6 +75,9 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
         break;
     case TAB_ACTION_PREVIEW_UPDATES:
         editor_set_preview_paused(app, tab, !editor_preview_paused(app, tab->path));
+        break;
+    case TAB_ACTION_RELOAD:
+        editor_watch_reload_interactive(app, tab);
         break;
     case TAB_ACTION_MODE_NOTEPAD:
         editor_set_tab_mode(app, tab, EDITOR_MODE_NOTEPAD);
@@ -265,6 +269,8 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
         gtk_widget_set_margin_top(sep_copy, 4);
         gtk_widget_set_margin_bottom(sep_copy, 4);
         gtk_box_append(GTK_BOX(box), sep_copy);
+        tab_menu_item(box, popover, app, tab, _("Reload from Disk"),
+                      vim ? ":e!" : emacs ? "M-x revert-buffer" : NULL, TAB_ACTION_RELOAD);
         tab_menu_item(box, popover, app, tab, _("Copy Name"), NULL, TAB_ACTION_COPY_NAME);
         if (path_copy_has_relative(tab->path)) {
             tab_menu_item(box, popover, app, tab, _("Copy Git Relative Path"), NULL, TAB_ACTION_COPY_RELATIVE);

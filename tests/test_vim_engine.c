@@ -536,6 +536,14 @@ static void test_ex_errors_and_host(void) {
     g_assert_false(vim_engine_options(f->e)->ignorecase);
     fx_type(f, ":set ic!<CR>");
     g_assert_true(vim_engine_options(f->e)->ignorecase);
+    g_assert_true(vim_engine_options(f->e)->autoread);
+    fx_type(f, ":set noar<CR>");
+    g_assert_false(vim_engine_options(f->e)->autoread);
+    fx_type(f, ":set autoread!<CR>");
+    g_assert_true(vim_engine_options(f->e)->autoread);
+    g_string_truncate(f->host.ex, 0);
+    fx_type(f, ":checktime<CR>");
+    g_assert_cmpstr(f->host.ex->str, ==, "checktime ;");
     g_string_truncate(f->host.messages, 0);
     fx_type(f, ":set sw?<CR>");
     g_assert_nonnull(strstr(f->host.messages->str, "shiftwidth=2"));

@@ -32,6 +32,7 @@ enum {
     TAB_ACTION_COPY_RELATIVE,
     TAB_ACTION_COPY_PATH,
     TAB_ACTION_PREVIEW_UPDATES,
+    TAB_ACTION_RELOAD,
     TAB_ACTION_PAGE_EXTRA
 };
 
@@ -78,6 +79,9 @@ void editor_close_page(AppData* app, gint page);
 void editor_close_current(AppData* app);
 void editor_save_all_buffers(AppData* app);
 gboolean editor_save_current(AppData* app);
+/* Save the current tab without prompting for external disk changes (Vim :w!,
+ * Emacs after minibuffer confirmation) */
+gboolean editor_save_current_force(AppData* app);
 /* TRUE if path has a preview built from its text (Markdown, Org, JSON, a
  * LaTeX PDF...), which follows the saves of its editor tabs */
 gboolean editor_tab_updates_preview(const EditorTab* tab);

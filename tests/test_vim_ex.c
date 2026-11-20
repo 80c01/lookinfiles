@@ -27,7 +27,7 @@ static void test_names(void) {
         {"r", "read"}, {"r! ls", "read"}, {"read", "read"}, {"read! echo 1", "read"},
         {"ce 40", "center"}, {"ri", "right"}, {"le", "left"}, {"ret", "retab"}, {"&&", "&&"},
         {">", ">"}, {"<<", "<"}, {"sg", "substitute"}, {"tabn", "tabnext"}, {"bp", "tabprevious"},
-        {"sav x", "saveas"}, {"e!", "edit"}, {"", ""}, {"12", ""},
+        {"sav x", "saveas"}, {"e!", "edit"}, {"chec", "checktime"}, {"checktime", "checktime"}, {"", ""}, {"12", ""},
         {"sp", "split"}, {"vs", "vsplit"}, {"vsplit", "vsplit"}, {"on", "only"}, {"clo", "close"},
     };
     for (gsize i = 0; i < G_N_ELEMENTS(cases); i++) {

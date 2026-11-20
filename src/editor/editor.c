@@ -14,6 +14,7 @@
 #include "widgets/focus_route.h"
 #include "explorer/nav_history.h"
 #include "editor/editor_view.h"
+#include "editor/editor_watch.h"
 #include "theme/icons.h"
 #include "latex/latex_build.h"
 #include "explorer/fs_watch.h"
@@ -92,7 +93,8 @@ EditorTab* editor_current_tab(AppData* app) {
 void on_editor_modified_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     EditorTab* tab = (EditorTab*)data;
-    if (tab != NULL && tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer)) {
+    if (tab != NULL && tab->is_buffer && gtk_text_buffer_get_modified(tab->buffer) &&
+        !editor_watch_is_reloading(tab->buffer)) {
         if (tab->path != NULL) {
             /* Automatically back buffer to ~/.config file so user doesn't lose changes */
             editor_tab_write(tab, tab->path, NULL);
@@ -391,6 +393,7 @@ void editor_open_text_file(AppData* app, const gchar* name, const gchar* full) {
     build_view(app, tab, buffer);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     editor_tab_add_page(app, tab, target_nb);
+    editor_watch_record(tab);
     g_free(contents);
 }
 
@@ -544,6 +547,7 @@ EditorTab* editor_add_view(AppData* app, EditorTab* tab, GtkNotebook* nb) {
                                 gtk_text_view_get_wrap_mode(GTK_TEXT_VIEW(tab->view)));
     minimap_view_set_enabled(twin->minimap, minimap_view_enabled(tab->minimap));
     editor_tab_add_page(app, twin, nb);
+    editor_watch_sync_view(twin);
     editor_update_panel_visibilities(app);
     /* Both views share the cursor: show it */
     gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(twin->view), gtk_text_buffer_get_insert(twin->buffer),
@@ -1087,10 +1091,19 @@ static void update_preview_after_save(AppData* app, EditorTab* tab) {
     latex_build_saved(app, tab->path);
 }
 
-gboolean editor_save_current(AppData* app) {
+static gboolean save_current_impl(AppData* app, gboolean check_disk) {
     EditorTab* tab = editor_current_tab(app);
     if (tab == NULL || tab->path == NULL) {
         return FALSE;
+    }
+    if (check_disk) {
+        EditorWatchSaveAction act = editor_watch_before_save(app, tab);
+        if (act != EDITOR_WATCH_SAVE_OK) {
+            if (tab->view != NULL) {
+                gtk_widget_grab_focus(tab->view);
+            }
+            return act == EDITOR_WATCH_SAVE_RELOADED;
+        }
     }
     GError* error = NULL;
     if (!editor_tab_write(tab, tab->path, &error)) {
@@ -1108,6 +1121,14 @@ gboolean editor_save_current(AppData* app) {
         }
     }
     return TRUE;
+}
+
+gboolean editor_save_current(AppData* app) {
+    return save_current_impl(app, TRUE);
+}
+
+gboolean editor_save_current_force(AppData* app) {
+    return save_current_impl(app, FALSE);
 }
 
 gboolean editor_tab_updates_preview(const EditorTab* tab) {
@@ -1152,5 +1173,8 @@ gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {
     g_free(lines);
     gboolean ok = file_save_text(path, text, -1, error);
     g_free(text);
+    if (ok && tab->path != NULL && g_strcmp0(path, tab->path) == 0) {
+        editor_watch_record(tab);
+    }
     return ok;
 }

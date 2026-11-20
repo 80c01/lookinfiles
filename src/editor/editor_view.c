@@ -11,6 +11,7 @@
 #include "widgets/diff_gutter.h"
 #include "code/code_help.h"
 #include "editor/editor_tagbar.h"
+#include "editor/editor_watch.h"
 #include "core/file_types.h"
 
 /* The tab whose view has the buffer's cursor (the views of a split file share
@@ -74,6 +75,7 @@ static void on_editor_focus_enter(GtkEventControllerFocus* ctrl, gpointer data) 
         update_active_panel_highlight(app);
         app_emit(app, APP_EVENT_STATUS_CHANGED);
         editor_modes_update_status(tab);
+        editor_watch_check_tab(app, tab, FALSE);
     }
 }
 

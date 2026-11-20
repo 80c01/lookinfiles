@@ -13,6 +13,7 @@
 #include "media/audio.h"
 #include "editor/editor.h"
 #include "editor/editor_swap.h"
+#include "editor/editor_watch.h"
 #include "explorer/file_list.h"
 #include "widgets/minimap.h"
 #include "terminal/terminal.h"
@@ -491,6 +492,7 @@ void workspace_switch(AppData* app, gint idx) {
         GtkWidget* panel = ws->editor_panel;
         ws->editor_panel = NULL;
         editor_attach_tabs(app, ws->editors, panel);
+        editor_watch_check_all(app);
         project_search_workspace_shown(app, ws);
         help_guide_workspace_shown(app, ws);
         sysmon_tab_workspace_shown(app, ws);

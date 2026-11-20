@@ -7,6 +7,7 @@
 #include "code/code_refs.h"
 #include "code/code_symbols.h"
 #include "editor/editor_tagbar.h"
+#include "editor/editor_watch.h"
 #include "core/app_events.h"
 #include "explorer/nav_keys.h"
 #include "search/quick_open.h"
@@ -300,9 +301,9 @@ void emacs_close_minibuffer(EditorTab* tab) {
 
 /* M-x command names offered by Tab completion */
 static const gchar* MX_COMMANDS[] = {
-    "display-line-numbers-mode", "dunnet", "fill-paragraph", "goto-line", "imenu-list",
-    "notepad-mode", "org-mode", "query-replace", "redo", "save-buffer",
-    "set-justification-center", "set-justification-full",
+    "auto-revert-mode", "display-line-numbers-mode", "dunnet", "fill-paragraph", "goto-line",
+    "imenu-list", "notepad-mode", "org-mode", "query-replace", "redo", "revert-buffer",
+    "save-buffer", "set-justification-center", "set-justification-full",
     "set-justification-left", "set-justification-right", "text-mode",
     "toggle-truncate-lines", "undo", "vim-mode", "visual-line-mode",
     "write-file",
@@ -347,6 +348,78 @@ void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
     st->emacs_prompt_cb = cb;
     st->emacs_prompt_data = data;
     gtk_editable_set_position(GTK_EDITABLE(st->emacs_mb_entry), -1);
+}
+
+static void emacs_confirm_save_cb(EditorTab* tab, const gchar* text, gchar* data) {
+    (void)data;
+    const gchar* p = text != NULL ? text : "";
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == 'y' || *p == 'Y') {
+        tab->app->last_focused_editor = tab;
+        editor_save_current_force(tab->app);
+        gchar* msg = g_strdup_printf("Wrote %s", tab->path != NULL ? tab->path : "");
+        emacs_echo(tab, msg);
+        g_free(msg);
+    } else {
+        emacs_echo(tab, "Save cancelled");
+    }
+}
+
+static void emacs_save_buffer(EditorTab* tab) {
+    if (tab == NULL) return;
+    if (tab->path == NULL) {
+        emacs_open_minibuffer(tab, EMACS_MINI_WRITE_FILE, "Write file: ", "");
+        return;
+    }
+    gboolean removed = FALSE;
+    if (editor_watch_disk_changed(tab, &removed)) {
+        const gchar* name = tab->name != NULL ? tab->name : tab->path;
+        gchar* prompt = removed
+            ? g_strdup_printf("%s removed on disk; really save the buffer? (y/n) ", name)
+            : g_strdup_printf("%s changed on disk; really save the buffer? (y/n) ", name);
+        emacs_prompt(tab, prompt, "", emacs_confirm_save_cb, NULL);
+        g_free(prompt);
+        return;
+    }
+    tab->app->last_focused_editor = tab;
+    editor_save_current_force(tab->app);
+    gchar* msg = g_strdup_printf("Wrote %s", tab->path);
+    emacs_echo(tab, msg);
+    g_free(msg);
+}
+
+static void emacs_confirm_revert_cb(EditorTab* tab, const gchar* text, gchar* data) {
+    (void)data;
+    const gchar* p = text != NULL ? text : "";
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == 'y' || *p == 'Y') {
+        gchar* err = NULL;
+        if (!editor_watch_reload_tab(tab->app, tab, TRUE, &err) && err != NULL) {
+            emacs_echo(tab, err);
+        }
+        g_free(err);
+    } else {
+        emacs_echo(tab, "Revert cancelled");
+    }
+}
+
+static void emacs_revert_buffer(EditorTab* tab) {
+    if (tab == NULL || tab->path == NULL) {
+        emacs_echo(tab, "Buffer does not seem to be associated with any file");
+        return;
+    }
+    if (gtk_text_buffer_get_modified(tab->buffer) && !tab->is_buffer) {
+        const gchar* name = tab->name != NULL ? tab->name : tab->path;
+        gchar* prompt = g_strdup_printf("Revert buffer from file %s? (y/n) ", name);
+        emacs_prompt(tab, prompt, "", emacs_confirm_revert_cb, NULL);
+        g_free(prompt);
+        return;
+    }
+    gchar* err = NULL;
+    if (!editor_watch_reload_tab(tab->app, tab, TRUE, &err) && err != NULL) {
+        emacs_echo(tab, err);
+    }
+    g_free(err);
 }
 
 static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
@@ -428,9 +501,20 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                 emacs_echo(tab, "Filled paragraph");
                 emacs_close_minibuffer(tab);
             } else if (strstr(cmd, "save-buffer")) {
-                editor_save_current(tab->app);
-                emacs_echo(tab, "Wrote buffer");
                 emacs_close_minibuffer(tab);
+                emacs_save_buffer(tab);
+            } else if (g_strcmp0(cmd, "revert-buffer") == 0) {
+                emacs_close_minibuffer(tab);
+                emacs_revert_buffer(tab);
+            } else if (g_strcmp0(cmd, "auto-revert-mode") == 0) {
+                st->emacs_auto_revert = !st->emacs_auto_revert;
+                emacs_close_minibuffer(tab);
+                emacs_echo(tab, st->emacs_auto_revert
+                                    ? "Auto-Revert mode enabled in current buffer"
+                                    : "Auto-Revert mode disabled in current buffer");
+                if (st->emacs_auto_revert) {
+                    editor_watch_check_tab(tab->app, tab, FALSE);
+                }
             } else if (strstr(cmd, "write-file")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_WRITE_FILE, "Write file: ", tab->path ? tab->path : "");
             } else if (strstr(cmd, "set-justification-center")) {
@@ -886,8 +970,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     if (st->emacs_prefix == EMACS_PREFIX_CTRL_X) {
         st->emacs_prefix = EMACS_PREFIX_NONE;
         if (ctrl && (keyval == GDK_KEY_s || keyval == GDK_KEY_S) && tab->path != NULL) {
-            editor_save_current(tab->app);
-            emacs_echo(tab, "Wrote buffer");
+            emacs_save_buffer(tab);
             return TRUE;
         } /* C-x C-s without a file: asks for one, as C-x C-w */
         if (ctrl && (keyval == GDK_KEY_w || keyval == GDK_KEY_W || keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {

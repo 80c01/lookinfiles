@@ -202,6 +202,7 @@ typedef struct AppData {
 
     /* File monitors & async I/O cancellation */
     struct FsWatch* fs_watch;          /* file monitors and pending refresh (fs_watch.c), NULL until first used */
+    struct EditorWatch* editor_watch;  /* external-change watch of open editor tabs (editor_watch.c), NULL until first used */
     GitState* git_state;               /* git badges and upstream counts of base_dir (git_state.h, owned), or NULL */
     GCancellable* dir_cancellable;     /* active left-pane directory scan GTask */
     GCancellable* preview_cancellable; /* active right-pane preview GTask */

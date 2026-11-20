@@ -11,11 +11,11 @@
 #include "code/code_refs.h"
 #include "code/code_symbols.h"
 #include "editor/editor_tagbar.h"
+#include "editor/editor_watch.h"
 #include "vim/vim_engine.h"
 #include "vim/vim_keys.h"
 #include "explorer/nav_keys.h"
 #include "core/app_events.h"
-#include "core/text_encoding.h"
 #include <string.h>
 
 static EditorModeState* state_of(EditorTab* tab) {
@@ -34,6 +34,15 @@ static void set_echo(EditorTab* tab, const gchar* msg, gboolean error) {
 
 void vim_echo(EditorTab* tab, const gchar* msg) {
     set_echo(tab, msg, FALSE);
+}
+
+void vim_echo_error(EditorTab* tab, const gchar* msg) {
+    set_echo(tab, msg, TRUE);
+}
+
+gboolean vim_autoread_enabled(EditorTab* tab) {
+    if (tab == NULL || tab->mode_state == NULL || tab->mode_state->vim == NULL) return TRUE;
+    return vim_engine_options(tab->mode_state->vim)->autoread;
 }
 
 void vim_cursor_get(EditorTab* tab, GtkTextIter* it) {
@@ -229,15 +238,21 @@ static void report_written(EditorTab* tab) {
     g_free(msg);
 }
 
-static gboolean save_tab(EditorTab* tab, const gchar* path, gchar** error) {
+static gboolean save_tab(EditorTab* tab, const gchar* path, gboolean force, gchar** error) {
     AppData* app = tab->app;
     if (path != NULL && path[0] != '\0') return editor_save_tab_as(app, tab, path);
     if (tab->path == NULL) {
         if (error) *error = g_strdup("E32: No file name");
         return FALSE;
     }
+    if (!force && editor_watch_disk_changed(tab, NULL)) {
+        if (error) {
+            *error = g_strdup("WARNING: The file has been changed since reading it!!! (use :w! to override)");
+        }
+        return FALSE;
+    }
     app->last_focused_editor = tab;
-    editor_save_current(app);
+    editor_save_current_force(app);
     if (gtk_text_buffer_get_modified(tab->buffer)) {
         if (error) *error = g_strdup_printf("E212: Cannot open file for writing: %s", tab->path);
         return FALSE;
@@ -396,7 +411,7 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
     }
     if (strcmp(name, "write") == 0 || strcmp(name, "update") == 0 || strcmp(name, "wall") == 0) {
         if (name[0] == 'u' && !gtk_text_buffer_get_modified(tab->buffer)) return TRUE;
-        save_tab(tab, args, error);
+        save_tab(tab, args, bang, error);
         return TRUE;
     }
     if (strcmp(name, "saveas") == 0) {
@@ -410,7 +425,7 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
     if (strcmp(name, "wq") == 0 || strcmp(name, "wqall") == 0 || strcmp(name, "xit") == 0 ||
         strcmp(name, "xall") == 0) {
         gboolean needed = name[0] == 'w' || gtk_text_buffer_get_modified(tab->buffer);
-        if (needed && !save_tab(tab, args, error)) return TRUE;
+        if (needed && !save_tab(tab, args, bang, error)) return TRUE;
         close_tab(tab, TRUE, error);
         return TRUE;
     }
@@ -430,29 +445,20 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
         close_tab(tab, bang, error);
         return TRUE;
     }
+    if (strcmp(name, "checktime") == 0) {
+        editor_watch_check_tab(app, tab, TRUE);
+        return TRUE;
+    }
     if (strcmp(name, "edit") == 0) {
         if (args[0] == '\0') {
             if (!bang && gtk_text_buffer_get_modified(tab->buffer)) {
                 if (error) *error = g_strdup("E37: No write since last change (add ! to override)");
                 return TRUE;
             }
-            gchar* text = NULL;
-            gsize len = 0;
-            if (tab->path != NULL && g_file_get_contents(tab->path, &text, &len, NULL)) {
-                tab->line_ending = text_line_ending_detect(text, len);
-                tab->final_break = text_final_break(text, len);
-                text[len - strlen(tab->final_break)] = '\0';
-                if (!g_utf8_validate(text, -1, NULL)) {
-                    gchar* valid = g_utf8_make_valid(text, -1);
-                    g_free(text);
-                    text = valid;
-                }
-                gtk_text_buffer_set_text(tab->buffer, text, -1);
-                gtk_text_buffer_set_modified(tab->buffer, FALSE);
-                GtkTextIter start;
-                gtk_text_buffer_get_start_iter(tab->buffer, &start);
-                gtk_text_buffer_place_cursor(tab->buffer, &start);
-                g_free(text);
+            if (editor_watch_reload_tab(app, tab, FALSE, error)) {
+                gchar* msg = g_strdup_printf("\"%s\" reloaded", tab->name != NULL ? tab->name : "");
+                vim_echo(tab, msg);
+                g_free(msg);
             }
             return TRUE;
         }

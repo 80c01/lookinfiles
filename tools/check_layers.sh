@@ -89,6 +89,7 @@ sunburst_layout:
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types
 file_save:
+editor_stamp:preview_cache
 hex_dump:
 ps_convert:i18n
 elf_info:i18n

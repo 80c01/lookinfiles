@@ -7,6 +7,7 @@
 #include "code/code_help.h"
 #include "code/code_intel.h"
 #include "editor/editor_info.h"
+#include "editor/editor_watch.h"
 #include "editor/file_save.h"
 #include "theme/theme.h"
 #include "theme/fonts.h"
@@ -264,6 +265,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
     tab->name = g_path_get_basename(full_path);
     diff_gutter_set_file(tab->view, tab->path);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
+    editor_watch_retarget(tab);
 
     editor_tab_label_update(tab);
     if (app != NULL) {
@@ -973,9 +975,41 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
     }
 
     editor_modes_update_status(tab);
+    editor_watch_sync_view(tab);
     if (app != NULL) {
         app_emit(app, APP_EVENT_STATUS_CHANGED);
     }
+}
+
+static gboolean watch_hook_auto_reload(EditorTab* tab) {
+    if (tab == NULL) return FALSE;
+    if (tab->mode == EDITOR_MODE_VIM) {
+        return vim_autoread_enabled(tab);
+    }
+    if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
+        return tab->mode_state != NULL && tab->mode_state->emacs_auto_revert;
+    }
+    return TRUE;
+}
+
+static void watch_hook_notify(EditorTab* tab, const gchar* msg, gboolean is_error) {
+    if (tab == NULL || msg == NULL) return;
+    if (tab->mode == EDITOR_MODE_VIM) {
+        if (is_error) vim_echo_error(tab, msg);
+        else vim_echo(tab, msg);
+    } else if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
+        emacs_echo(tab, msg);
+    } else if (tab->app != NULL) {
+        app_notice(tab->app, msg, FALSE);
+    }
+}
+
+void editor_modes_init_watch_hooks(void) {
+    static const EditorWatchHooks hooks = {
+        .auto_reload = watch_hook_auto_reload,
+        .notify = watch_hook_notify,
+    };
+    editor_watch_set_hooks(&hooks);
 }
 
 /* ------------------------------------------------------------------------- */

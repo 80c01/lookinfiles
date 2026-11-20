@@ -115,6 +115,7 @@ typedef struct EditorModeState {
     gboolean emacs_universal_arg;    /* C-u typed: the next command gets a prefix argument */
     gboolean emacs_last_set_mark;    /* previous command was C-SPC (C-SPC C-SPC toggles) */
     gint emacs_recenter_step;        /* next C-l position: 0 middle, 1 top, 2 bottom */
+    gboolean emacs_auto_revert;      /* M-x auto-revert-mode: auto-reload clean buffer */
 
     /* --- Org-mode (editor_org.c) --- */
     OrgPrefix org_prefix;
@@ -211,6 +212,10 @@ gboolean vim_is_inserting(EditorTab* tab);
 gboolean vim_claims_key(EditorTab* tab, guint keyval, GdkModifierType state);
 /* Drop a half-typed command (Ctrl+W, 2d, g...); TRUE if there was one */
 gboolean vim_cancel_pending(EditorTab* tab);
+/* Show an error/warning line in the Vim command area (red) */
+void vim_echo_error(EditorTab* tab, const gchar* msg);
+/* TRUE when :set autoread is enabled on tab's Vim engine */
+gboolean vim_autoread_enabled(EditorTab* tab);
 /* Next (1) / previous (-1) tab of the tab's notebook, focus in the new page */
 void editor_modes_step_tab(EditorTab* tab, gint step);
 

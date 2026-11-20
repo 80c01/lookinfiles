@@ -2,6 +2,7 @@
 #include "explorer/file_moves.h"
 #include "core/app_events.h"
 #include "editor/editor_modes.h"
+#include "editor/editor_watch.h"
 #include "core/i18n.h"
 #include "explorer/trash_restore.h"
 
@@ -58,6 +59,7 @@ static void retarget_editor_tabs(AppData* app, const gchar* old_path, const gcha
         g_free(tab->name);
         tab->name = g_path_get_basename(moved);
         editor_tab_label_update(tab);
+        editor_watch_retarget(tab);
     }
 }
 

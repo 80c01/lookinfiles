@@ -77,6 +77,7 @@ typedef struct {
     gboolean wrapscan;
     gboolean expandtab;
     gboolean autoindent;
+    gboolean autoread;
     gboolean unnamedplus;   /* clipboard=unnamedplus: yanks also go to "+ */
     gint shiftwidth;
     gint tabstop;

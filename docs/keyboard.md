@@ -500,7 +500,7 @@ GNU Emacs mode line and minibuffer (echo area).
 | Save | `C-x C-s`, write file (Save As) `C-x C-w` |
 | Windows (split view) | `C-x 2` / `C-x 3` the file in a second window below / to the right (its own point; text and undo shared), `C-x 0` delete this window, `C-x 1` delete the other windows of the file (the changes stay in the window kept) |
 | Code | `M-.` definition (`C-u M-.` declaration), `M-,` back, `C-M-,` forward, `M-?` references, `M-g i` symbols, `M-x imenu-list` tagbar, `C-h .` help; signatures in the echo area |
-| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, `dunnet`, mode switches) |
+| Commands | `M-x` (`goto-line`, `query-replace`, `fill-paragraph`, `save-buffer`, `write-file`, `revert-buffer`, `auto-revert-mode`, `undo`, `redo`, `display-line-numbers-mode`, `visual-line-mode` / `toggle-truncate-lines` (wrap long lines), `org-mode`, `text-mode`, `dunnet`, mode switches) |
 | Minibuffer | `Tab` completes (`M-x` command names, Org tags, `*Heading` links) and lists the candidates; `C-g` / `Esc` quits |
 
 </details>
@@ -530,9 +530,9 @@ listed over the statusline, Vim's wildmenu) and `Ctrl+R` register insert.
 | Search | `/` `?` (Vim regex: `\<` `\>` `\(` `\)` `\\|` `\{n,m}` `\zs` `\ze` `\v` `\c`), incremental with all matches highlighted and a `[n/total]` count, `n` `N`, `*` `#` `g*` `g#`, `gd` (first occurrence, when the file is not code); `:noh` |
 | Code | `gd` / `Ctrl+]` definition, `gD` declaration, `:tag[!] name`, `K` help, `gr` / `:References`, `:Symbols`, `:TagbarToggle`; `Ctrl+O` / `Tab` continue across files |
 | Ex commands | Ranges `%` `.` `$` `N` `'a` `'<,'>` `/pat/` `?pat?` `+N` `-N` `;`; `:s/pat/rep/[gine]` (`&` `\1` `\u` `\U` `\r` `~`), `:&` `:&&` `&` `g&`, `:g/pat/cmd` `:v`, `:d [x] [N]`, `:y`, `:pu`, `:r[!]`, `:m`, `:t` / `:co`, `:j[!]`, `:>` `:<`, `:normal`, `:sort [n i u] [!]`, `:retab`, `:center` / `:right` / `:left [width]`, `:k`, `:reg`, `:[N]` |
-| Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap` (`no` / `inv` / `!` / `?` / `+=`), `colorcolumn` / `cc` (one column: `:set cc=81`, `:set cc=` hides the line; this tab only, the Preferences set every tab) |
+| Options | `:set` `ignorecase` `smartcase` `hlsearch` `incsearch` `wrapscan` `expandtab` `autoindent` `autoread` `shiftwidth` `tabstop` `softtabstop` (default `-1`: same as `shiftwidth`) `textwidth` `clipboard`, `number`, `wrap` (`no` / `inv` / `!` / `?` / `+=`), `colorcolumn` / `cc` (one column: `:set cc=81`, `:set cc=` hides the line; this tab only, the Preferences set every tab) |
 | Scroll | `zz` `zt` `zb` (`z.` `z<CR>` `z-`), `Ctrl+E` / `Ctrl+Y` lines, `Ctrl+D` / `Ctrl+U` half pages, `Ctrl+F` / `Ctrl+B` pages |
-| Files and tabs | `:w [file]`, `:saveas`, `:up`, `:wq` / `:x` / `ZZ`, `:q` / `:q!` / `ZQ`, `:e[!] [file]`, `gt` / `gT` / `:tabn` / `:tabp`, `Ctrl+G` / `g Ctrl+G` file and word count, `ga` / `g8` character code |
+| Files and tabs | `:w[!] [file]`, `:saveas`, `:up`, `:wq` / `:x` / `ZZ`, `:q` / `:q!` / `ZQ`, `:e[!] [file]`, `:checktime`, `gt` / `gT` / `:tabn` / `:tabp`, `Ctrl+G` / `g Ctrl+G` file and word count, `ga` / `g8` character code |
 | Windows (split view) | `Ctrl+W s` / `:sp` and `Ctrl+W v` / `:vs` the file in a second window below / to the right (its own cursor; text, undo, registers and mode shared), `Ctrl+W o` / `:only` close the other windows of the file, `Ctrl+W q` / `:clo` close this one (no question while another window shows the file) |
 
 </details>

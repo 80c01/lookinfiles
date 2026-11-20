@@ -34,12 +34,12 @@ keys typed so far, `recording @x` while a macro records, and the ruler.
 | Macros | `qa` … `q`, `@a`, `@@`, `@:` |
 | Search | `/` `?` with Vim regular expressions, incremental, all matches highlighted with a `[n/total]` count; `*` `#`, `:noh` |
 | Ex | `:s`, `:g` / `:v`, `:d`, `:y`, `:m`, `:t`, `:normal`, `:sort`, `:retab`, `:center`... on ranges (`%`, `'<,'>`, `/pat/`...) |
-| Files and tabs | `:w`, `:wq`, `:x`, `ZZ`, `:q!`, `:e`, `:saveas`, `gt` / `gT`, `:tabn` / `:tabp` |
+| Files and tabs | `:w[!]`, `:wq`, `:x`, `ZZ`, `:q!`, `:e[!]`, `:checktime`, `:saveas`, `gt` / `gT`, `:tabn` / `:tabp` |
 
 ## Options
 
 `:set` knows `ignorecase`, `smartcase`, `hlsearch`, `incsearch`,
-`wrapscan`, `expandtab`, `autoindent`, `shiftwidth`, `tabstop`,
+`wrapscan`, `expandtab`, `autoindent`, `autoread`, `shiftwidth`, `tabstop`,
 `softtabstop`, `textwidth`, `clipboard`, `number` and `wrap`, with the
 `no` / `inv` / `!` / `?` / `+=` forms.
 

@@ -38,12 +38,12 @@ macro, et la règle. Les messages restent en anglais, comme dans Vim.
 | Macros | `qa` … `q`, `@a`, `@@`, `@:` |
 | Recherche | `/` `?` avec les expressions régulières de Vim, incrémentale, toutes les occurrences surlignées avec un compteur `[n/total]` ; `*` `#`, `:noh` |
 | Ex | `:s`, `:g` / `:v`, `:d`, `:y`, `:m`, `:t`, `:normal`, `:sort`, `:retab`, `:center`… sur des plages (`%`, `'<,'>`, `/motif/`…) |
-| Fichiers et onglets | `:w`, `:wq`, `:x`, `ZZ`, `:q!`, `:e`, `:saveas`, `gt` / `gT`, `:tabn` / `:tabp` |
+| Fichiers et onglets | `:w[!]`, `:wq`, `:x`, `ZZ`, `:q!`, `:e[!]`, `:checktime`, `:saveas`, `gt` / `gT`, `:tabn` / `:tabp` |
 
 ## Options
 
 `:set` connaît `ignorecase`, `smartcase`, `hlsearch`, `incsearch`,
-`wrapscan`, `expandtab`, `autoindent`, `shiftwidth`, `tabstop`,
+`wrapscan`, `expandtab`, `autoindent`, `autoread`, `shiftwidth`, `tabstop`,
 `softtabstop`, `textwidth`, `clipboard`, `number` et `wrap`, avec les
 formes `no` / `inv` / `!` / `?` / `+=`.
 

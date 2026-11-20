@@ -403,6 +403,10 @@ Layers, from bottom to top
   chapter (`latex_root_choose()`).
 - `file_save` — `file_save_text()`: edited text written in place (the target
   of a symbolic link, permissions kept, read-only files refused, atomic).
+- `editor_stamp` — `EditorStamp` over `preview_cache`'s `FileStamp`:
+  distinguishes unread, missing and existing files (`editor_stamp_read()`,
+  `_equal()`, `_changed()`), used by `editor_watch` to detect external disk
+  changes, removals and atomic inode replacements. Unit-tested.
 - `dir_scan` — explorer listings read in a worker thread (`dir_scan_read()`):
   one level sorted like the tree (folders first, then the sort mode) and the
   levels of its expanded folders, sorted on keys made once per entry; the
@@ -1179,6 +1183,17 @@ Layers, from bottom to top
   (`view_passive`); `editor_find_tab()` returns the view in use. In Vim mode
   the views share one `VimEngine` (kept on the buffer by `editor_vim`),
   hosted by the focused view.
+- `editor_watch` — external disk-change watch for open editor buffers:
+  `EditorStamp` + per-file `GFileMonitor` (debounced 150 ms, re-armed on inode
+  change), also checked on `APP_EVENT_FILES_CHANGED`,
+  `APP_EVENT_GIT_STATUS_CHANGED`, window activation, tab focus and workspace
+  switch. Mode-idiomatic interaction via `EditorWatchHooks` registered by
+  `editor_modes`: Notepad auto-reloads clean buffers, shows a non-blocking
+  `.editor-watch-bar` banner on conflict and confirms before overwrite; Vim
+  respects `:set [no]autoread`, emits `W11`/`W12`, reloads on `:e!` /
+  `:checktime` and overwrites on `:w!`; Emacs / Org-mode keep auto-revert off
+  until `M-x auto-revert-mode`, warn in the echo area, reload with `M-x
+  revert-buffer` and prompt `y/n` in the minibuffer before overwriting.
 - `editor_info` — what the bar of an editor tab tells about its file
   (`EditorInfo`: git branch and relative path, read once per file until
   `editor_info_forget()`, language, code navigation backend, diagnostics).

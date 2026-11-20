@@ -135,7 +135,24 @@ An nbformat 3 or damaged notebook opens as text.
 | `Ctrl+R` / `F2` | Rename the file of the tab (only `F2` in Emacs and Org-mode tabs) |
 | `Ctrl+Alt+N` | Show or hide line numbers |
 | Middle click on the title | Close the tab |
-| Right click on the title | Change the mode, line numbers, show the tagbar (code and Markdown), show the minimap (this tab only), move, split or close the tab |
+| Right click on the title | Change the mode, line numbers, show the tagbar (code and Markdown), show the minimap (this tab only), reload from disk, move, split or close the tab |
+
+### Files changed on disk
+
+Open tabs watch their file on disk and follow the conventions of their mode:
+
+- **Notepad**: an unmodified buffer reloads in place, keeping the cursor and
+  scroll position. When you have unsaved edits (or the file was removed), a
+  banner at the top of the tab offers **Reload** and **Keep Mine**, and saving
+  (`Ctrl+S`) asks before overwriting external changes.
+- **Vim**: with `:set autoread` (on by default; `:set noautoread` turns it
+  off), an unmodified buffer reloads automatically. Otherwise Vim warns in the
+  command line (`W11` / `W12`); `:e!` reloads, `:checktime` checks the file
+  now, and `:w` refuses to overwrite until you use `:w!`.
+- **Emacs** and **Org-mode**: automatic reload is off by default (`M-x
+  auto-revert-mode` toggles it for the tab). Changes are reported in the echo
+  area; `M-x revert-buffer` reloads from disk, and `C-x C-s` asks `y/n` in the
+  minibuffer before overwriting.
 
 ### The dedicated editor panel
 
