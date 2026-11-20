@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-20 19:29+0000\n"
+"POT-Creation-Date: 2026-11-20 19:49+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1053,8 +1053,8 @@ msgstr ""
 
 #: src/chrome/help.c:127 src/chrome/help.c:128 src/chrome/help.c:129
 #: src/chrome/help.c:130 src/chrome/help.c:131 src/chrome/help.c:132
-#: src/chrome/help.c:361 src/chrome/help.c:362 src/chrome/help.c:363
-#: src/chrome/help.c:364 src/chrome/help.c:365
+#: src/chrome/help.c:362 src/chrome/help.c:363 src/chrome/help.c:364
+#: src/chrome/help.c:365 src/chrome/help.c:366
 msgid "Help tab"
 msgstr "Onglet Aide"
 
@@ -2222,7 +2222,7 @@ msgstr ""
 #: src/chrome/help.c:351 src/chrome/help.c:352 src/chrome/help.c:353
 #: src/chrome/help.c:354 src/chrome/help.c:355 src/chrome/help.c:356
 #: src/chrome/help.c:357 src/chrome/help.c:358 src/chrome/help.c:359
-#: src/chrome/help.c:360 src/chrome/help.c:370
+#: src/chrome/help.c:360 src/chrome/help.c:361 src/chrome/help.c:371
 msgid "Global"
 msgstr "Global"
 
@@ -2279,6 +2279,15 @@ msgstr ""
 "la placer à 1/3, 1/2, 2/3"
 
 #: src/chrome/help.c:333
+msgctxt "key"
+msgid "Click a collapsed split border"
+msgstr "Clic sur la séparation d’un panneau replié"
+
+#: src/chrome/help.c:333
+msgid "Expand the collapsed panel back (its border shows as a coloured strip)"
+msgstr "Déplier le panneau replié (sa séparation apparaît comme une bande colorée)"
+
+#: src/chrome/help.c:334
 msgid ""
 "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, "
 "column line), window size, Auto layout panels, language servers"
@@ -2287,7 +2296,7 @@ msgstr ""
 "des nouveaux onglets, ligne de colonne), taille de la fenêtre, panneaux de "
 "la disposition Auto, serveurs de langage"
 
-#: src/chrome/help.c:334
+#: src/chrome/help.c:335
 msgid ""
 "Preferences on Appearance: pick a theme (applied as you select it), set your "
 "fonts, save, edit or delete your themes"
@@ -2295,14 +2304,14 @@ msgstr ""
 "Préférences, page Apparence : choisir un thème (appliqué dès la sélection), "
 "régler les polices, enregistrer, modifier ou supprimer vos thèmes"
 
-#: src/chrome/help.c:335
+#: src/chrome/help.c:336
 msgid ""
 "Larger / smaller fonts (interface and code), or back to the theme's sizes"
 msgstr ""
 "Polices plus grandes / plus petites (interface et code), ou retour aux "
 "tailles du thème"
 
-#: src/chrome/help.c:336
+#: src/chrome/help.c:337
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it; not in Vim editor tabs)"
@@ -2310,7 +2319,7 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie ; pas dans les onglets d’édition Vim)"
 
-#: src/chrome/help.c:337 src/chrome/help.c:338
+#: src/chrome/help.c:338 src/chrome/help.c:339
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it)"
@@ -2318,7 +2327,7 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie)"
 
-#: src/chrome/help.c:339
+#: src/chrome/help.c:340
 msgid ""
 "Search the text in every file of the project, on the Notes page in the notes "
 "(results in the Search tab, Enter opens; not in Emacs editor tabs)"
@@ -2327,7 +2336,7 @@ msgstr ""
 "les notes (résultats dans l’onglet Recherche, Enter ouvre ; pas dans les "
 "onglets d’édition Emacs)"
 
-#: src/chrome/help.c:340
+#: src/chrome/help.c:341
 msgid ""
 "In Search in Files: match case / whole word / regular expression / letters "
 "in order"
@@ -2335,7 +2344,7 @@ msgstr ""
 "Dans Rechercher dans les fichiers : respecter la casse / mot entier / "
 "expression régulière / lettres dans l’ordre"
 
-#: src/chrome/help.c:341
+#: src/chrome/help.c:342
 msgid ""
 "In Search in Files: files to include / to exclude (*.c, src/) / include the "
 "files git ignores"
@@ -2343,7 +2352,7 @@ msgstr ""
 "Dans Rechercher dans les fichiers : fichiers à inclure / à exclure (*.c, "
 "src/) / inclure les fichiers ignorés par git"
 
-#: src/chrome/help.c:342
+#: src/chrome/help.c:343
 msgid ""
 "Open a terminal in a new tab (exit the shell to close it; drag tabs to move "
 "or split; not in Vim Insert)"
@@ -2351,20 +2360,20 @@ msgstr ""
 "Ouvrir un terminal dans un nouvel onglet (quitter le shell pour le fermer ; "
 "glisser les onglets pour déplacer ou scinder ; pas en Insertion Vim)"
 
-#: src/chrome/help.c:343
+#: src/chrome/help.c:344
 msgid "Open a terminal in a new pane below the focused one"
 msgstr "Ouvrir un terminal dans un nouveau volet sous celui qui a le focus"
 
-#: src/chrome/help.c:344
+#: src/chrome/help.c:345
 msgid "In a terminal: next / previous tab of its pane"
 msgstr "Dans un terminal : onglet suivant / précédent de son volet"
 
-#: src/chrome/help.c:345
+#: src/chrome/help.c:346
 msgid "In a terminal: copy the selected text / paste the clipboard"
 msgstr ""
 "Dans un terminal : copier le texte sélectionné / coller le presse-papiers"
 
-#: src/chrome/help.c:346
+#: src/chrome/help.c:347
 msgid ""
 "Cycle the keyboard focus between panels (a tagbar on screen comes after its "
 "text)"
@@ -2372,13 +2381,13 @@ msgstr ""
 "Faire passer le focus clavier d’un panneau à l’autre (une barre de symboles "
 "affichée vient après son texte)"
 
-#: src/chrome/help.c:347
+#: src/chrome/help.c:348
 msgid "Focus the next / previous panel (also h / l; from Vim editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant / précédent (aussi h / l ; depuis les onglets "
 "d’édition Vim aussi)"
 
-#: src/chrome/help.c:348
+#: src/chrome/help.c:349
 msgid ""
 "Close the focused editor tab, or the current one on screen (from Vim editor "
 "tabs too; asks when unsaved)"
@@ -2386,19 +2395,19 @@ msgstr ""
 "Fermer l’onglet d’édition qui a le focus, ou celui affiché (depuis les "
 "onglets d’édition Vim aussi ; demande s’il n’est pas enregistré)"
 
-#: src/chrome/help.c:349
+#: src/chrome/help.c:350
 msgid "Focus the next panel (from Emacs and Org-mode editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant (depuis les onglets d’édition Emacs et Org-mode "
 "aussi)"
 
-#: src/chrome/help.c:350
+#: src/chrome/help.c:351
 msgid "Focus the next / previous panel (from Notepad editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant / précédent (depuis les onglets d’édition "
 "Notepad aussi)"
 
-#: src/chrome/help.c:351 src/chrome/help.c:352 src/chrome/help.c:353
+#: src/chrome/help.c:352 src/chrome/help.c:353 src/chrome/help.c:354
 msgid ""
 "Next / previous tab of the focused notebook (from the explorer: the preview "
 "panel, the focus stays)"
@@ -2406,23 +2415,23 @@ msgstr ""
 "Onglet suivant / précédent du groupe d’onglets qui a le focus (depuis "
 "l’explorateur : le panneau Aperçu, le focus reste)"
 
-#: src/chrome/help.c:354
+#: src/chrome/help.c:355
 msgctxt "key"
 msgid "Git Commits / References / Search"
 msgstr "Commits Git / Références / Recherche"
 
-#: src/chrome/help.c:354
+#: src/chrome/help.c:355
 msgid "The navigation keys of the global mode move in the list (Enter opens)"
 msgstr ""
 "Les touches de navigation du mode global se déplacent dans la liste (Enter "
 "ouvre)"
 
-#: src/chrome/help.c:355
+#: src/chrome/help.c:356
 msgctxt "key"
 msgid "Top bar mode"
 msgstr "Mode de la barre du haut"
 
-#: src/chrome/help.c:355
+#: src/chrome/help.c:356
 msgid ""
 "Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, "
 "viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode "
@@ -2432,11 +2441,11 @@ msgstr ""
 "l’explorateur, l’aperçu et leurs barres de recherche (flèches, Home / End, "
 "PgUp / PgDn partout) ; mode des nouveaux onglets d’édition"
 
-#: src/chrome/help.c:356
+#: src/chrome/help.c:357
 msgid "Toggle fullscreen"
 msgstr "Basculer en plein écran"
 
-#: src/chrome/help.c:357
+#: src/chrome/help.c:358
 msgid ""
 "Open an empty browser tab in the preview panel (needs WebKitGTK 6.0, or "
 "WebView2 on Windows; not in Emacs editor tabs)"
@@ -2444,7 +2453,7 @@ msgstr ""
 "Ouvrir un onglet navigateur vide dans le panneau Aperçu (nécessite WebKitGTK "
 "6.0, ou WebView2 sous Windows ; pas dans les onglets d’édition Emacs)"
 
-#: src/chrome/help.c:358
+#: src/chrome/help.c:359
 msgid ""
 "Stack the terminal pane under the viewer, or put it back beside it (the "
 "explorer panel stays fixed)"
@@ -2452,12 +2461,12 @@ msgstr ""
 "Placer le volet terminal sous l’aperçu, ou le remettre à côté (le panneau "
 "Explorateur reste fixe)"
 
-#: src/chrome/help.c:359
+#: src/chrome/help.c:360
 msgid "Toggle Remote (SSH) machines view in sidebar"
 msgstr ""
 "Afficher / masquer la vue des machines distantes (SSH) dans la barre latérale"
 
-#: src/chrome/help.c:360
+#: src/chrome/help.c:361
 msgid ""
 "User guide in a Help tab (also a click on the top bar's Help button; right "
 "click: this cheat sheet)"
@@ -2465,7 +2474,7 @@ msgstr ""
 "Guide d’utilisation dans un onglet Aide (aussi un clic sur le bouton Aide de "
 "la barre du haut ; clic droit : cet aide-mémoire)"
 
-#: src/chrome/help.c:361 src/chrome/help.c:362
+#: src/chrome/help.c:362 src/chrome/help.c:363
 msgid ""
 "Search every page of the guide (Enter: the sections that hold every word, "
 "Esc: back to the page)"
@@ -2473,7 +2482,7 @@ msgstr ""
 "Rechercher dans toutes les pages du guide (Enter : les sections qui "
 "contiennent tous les mots, Esc : retour à la page)"
 
-#: src/chrome/help.c:363
+#: src/chrome/help.c:364
 msgid ""
 "Search every page of the guide (RET: the sections that hold every word, Esc: "
 "back to the page)"
@@ -2481,16 +2490,16 @@ msgstr ""
 "Rechercher dans toutes les pages du guide (RET : les sections qui "
 "contiennent tous les mots, Esc : retour à la page)"
 
-#: src/chrome/help.c:364 src/chrome/help.c:365
+#: src/chrome/help.c:365 src/chrome/help.c:366
 msgid "Next / previous searched word in the page"
 msgstr "Mot recherché suivant / précédent dans la page"
 
-#: src/chrome/help.c:366 src/chrome/help.c:367 src/chrome/help.c:368
-#: src/chrome/help.c:369
+#: src/chrome/help.c:367 src/chrome/help.c:368 src/chrome/help.c:369
+#: src/chrome/help.c:370
 msgid "Help panel"
 msgstr "Panneau d’aide"
 
-#: src/chrome/help.c:366 src/chrome/help.c:367
+#: src/chrome/help.c:367 src/chrome/help.c:368
 msgid ""
 "Filter the shortcuts: only those that hold every word (Enter / Esc: back to "
 "the list)"
@@ -2498,7 +2507,7 @@ msgstr ""
 "Filtrer les raccourcis : seulement ceux qui contiennent tous les mots "
 "(Enter / Esc : retour à la liste)"
 
-#: src/chrome/help.c:368
+#: src/chrome/help.c:369
 msgid ""
 "Filter the shortcuts: only those that hold every word (RET / Esc: back to "
 "the list)"
@@ -2506,37 +2515,37 @@ msgstr ""
 "Filtrer les raccourcis : seulement ceux qui contiennent tous les mots (RET / "
 "Esc : retour à la liste)"
 
-#: src/chrome/help.c:369
+#: src/chrome/help.c:370
 msgid "Unlock Game Mode in this workspace"
 msgstr "Déverrouiller le mode Jeu dans cet espace de travail"
 
-#: src/chrome/help.c:370
+#: src/chrome/help.c:371
 msgid "Quit"
 msgstr "Quitter"
 
 #. TRANSLATORS: %s is Notepad, Vim or Emacs
-#: src/chrome/help.c:382
+#: src/chrome/help.c:383
 #, c-format
 msgid "(%s mode)"
 msgstr "(mode %s)"
 
-#: src/chrome/help.c:383
+#: src/chrome/help.c:384
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis clavier"
 
-#: src/chrome/help.c:442
+#: src/chrome/help.c:443
 msgid "No shortcut holds every word of the filter"
 msgstr "Aucun raccourci ne contient tous les mots du filtre"
 
-#: src/chrome/help.c:561
+#: src/chrome/help.c:562
 msgid "Close Help Panel (?)"
 msgstr "Fermer le panneau d’aide (?)"
 
-#: src/chrome/help.c:580
+#: src/chrome/help.c:581
 msgid "Filter shortcuts"
 msgstr "Filtrer les raccourcis"
 
-#: src/chrome/help.c:581
+#: src/chrome/help.c:582
 msgid ""
 "Show only the shortcuts that hold every word (the search key of your mode: "
 "Ctrl+F, / or C-s)"
@@ -11950,6 +11959,22 @@ msgstr "Côté du haut un tiers, côté du bas deux tiers"
 #: src/widgets/split_menu.c:240
 msgid "Top Side Two Thirds, Bottom Side a Third"
 msgstr "Côté du haut deux tiers, côté du bas un tiers"
+
+#: src/widgets/split_menu.c:418
+msgid "Top Side Collapsed: Click to Expand"
+msgstr "Côté haut replié : cliquer pour le déplier"
+
+#: src/widgets/split_menu.c:418
+msgid "Bottom Side Collapsed: Click to Expand"
+msgstr "Côté bas replié : cliquer pour le déplier"
+
+#: src/widgets/split_menu.c:420
+msgid "Left Side Collapsed: Click to Expand"
+msgstr "Côté gauche replié : cliquer pour le déplier"
+
+#: src/widgets/split_menu.c:420
+msgid "Right Side Collapsed: Click to Expand"
+msgstr "Côté droit replié : cliquer pour le déplier"
 
 #: src/workspace/layout_store.c:60
 #, c-format

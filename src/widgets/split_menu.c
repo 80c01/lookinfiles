@@ -349,16 +349,6 @@ static void on_handle_leave(GtkEventControllerMotion* ctrl, gpointer data) {
     schedule_hide(menu);
 }
 
-void split_menu_attach(SplitMenu* menu, GtkWidget* paned) {
-    GtkWidget* handle = (menu != NULL && GTK_IS_PANED(paned)) ? paned_handle(paned) : NULL;
-    if (handle == NULL) return;
-    GtkEventController* motion = gtk_event_controller_motion_new();
-    g_signal_connect(motion, "enter", G_CALLBACK(on_handle_enter), menu);
-    g_signal_connect(motion, "motion", G_CALLBACK(on_handle_motion), menu);
-    g_signal_connect(motion, "leave", G_CALLBACK(on_handle_leave), menu);
-    gtk_widget_add_controller(handle, motion);
-}
-
 /* --- The bar ------------------------------------------------------------- */
 
 static void move_handle(SplitMenu* menu, GtkWidget* paned, gint pos) {
@@ -379,6 +369,14 @@ static void move_handle(SplitMenu* menu, GtkWidget* paned, gint pos) {
     }
 }
 
+/* Expand the collapsed side of paned back to the share it had */
+static void expand_collapsed(SplitMenu* menu, GtkWidget* paned) {
+    gdouble* before = g_object_get_data(G_OBJECT(paned), BEFORE_KEY);
+    move_handle(menu, paned,
+                split_ratio_expand(paned_room(paned), before != NULL ? *before : -1.0, start_min(paned),
+                                   end_min(paned)));
+}
+
 static void on_button_clicked(GtkButton* button, gpointer data) {
     SplitMenu* menu = data;
     GtkWidget* paned = menu->shown;
@@ -392,8 +390,9 @@ static void on_button_clicked(GtkButton* button, gpointer data) {
     split_menu_hide(menu); /* the handle moves away from the bar */
     gint target;
     if ((kind == BTN_START && collapsed == SPLIT_SIDE_START) || (kind == BTN_END && collapsed == SPLIT_SIDE_END)) {
-        gdouble* before = g_object_get_data(G_OBJECT(paned), BEFORE_KEY);
-        target = split_ratio_expand(max, before != NULL ? *before : -1.0, smin, emin);
+        expand_collapsed(menu, paned);
+        g_object_unref(paned);
+        return;
     } else if (kind == BTN_START) {
         target = paned_min(paned);
     } else if (kind == BTN_END) {
@@ -403,6 +402,103 @@ static void on_button_clicked(GtkButton* button, gpointer data) {
     }
     move_handle(menu, paned, target);
     g_object_unref(paned);
+}
+
+/* --- A collapsed side ----------------------------------------------------- */
+
+/* The side of paned collapsed at its border, with both sides shown */
+static SplitSide paned_collapsed(GtkWidget* paned) {
+    if (!both_sides_shown(paned)) return SPLIT_SIDE_NONE;
+    return split_ratio_collapsed(gtk_paned_get_position(GTK_PANED(paned)), paned_room(paned));
+}
+
+static const gchar* collapsed_tooltip(GtkWidget* paned, SplitSide side) {
+    gboolean start = side == SPLIT_SIDE_START;
+    if (paned_vertical(paned)) {
+        return start ? _("Top Side Collapsed: Click to Expand") : _("Bottom Side Collapsed: Click to Expand");
+    }
+    return start ? _("Left Side Collapsed: Click to Expand") : _("Right Side Collapsed: Click to Expand");
+}
+
+/* Mark the handle of a collapsed split (the theme draws it as a coloured
+ * strip, so the collapsed side can be seen at the window's edge) */
+static void update_collapsed_mark(GtkWidget* paned) {
+    GtkWidget* handle = paned_handle(paned);
+    if (handle == NULL) return;
+    SplitSide side = paned_collapsed(paned);
+    if (side == SPLIT_SIDE_NONE) {
+        gtk_widget_remove_css_class(handle, "collapsed");
+        gtk_widget_set_tooltip_text(handle, NULL);
+    } else {
+        gtk_widget_add_css_class(handle, "collapsed");
+        gtk_widget_set_tooltip_text(handle, collapsed_tooltip(paned, side));
+    }
+}
+
+static void on_paned_geometry(GObject* object, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    (void)data;
+    update_collapsed_mark(GTK_WIDGET(object));
+}
+
+static void on_side_visible(GObject* child, GParamSpec* pspec, gpointer data) {
+    (void)child;
+    (void)pspec;
+    update_collapsed_mark(GTK_WIDGET(data));
+}
+
+/* Follow the visibility of the sides of paned (a hidden side has no border) */
+static void watch_sides(GtkWidget* paned) {
+    GtkWidget* sides[2] = {gtk_paned_get_start_child(GTK_PANED(paned)), gtk_paned_get_end_child(GTK_PANED(paned))};
+    for (gint i = 0; i < 2; i++) {
+        if (sides[i] == NULL) continue;
+        g_signal_handlers_disconnect_by_func(sides[i], on_side_visible, paned);
+        g_signal_connect_object(sides[i], "notify::visible", G_CALLBACK(on_side_visible), paned, 0);
+    }
+    update_collapsed_mark(paned);
+}
+
+static void on_paned_child(GObject* object, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    (void)data;
+    watch_sides(GTK_WIDGET(object));
+}
+
+/* A click on the handle of a collapsed split (without a drag: the handle has
+ * not moved) expands the side back. The press position is kept on the paned. */
+#define PRESS_KEY "lookin-split-press" /* position + 1 at the press, 0: none */
+
+static gboolean on_paned_event(GtkEventControllerLegacy* ctrl, GdkEvent* event, gpointer data) {
+    SplitMenu* menu = data;
+    GtkWidget* paned = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    GdkEventType type = gdk_event_get_event_type(event);
+    if (type != GDK_BUTTON_PRESS && type != GDK_BUTTON_RELEASE) return FALSE;
+    if (gdk_button_event_get_button(event) != GDK_BUTTON_PRIMARY) return FALSE;
+    gint pos = gtk_paned_get_position(GTK_PANED(paned));
+    if (type == GDK_BUTTON_PRESS) {
+        GtkWidget* handle = paned_handle(paned);
+        gdouble x = 0.0, y = 0.0;
+        graphene_point_t at;
+        gboolean on_handle = FALSE;
+        if (handle != NULL && gtk_widget_has_css_class(handle, "collapsed") && gdk_event_get_position(event, &x, &y)) {
+            GtkNative* native = gtk_widget_get_native(paned);
+            double nx = 0.0, ny = 0.0;
+            if (native != NULL) gtk_native_get_surface_transform(native, &nx, &ny);
+            on_handle = gtk_widget_compute_point(GTK_WIDGET(native), handle,
+                                                 &GRAPHENE_POINT_INIT((float)(x - nx), (float)(y - ny)), &at) &&
+                        gtk_widget_contains(handle, at.x, at.y);
+        }
+        g_object_set_data(G_OBJECT(paned), PRESS_KEY, GINT_TO_POINTER(on_handle ? pos + 1 : 0));
+        return FALSE;
+    }
+    gint pressed = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(paned), PRESS_KEY));
+    g_object_set_data(G_OBJECT(paned), PRESS_KEY, GINT_TO_POINTER(0));
+    if (pressed == 0 || pressed - 1 != pos || paned_collapsed(paned) == SPLIT_SIDE_NONE) return FALSE;
+    gint sides = menu->hooks.sides != NULL ? menu->hooks.sides(paned, menu->hooks.data) : 0;
+    if (sides < 0) return FALSE;
+    split_menu_hide(menu);
+    expand_collapsed(menu, paned);
+    return FALSE;
 }
 
 static void on_bar_enter(GtkEventControllerMotion* ctrl, gdouble x, gdouble y, gpointer data) {
@@ -466,6 +562,27 @@ void split_menu_halve(SplitMenu* menu, GtkWidget* paned) {
     split_menu_hide(menu);
     gint max = paned_room(paned);
     move_handle(menu, paned, split_ratio_position(max, 0.5, start_min(paned), end_min(paned)));
+}
+
+void split_menu_attach(SplitMenu* menu, GtkWidget* paned) {
+    GtkWidget* handle = (menu != NULL && GTK_IS_PANED(paned)) ? paned_handle(paned) : NULL;
+    if (handle == NULL) return;
+    GtkEventController* motion = gtk_event_controller_motion_new();
+    g_signal_connect(motion, "enter", G_CALLBACK(on_handle_enter), menu);
+    g_signal_connect(motion, "motion", G_CALLBACK(on_handle_motion), menu);
+    g_signal_connect(motion, "leave", G_CALLBACK(on_handle_leave), menu);
+    gtk_widget_add_controller(handle, motion);
+
+    GtkEventController* legacy = gtk_event_controller_legacy_new();
+    gtk_event_controller_set_propagation_phase(legacy, GTK_PHASE_CAPTURE);
+    g_signal_connect(legacy, "event", G_CALLBACK(on_paned_event), menu);
+    gtk_widget_add_controller(paned, legacy);
+
+    g_signal_connect(paned, "notify::position", G_CALLBACK(on_paned_geometry), NULL);
+    g_signal_connect(paned, "notify::max-position", G_CALLBACK(on_paned_geometry), NULL);
+    g_signal_connect(paned, "notify::start-child", G_CALLBACK(on_paned_child), NULL);
+    g_signal_connect(paned, "notify::end-child", G_CALLBACK(on_paned_child), NULL);
+    watch_sides(paned);
 }
 
 SplitMenu* split_menu_new(const SplitMenuHooks* hooks) {

@@ -703,7 +703,9 @@ Layers, from bottom to top
   (`split_ratio`); `split_menu_halve()` is the double click. `panels` gives
   it the sides allowed (the preview, the explorer and the terminal panel,
   which have their top-bar toggles, never collapse from a border) and
-  records the move.
+  records the move. The handle of a collapsed split gets the CSS class
+  `collapsed` (a coloured strip in the theme, with a tooltip); a click on it
+  without a drag expands the side back.
 - `outline_pane` — a tagbar beside some content: a `GtkPaned` with a
   `GtkListView` over a `GtkTreeListModel` of an outline (`code_outline_tree`),
   its width shared through an `int*`, collapsed rows kept across refreshes;

@@ -23,7 +23,8 @@ la moitié ou aux deux tiers. Un double clic sur une séparation la met à la
 moitié. L’aperçu, l’explorateur et le panneau du terminal ne se replient
 pas depuis une séparation (ils ont leur propre bouton dans la barre du
 haut) : la séparation entre l’aperçu et le panneau d’édition ne replie que
-le panneau d’édition.
+le panneau d’édition. La séparation d’un panneau replié apparaît comme une
+bande colorée au bord ; un clic dessus déplie le panneau.
 `f` bascule le plein écran.
 
 ## Espaces de travail

@@ -395,6 +395,20 @@ void apply_panel_borders(void) {
         "  border-top-width: 2px;\n"
         "  border-bottom-width: 2px;\n"
         "}\n"
+        /* A collapsed side (split_menu.c): a coloured strip at the border,
+         * a click expands it */
+        "paned > separator.wide.collapsed {\n"
+        "  background-color: alpha(@accent, 0.45);\n"
+        "}\n"
+        "paned > separator.wide.collapsed:hover {\n"
+        "  background-color: @accent;\n"
+        "}\n"
+        "paned.horizontal > separator.wide.collapsed {\n"
+        "  min-width: 5px;\n"
+        "}\n"
+        "paned.vertical > separator.wide.collapsed {\n"
+        "  min-height: 5px;\n"
+        "}\n"
         /* ---- Explorer panel ---- */
         "#left-sidebar, #left-scroll, #left-scroll viewport, #file-tree {\n"
         "  background-color: @bg_window;\n"
