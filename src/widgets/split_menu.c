@@ -56,25 +56,28 @@ static gint paned_min(GtkWidget* paned) {
     return min;
 }
 
-/* Room of the two sides: the paned's length less the handle's. Shares are of
- * that room; a side that cannot shrink keeps the paned's min / max position. */
-static gint paned_room(GtkWidget* paned) {
-    GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(paned));
-    GtkWidget* handle = paned_handle(paned);
-    return MAX(gtk_widget_get_size(paned, o) - (handle != NULL ? gtk_widget_get_size(handle, o) : 0), 0);
-}
-
-static gint clamp_position(GtkWidget* paned, gint pos) {
-    gint min = paned_min(paned), max = paned_max(paned);
-    return max >= min ? CLAMP(pos, min, max) : pos;
-}
-
 /* Minimum size of a side along the split, so a share keeps it usable */
 static gint child_min(GtkWidget* paned, GtkWidget* child) {
     if (child == NULL || !gtk_widget_get_visible(child)) return 0;
     gint min = 0;
     gtk_widget_measure(child, gtk_orientable_get_orientation(GTK_ORIENTABLE(paned)), -1, &min, NULL, NULL, NULL);
     return min;
+}
+
+/* Room of the two sides (the paned's length less its handle's), as GtkPaned
+ * counts it: its max position, plus the end side's minimum size when that
+ * side cannot shrink. Shares are of that room. */
+static gint paned_room(GtkWidget* paned) {
+    gint max = paned_max(paned);
+    if (!gtk_paned_get_shrink_end_child(GTK_PANED(paned))) {
+        max += child_min(paned, gtk_paned_get_end_child(GTK_PANED(paned)));
+    }
+    return MAX(max, 0);
+}
+
+static gint clamp_position(GtkWidget* paned, gint pos) {
+    gint min = paned_min(paned), max = paned_max(paned);
+    return max >= min ? CLAMP(pos, min, max) : pos;
 }
 
 static gint start_min(GtkWidget* paned) {
@@ -218,9 +221,9 @@ static void update_buttons(SplitMenu* menu, gint sides) {
     /* A side collapses only if the paned lets it shrink to nothing; the
      * collapsed side can always expand */
     gboolean start_ok = collapsed == SPLIT_SIDE_START ||
-                        ((sides & SPLIT_SIDE_START) && paned_min(paned) <= SPLIT_COLLAPSE_SLACK);
+                        ((sides & SPLIT_SIDE_START) && gtk_paned_get_shrink_start_child(GTK_PANED(paned)));
     gboolean end_ok = collapsed == SPLIT_SIDE_END ||
-                      ((sides & SPLIT_SIDE_END) && paned_max(paned) >= max - SPLIT_COLLAPSE_SLACK);
+                      ((sides & SPLIT_SIDE_END) && gtk_paned_get_shrink_end_child(GTK_PANED(paned)));
     gtk_widget_set_visible(menu->buttons[BTN_START], start_ok);
     gtk_widget_set_visible(menu->buttons[BTN_END], end_ok);
     gtk_widget_set_tooltip_text(menu->buttons[BTN_START], side_tooltip(paned, TRUE, collapsed == SPLIT_SIDE_START));
