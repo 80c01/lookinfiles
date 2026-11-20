@@ -73,6 +73,11 @@ const gchar* code_lang_name(CodeLang lang);
 
 /* "function", "macro", "field"... */
 const gchar* code_symbol_kind_name(CodeSymbolKind kind);
+/* A set of kinds is a mask of CODE_SYM_KIND_BIT(kind); CODE_SYM_KINDS_ALL
+ * (0) holds every kind */
+#define CODE_SYM_KIND_BIT(kind) (1u << (guint)(kind))
+#define CODE_SYM_KINDS_ALL 0u
+gboolean code_symbol_kind_in(CodeSymbolKind kind, guint kinds);
 
 /* TRUE when c can be part of an identifier in lang */
 gboolean code_is_word_char(CodeLang lang, gunichar c);

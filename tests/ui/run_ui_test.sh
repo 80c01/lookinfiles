@@ -481,6 +481,9 @@ key Escape;             shot quick_open_closed
 # Ctrl+Alt+O from the explorer: symbols of the project of its folder
 key ctrl+alt+o; xdotool type --delay 60 "main"
                         shot workspace_symbols_explorer
+# Alt+K: only the functions; Alt+Shift+K: every kind again
+key alt+k;              shot workspace_symbols_functions
+key alt+shift+k;        shot workspace_symbols_all_kinds
 key Escape;             shot workspace_symbols_explorer_closed
 # Search in files options: an invalid regex disables Search; letters in
 # order greys out whole word; files to include / exclude, ignored files;

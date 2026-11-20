@@ -91,8 +91,13 @@ static void test_index(void) {
     g_assert_cmpuint(hits->len, ==, 1);
     g_assert_true(((CodeTagsHit*)g_ptr_array_index(hits, 0))->symbol->declaration);
     g_ptr_array_unref(hits);
-    hits = code_tags_index_search(idx, "TOT", 10);
+    hits = code_tags_index_search(idx, "TOT", CODE_SYM_KINDS_ALL, 10);
     g_assert_cmpuint(hits->len, ==, 2);
+    g_ptr_array_unref(hits);
+    /* Only the kinds asked for: total is a function, verbose a variable */
+    hits = code_tags_index_search(idx, "", CODE_SYM_KIND_BIT(CODE_SYM_VARIABLE), 10);
+    g_assert_cmpuint(hits->len, ==, 1);
+    g_assert_cmpstr(((CodeTagsHit*)g_ptr_array_index(hits, 0))->symbol->name, ==, "verbose");
     g_ptr_array_unref(hits);
     g_assert_true(g_file_test(cache, G_FILE_TEST_EXISTS));
 

@@ -167,6 +167,10 @@ const gchar* code_symbol_kind_name(CodeSymbolKind kind) {
     return C_("symbol kind", "symbol");
 }
 
+gboolean code_symbol_kind_in(CodeSymbolKind kind, guint kinds) {
+    return kinds == CODE_SYM_KINDS_ALL || (kinds & CODE_SYM_KIND_BIT(kind)) != 0;
+}
+
 gboolean code_is_word_char(CodeLang lang, gunichar c) {
     if (c == '_' || g_unichar_isalnum(c)) return TRUE;
     if (c == '$') return lang == CODE_LANG_JS;

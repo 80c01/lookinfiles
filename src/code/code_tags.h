@@ -40,9 +40,9 @@ typedef struct {
 } CodeTagsHit;
 
 GPtrArray* code_tags_index_lookup(CodeTagsIndex* index, const gchar* name);
-/* Symbols whose name starts with prefix (case-insensitive), at most limit
- * (symbol pickers) */
-GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, guint limit);
+/* Symbols of the kinds (mask, code_symbol_kind_in()) whose name starts with
+ * prefix (case-insensitive), at most limit (symbol pickers) */
+GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, guint kinds, guint limit);
 /* Number of files and symbols indexed */
 void code_tags_index_stats(CodeTagsIndex* index, guint* files, guint* symbols);
 

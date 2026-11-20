@@ -30,6 +30,9 @@ it is used, and show what it is, in all three modes.
 - The symbols of the project can also be searched from the explorer:
   `Ctrl+Alt+O` (`M-g s` in Emacs mode) looks in the project of the
   current folder, in every language.
+- In the symbols of the project, the list beside the search field keeps
+  only one kind (functions, macros, types...); `Alt+K` / `Alt+Shift+K`
+  go to the next / previous kind.
 
 The **tagbar** shows the symbols of a code file beside the text, grouped by
 kind (Functions, Types...) and nested in their struct or class, or the

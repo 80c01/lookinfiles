@@ -485,7 +485,7 @@ GPtrArray* code_tags_index_lookup(CodeTagsIndex* index, const gchar* name) {
     return out;
 }
 
-GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, guint limit) {
+GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, guint kinds, guint limit) {
     GPtrArray* out = g_ptr_array_new_with_free_func(hit_free);
     if (index == NULL || prefix == NULL) return out;
     gchar* low = g_ascii_strdown(prefix, -1);
@@ -498,7 +498,10 @@ GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, gui
     while (g_hash_table_iter_next(&it, &key, &value) && out->len < limit) {
         if (g_ascii_strncasecmp(key, low, n) != 0) continue;
         GArray* refs = value;
-        for (guint i = 0; i < refs->len && out->len < limit; i++) add_hit(out, &g_array_index(refs, TagRef, i));
+        for (guint i = 0; i < refs->len && out->len < limit; i++) {
+            const TagRef* r = &g_array_index(refs, TagRef, i);
+            if (code_symbol_kind_in(r->symbol->kind, kinds)) add_hit(out, r);
+        }
     }
     g_mutex_unlock(&index->lock);
     g_free(low);

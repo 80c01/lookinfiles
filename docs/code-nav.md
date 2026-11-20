@@ -92,6 +92,12 @@ Notes:
 - Symbols of the project also work outside editor tabs (`Ctrl+Alt+O`,
   Emacs `M-g s`): the project of the explorer's folder, every language,
   ctags or the built-in index (no language server without a file).
+- The project symbol picker has a drop-down of kinds beside its search
+  field (every kind, or functions, methods, macros, types...; `Alt+K` /
+  `Alt+Shift+K` from the field step through it). The kind is filtered
+  before the results are capped (`code_index_search_symbols()`,
+  `code_tags_index_search()`), on the server's answer with a language
+  server; the choice is kept for the next picker.
 - Org-mode tabs are not concerned (no code language).
 - Tagbar: a `GtkPaned` in each editor tab (thin handle), shown or hidden
   per tab by its key (not saved); a new tab follows the Preferences
