@@ -76,11 +76,15 @@ static gint clamp_position(GtkWidget* paned, gint pos) {
     return max >= min ? CLAMP(pos, min, max) : pos;
 }
 
+/* Minimum size of a side that GtkPaned enforces: 0 when it may shrink (a
+ * share asked for is then given exactly, whatever the side's natural minimum) */
 static gint start_min(GtkWidget* paned) {
+    if (gtk_paned_get_shrink_start_child(GTK_PANED(paned))) return 0;
     return child_min(paned, gtk_paned_get_start_child(GTK_PANED(paned)));
 }
 
 static gint end_min(GtkWidget* paned) {
+    if (gtk_paned_get_shrink_end_child(GTK_PANED(paned))) return 0;
     return child_min(paned, gtk_paned_get_end_child(GTK_PANED(paned)));
 }
 
@@ -224,14 +228,21 @@ static void update_buttons(SplitMenu* menu, gint sides) {
     gtk_widget_set_tooltip_text(menu->buttons[BTN_START], side_tooltip(paned, TRUE, collapsed == SPLIT_SIDE_START));
     gtk_widget_set_tooltip_text(menu->buttons[BTN_END], side_tooltip(paned, FALSE, collapsed == SPLIT_SIDE_END));
 
-    static const gchar* const RATIO_TIPS[SPLIT_RATIO_COUNT] = {
-        N_("Split One Third / Two Thirds"),
+    /* The tooltips name the sides: "a third" alone does not say which one */
+    static const gchar* const RATIO_TIPS_H[SPLIT_RATIO_COUNT] = {
+        N_("Left Side a Third, Right Side Two Thirds"),
         N_("Split in Half (Double-Click the Border)"),
-        N_("Split Two Thirds / One Third"),
+        N_("Left Side Two Thirds, Right Side a Third"),
     };
+    static const gchar* const RATIO_TIPS_V[SPLIT_RATIO_COUNT] = {
+        N_("Top Side a Third, Bottom Side Two Thirds"),
+        N_("Split in Half (Double-Click the Border)"),
+        N_("Top Side Two Thirds, Bottom Side a Third"),
+    };
+    gboolean vertical = paned_vertical(paned);
     for (gint i = 0; i < SPLIT_RATIO_COUNT; i++) {
         GtkWidget* b = menu->buttons[BTN_RATIO + i];
-        gtk_widget_set_tooltip_text(b, _(RATIO_TIPS[i]));
+        gtk_widget_set_tooltip_text(b, _(vertical ? RATIO_TIPS_V[i] : RATIO_TIPS_H[i]));
         gtk_widget_set_sensitive(b, split_ratio_reachable(max, SPLIT_RATIOS[i], smin, emin));
     }
     for (gint i = 0; i < BTN_COUNT; i++) {

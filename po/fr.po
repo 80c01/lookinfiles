@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-20 19:26+0000\n"
+"POT-Creation-Date: 2026-11-20 19:29+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -11899,49 +11899,57 @@ msgstr "Grouper par type (s)"
 msgid "Hide Tagbar (q)"
 msgstr "Masquer la barre de symboles (q)"
 
-#: src/widgets/split_menu.c:201
+#: src/widgets/split_menu.c:205
 msgid "Expand the Top Side"
 msgstr "Déplier le côté du haut"
 
-#: src/widgets/split_menu.c:201
+#: src/widgets/split_menu.c:205
 msgid "Expand the Bottom Side"
 msgstr "Déplier le côté du bas"
 
-#: src/widgets/split_menu.c:202
+#: src/widgets/split_menu.c:206
 msgid "Collapse the Top Side"
 msgstr "Replier le côté du haut"
 
-#: src/widgets/split_menu.c:202
+#: src/widgets/split_menu.c:206
 msgid "Collapse the Bottom Side"
 msgstr "Replier le côté du bas"
 
-#: src/widgets/split_menu.c:204
+#: src/widgets/split_menu.c:208
 msgid "Expand the Left Side"
 msgstr "Déplier le côté gauche"
 
-#: src/widgets/split_menu.c:204
+#: src/widgets/split_menu.c:208
 msgid "Expand the Right Side"
 msgstr "Déplier le côté droit"
 
-#: src/widgets/split_menu.c:205
+#: src/widgets/split_menu.c:209
 msgid "Collapse the Left Side"
 msgstr "Replier le côté gauche"
 
-#: src/widgets/split_menu.c:205
+#: src/widgets/split_menu.c:209
 msgid "Collapse the Right Side"
 msgstr "Replier le côté droit"
 
-#: src/widgets/split_menu.c:228
-msgid "Split One Third / Two Thirds"
-msgstr "Partager un tiers / deux tiers"
+#: src/widgets/split_menu.c:233
+msgid "Left Side a Third, Right Side Two Thirds"
+msgstr "Côté gauche un tiers, côté droit deux tiers"
 
-#: src/widgets/split_menu.c:229
+#: src/widgets/split_menu.c:234 src/widgets/split_menu.c:239
 msgid "Split in Half (Double-Click the Border)"
 msgstr "Partager à moitié (double-clic sur la séparation)"
 
-#: src/widgets/split_menu.c:230
-msgid "Split Two Thirds / One Third"
-msgstr "Partager deux tiers / un tiers"
+#: src/widgets/split_menu.c:235
+msgid "Left Side Two Thirds, Right Side a Third"
+msgstr "Côté gauche deux tiers, côté droit un tiers"
+
+#: src/widgets/split_menu.c:238
+msgid "Top Side a Third, Bottom Side Two Thirds"
+msgstr "Côté du haut un tiers, côté du bas deux tiers"
+
+#: src/widgets/split_menu.c:240
+msgid "Top Side Two Thirds, Bottom Side a Third"
+msgstr "Côté du haut deux tiers, côté du bas un tiers"
 
 #: src/workspace/layout_store.c:60
 #, c-format
