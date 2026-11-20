@@ -412,6 +412,8 @@ static void ensure_css(void) {
     if (done) return;
     done = TRUE;
     static const gchar* const CSS =
+        ".code-problems { background-color: @bg_view; }\n"
+        ".code-problems listview { background-color: @bg_view; }\n"
         ".code-problems-bar {\n"
         "  background-color: @bg_bar;\n"
         "  border-bottom: 1px solid @border;\n"
@@ -451,6 +453,7 @@ static ProblemsPage* ensure_page(AppData* app) {
     pp->store = g_list_store_new(CODE_TYPE_PROB_ITEM);
 
     GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_add_css_class(page, "code-problems");
     gtk_widget_set_hexpand(page, TRUE);
     gtk_widget_set_vexpand(page, TRUE);
 
