@@ -22,6 +22,15 @@ typedef struct {
     GHashTable* inodes;  /* "dev:ino" of the files with several links counted */
 } Ctx;
 
+static gboolean is_symlink(const GStatBuf* st) {
+#ifdef S_ISLNK
+    return S_ISLNK(st->st_mode);
+#else
+    (void)st; /* no symbolic links in the stat modes (Windows) */
+    return FALSE;
+#endif
+}
+
 static void entry_clear(gpointer data) {
     g_free(((GitSpaceEntry*)data)->path);
 }
@@ -117,7 +126,7 @@ static gboolean on_file(const gchar* rel, GitFileKind kind, gpointer data) {
         return TRUE;
     }
     gboolean regular = S_ISREG(st.st_mode);
-    if (!regular && !S_ISLNK(st.st_mode)) {
+    if (!regular && !is_symlink(&st)) {
         g_free(full);
         g_free(r);
         return TRUE;
