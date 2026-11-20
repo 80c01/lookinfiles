@@ -79,7 +79,7 @@ gboolean focus_route_preview_back(AppData* app);
 void focus_route_panel_action(AppData* app, GtkWidget* widget, NavAction action);
 
 /* Navigation keys of the global mode in a list page: next / previous row,
- * first / last, page down / up, panel and tab keys */
+ * first / last, page down / up, center / top / bottom, panel and tab keys */
 void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* selection);
 
 #endif /* FOCUS_ROUTE_H */

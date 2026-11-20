@@ -429,6 +429,24 @@ static guint list_page_rows(GtkWidget* list, guint n) {
     return rows > 1 ? rows - 1 : 1; /* one row of the page stays in view */
 }
 
+/* Scroll so that the selected row sits at align of the viewport (0 top, 0.5
+ * middle, 1 bottom: Vim zt / zz / zb, Emacs C-l) */
+static void list_scroll(GtkWidget* list, guint pos, guint n, gdouble align) {
+    GtkAdjustment* adj = GTK_IS_SCROLLABLE(list) ? gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(list)) : NULL;
+    gdouble upper = adj != NULL ? gtk_adjustment_get_upper(adj) : 0.0;
+    if (adj == NULL || upper <= 0.0 || n == 0 || pos >= n) return;
+    gdouble h = upper / n;
+    gdouble page = gtk_adjustment_get_page_size(adj);
+    gdouble value = pos * h - align * (page - h);
+    gdouble max = upper - page;
+    gtk_adjustment_set_value(adj, CLAMP(value, 0.0, MAX(max, 0.0)));
+}
+
+static gboolean is_modifier_key(guint keyval) {
+    return (keyval >= GDK_KEY_Shift_L && keyval <= GDK_KEY_Hyper_R) ||
+           keyval == GDK_KEY_ISO_Level3_Shift || keyval == GDK_KEY_ISO_Level5_Shift;
+}
+
 static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, guint keycode,
                             GdkModifierType state, gpointer data) {
     (void)keycode;
@@ -438,6 +456,9 @@ static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, gui
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, &next);
     app->nav_prefix = next;
+    if (action != NAV_RECENTER && action != NAV_PENDING && !is_modifier_key(keyval)) {
+        app->nav_recenter_step = 0;
+    }
 
     guint n = g_list_model_get_n_items(G_LIST_MODEL(ln->selection));
     guint cur = gtk_single_selection_get_selected(ln->selection);
@@ -467,6 +488,21 @@ static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, gui
         if (n > 0) list_select(list, ln, none || cur < rows ? 0 : cur - rows);
         return TRUE;
     }
+    case NAV_CENTER:
+        if (!none) list_scroll(list, cur, n, 0.5);
+        return TRUE;
+    case NAV_TOP:
+        if (!none) list_scroll(list, cur, n, 0.0);
+        return TRUE;
+    case NAV_BOTTOM:
+        if (!none) list_scroll(list, cur, n, 1.0);
+        return TRUE;
+    case NAV_RECENTER: {
+        static const gdouble align[] = {0.5, 0.0, 1.0};
+        if (!none) list_scroll(list, cur, n, align[app->nav_recenter_step % 3]);
+        app->nav_recenter_step = (app->nav_recenter_step + 1) % 3;
+        return TRUE;
+    }
     case NAV_PANEL_NEXT:
     case NAV_PANEL_PREV:
     case NAV_TAB_CLOSE:
@@ -475,7 +511,7 @@ static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, gui
         focus_route_panel_action(app, list, action);
         return TRUE;
     default:
-        return TRUE; /* prefixes, and keys a list has no use for (search, scrolling) */
+        return TRUE; /* prefixes, and keys a list has no use for (search) */
     }
 }
 
