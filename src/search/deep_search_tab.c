@@ -2,6 +2,7 @@
 #include "search/deep_search_tab.h"
 #include "search/deep_search.h"
 #include "search/deep_search_charts.h"
+#include "search/deep_search_date.h"
 #include "search/deep_search_list.h"
 #include "search/deep_search_preview.h"
 #include "core/app_events.h"
@@ -451,9 +452,46 @@ static void on_split_sized(GObject* split, GParamSpec* pspec, gpointer data) {
 
 #define READY_TEXT _("Fill in the criteria, then press Enter")
 
-/* Every criterion back to its default (the folder stays), no result */
-static void reset_search(DeepSearchTab* dt) {
-    /* A search running is forgotten: its end shows nothing (its job frees it) */
+static void set_entry(GtkWidget* e, const gchar* text) {
+    gtk_editable_set_text(GTK_EDITABLE(e), text != NULL ? text : "");
+}
+
+static gchar* dup_nonempty(const gchar* text, gboolean strip) {
+    if (text == NULL || text[0] == '\0') return NULL;
+    gchar* s = g_strdup(text);
+    if (strip) g_strstrip(s);
+    if (s[0] == '\0') {
+        g_free(s);
+        return NULL;
+    }
+    return s;
+}
+
+/* Fill the criteria widgets from s (without touching the folder) */
+static void apply_form(DeepSearchTab* dt, const SavedDeepSearch* s) {
+    set_entry(dt->name, s->name);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->family),
+                               s->family >= 0 && s->family < FILE_FAMILY_OTHER ? (guint)(s->family + 1) : 0);
+    set_entry(dt->extensions, s->family >= 0 ? "" : s->extensions);
+    set_entry(dt->content, s->content);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dt->options[OPT_CASE]), s->content_opts.match_case);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dt->options[OPT_WORD]), s->content_opts.whole_word);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dt->options[OPT_REGEX]), s->content_opts.regex);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dt->options[OPT_FUZZY]),
+                                 !s->content_opts.regex && s->content_opts.fuzzy);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->kind), (guint)s->kind);
+    set_entry(dt->min_size, s->min_size);
+    set_entry(dt->max_size, s->max_size);
+    set_entry(dt->after, s->after);
+    set_entry(dt->before, s->before);
+    set_entry(dt->exclude, s->exclude);
+    set_entry(dt->depth, s->depth);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->hidden), s->hidden);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->one_fs), s->one_filesystem);
+}
+
+/* Stop any running search and clear the previous results */
+static void clear_results(DeepSearchTab* dt) {
     stop_search(dt);
     dt->running = NULL;
     if (dt->timer != 0) {
@@ -462,19 +500,19 @@ static void reset_search(DeepSearchTab* dt) {
     }
     sync_buttons(dt);
     clear_errors(dt);
-    GtkWidget* fields[] = {dt->name,  dt->extensions, dt->content, dt->min_size, dt->max_size,
-                           dt->after, dt->before,     dt->exclude, dt->depth};
-    for (gsize i = 0; i < G_N_ELEMENTS(fields); i++) gtk_editable_set_text(GTK_EDITABLE(fields[i]), "");
-    for (gint i = 0; i < OPT_COUNT; i++) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dt->options[i]), FALSE);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->family), 0);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->kind), DEEP_KIND_ANY);
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->hidden), FALSE);
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(dt->one_fs), TRUE);
     deep_search_list_reset(dt->list, NULL, FALSE);
     deep_search_charts_reset(dt->charts);
     dt->ranged = FALSE;
     set_status(dt, g_strdup(READY_TEXT));
     set_label(dt->current, g_strdup(""));
+}
+
+/* Every criterion back to its default (the folder stays), no result */
+static void reset_search(DeepSearchTab* dt) {
+    clear_results(dt);
+    SavedDeepSearch empty;
+    saved_deep_search_init(&empty);
+    apply_form(dt, &empty);
     gtk_widget_grab_focus(dt->name);
 }
 
@@ -496,6 +534,11 @@ static void on_entry_activate(GtkEntry* entry, gpointer data) {
 static void on_stop_clicked(GtkButton* button, gpointer data) {
     (void)button;
     stop_search(data);
+}
+
+static void on_bookmark_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    app_emit(((DeepSearchTab*)data)->app, APP_EVENT_SAVE_SEARCH_BOOKMARK);
 }
 
 static void on_parent_clicked(GtkButton* button, gpointer data) {
@@ -693,14 +736,25 @@ static void on_menu_close(GtkWidget* child, gpointer data) {
     close_page(data);
 }
 
-/* The tab menu, as for an editor tab: move, close */
+static gboolean bookmark_from_menu_idle(gpointer data) {
+    app_emit((AppData*)data, APP_EVENT_SAVE_SEARCH_BOOKMARK);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_menu_bookmark(GtkWidget* child, gpointer data) {
+    (void)child;
+    g_idle_add(bookmark_from_menu_idle, data);
+}
+
+/* The tab menu, as for an editor tab: save as bookmark, move, close */
 static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
     (void)n_press;
     (void)x;
     (void)y;
     gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     DeepSearchTab* dt = data;
-    editor_page_show_context_menu(dt->app, dt->page, dt->label, on_menu_close, dt->app);
+    editor_page_show_context_menu_extra(dt->app, dt->page, dt->label, on_menu_close, dt->app,
+                                        _("Save as Bookmark…"), on_menu_bookmark);
 }
 
 /* Put the page in the preview notebook: after the result pages and the
@@ -775,108 +829,6 @@ static GtkWidget* option_new(DeepSearchTab* dt, gint opt, const gchar* label, co
     g_signal_connect(b, "toggled", G_CALLBACK(on_option_toggled), dt);
     dt->options[opt] = b;
     return b;
-}
-
-/* The calendar of a date field: a button on its right, a GtkCalendar in
- * its popover; a click on a day writes it in the field and closes it, the
- * button under it empties the field */
-
-#define CAL_ENTRY_KEY "lookin-deep-search-date-entry"
-#define CAL_SHOWN_KEY "lookin-deep-search-date-shown" /* year * 12 + month shown */
-#define CAL_SYNC_KEY "lookin-deep-search-date-sync"   /* set while the code moves it */
-
-static void calendar_show_date(GtkCalendar* cal, GDateTime* t) {
-#if GTK_CHECK_VERSION(4, 14, 0)
-    gtk_calendar_set_day(cal, 1); /* a valid day in any month while it changes */
-    gtk_calendar_set_year(cal, g_date_time_get_year(t));
-    gtk_calendar_set_month(cal, g_date_time_get_month(t) - 1);
-    gtk_calendar_set_day(cal, g_date_time_get_day_of_month(t));
-#else
-    gtk_calendar_select_day(cal, t);
-#endif
-}
-
-static gint shown_month(GtkCalendar* cal) {
-    GDateTime* t = gtk_calendar_get_date(cal);
-    gint m = g_date_time_get_year(t) * 12 + g_date_time_get_month(t);
-    g_date_time_unref(t);
-    return m;
-}
-
-/* The popover opens on the date of the field, else today */
-static void on_calendar_shown(GtkPopover* popover, gpointer data) {
-    (void)popover;
-    GtkCalendar* cal = data;
-    GtkWidget* entry = g_object_get_data(G_OBJECT(cal), CAL_ENTRY_KEY);
-    GDateTime* now = g_date_time_new_now_local();
-    gint64 when = 0;
-    GDateTime* t = NULL;
-    if (deep_query_parse_date(gtk_editable_get_text(GTK_EDITABLE(entry)), now, FALSE, &when) && when > 0) {
-        t = g_date_time_new_from_unix_local(when);
-    }
-    g_object_set_data(G_OBJECT(cal), CAL_SYNC_KEY, GINT_TO_POINTER(1));
-    calendar_show_date(cal, t != NULL ? t : now);
-    g_object_set_data(G_OBJECT(cal), CAL_SYNC_KEY, NULL);
-    g_object_set_data(G_OBJECT(cal), CAL_SHOWN_KEY, GINT_TO_POINTER(shown_month(cal)));
-    if (t != NULL) g_date_time_unref(t);
-    g_date_time_unref(now);
-}
-
-/* The arrows moved to another month or year */
-static void on_calendar_moved(GtkCalendar* cal, gpointer data) {
-    (void)data;
-    g_object_set_data(G_OBJECT(cal), CAL_SHOWN_KEY, GINT_TO_POINTER(shown_month(cal)));
-}
-
-/* A day of the month shown was clicked (a day of the month before or after
- * moves to that month: then only the month shown is kept) */
-static void on_calendar_day(GtkCalendar* cal, gpointer data) {
-    GtkWidget* button = data;
-    if (g_object_get_data(G_OBJECT(cal), CAL_SYNC_KEY) != NULL) return;
-    gint month = shown_month(cal);
-    if (month != GPOINTER_TO_INT(g_object_get_data(G_OBJECT(cal), CAL_SHOWN_KEY))) {
-        g_object_set_data(G_OBJECT(cal), CAL_SHOWN_KEY, GINT_TO_POINTER(month));
-        return;
-    }
-    GDateTime* t = gtk_calendar_get_date(cal);
-    gchar* text = g_date_time_format(t, "%Y-%m-%d");
-    gtk_editable_set_text(GTK_EDITABLE(g_object_get_data(G_OBJECT(cal), CAL_ENTRY_KEY)), text);
-    g_free(text);
-    g_date_time_unref(t);
-    gtk_menu_button_popdown(GTK_MENU_BUTTON(button));
-}
-
-/* Clear: no date in the field */
-static void on_calendar_clear(GtkButton* clear, gpointer data) {
-    GtkWidget* entry = g_object_get_data(G_OBJECT(clear), CAL_ENTRY_KEY);
-    gtk_editable_set_text(GTK_EDITABLE(entry), "");
-    gtk_menu_button_popdown(GTK_MENU_BUTTON(data));
-}
-
-static GtkWidget* calendar_button(GtkWidget* entry) {
-    GtkWidget* button = gtk_menu_button_new();
-    gtk_menu_button_set_child(GTK_MENU_BUTTON(button), icon_image_new("x-office-calendar"));
-    gtk_menu_button_set_has_frame(GTK_MENU_BUTTON(button), FALSE);
-    gtk_widget_set_focus_on_click(button, FALSE);
-    gtk_widget_set_tooltip_text(button, _("Pick a Day"));
-    GtkWidget* cal = gtk_calendar_new();
-    g_object_set_data(G_OBJECT(cal), CAL_ENTRY_KEY, entry);
-    g_signal_connect(cal, "day-selected", G_CALLBACK(on_calendar_day), button);
-    const gchar* moves[] = {"prev-month", "next-month", "prev-year", "next-year"};
-    for (gsize i = 0; i < G_N_ELEMENTS(moves); i++) g_signal_connect(cal, moves[i], G_CALLBACK(on_calendar_moved), NULL);
-    GtkWidget* clear = gtk_button_new();
-    icon_button_set_content(clear, "edit-clear", _("Clear the Date"));
-    gtk_widget_set_halign(clear, GTK_ALIGN_END);
-    g_object_set_data(G_OBJECT(clear), CAL_ENTRY_KEY, entry);
-    g_signal_connect(clear, "clicked", G_CALLBACK(on_calendar_clear), button);
-    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
-    gtk_box_append(GTK_BOX(box), cal);
-    gtk_box_append(GTK_BOX(box), clear);
-    GtkWidget* popover = gtk_popover_new();
-    gtk_popover_set_child(GTK_POPOVER(popover), box);
-    g_signal_connect(popover, "show", G_CALLBACK(on_calendar_shown), cal);
-    gtk_menu_button_set_popover(GTK_MENU_BUTTON(button), popover);
-    return button;
 }
 
 static GtkWidget* between_label(const gchar* text) {
@@ -956,11 +908,11 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     box = form_row(g, 3, 2, _("Last change"), 1);
     dt->after = field_new(dt, _("any"), date_tip, 10);
     gtk_box_append(GTK_BOX(box), dt->after);
-    gtk_box_append(GTK_BOX(box), calendar_button(dt->after));
+    gtk_box_append(GTK_BOX(box), deep_search_calendar_button(dt->after));
     gtk_box_append(GTK_BOX(box), between_label(_("to")));
     dt->before = field_new(dt, _("any"), date_tip, 10);
     gtk_box_append(GTK_BOX(box), dt->before);
-    gtk_box_append(GTK_BOX(box), calendar_button(dt->before));
+    gtk_box_append(GTK_BOX(box), deep_search_calendar_button(dt->before));
 
     box = form_row(g, 4, 0, _("Exclude"), 1);
     dt->exclude = field_new(dt, _("node_modules, .git, build/"), GLOBS_TOOLTIP, 0);
@@ -1025,6 +977,9 @@ static DeepSearchTab* ensure_page(AppData* app) {
     icon_button_set_content(dt->stop, "process-stop", _("Stop"));
     g_signal_connect(dt->stop, "clicked", G_CALLBACK(on_stop_clicked), dt);
     gtk_box_append(GTK_BOX(bar), dt->stop);
+    GtkWidget* bookmark = icon_button_new("bookmark-new", _("Save Search as Bookmark…"));
+    g_signal_connect(bookmark, "clicked", G_CALLBACK(on_bookmark_clicked), dt);
+    gtk_box_append(GTK_BOX(bar), bookmark);
     dt->beside = icon_button_new("view-dual", _("Show the Preview on the Right"));
     g_signal_connect(dt->beside, "clicked", G_CALLBACK(on_beside_clicked), dt);
     gtk_box_append(GTK_BOX(bar), dt->beside);
@@ -1097,6 +1052,61 @@ void deep_search_tab_show(AppData* app, const gchar* path) {
     if (GTK_WIDGET(nb) == app->notebook) deep_search_show_preview_panel(app);
     gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, dt->page));
     gtk_widget_grab_focus(dt->name);
+}
+
+gboolean deep_search_tab_read_saved(AppData* app, SavedDeepSearch* out) {
+    DeepSearchTab* dt = tab_state(app);
+    if (dt == NULL || out == NULL) return FALSE;
+    clear_errors(dt);
+    DeepQuery q;
+    gboolean ok = read_form(dt, &q);
+    deep_query_clear(&q);
+    if (!ok) return FALSE;
+    saved_deep_search_init(out);
+    gchar* folder = dup_nonempty(field_text(dt->folder), TRUE);
+    if (folder != NULL && folder[0] == '~' && (folder[1] == '\0' || folder[1] == '/')) {
+        gchar* home = g_build_filename(g_get_home_dir(), folder + 1, NULL);
+        g_free(folder);
+        folder = home;
+    }
+    out->folder = folder;
+    out->use_current_folder = (folder == NULL);
+    out->name = dup_nonempty(field_text(dt->name), FALSE);
+    out->family = (gint)gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->family)) - 1;
+    if (out->family < 0) out->extensions = dup_nonempty(field_text(dt->extensions), TRUE);
+    out->content = dup_nonempty(field_text(dt->content), FALSE);
+    out->content_opts.match_case = option_on(dt, OPT_CASE);
+    out->content_opts.whole_word = option_on(dt, OPT_WORD);
+    out->content_opts.regex = option_on(dt, OPT_REGEX);
+    out->content_opts.fuzzy = !out->content_opts.regex && option_on(dt, OPT_FUZZY);
+    out->kind = (DeepKind)gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->kind));
+    out->min_size = dup_nonempty(field_text(dt->min_size), TRUE);
+    out->max_size = dup_nonempty(field_text(dt->max_size), TRUE);
+    out->after = dup_nonempty(field_text(dt->after), TRUE);
+    out->before = dup_nonempty(field_text(dt->before), TRUE);
+    out->exclude = dup_nonempty(field_text(dt->exclude), TRUE);
+    out->depth = dup_nonempty(field_text(dt->depth), TRUE);
+    out->hidden = gtk_check_button_get_active(GTK_CHECK_BUTTON(dt->hidden));
+    out->one_filesystem = gtk_check_button_get_active(GTK_CHECK_BUTTON(dt->one_fs));
+    return TRUE;
+}
+
+void deep_search_tab_run_saved(AppData* app, const SavedDeepSearch* saved) {
+    if (app == NULL || saved == NULL) return;
+    DeepSearchTab* dt = ensure_page(app);
+    if (dt == NULL) return;
+    clear_results(dt);
+    const gchar* folder = (!saved->use_current_folder && saved->folder != NULL && saved->folder[0] != '\0')
+                              ? saved->folder
+                              : (app->base_dir != NULL ? app->base_dir : "");
+    set_entry(dt->folder, folder);
+    apply_form(dt, saved);
+    GtkNotebook* nb = deep_search_page_notebook(dt->page);
+    if (nb != NULL) {
+        if (GTK_WIDGET(nb) == app->notebook) deep_search_show_preview_panel(app);
+        gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, dt->page));
+    }
+    start_search(dt);
 }
 
 gboolean deep_search_tab_close_shown(AppData* app) {

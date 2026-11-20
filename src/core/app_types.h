@@ -157,6 +157,7 @@ typedef struct AppData {
     struct Bookmarks* bm;    /* bookmark tree and counters (bookmarks.c), NULL outside bookmarks_init() / bookmarks_free() */
     gint session_save_ws;       /* workspace to save on APP_EVENT_SAVE_WORKSPACE_BOOKMARK */
     gchar* session_open_target; /* saved-workspace target to open on APP_EVENT_OPEN_WORKSPACE_BOOKMARK */
+    gchar* deep_search_open_target; /* saved-search target to open on APP_EVENT_OPEN_SEARCH_BOOKMARK */
     gchar* bookmark_add_target; /* link to bookmark on APP_EVENT_ADD_BOOKMARK */
     gchar* bookmark_add_name;   /* its proposed name, or NULL */
     gchar* preview_request_path; /* file or folder to preview on APP_EVENT_PREVIEW_PATH (taken by the handler) */

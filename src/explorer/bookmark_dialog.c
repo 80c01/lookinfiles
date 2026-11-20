@@ -5,6 +5,7 @@
 #include "widgets/dialog.h"
 #include "widgets/icon_picker.h"
 #include "notes/notebook_icons.h"
+#include "search/deep_search_store.h"
 #include "workspace/session_store.h"
 
 #include <string.h>
@@ -16,6 +17,9 @@ gchar* bookmark_display_location(const gchar* target) {
     }
     if (session_target_id(target) != NULL) {
         return g_strdup(_("Saved workspace"));
+    }
+    if (deep_search_target_id(target) != NULL) {
+        return g_strdup(_("Saved search"));
     }
     if (bookmark_target_is_uri(target)) {
         return g_strdup(target);
@@ -218,8 +222,9 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
     /* Icon (folders) or location (links) */
     GtkWidget* target_entry = NULL;
     GtkWidget* picker = NULL;
-    /* A saved workspace keeps its target: only its name and folder change */
-    gboolean fixed_target = !is_folder && session_target_id(spec->target) != NULL;
+    /* A saved workspace or search keeps its target: only its name and folder change */
+    gboolean fixed_target = !is_folder && (session_target_id(spec->target) != NULL ||
+                                           deep_search_target_id(spec->target) != NULL);
     if (is_folder) {
         gtk_box_append(GTK_BOX(box), bm_field_label(_("Icon")));
         picker = icon_picker_new(NOTEBOOK_ICONS, spec->icon, NULL, NULL);

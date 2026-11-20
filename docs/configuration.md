@@ -10,6 +10,7 @@ Settings and data are kept in `~/.config/lookinfiles/`
 | `remotes.xml` | Remote machines added by hand and remote view folders (`~/.ssh/config` hosts are read directly; one moved into a folder is saved here) |
 | `layouts.ini` | Saved workspace layouts and the default layout of new workspaces |
 | `sessions/<id>.ini` | One saved workspace per file, in the format of `session.ini` (workspace bookmarks: **Save Workspace as Bookmark…** in the bookmarks view); the bookmark points to it as `lookinfiles-session://<id>` and deleting it deletes the file |
+| `searches/<id>.ini` | One saved Deep Search per file (search bookmarks: the bookmark button or tab menu in Deep Search); stores only the criteria (not the results) as `lookinfiles-search://<id>` and deleting the bookmark deletes the file |
 | `session.ini` | The workspaces of the last session (folders, expanded folders, selection, sort, explorer view (files, bookmarks, notes, remote), open files and notes (text and Canvas), browser, Video and Jupyter tabs, and their notebooks and splits, panels and split sizes, terminal panes), reopened by a launch without argument |
 | `recent.ini` | Recent folders and files (`Alt+R`, and first in `Ctrl+P` when nothing is typed) |
 | `lsp.ini` | Language server commands for code navigation (optional, see below) |

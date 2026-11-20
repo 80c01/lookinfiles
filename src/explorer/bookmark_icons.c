@@ -1,5 +1,6 @@
 #include "explorer/bookmark_icons.h"
 #include "core/path_kind.h"
+#include "search/deep_search_store.h"
 #include "workspace/session_store.h"
 #include "explorer/tree_nav.h"
 
@@ -15,11 +16,12 @@ void bookmark_icon_apply(ExplorerRow* row) {
     PathKind kind = is_uri ? PATH_KIND_UNKNOWN : path_kind_lookup(target);
     gchar* base = (kind == PATH_KIND_FILE) ? g_path_get_basename(target) : NULL;
     explorer_row_set_icon_name(row, base);
-    explorer_row_set_glyph(row, session_target_id(target) != NULL ? "view-dual"
-                                : is_uri                   ? "link"
-                                : kind == PATH_KIND_MISSING ? "missing"
-                                : kind == PATH_KIND_DIR     ? "folder"
-                                                            : "unknown");
+    explorer_row_set_glyph(row, session_target_id(target) != NULL     ? "view-dual"
+                                : deep_search_target_id(target) != NULL ? "edit-find"
+                                : is_uri                                ? "link"
+                                : kind == PATH_KIND_MISSING             ? "missing"
+                                : kind == PATH_KIND_DIR                 ? "folder"
+                                                                        : "unknown");
     explorer_row_set_label(row, row->name);
     g_free(base);
 }

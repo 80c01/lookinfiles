@@ -150,8 +150,12 @@ réduire ou les cacher.
 
 L’onglet garde ses critères tant qu’il est ouvert : l’ouvrir sur un autre
 dossier ne change que le dossier. Chaque espace de travail a le sien.
-`Ctrl+W`, un clic du milieu sur l’onglet ou sa croix le ferment et
-arrêtent la recherche.
+Cliquez sur le bouton signet dans l’en-tête (ou faites un clic droit sur
+l’onglet et choisissez **Enregistrer comme signet…**) pour garder les
+critères dans vos [signets](bookmarks.md#enregistrer-une-recherche) et les
+relancer plus tard, soit dans le dossier enregistré, soit dans le dossier
+courant de l’explorateur. `Ctrl+W`, un clic du milieu sur l’onglet ou sa
+croix le ferment et arrêtent la recherche.
 
 ## Rechercher dans un panneau ou un onglet
 

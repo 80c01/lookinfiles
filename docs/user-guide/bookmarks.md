@@ -33,11 +33,27 @@ Terminals start new shells. A missing folder stops it with a message; files
 that no longer exist are skipped. Rename or move it with `F2`; its location
 cannot be edited. Deleting the bookmark deletes the saved workspace.
 
+## Saving a search
+
+In the [Deep Search](search.md#deep-search-shiftf) tab, click the bookmark
+button in the header (or right-click the tab and choose **Save as
+Bookmark…**) to keep the current search criteria under a **Name** and in a
+bookmark **Folder**. Check **Search the explorer's current folder when
+opened** to replay those criteria in whichever folder is open in the
+explorer, instead of the folder typed in the form. Only the criteria are
+saved (not the results); relative dates such as `7d` or `today` are
+evaluated each time the search runs.
+
+Selecting a saved search shows a summary of its criteria in the preview.
+Opening it (`Enter`) opens the Deep Search tab, fills in the criteria and
+starts the search. Rename or move it with `F2`; deleting the bookmark
+deletes the saved search.
+
 ## Using bookmarks
 
 | Key | Action |
 |---|---|
-| `Enter` | Open: a folder becomes the explorer's folder, a file opens, a URL opens in your web browser, a saved workspace opens in a new workspace |
+| `Enter` | Open: a folder becomes the explorer's folder, a file opens, a URL opens in your web browser, a saved workspace opens in a new workspace, a saved search runs in Deep Search |
 | `Right` / `Left` | Open / close a bookmark folder |
 | `F2`, `r` or `e` | Edit the name, location and folder (a folder: its name, icon and parent folder) |
 | `d` or `Delete` | Delete the bookmark or folder |
@@ -50,4 +66,5 @@ When a bookmark's folder or file no longer exists, opening it offers to
 remove it.
 
 Bookmarks are saved in `~/.config/lookinfiles/bookmarks.xml`; the saved
-workspaces are in `~/.config/lookinfiles/sessions/`.
+workspaces are in `~/.config/lookinfiles/sessions/` and the saved searches
+are in `~/.config/lookinfiles/searches/`.

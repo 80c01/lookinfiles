@@ -11,6 +11,7 @@
 #include "core/app_types.h"
 #include "explorer/explorer_row.h"
 #include "explorer/remote_store.h"
+#include "search/deep_search_store.h"
 
 #define PREVIEW_SUMMARY_NAME_MAX 40 /* item name column (longer names are not padded) */
 
@@ -46,6 +47,10 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row);
  * a Canvas note directory. Unref the array. */
 GPtrArray* preview_summary_canvas_lines(const gchar* name, const gchar* path);
 
+/* Lines of a saved Deep Search bookmark: its criteria and shortcuts.
+ * NULL for NULL. Unref the array. */
+GPtrArray* preview_summary_search_lines(const gchar* name, const SavedDeepSearch* saved);
+
 /* Width of the name column of the items starting at index i (up to the
  * first line that is not an item), at most PREVIEW_SUMMARY_NAME_MAX */
 glong preview_summary_item_width(GPtrArray* lines, guint i);
@@ -57,5 +62,6 @@ gchar* preview_summary_to_text(GPtrArray* lines);
 gchar* preview_summary_remote(const RemoteMachine* rm);
 gchar* preview_summary_container(ExplorerRow* row);
 gchar* preview_summary_canvas(const gchar* name, const gchar* path);
+gchar* preview_summary_search(const gchar* name, const SavedDeepSearch* saved);
 
 #endif /* PREVIEW_SUMMARY_H */

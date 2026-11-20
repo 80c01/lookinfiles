@@ -137,8 +137,12 @@ or **Show All**, to list every result. Drag the line above the charts to
 make them smaller or to hide them.
 
 The tab keeps its criteria while it is open: opening it on another folder
-only changes the folder. Each workspace has its own. `Ctrl+W`, a middle
-click on the tab or its cross close it and stop the search.
+only changes the folder. Each workspace has its own. Click the bookmark
+button in the header (or right-click the tab and choose **Save as
+Bookmark…**) to keep the criteria in your [bookmarks](bookmarks.md#saving-a-search)
+and run them again later — either in the saved folder or in the explorer's
+current folder. `Ctrl+W`, a middle click on the tab or its cross close it
+and stop the search.
 
 ## Search in a panel or a tab
 

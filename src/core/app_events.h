@@ -22,6 +22,8 @@
  *   APP_EVENT_CLOSE_TAB       -> close_shown_tab()            (ui.c)
  *   APP_EVENT_SAVE_WORKSPACE_BOOKMARK -> session_bookmark_save() (session_bookmark.c)
  *   APP_EVENT_OPEN_WORKSPACE_BOOKMARK -> session_bookmark_open() (session_bookmark.c)
+ *   APP_EVENT_SAVE_SEARCH_BOOKMARK -> deep_search_bookmark_save() (deep_search_bookmark.c)
+ *   APP_EVENT_OPEN_SEARCH_BOOKMARK -> deep_search_bookmark_open() (deep_search_bookmark.c)
  *   APP_EVENT_ADD_BOOKMARK    -> bookmarks_add_requested()    (bookmarks.c)
  *   APP_EVENT_PREVIEW_LOCATION -> status_bar_show_location()  (status_bar.c)
  *   APP_EVENT_PREVIEW_PATH    -> preview_show_requested()     (preview_show.c)
@@ -57,6 +59,11 @@ typedef enum {
      * saved workspace in app->session_open_target (taken by the handler) */
     APP_EVENT_SAVE_WORKSPACE_BOOKMARK,
     APP_EVENT_OPEN_WORKSPACE_BOOKMARK,
+    /* Deep Search asked to save its criteria as a bookmark / the bookmarks
+     * view asked to run the saved search in app->deep_search_open_target
+     * (taken by the handler) */
+    APP_EVENT_SAVE_SEARCH_BOOKMARK,
+    APP_EVENT_OPEN_SEARCH_BOOKMARK,
     /* A browser tab asked to bookmark app->bookmark_add_target, named
      * app->bookmark_add_name (both taken by the handler) */
     APP_EVENT_ADD_BOOKMARK,

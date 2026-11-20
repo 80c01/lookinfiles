@@ -217,6 +217,7 @@ path_globs:
 text_search:code_index,i18n
 deep_query:text_search,path_globs,file_types,i18n
 deep_search:deep_query
+deep_search_store:app_paths,deep_query,file_types,i18n
 session_store:app_paths,layout_store
 tab_tree:
 settings_store:app_paths
@@ -262,7 +263,7 @@ tab_drop:pane_geometry
 after_frame:
 explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths,notebook_icons
-preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,i18n
+preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,deep_search_store,file_types,i18n
 fs_watch:app_types,app_events,git_utils,git_tab,preview_state
 preview_state:app_types
 git_state:

@@ -39,11 +39,28 @@ plus sont ignorés. Renommez-le ou déplacez-le avec `F2` ; son emplacement
 ne peut pas être modifié. Supprimer le signet supprime l’espace de travail
 enregistré.
 
+## Enregistrer une recherche
+
+Dans l’onglet [Recherche approfondie](search.md#recherche-approfondie--shiftf),
+cliquez sur le bouton signet dans l’en-tête (ou faites un clic droit sur
+l’onglet et choisissez **Enregistrer comme signet…**) pour garder les
+critères de recherche actuels sous un **Nom** et dans un **Dossier** de
+signets. Cochez **Chercher dans le dossier courant de l’explorateur à
+l’ouverture** pour rejouer ces critères dans le dossier ouvert dans
+l’explorateur plutôt que celui saisi dans le formulaire. Seuls les critères
+sont enregistrés (pas les résultats) ; les dates relatives comme `7d` ou
+`today` sont réévaluées à chaque lancement.
+
+Sélectionner une recherche enregistrée affiche un résumé de ses critères
+dans l’aperçu. L’ouvrir (`Enter`) ouvre l’onglet Recherche approfondie,
+remplit les critères et lance la recherche. Renommez-la ou déplacez-la
+avec `F2` ; supprimer le signet supprime la recherche enregistrée.
+
 ## Utiliser les signets
 
 | Touche | Action |
 |---|---|
-| `Enter` | Ouvrir : un dossier devient le dossier de l’explorateur, un fichier s’ouvre, une URL s’ouvre dans votre navigateur web, un espace de travail enregistré s’ouvre dans un nouvel espace de travail |
+| `Enter` | Ouvrir : un dossier devient le dossier de l’explorateur, un fichier s’ouvre, une URL s’ouvre dans votre navigateur web, un espace de travail enregistré s’ouvre dans un nouvel espace de travail, une recherche enregistrée se lance dans la Recherche approfondie |
 | `Right` / `Left` | Ouvrir / fermer un dossier de signets |
 | `F2`, `r` ou `e` | Modifier le nom, l’emplacement et le dossier (un dossier : son nom, son icône et son dossier parent) |
 | `d` ou `Delete` | Supprimer le signet ou le dossier |
@@ -58,4 +75,5 @@ de le supprimer.
 
 Les signets sont enregistrés dans `~/.config/lookinfiles/bookmarks.xml` ;
 les espaces de travail enregistrés sont dans
-`~/.config/lookinfiles/sessions/`.
+`~/.config/lookinfiles/sessions/` et les recherches enregistrées dans
+`~/.config/lookinfiles/searches/`.

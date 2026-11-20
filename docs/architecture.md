@@ -468,6 +468,10 @@ Layers, from bottom to top
   links not followed, `/proc` `/sys` `/dev` skipped. Run in a worker
   (`deep_search_run()`, cancellable); `deep_search_take()` hands the
   entries found so far (`DeepHit`) and the counters to any thread.
+- `deep_search_store` — saved Deep Search criteria (`SavedDeepSearch`,
+  `searches/<id>.ini`, target `lookinfiles-search://<id>`): raw form text so
+  relative dates and sizes stay dynamic; `deep_search_target_make()` /
+  `deep_search_target_id()` accept lowercase hex ids only.
 - `jump_list` — back / forward history of navigation jumps across files
   (also the explorer's folder history, `nav_history`).
 - `session_store` — `session.ini` (workspaces at quit, with their explorer
@@ -992,7 +996,12 @@ Layers, from bottom to top
   results previewed: out of the preview notebook, the result moved to
   (after the list's next frame, `after_frame`) and the one selected when
   the tab gets there; `Space` in either place (`APP_EVENT_PREVIEW_PATH`,
-  handled by `preview_show_requested()`).
+  handled by `preview_show_requested()`). `deep_search_date` — the
+  `GtkCalendar` popover button beside each date field.
+  `deep_search_bookmark` — saving the form criteria as a bookmark
+  (`APP_EVENT_SAVE_SEARCH_BOOKMARK`, with name, bookmark folder and "use
+  current folder" option) and replaying a saved search
+  (`APP_EVENT_OPEN_SEARCH_BOOKMARK`, fills the form and starts searching).
 - `clock_pill` — the clock and three timers (`countdown`; the time format
   and timer 1 from `settings.ini`, changed by the Clock page of the
   Preferences through `topbar_set_clock()`, `topbar_set_timer()` and
@@ -1435,6 +1444,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_PREVIEW_PATH`         | Deep Search: preview `app->preview_request_path` at `app->preview_request_line` | `preview_show_requested()` |
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
+| `APP_EVENT_SAVE_SEARCH_BOOKMARK` / `APP_EVENT_OPEN_SEARCH_BOOKMARK` | Deep Search / bookmarks view: save criteria as a bookmark / run a saved search | `deep_search_bookmark_save()` / `deep_search_bookmark_open()` |
 | `APP_EVENT_ADD_BOOKMARK`         | browser tab: bookmark `app->bookmark_add_target` (name `app->bookmark_add_name`) | `bookmarks_add_requested()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
 | `APP_EVENT_QUIT`                 | `Ctrl+Q` in a popover (branches, layout switcher) | `ui_quit()`               |

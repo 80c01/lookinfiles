@@ -11,6 +11,7 @@
 #include "explorer/bookmark_dialog.h"
 #include "preview/browser.h"
 #include "preview/web_address.h"
+#include "search/deep_search_store.h"
 #include "workspace/session_store.h"
 
 /* Bookmark tree and its counters, private to this file */
@@ -555,7 +556,7 @@ static void bm_add_dialog(AppData* app, const gchar* init_target, const gchar* n
     g_free(target);
 }
 
-/* Delete the saved workspace files of the links under node (node included) */
+/* Delete the saved workspace or search files of the links under node (node included) */
 static gboolean bm_remove_snapshot(GNode* node, gpointer data) {
     (void)data;
     BookmarkItem* it = bm_item(node);
@@ -563,6 +564,10 @@ static gboolean bm_remove_snapshot(GNode* node, gpointer data) {
         const gchar* id = session_target_id(it->target);
         if (id != NULL) {
             session_snapshot_remove(id);
+        }
+        const gchar* search_id = deep_search_target_id(it->target);
+        if (search_id != NULL) {
+            deep_search_store_remove(search_id);
         }
     }
     return FALSE;
@@ -668,6 +673,56 @@ void bookmarks_add_session(AppData* app, const gchar* name, const gchar* target)
     if (parent == NULL) {
         parent = app->bm->root;
     }
+    GNode* node = bm_new_node(app, FALSE, name, target);
+    g_node_append(parent, node);
+    if (bm_is_folder(parent)) {
+        bm_item(parent)->expanded = TRUE;
+    }
+    app->bm->last_folder_id = bm_folder_id(parent);
+    bm_after_change(app, bm_item(node)->id);
+}
+
+gchar** bookmarks_folder_names(AppData* app, guint* out_default) {
+    if (out_default != NULL) {
+        *out_default = 0;
+    }
+    if (app == NULL || app->bm == NULL) {
+        return NULL;
+    }
+    GPtrArray* nodes = g_ptr_array_new();
+    GPtrArray* labels = g_ptr_array_new();
+    g_ptr_array_add(nodes, app->bm->root);
+    g_ptr_array_add(labels, g_strdup(_("Bookmarks (top level)")));
+    bm_collect_folders(app->bm->root, 1, NULL, nodes, labels);
+    GNode* def = (app->sidebar_view == SIDEBAR_VIEW_BOOKMARKS)
+                     ? bm_context_folder(app)
+                     : bm_find_by_id(app->bm->root, app->bm->last_folder_id);
+    if (out_default != NULL && def != NULL) {
+        for (guint i = 0; i < nodes->len; i++) {
+            if (g_ptr_array_index(nodes, i) == def) {
+                *out_default = i;
+                break;
+            }
+        }
+    }
+    g_ptr_array_add(labels, NULL);
+    g_ptr_array_unref(nodes);
+    return (gchar**)g_ptr_array_free(labels, FALSE);
+}
+
+void bookmarks_add_fixed_at(AppData* app, const gchar* name, const gchar* target, guint folder_idx) {
+    if (app == NULL || app->bm == NULL || target == NULL) {
+        return;
+    }
+    GPtrArray* nodes = g_ptr_array_new();
+    GPtrArray* labels = g_ptr_array_new_with_free_func(g_free);
+    g_ptr_array_add(nodes, app->bm->root);
+    g_ptr_array_add(labels, g_strdup(""));
+    bm_collect_folders(app->bm->root, 1, NULL, nodes, labels);
+    GNode* parent = (folder_idx < nodes->len) ? (GNode*)g_ptr_array_index(nodes, folder_idx) : app->bm->root;
+    g_ptr_array_unref(nodes);
+    g_ptr_array_unref(labels);
+
     GNode* node = bm_new_node(app, FALSE, name, target);
     g_node_append(parent, node);
     if (bm_is_folder(parent)) {
@@ -878,6 +933,14 @@ void bookmarks_activate_selected(AppData* app) {
         g_free(app->session_open_target);
         app->session_open_target = g_strdup(it->target);
         app_emit(app, APP_EVENT_OPEN_WORKSPACE_BOOKMARK);
+        return;
+    }
+
+    /* A saved deep search opens the Deep Search tab and runs it (deep_search_bookmark.c) */
+    if (deep_search_target_id(it->target) != NULL) {
+        g_free(app->deep_search_open_target);
+        app->deep_search_open_target = g_strdup(it->target);
+        app_emit(app, APP_EVENT_OPEN_SEARCH_BOOKMARK);
         return;
     }
 

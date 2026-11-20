@@ -15,10 +15,19 @@
  * Ctrl+W (Vim Ctrl+W c) close it and stop the search. Each workspace has its own tab; opening
  * it on another folder keeps the criteria. */
 #include "core/app_types.h"
+#include "search/deep_search_store.h"
 
 /* Show the tab with path (a folder) as the folder to search, opened when
  * needed; the focus goes to the name field. Nothing is searched yet. */
 void deep_search_tab_show(AppData* app, const gchar* path);
+
+/* Read and validate the criteria of the open Deep Search tab into out.
+ * Returns FALSE when no tab is open or a criterion is invalid (error shown). */
+gboolean deep_search_tab_read_saved(AppData* app, SavedDeepSearch* out);
+
+/* Show the tab, fill the form from saved (using app->base_dir when
+ * saved->use_current_folder is TRUE) and start the search. */
+void deep_search_tab_run_saved(AppData* app, const SavedDeepSearch* saved);
 
 /* Close the tab if it is the current page of the preview notebook (Ctrl+W).
  * Returns TRUE if it was closed. */

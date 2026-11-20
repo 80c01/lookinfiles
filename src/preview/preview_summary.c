@@ -1,5 +1,6 @@
 /* Summaries for explorer rows without file content (see preview_summary.h). */
 #include "preview/preview_summary.h"
+#include "core/file_types.h"
 #include "core/i18n.h"
 #include "notes/note_types.h"
 #include "canvas/canvas_doc.h"
@@ -196,6 +197,110 @@ GPtrArray* preview_summary_canvas_lines(const gchar* name, const gchar* path) {
     return lines;
 }
 
+static gchar* format_range(const gchar* from, const gchar* to) {
+    gboolean has_from = from != NULL && from[0] != '\0';
+    gboolean has_to = to != NULL && to[0] != '\0';
+    if (has_from && has_to) {
+        /* TRANSLATORS: a size or date range in a saved search summary, e.g. "10M to 100M" */
+        return g_strdup_printf(_("%1$s to %2$s"), from, to);
+    }
+    if (has_from) {
+        /* TRANSLATORS: lower bound of a size or date range, e.g. "from 7d" */
+        return g_strdup_printf(_("from %s"), from);
+    }
+    if (has_to) {
+        /* TRANSLATORS: upper bound of a size or date range, e.g. "up to 10M" */
+        return g_strdup_printf(_("up to %s"), to);
+    }
+    return NULL;
+}
+
+static gchar* format_search_options(const TextSearchOptions* opts) {
+    GString* s = g_string_new(NULL);
+    const gchar* items[4];
+    gsize n = 0;
+    if (opts->match_case) items[n++] = _("Match case");
+    if (opts->whole_word && !opts->fuzzy) items[n++] = _("Whole word");
+    if (opts->regex) items[n++] = _("Regular expression");
+    else if (opts->fuzzy) items[n++] = _("Letters in order");
+    for (gsize i = 0; i < n; i++) {
+        if (i > 0) g_string_append(s, ", ");
+        g_string_append(s, items[i]);
+    }
+    if (s->len == 0) {
+        g_string_free(s, TRUE);
+        return NULL;
+    }
+    return g_string_free(s, FALSE);
+}
+
+GPtrArray* preview_summary_search_lines(const gchar* name, const SavedDeepSearch* saved) {
+    if (saved == NULL) {
+        return NULL;
+    }
+    static const SummaryShortcut keys[] = {
+        {"Enter", N_("Run this search in Deep Search")},
+        {"F2 / r / e", N_("Rename or move bookmark")},
+        {"d / Delete", N_("Delete bookmark")},
+        {"Shift+K / Shift+J", N_("Move bookmark up / down")},
+    };
+    GPtrArray* lines = lines_new();
+    gchar* title = g_strdup_printf(_("Saved Search: %s"), name != NULL ? name : "");
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup("edit-find");
+    g_free(title);
+
+    const gchar* folder = (!saved->use_current_folder && saved->folder != NULL && saved->folder[0] != '\0')
+                              ? saved->folder
+                              : _("Current folder");
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Folder"), folder);
+    if (saved->name != NULL && saved->name[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Name"), saved->name);
+    }
+    if (saved->family >= 0 && saved->family < FILE_FAMILY_OTHER) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Category"), file_family_name((FileFamily)saved->family));
+    } else if (saved->extensions != NULL && saved->extensions[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Extensions"), saved->extensions);
+    }
+    if (saved->content != NULL && saved->content[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Contains"), saved->content);
+        gchar* opts = format_search_options(&saved->content_opts);
+        if (opts != NULL) {
+            add_line(lines, PREVIEW_SUMMARY_FIELD, _("Options"), opts);
+            g_free(opts);
+        }
+    }
+    if (saved->kind == DEEP_KIND_FILES) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Type"), _("Files"));
+    } else if (saved->kind == DEEP_KIND_FOLDERS) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Type"), _("Folders"));
+    }
+    gchar* size = format_range(saved->min_size, saved->max_size);
+    if (size != NULL) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Size"), size);
+        g_free(size);
+    }
+    gchar* dates = format_range(saved->after, saved->before);
+    if (dates != NULL) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Last change"), dates);
+        g_free(dates);
+    }
+    if (saved->exclude != NULL && saved->exclude[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Exclude"), saved->exclude);
+    }
+    if (saved->depth != NULL && saved->depth[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Depth"), saved->depth);
+    }
+    if (saved->hidden) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Hidden entries"), _("Yes"));
+    }
+    if (!saved->one_filesystem) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("This filesystem only"), _("No"));
+    }
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
+}
+
 /* One line per child, placeholder rows (type "-") skipped */
 static guint add_items(GPtrArray* lines, ExplorerRow* row) {
     guint n = 0;
@@ -213,7 +318,8 @@ static guint add_items(GPtrArray* lines, ExplorerRow* row) {
             detail = g_strdup_printf(ngettext("folder, %u item", "folder, %u items", count), count);
         } else if (explorer_row_is(child, "bookmark")) {
             name = g_strdup(child->name);
-            detail = g_strdup(child->path);
+            detail = (deep_search_target_id(child->path) != NULL) ? g_strdup(_("Saved search"))
+                                                                  : g_strdup(child->path);
         } else if (explorer_row_is(child, "note")) {
             name = g_strdup(child->name);
             detail = g_strdup(note_format_name(badge_text));
@@ -237,6 +343,26 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     }
     const gchar* name = row->name ? row->name : "";
     const gchar* path = row->path;
+    if (explorer_row_is(row, "bookmark")) {
+        const gchar* id = deep_search_target_id(path);
+        if (id != NULL) {
+            gchar* spath = deep_search_store_path(id);
+            SavedDeepSearch* saved = deep_search_store_load(spath);
+            g_free(spath);
+            if (saved != NULL) {
+                GPtrArray* lines = preview_summary_search_lines(name, saved);
+                saved_deep_search_free(saved);
+                return lines;
+            }
+            GPtrArray* lines = lines_new();
+            gchar* title = g_strdup_printf(_("Saved Search: %s"), name);
+            PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+            head->glyph = g_strdup("edit-find");
+            g_free(title);
+            add_line(lines, PREVIEW_SUMMARY_NOTE, _("(saved search file missing)"), NULL);
+            return lines;
+        }
+    }
     GPtrArray* canvas = preview_summary_canvas_lines(name, path);
     if (canvas != NULL) {
         return canvas;
@@ -424,4 +550,8 @@ gchar* preview_summary_container(ExplorerRow* row) {
 
 gchar* preview_summary_canvas(const gchar* name, const gchar* path) {
     return to_text_and_free(preview_summary_canvas_lines(name, path));
+}
+
+gchar* preview_summary_search(const gchar* name, const SavedDeepSearch* saved) {
+    return to_text_and_free(preview_summary_search_lines(name, saved));
 }

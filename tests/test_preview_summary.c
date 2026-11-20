@@ -192,6 +192,53 @@ static void test_bookmark_folder_and_trash(void) {
     g_object_unref(root);
 }
 
+static void test_saved_search(void) {
+    SavedDeepSearch s;
+    saved_deep_search_init(&s);
+    s.use_current_folder = TRUE;
+    s.name = g_strdup("*.c");
+    s.family = FILE_FAMILY_CODE;
+    s.content = g_strdup("TODO");
+    s.content_opts.match_case = TRUE;
+    s.content_opts.regex = TRUE;
+    s.kind = DEEP_KIND_FILES;
+    s.min_size = g_strdup("10k");
+    s.after = g_strdup("7d");
+    s.before = g_strdup("today");
+    s.exclude = g_strdup("build/");
+    s.depth = g_strdup("3");
+    s.hidden = TRUE;
+    s.one_filesystem = FALSE;
+
+    gchar* text = preview_summary_search("Recent TODOs", &s);
+    g_assert_nonnull(text);
+    g_assert_nonnull(strstr(text, "Saved Search: Recent TODOs\n"));
+    g_assert_nonnull(strstr(text, "Current folder"));
+    g_assert_nonnull(strstr(text, "*.c"));
+    g_assert_nonnull(strstr(text, "Text and code"));
+    g_assert_nonnull(strstr(text, "TODO"));
+    g_assert_nonnull(strstr(text, "Match case, Regular expression"));
+    g_assert_nonnull(strstr(text, "from 10k"));
+    g_assert_nonnull(strstr(text, "7d to today"));
+    g_assert_nonnull(strstr(text, "build/"));
+    g_assert_nonnull(strstr(text, "Hidden entries:"));
+    g_assert_nonnull(strstr(text, "Run this search in Deep Search"));
+    g_free(text);
+    saved_deep_search_clear(&s);
+    g_assert_null(preview_summary_search("x", NULL));
+
+    /* Bookmark folder lists a saved search as "Saved search", not its raw URI */
+    ExplorerRow* root = explorer_row_new_root();
+    ExplorerRow* folder = add_row(root, "bm_folder", "Searches", "", "1");
+    add_row(folder, "bookmark", "Large files", "lookinfiles-search://0123abcd", "");
+    text = preview_summary_container(folder);
+    g_assert_nonnull(strstr(text, "Large files"));
+    g_assert_nonnull(strstr(text, "Saved search"));
+    g_assert_null(strstr(text, "lookinfiles-search://"));
+    g_free(text);
+    g_object_unref(root);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_summary/remote", test_remote);
@@ -199,5 +246,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);
     g_test_add_func("/preview_summary/lines", test_lines);
+    g_test_add_func("/preview_summary/saved_search", test_saved_search);
     return g_test_run();
 }

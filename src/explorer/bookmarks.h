@@ -32,6 +32,12 @@ void bookmarks_new_folder(AppData* app);
 /* Add a link to a saved workspace (target from session_target_make()) in the
  * folder of the selection, and select it */
 void bookmarks_add_session(AppData* app, const gchar* name, const gchar* target);
+/* Indented folder names for a folder dropdown (NULL-terminated, caller frees
+ * with g_strfreev()); *out_default is the context or last used folder */
+gchar** bookmarks_folder_names(AppData* app, guint* out_default);
+/* Add a link with an internal target (saved search or workspace) into the
+ * folder at folder_idx (same order as bookmarks_folder_names()), and select it */
+void bookmarks_add_fixed_at(AppData* app, const gchar* name, const gchar* target, guint folder_idx);
 void bookmarks_edit_selected(AppData* app);
 void bookmarks_delete_selected(AppData* app);
 void bookmarks_move_selected(AppData* app, gint delta);
