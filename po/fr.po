@@ -1218,6 +1218,14 @@ msgid "From a field: to the results"
 msgstr "Depuis un champ : vers les résultats"
 
 #: src/chrome/help.c:158
+msgid ""
+"In the folder: suggest folders (also as you type; Tab completes, Enter takes "
+"one)"
+msgstr ""
+"Dans le dossier : suggérer des dossiers (aussi pendant la saisie ; Tab "
+"complète, Entrée en prend un)"
+
+#: src/chrome/help.c:158
 msgid "In a chart: previous / next bar, first / last bar"
 msgstr "Dans un graphique : barre précédente / suivante, première / dernière"
 

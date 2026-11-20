@@ -209,6 +209,7 @@ canvas_text:canvas_doc,fonts,palette,text_tags
 user_guide:
 user_guide_search:user_guide,i18n
 fuzzy_match:
+folder_complete:
 web_address:
 web_keys:
 web_engine:i18n,app_paths,module_path,profile,web_engine_module

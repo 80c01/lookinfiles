@@ -461,6 +461,9 @@ Layers, from bottom to top
   keys but F3 / F7 / F12 (`web_keys_for_app()`).
 - `fuzzy_match` — fuzzy scoring of paths for quick open (file name, word
   starts and consecutive characters first) and the matched positions.
+- `folder_complete` — a folder field's text split for completion (folder
+  to list, name started, `~` expanded), how subfolder names match it, and
+  the field text for one (for `folder_suggest`).
 - `path_globs` — comma-separated path patterns matched like `.gitignore`
   (name at any depth, anchored, folders only), for the files to include /
   exclude of a search in files.
@@ -1264,6 +1267,10 @@ Layers, from bottom to top
   / `go_history_directory()` in `file_list` walk it), with the entry
   selected in each folder left (selected again on the way back), and the
   recent folders and files (editor tabs opened, quick open choices).
+- `folder_suggest` — folder suggestions in a popover under a folder field
+  (Deep Search folder, bookmark location): the subfolders of the path typed,
+  read with `GFileEnumerator` async, then the recent folders (`nav_history`,
+  ranked by `fuzzy_match` for other text); keys in the field's capture phase.
 - `quick_open` — Ctrl+P / Emacs `C-x C-f`; Alt+R lists the recent places
   in the same dialog (`quick_open_show_recent()`). Ctrl+P: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by

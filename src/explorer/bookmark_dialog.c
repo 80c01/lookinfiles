@@ -2,6 +2,7 @@
 #include "explorer/bookmark_dialog.h"
 #include "core/i18n.h"
 #include "explorer/bookmark_icons.h"
+#include "explorer/folder_suggest.h"
 #include "widgets/dialog.h"
 #include "widgets/icon_picker.h"
 #include "notes/notebook_icons.h"
@@ -241,6 +242,7 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
             g_free(shown);
         }
         gtk_entry_set_activates_default(GTK_ENTRY(target_entry), TRUE);
+        folder_suggest_attach(target_entry, app);
         g_signal_connect(target_entry, "changed", G_CALLBACK(bm_on_entry_changed), NULL);
         gtk_box_append(GTK_BOX(row), target_entry);
 

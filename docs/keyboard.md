@@ -273,6 +273,7 @@ mode move in the list)
 | `Escape` | Stop the search (what was found stays) |
 | `Alt+M` / `Alt+W` / `Alt+R` / `Alt+L` | Content: match case / whole word / regular expression / letters in order |
 | `Down` in a field | Go to the results |
+| Typing in **Folder**, `Ctrl+Space` there | Suggest folders: the subfolders of the path typed (`~/pro` → `~/projects`), then the recent folders going on from it; any other text matches the recent folders as in `Ctrl+P`. `Down` / `Up` choose one, `Tab` completes with it (or the first) and lists its subfolders, `Enter` takes it, `Escape` hides them (also in the **Location** of a bookmark) |
 | `Enter` / double click on a result | Show it in the explorer |
 | `Ctrl+Enter` on a result | Open the file in an editor tab, at its first match |
 | `Space` on a result | Preview it, at its first match (in the preview panel, the Preview tab comes in front with the focus; `Escape` there goes back to the results) |

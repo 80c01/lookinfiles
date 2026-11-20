@@ -15,7 +15,9 @@ de l’explorateur.
 - Dans la vue des signets, `a` ajoute un signet dans le dossier
   sélectionné. Le dialogue demande un **Nom**, un **Emplacement** (un
   chemin ou une URL ; le bouton **Dossier courant** remplit le dossier de
-  l’explorateur) et un **Dossier**.
+  l’explorateur ; pendant la saisie d’un chemin, ses dossiers sont
+  suggérés, comme dans la
+  [recherche approfondie](search.md#recherche-approfondie--shiftf)) et un **Dossier**.
 - `Shift+A` crée un dossier de signets, avec un **Nom**, une **Icône** et
   un **Dossier parent**.
 

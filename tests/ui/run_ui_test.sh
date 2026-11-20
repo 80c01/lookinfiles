@@ -312,6 +312,8 @@ key v;                  shot disk_usage_histograms # the files of the folder by 
 key v;                  shot disk_usage_treemap    # back to the treemap
 key ctrl+w;             shot disk_usage_closed
 key shift+f;            shot deep_search_tab       # the folder of plan.org, the name field focused
+key shift+Tab shift+Tab ctrl+space; shot deep_search_folder_suggest # Ctrl+Space in the folder: folders suggested
+key Escape Tab Tab                                 # suggestions hidden, back to the name field
 xdotool type --delay 60 "plan"
 key Return; sleep 1;    shot deep_search_results   # the entries named *plan*, found in the background
 key Down;               shot deep_search_list      # the first result selected

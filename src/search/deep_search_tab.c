@@ -10,6 +10,7 @@
 #include "editor/editor.h"
 #include "editor/editor_swap.h"
 #include "explorer/file_list.h"
+#include "explorer/folder_suggest.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "widgets/focus_route.h"
@@ -648,7 +649,7 @@ static gboolean on_page_key(GtkEventControllerKey* controller, guint keyval, gui
         }
         return FALSE;
     }
-    if (mods != 0) return FALSE;
+    if (mods != 0 || folder_suggest_is_open(dt->folder)) return FALSE; /* the suggestions' keys */
     if (keyval == GDK_KEY_F5) {
         start_search(dt);
         return TRUE;
@@ -879,6 +880,7 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     GtkWidget* box = form_row(g, 0, 0, _("Folder"), 3);
     dt->folder = field_new(dt, _("Folder to search"), _("The folder searched, with everything below it"), 0);
     gtk_box_append(GTK_BOX(box), dt->folder);
+    folder_suggest_attach(dt->folder, dt->app);
     GtkWidget* parent = icon_button_new("pan-up", _("Parent Folder"));
     g_signal_connect(parent, "clicked", G_CALLBACK(on_parent_clicked), dt);
     gtk_box_append(GTK_BOX(box), parent);

@@ -12,8 +12,9 @@ back to the files) or the bookmark button at the top of the explorer.
   the dialog proposes the page's title and address.
 - In the bookmarks view, `a` adds a bookmark inside the selected folder.
   The dialog asks for a **Name**, a **Location** (a path or a URL; the
-  **Current Directory** button fills in the explorer's folder) and a
-  **Folder**.
+  **Current Directory** button fills in the explorer's folder; as you
+  type a path, its folders are suggested, as in
+  [Deep Search](search.md#deep-search-shiftf)) and a **Folder**.
 - `Shift+A` creates a bookmark folder, with a **Name**, an **Icon** and a
   **Parent folder**.
 
