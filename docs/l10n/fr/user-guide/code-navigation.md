@@ -46,7 +46,9 @@ affichent les titres.
 En mode Vim, comme dans Vim, la barre de symboles et le texte ont chacun
 leur ligne de statut : `Tagbar`, puis `Name` (groupé par type) ou `Order`
 (ordre du fichier) et le fichier sous la barre de symboles ; la ligne de
-commande reste sous les deux.
+commande reste sous les deux, et `/` dans la barre de symboles y fait sa
+recherche. Comme dans airline, la ligne de statut du côté qui n’a pas le
+focus est grisée.
 
 ## D’où viennent les réponses
 

@@ -26,8 +26,11 @@ void editor_tagbar_set_width(AppData* app, gint width);
  * the view; the other tabs and the tabs opened next keep the preference
  * (not saved). A message (through message) when tab has no outline. */
 void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc message);
-/* Show the tagbar window's own status line (Vim mode) or hide it */
-void editor_tagbar_set_vim_status(EditorTab* tab, gboolean shown);
+/* Vim mode (both non-NULL) or not (NULL): the tagbar shows its own status
+ * line, greys the view's statusline or its own by where the focus is, and
+ * searches in the Vim command line area (the parent of commandline), in
+ * place of commandline */
+void editor_tagbar_set_vim(EditorTab* tab, GtkWidget* statusline, GtkWidget* commandline);
 /* Whether tab has a tagbar to show (a code or Markdown file) */
 gboolean editor_tagbar_available(EditorTab* tab);
 /* Whether the tagbar of tab is shown */

@@ -41,7 +41,9 @@ In a Markdown file, the symbol list and the tagbar show the headings.
 
 In Vim mode, as in Vim, the tagbar and the text each have their own status
 line: `Tagbar`, then `Name` (grouped by kind) or `Order` (file order) and
-the file under the tagbar; the command line stays below both.
+the file under the tagbar; the command line stays below both, and `/` in
+the tagbar searches in it. As in airline, the status line of the side
+without the focus is grey.
 
 ## Where the answers come from
 

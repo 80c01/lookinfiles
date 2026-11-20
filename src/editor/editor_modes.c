@@ -89,6 +89,10 @@ void editor_modes_load_css(void) {
         ".vim-mode-visual { background: @badge_orange; }\n"
         ".vim-mode-command { background: @accent; }\n"
         ".vim-mode-replace { background: @badge_red; }\n"
+        /* The window without the focus (airline's inactive status line) */
+        ".vim-statusline-inactive .vim-mode-badge, .vim-statusline-inactive .vim-ruler-badge {\n"
+        "  background: @fg_faint;\n"
+        "}\n"
         ".vim-showcmd {\n"
         "  color: @fg_muted;\n"
         "  margin-right: 12px;\n"

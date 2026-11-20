@@ -22,6 +22,9 @@ typedef struct Tagbar {
     GtkWidget* status;       /* Vim mode: the tagbar window's status line */
     GtkWidget* status_order; /* "Name" (grouped by kind) or "Order" (file order) */
     GtkWidget* status_file;
+    GtkWidget* vim_statusline;  /* Vim mode: the view's status line, else NULL */
+    GtkWidget* vim_commandline; /* Vim mode: the command line, else NULL */
+    gboolean focused;           /* the focus is in the list or its search bar */
 } Tagbar;
 
 static void tagbar_free(Tagbar* tb) {
@@ -100,6 +103,48 @@ static void update_status(Tagbar* tb) {
     gtk_label_set_text(GTK_LABEL(tb->status_file), tb->tab->name != NULL ? tb->tab->name : "[No Name]");
 }
 
+/* As airline does, the status line of the window without the focus is
+ * grey: the tagbar's or the view's, by where the focus is */
+static void update_active(Tagbar* tb) {
+    if (tb->focused) gtk_widget_remove_css_class(tb->status, "vim-statusline-inactive");
+    else gtk_widget_add_css_class(tb->status, "vim-statusline-inactive");
+    if (tb->vim_statusline == NULL) return;
+    if (tb->focused) gtk_widget_add_css_class(tb->vim_statusline, "vim-statusline-inactive");
+    else gtk_widget_remove_css_class(tb->vim_statusline, "vim-statusline-inactive");
+}
+
+static void on_focus_changed(GObject* ctrl, GParamSpec* pspec, gpointer data) {
+    (void)ctrl;
+    (void)pspec;
+    Tagbar* tb = data;
+    gboolean focused = FALSE;
+    GtkWidget* watched[] = {outline_pane_list(tb->pane), outline_pane_search_bar(tb->pane)};
+    for (gsize i = 0; i < G_N_ELEMENTS(watched); i++) {
+        GtkEventController* c = g_object_get_data(G_OBJECT(watched[i]), "tagbar-focus");
+        if (c != NULL) focused = focused || gtk_event_controller_focus_contains_focus(GTK_EVENT_CONTROLLER_FOCUS(c));
+    }
+    if (focused == tb->focused) return;
+    tb->focused = focused;
+    update_active(tb);
+}
+
+static void watch_focus(Tagbar* tb, GtkWidget* widget) {
+    GtkEventController* c = gtk_event_controller_focus_new();
+    g_signal_connect(c, "notify::contains-focus", G_CALLBACK(on_focus_changed), tb);
+    gtk_widget_add_controller(widget, c);
+    g_object_set_data(G_OBJECT(widget), "tagbar-focus", c);
+}
+
+/* In the Vim command line, the search bar takes the place of the command
+ * line while it is shown */
+static void on_search_bar_visible(GObject* bar, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    Tagbar* tb = data;
+    if (tb->vim_commandline != NULL) {
+        gtk_widget_set_visible(tb->vim_commandline, !gtk_widget_get_visible(GTK_WIDGET(bar)));
+    }
+}
+
 static void sort_changed(gpointer data) {
     update_status(data);
 }
@@ -121,6 +166,7 @@ static GtkWidget* status_new(Tagbar* tb) {
     gtk_label_set_ellipsize(GTK_LABEL(tb->status_file), PANGO_ELLIPSIZE_MIDDLE);
     gtk_widget_set_hexpand(tb->status_file, TRUE);
     gtk_box_append(GTK_BOX(status), tb->status_file);
+    gtk_widget_add_css_class(status, "vim-statusline-inactive");
     gtk_widget_set_visible(status, FALSE);
     return status;
 }
@@ -202,6 +248,9 @@ GtkWidget* editor_tagbar_wrap(AppData* app, EditorTab* tab, GtkWidget* content) 
     tb->pane = outline_pane_new(content, &app->editor_tagbar_width, _("Reading the symbols…"), &callbacks, tb);
     tb->status = status_new(tb);
     outline_pane_set_footer(tb->pane, tb->status);
+    watch_focus(tb, outline_pane_list(tb->pane));
+    watch_focus(tb, outline_pane_search_bar(tb->pane));
+    g_signal_connect(outline_pane_search_bar(tb->pane), "notify::visible", G_CALLBACK(on_search_bar_visible), tb);
     GtkWidget* paned = outline_pane_widget(tb->pane);
     g_object_set_data_full(G_OBJECT(paned), "editor-tagbar", tb, (GDestroyNotify)tagbar_free);
     g_signal_connect(tab->buffer, "mark-set", G_CALLBACK(on_mark_set), tb);
@@ -217,6 +266,9 @@ void editor_tagbar_release(EditorTab* tab) {
     if (tb->cancellable != NULL) g_cancellable_cancel(tb->cancellable);
     g_clear_handle_id(&tb->refresh_source, g_source_remove);
     g_clear_handle_id(&tb->cursor_source, g_source_remove);
+    editor_tagbar_set_vim(tab, NULL, NULL);
+    g_signal_handlers_disconnect_by_data(outline_pane_search_bar(tb->pane), tb);
+    g_signal_handlers_disconnect_by_data(outline_pane_list(tb->pane), tb);
     outline_pane_detach(tb->pane);
     tb->tab = NULL;
     tab->tagbar = NULL;
@@ -274,11 +326,21 @@ void editor_tagbar_toggle(AppData* app, EditorTab* tab, CodeNavMessageFunc messa
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }
 
-void editor_tagbar_set_vim_status(EditorTab* tab, gboolean shown) {
+void editor_tagbar_set_vim(EditorTab* tab, GtkWidget* statusline, GtkWidget* commandline) {
     Tagbar* tb = tab != NULL ? tab->tagbar : NULL;
     if (tb == NULL) return;
-    gtk_widget_set_visible(tb->status, shown);
+    if (tb->vim_statusline != NULL && tb->vim_statusline != statusline) {
+        gtk_widget_remove_css_class(tb->vim_statusline, "vim-statusline-inactive");
+    }
+    if (tb->vim_commandline != NULL && tb->vim_commandline != commandline) {
+        gtk_widget_set_visible(tb->vim_commandline, TRUE);
+    }
+    tb->vim_statusline = statusline;
+    tb->vim_commandline = commandline;
+    outline_pane_set_search_host(tb->pane, commandline != NULL ? gtk_widget_get_parent(commandline) : NULL);
+    gtk_widget_set_visible(tb->status, statusline != NULL);
     update_status(tb);
+    update_active(tb);
 }
 
 gboolean editor_tagbar_available(EditorTab* tab) {

@@ -1015,7 +1015,7 @@ void vim_activate(EditorTab* tab) {
     gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
     filler_lines_set(tab->view, TRUE);
     gtk_widget_set_visible(st->vim_statusline, TRUE);
-    editor_tagbar_set_vim_status(tab, TRUE);
+    editor_tagbar_set_vim(tab, st->vim_statusline, st->vim_commandline);
     vim_engine_reset(st->vim);
     on_state_changed(tab);
     gtk_widget_grab_focus(tab->view); /* also after picking Vim in a menu */
@@ -1045,7 +1045,7 @@ void vim_deactivate(EditorTab* tab) {
     EditorModeState* st = state_of(tab);
     if (st == NULL) return;
     gtk_widget_set_visible(st->vim_statusline, FALSE);
-    editor_tagbar_set_vim_status(tab, FALSE);
+    editor_tagbar_set_vim(tab, NULL, NULL);
     if (st->vim == NULL) return;
     release_engine(st);
     hide_cmdline(st);

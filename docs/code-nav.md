@@ -98,7 +98,10 @@ Notes:
   line); the rows the user collapsed stay collapsed across refreshes.
   In Vim mode it has its own status line (`outline_pane_set_footer()`,
   `editor_tagbar_set_vim_status()`), and the tab's Vim status line is in
-  `tab->window`, beside it; the command line spans both.
+  `tab->window`, beside it; the command line spans both, and the tagbar's
+  search bar takes its place while searching (`outline_pane_set_search_host()`).
+  The status line of the side without the focus has `vim-statusline-inactive`
+  (grey badges).
   A language server that has not answered within 2.5 s (starting,
   indexing, hung) is not waited for: the built-in scanner fills it.
   The widget is `outline_pane`, shared with the preview tagbar

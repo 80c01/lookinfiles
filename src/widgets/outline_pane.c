@@ -121,6 +121,10 @@ struct OutlinePane {
 
 static void pane_free(OutlinePane* p) {
     if (p->collapse_idle != 0) g_source_remove(p->collapse_idle);
+    /* The search bar may be in the owner's command line (referenced) */
+    GtkWidget* bar_parent = gtk_widget_get_parent(p->search_bar);
+    if (bar_parent != NULL && bar_parent != p->panel) gtk_box_remove(GTK_BOX(bar_parent), p->search_bar);
+    g_object_unref(p->search_bar);
     g_clear_object(&p->tree);
     g_clear_pointer(&p->entries, g_ptr_array_unref);
     g_hash_table_unref(p->collapsed);
@@ -1006,6 +1010,7 @@ OutlinePane* outline_pane_new(GtkWidget* content, gint* width, const gchar* load
     gtk_widget_set_visible(p->search_echo, FALSE);
     gtk_box_append(GTK_BOX(p->search_bar), p->search_echo);
     gtk_widget_set_visible(p->search_bar, FALSE);
+    g_object_ref(p->search_bar); /* lives as long as the pane, wherever it is */
     gtk_box_append(GTK_BOX(p->panel), p->search_bar);
     gtk_widget_set_visible(p->panel, FALSE);
 
@@ -1069,4 +1074,21 @@ gboolean outline_pane_grouped(OutlinePane* pane) {
 
 void outline_pane_set_footer(OutlinePane* pane, GtkWidget* footer) {
     gtk_box_append(GTK_BOX(pane->panel), footer);
+}
+
+GtkWidget* outline_pane_search_bar(OutlinePane* pane) {
+    return pane->search_bar;
+}
+
+void outline_pane_set_search_host(OutlinePane* pane, GtkWidget* host) {
+    GtkWidget* target = host != NULL ? host : pane->panel;
+    GtkWidget* parent = gtk_widget_get_parent(pane->search_bar);
+    if (parent == target) return;
+    search_close(pane, TRUE);
+    if (parent != NULL) gtk_box_remove(GTK_BOX(parent), pane->search_bar);
+    if (host != NULL) {
+        gtk_box_append(GTK_BOX(host), pane->search_bar);
+    } else {
+        gtk_box_insert_child_after(GTK_BOX(pane->panel), pane->search_bar, pane->stack);
+    }
 }

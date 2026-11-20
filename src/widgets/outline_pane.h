@@ -71,5 +71,10 @@ GtkWidget* outline_pane_list(OutlinePane* pane);
 gboolean outline_pane_grouped(OutlinePane* pane);
 /* Put footer at the bottom of the tagbar, under the list (a status line) */
 void outline_pane_set_footer(OutlinePane* pane, GtkWidget* footer);
+/* The search bar (shown while searching), and the box it is in: host (a
+ * GtkBox of the owner, its command line area) or, for NULL, the bottom of
+ * the tagbar. A search being typed is closed. */
+GtkWidget* outline_pane_search_bar(OutlinePane* pane);
+void outline_pane_set_search_host(OutlinePane* pane, GtkWidget* host);
 
 #endif /* OUTLINE_PANE_H */
