@@ -1,5 +1,6 @@
 /* Notepad editor mode: find/replace, go to line and save-as bars, Windows-style key bindings. */
 #include "editor/editor_modes_private.h"
+#include "editor/editor_info.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
 #include "editor/editor.h"
@@ -42,6 +43,9 @@ static const gchar* np_query(EditorModeState* st) {
 }
 
 static void np_status(EditorModeState* st, const gchar* msg) {
+    if (st == NULL || st->np_status_label == NULL) return;
+    st->diag_shown = FALSE;
+    editor_info_clear_diag_classes(st->np_status_label);
     gtk_label_set_text(GTK_LABEL(st->np_status_label), msg != NULL ? msg : "");
 }
 
@@ -614,7 +618,7 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     if (st->np_chord_k && !is_modifier_keyval(keyval)) {
         /* Ctrl+K Ctrl+I: help card; Ctrl+K Ctrl+O: tagbar */
         st->np_chord_k = FALSE;
-        gtk_label_set_text(GTK_LABEL(st->np_status_label), "");
+        np_status(st, "");
         if (ctrl && (keyval == GDK_KEY_i || keyval == GDK_KEY_I)) {
             code_help_show(tab->app, tab);
         } else if (ctrl && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
@@ -622,7 +626,7 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
         } else if (ctrl && (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) {
             code_rename_start(tab->app, tab, editor_mode_message);
         } else {
-            gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K: no command for this key");
+            np_status(st, "Ctrl+K: no command for this key");
         }
         return TRUE;
     }
@@ -693,7 +697,7 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     gboolean alt = (state & GDK_ALT_MASK) != 0;
     if (ctrl && !shift && !alt && (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
         st->np_chord_k = TRUE;
-        gtk_label_set_text(GTK_LABEL(st->np_status_label), "Ctrl+K was pressed: waiting for the second key");
+        np_status(st, "Ctrl+K was pressed: waiting for the second key");
         return TRUE;
     }
     if (ctrl && shift && !alt && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {

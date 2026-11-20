@@ -807,6 +807,43 @@ gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint i
     return out != NULL ? g_string_free(out, FALSE) : NULL;
 }
 
+gchar* code_intel_line_diagnostic(AppData* app, EditorTab* tab, gint line, LspSeverity* out_severity) {
+    if (out_severity != NULL) *out_severity = LSP_SEVERITY_ERROR;
+    if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL || line < 0) return NULL;
+    gchar* path = g_canonicalize_filename(tab->path, NULL);
+    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    g_free(path);
+    if (diags == NULL || diags->len == 0) return NULL;
+
+    const LspDiagnostic* best = NULL;
+    for (guint i = 0; i < diags->len; i++) {
+        const LspDiagnostic* d = g_ptr_array_index(diags, i);
+        if (line < d->line || line > d->end_line) continue;
+        if (best == NULL || d->severity < best->severity ||
+            (d->severity == best->severity && d->column < best->column)) {
+            best = d;
+        }
+    }
+    if (best == NULL || best->message == NULL) return NULL;
+    if (out_severity != NULL) *out_severity = best->severity;
+
+    GString* s = g_string_new(NULL);
+    gboolean prev_sp = FALSE;
+    for (const gchar* p = best->message; *p != '\0'; p++) {
+        if (*p == '\n' || *p == '\r' || *p == '\t') {
+            if (!prev_sp && s->len > 0) g_string_append_c(s, ' ');
+            prev_sp = TRUE;
+        } else {
+            g_string_append_c(s, *p);
+            prev_sp = (*p == ' ');
+        }
+    }
+    if (best->source != NULL && best->source[0] != '\0') {
+        g_string_append_printf(s, " [%s]", best->source);
+    }
+    return g_string_free(s, FALSE);
+}
+
 /* Error and warning counts of a file */
 static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint* warnings) {
     *errors = *warnings = 0;

@@ -1,6 +1,7 @@
 /* Emacs editor mode (visual clone): modeline, minibuffer, prefix keys and commands. */
 #include "editor/editor_modes_private.h"
 #include "editor/editor.h"
+#include "editor/editor_info.h"
 #include "theme/text_tags.h"
 #include "code/code_nav.h"
 #include "code/code_help.h"
@@ -22,7 +23,9 @@
 void emacs_echo(EditorTab* tab, const gchar* msg) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = tab->mode_state;
+    st->diag_shown = FALSE;
     if (st->emacs_mb_echo != NULL) {
+        editor_info_clear_diag_classes(st->emacs_mb_echo);
         gtk_label_set_text(GTK_LABEL(st->emacs_mb_echo), msg ? msg : "");
     }
 }

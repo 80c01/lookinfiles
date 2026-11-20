@@ -94,6 +94,9 @@ void editor_modes_load_css(void) {
         ".vim-message-error {\n"
         "  color: @error;\n"
         "}\n"
+        ".editor-diag-error { color: @error; }\n"
+        ".editor-diag-warning { color: @warning; }\n"
+        ".editor-diag-info { color: @link; }\n"
         ".vim-commandline-prompt {\n"
         "  font-weight: bold;\n"
         "  color: @fg_strong;\n"
@@ -279,7 +282,8 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
     gtk_text_buffer_get_bounds(tab->buffer, &b_start, &b_end);
     gint char_count = gtk_text_iter_get_offset(&b_end);
 
-    if (tab->mode == EDITOR_MODE_EMACS) {
+    editor_modes_update_status(tab);
+    if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
         gchar* msg = g_strdup_printf("Wrote %s", tab->path);
         emacs_echo(tab, msg);
         g_free(msg);
@@ -288,15 +292,10 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
         vim_echo(tab, msg);
         g_free(msg);
     } else {
-        EditorModeState* st = tab->mode_state;
-        if (st && st->np_status_label) {
-            gchar* msg = g_strdup_printf(_("Saved to %s"), tab->name);
-            gtk_label_set_text(GTK_LABEL(st->np_status_label), msg);
-            g_free(msg);
-        }
+        gchar* msg = g_strdup_printf(_("Saved to %s"), tab->name);
+        editor_mode_message(tab, msg);
+        g_free(msg);
     }
-
-    editor_modes_update_status(tab);
     return TRUE;
 }
 
@@ -811,6 +810,22 @@ static void vim_update_status(EditorTab* tab, EditorModeState* st, const EditorI
     g_free(ruler);
 }
 
+static void update_line_diagnostic(EditorTab* tab, EditorModeState* st, gint line_zero) {
+    if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
+        if (st->emacs_mini_mode == EMACS_MINI_NONE && st->emacs_prefix == EMACS_PREFIX_NONE &&
+            st->org_prefix == ORG_PREFIX_NONE) {
+            editor_info_update_line_diag(st->app, tab, st->emacs_mb_echo, "", line_zero, &st->diag_shown);
+        }
+    } else if (tab->mode == EDITOR_MODE_VIM) {
+        if (!(st->vim_cl_entry != NULL && gtk_widget_get_visible(st->vim_cl_entry)) &&
+            !st->vim_echo_sticky && !st->vim_ctrl_w) {
+            editor_info_update_line_diag(st->app, tab, st->vim_cl_echo, "", line_zero, &st->diag_shown);
+        }
+    } else if (!st->np_chord_k) {
+        editor_info_update_line_diag(st->app, tab, st->np_status_label, _("Ready"), line_zero, &st->diag_shown);
+    }
+}
+
 void editor_modes_update_status(EditorTab* tab) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = tab->mode_state;
@@ -830,6 +845,7 @@ void editor_modes_update_status(EditorTab* tab) {
     if (st->vim_statusline != NULL) {
         vim_update_status(tab, st, &info, line, col, percent, total, modified);
     }
+    update_line_diagnostic(tab, st, line - 1);
     editor_info_clear(&info);
 }
 
@@ -1147,11 +1163,13 @@ void editor_modes_cancel_pending(EditorTab* tab) {
 void editor_mode_message(EditorTab* tab, const gchar* msg) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = tab->mode_state;
+    st->diag_shown = FALSE;
     if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
         emacs_echo(tab, msg);
     } else if (tab->mode == EDITOR_MODE_VIM) {
         vim_echo(tab, msg);
     } else if (st->np_status_label != NULL) {
+        editor_info_clear_diag_classes(st->np_status_label);
         gtk_label_set_text(GTK_LABEL(st->np_status_label), msg != NULL ? msg : "");
     }
 }

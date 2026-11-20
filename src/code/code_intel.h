@@ -69,6 +69,10 @@ void code_intel_attach(AppData* app, EditorTab* tab);
 /* Diagnostics at the position (line, byte index) of tab as Markdown, or
  * NULL when there is none */
 gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint index);
+/* Most severe diagnostic covering 0-based line of tab as a single plain line
+ * (for the editor status bar / echo area), or NULL when the line has none.
+ * Caller frees. */
+gchar* code_intel_line_diagnostic(AppData* app, EditorTab* tab, gint line, LspSeverity* out_severity);
 /* Snapshot of all diagnostics across all files, sorted by path/line/col
  * (GPtrArray* of CodeDiagEntry*, caller unrefs) */
 GPtrArray* code_intel_all_diagnostics(AppData* app);

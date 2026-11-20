@@ -146,6 +146,7 @@ typedef struct EditorModeState {
     gsize vim_wild_at;               /* byte offset of the completed word in it */
     gint vim_wild_index;             /* shown completion, -1 for the original text */
     gint vim_wild_first;             /* first completion visible in the wildmenu */
+    gboolean diag_shown;             /* status/echo area currently shows a line diagnostic */
 } EditorModeState;
 
 /* Mode bar helpers: keep bars from imposing a minimum width (editor_modes.c) */

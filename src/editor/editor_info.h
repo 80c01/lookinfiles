@@ -26,4 +26,13 @@ void editor_info_clear(EditorInfo* info);
  * repository changed) */
 void editor_info_forget(EditorTab* tab);
 
+/* Clear diagnostic colour CSS classes from a mode status / echo label */
+void editor_info_clear_diag_classes(GtkWidget* label);
+
+/* Show the most severe diagnostic on 0-based line_zero in target (styled per
+ * tab->mode), or clear back to clear_text when *shown was TRUE and the line
+ * is now clean. */
+void editor_info_update_line_diag(AppData* app, EditorTab* tab, GtkWidget* target,
+                                  const gchar* clear_text, gint line_zero, gboolean* shown);
+
 #endif /* EDITOR_INFO_H */

@@ -3,6 +3,7 @@
 #include "code/code_intel.h"
 #include "code/code_nav.h"
 #include "core/file_types.h"
+#include "core/i18n.h"
 #include "git/git_utils.h"
 #include <string.h>
 
@@ -126,4 +127,46 @@ void editor_info_clear(EditorInfo* info) {
     g_free(info->language_id);
     g_free(info->backend);
     memset(info, 0, sizeof(*info));
+}
+
+void editor_info_clear_diag_classes(GtkWidget* label) {
+    if (label == NULL) return;
+    gtk_widget_remove_css_class(label, "editor-diag-error");
+    gtk_widget_remove_css_class(label, "editor-diag-warning");
+    gtk_widget_remove_css_class(label, "editor-diag-info");
+    gtk_widget_set_tooltip_text(label, NULL);
+}
+
+void editor_info_update_line_diag(AppData* app, EditorTab* tab, GtkWidget* target,
+                                  const gchar* clear_text, gint line_zero, gboolean* shown) {
+    if (target == NULL || tab == NULL || shown == NULL) return;
+    LspSeverity sev = LSP_SEVERITY_ERROR;
+    gchar* diag = code_intel_line_diagnostic(app, tab, line_zero, &sev);
+    if (diag == NULL) {
+        if (*shown) {
+            editor_info_clear_diag_classes(target);
+            gtk_label_set_text(GTK_LABEL(target), clear_text != NULL ? clear_text : "");
+            *shown = FALSE;
+        }
+        return;
+    }
+    const gchar* pfx;
+    if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
+        pfx = "Flymake: ";
+    } else if (tab->mode == EDITOR_MODE_VIM) {
+        pfx = (sev == LSP_SEVERITY_ERROR) ? "E: " : (sev == LSP_SEVERITY_WARNING) ? "W: " : "I: ";
+    } else {
+        pfx = (sev == LSP_SEVERITY_ERROR) ? _("Error: ")
+              : (sev == LSP_SEVERITY_WARNING) ? _("Warning: ") : _("Info: ");
+    }
+    gchar* full = g_strconcat(pfx, diag, NULL);
+    editor_info_clear_diag_classes(target);
+    gtk_widget_remove_css_class(target, "vim-message-error");
+    gtk_widget_add_css_class(target, sev == LSP_SEVERITY_ERROR ? "editor-diag-error"
+                                     : sev == LSP_SEVERITY_WARNING ? "editor-diag-warning" : "editor-diag-info");
+    gtk_label_set_text(GTK_LABEL(target), full);
+    gtk_widget_set_tooltip_text(target, full);
+    *shown = TRUE;
+    g_free(full);
+    g_free(diag);
 }

@@ -2,6 +2,7 @@
  * engine (vim_engine.h), which does the editing itself. */
 #include "editor/editor_modes_private.h"
 #include "editor/editor.h"
+#include "editor/editor_info.h"
 #include "editor/editor_view.h"
 #include "theme/palette.h"
 #include "widgets/color_column.h"
@@ -29,7 +30,9 @@ static EditorModeState* state_of(EditorTab* tab) {
 static void set_echo(EditorTab* tab, const gchar* msg, gboolean error) {
     if (tab == NULL || tab->mode_state == NULL) return;
     EditorModeState* st = state_of(tab);
+    st->diag_shown = FALSE;
     if (st->vim_cl_echo == NULL) return;
+    editor_info_clear_diag_classes(st->vim_cl_echo);
     gtk_label_set_text(GTK_LABEL(st->vim_cl_echo), msg != NULL ? msg : "");
     if (error) gtk_widget_add_css_class(st->vim_cl_echo, "vim-message-error");
     else gtk_widget_remove_css_class(st->vim_cl_echo, "vim-message-error");
