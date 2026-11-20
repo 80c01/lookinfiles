@@ -22,17 +22,16 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
     GtkTextBuffer* buffer = gtk_text_view_get_buffer(tv);
 
     /* The screen line after the last one of the buffer, and its height */
-    GtkTextIter end, line_start;
+    GtkTextIter end;
     gtk_text_buffer_get_end_iter(buffer, &end);
-    line_start = end;
-    gtk_text_iter_set_line_offset(&line_start, 0);
-    GdkRectangle last, first;
+    GdkRectangle last;
     gtk_text_view_get_iter_location(tv, &end, &last);
-    gtk_text_view_get_iter_location(tv, &line_start, &first);
     if (last.height <= 0) return;
     gint wx = 0, wy = 0;
-    gtk_text_view_buffer_to_window_coords(tv, GTK_TEXT_WINDOW_WIDGET, first.x, last.y + last.height, &wx, &wy);
-    graphene_point_t p = GRAPHENE_POINT_INIT((float)wx, (float)wy);
+    gtk_text_view_buffer_to_window_coords(tv, GTK_TEXT_WINDOW_WIDGET, 0, last.y + last.height, &wx, &wy);
+    /* In the first column of the view, over the gutter, as Vim draws them
+     * whatever the number column or the horizontal scroll */
+    graphene_point_t p = GRAPHENE_POINT_INIT(0.0f, (float)wy);
     graphene_point_t q;
     if (!gtk_widget_compute_point(f->view, GTK_WIDGET(area), &p, &q)) return;
 
@@ -84,7 +83,6 @@ GtkWidget* filler_lines_wrap(GtkWidget* child, GtkWidget* view) {
 
     GtkScrollable* s = GTK_SCROLLABLE(view);
     watch_adjustment(f, gtk_scrollable_get_vadjustment(s));
-    watch_adjustment(f, gtk_scrollable_get_hadjustment(s));
     /* A short text does not change the adjustments when lines come and go */
     g_signal_connect_object(gtk_text_view_get_buffer(GTK_TEXT_VIEW(view)), "changed", G_CALLBACK(queue_redraw),
                             f->area, G_CONNECT_SWAPPED);

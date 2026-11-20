@@ -3,7 +3,8 @@
 
 /* Vim's filler lines: a "~" at the start of each screen line below the end
  * of the buffer, drawn over a text view (a non-targetable drawing area in
- * an overlay), in the view's font, scrolling with the text. Colour:
+ * an overlay), in the view's font, in the view's first column (over the
+ * gutter), scrolling with the text. Colour:
  * @accent_fg (Vim's NonText). */
 #include <gtk/gtk.h>
 
