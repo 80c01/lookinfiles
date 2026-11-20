@@ -5,6 +5,7 @@
 #include "widgets/diff_gutter.h"
 #include "code/code_nav.h"
 #include "code/code_help.h"
+#include "code/code_complete.h"
 #include "code/code_intel.h"
 #include "editor/editor_info.h"
 #include "editor/editor_watch.h"
@@ -882,6 +883,12 @@ static void on_view_ctrl_click(GtkGestureClick* gesture, gint n_press, gdouble x
     code_nav_goto_definition(tab->app, tab, FALSE, editor_mode_message);
 }
 
+static gboolean can_auto_complete(EditorTab* tab) {
+    if (tab == NULL || tab->mode == EDITOR_MODE_ORGMODE) return FALSE;
+    if (tab->mode == EDITOR_MODE_VIM) return vim_is_inserting(tab);
+    return TRUE;
+}
+
 void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     if (tab == NULL) return;
     editor_modes_load_css();
@@ -919,6 +926,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     g_signal_connect(ctrl_click, "pressed", G_CALLBACK(on_view_ctrl_click), tab);
     gtk_widget_add_controller(tab->view, GTK_EVENT_CONTROLLER(ctrl_click));
     code_help_attach(app, tab, editor_mode_message);
+    code_complete_attach(app, tab, can_auto_complete);
     code_intel_attach(app, tab);
 
     /* Apply initial mode */
@@ -1092,6 +1100,7 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     (void)keycode;
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
     EditorModeState* st = tab->mode_state;
+    if (code_complete_handle_key(tab, keyval, state)) return TRUE;
     code_help_on_key(tab, keyval);
     gboolean was_c_u = st->emacs_universal_arg;
     gboolean handled = dispatch_key(app, tab, st, keyval, state);

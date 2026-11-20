@@ -4,6 +4,7 @@
 #include "theme/text_tags.h"
 #include "code/code_nav.h"
 #include "code/code_help.h"
+#include "code/code_complete.h"
 #include "code/code_refs.h"
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
@@ -1166,6 +1167,12 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
     if (alt && keyval == GDK_KEY_question) {
         /* xref-find-references */
         code_refs_find(tab->app, tab, editor_mode_message);
+        return TRUE;
+    }
+    if ((alt && !ctrl && keyval == GDK_KEY_slash) ||
+        (alt && ctrl && (keyval == GDK_KEY_i || keyval == GDK_KEY_I))) {
+        /* completion-at-point (C-M-i) / dabbrev-expand (M-/) */
+        code_complete_trigger(tab->app, tab);
         return TRUE;
     }
     if (alt && keyval == GDK_KEY_comma) {

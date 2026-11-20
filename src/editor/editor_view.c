@@ -10,6 +10,7 @@
 #include "widgets/color_column.h"
 #include "widgets/diff_gutter.h"
 #include "code/code_help.h"
+#include "code/code_complete.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
 #include "core/file_types.h"
@@ -430,6 +431,7 @@ void editor_view_release(EditorTab* tab) {
     /* The buffer stays alive while another view shows it: no handler of this
      * tab or its view may run afterwards */
     code_help_detach(tab);
+    code_complete_detach(tab);
     editor_tagbar_release(tab);
     g_signal_handlers_disconnect_by_data(tab->buffer, tab);
     if (tab->view != NULL) {

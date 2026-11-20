@@ -5,6 +5,7 @@
 #include "editor/editor.h"
 #include "code/code_nav.h"
 #include "code/code_help.h"
+#include "code/code_complete.h"
 #include "code/code_refs.h"
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
@@ -710,6 +711,10 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (ctrl && shift && !alt && keyval == GDK_KEY_space) {
         code_help_signature(tab->app, tab);
+        return TRUE;
+    }
+    if (ctrl && !shift && !alt && keyval == GDK_KEY_space) {
+        code_complete_trigger(tab->app, tab);
         return TRUE;
     }
     if (keyval == GDK_KEY_F12 && shift && !ctrl && !alt) {

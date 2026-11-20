@@ -8,6 +8,7 @@
 #include "widgets/diff_gutter.h"
 #include "code/code_nav.h"
 #include "code/code_help.h"
+#include "code/code_complete.h"
 #include "code/code_refs.h"
 #include "code/code_problems.h"
 #include "code/code_symbols.h"
@@ -1089,6 +1090,11 @@ static gboolean engine_idle(VimEngine* engine) {
 gboolean vim_handle_key(EditorTab* tab, EditorModeState* st, guint keyval, GdkModifierType state) {
     if (st->vim == NULL) return FALSE;
     if (st->vim_ctrl_w) return handle_window_command(tab, st, keyval, state);
+    if (vim_is_inserting(tab) && (state & GDK_CONTROL_MASK) &&
+        !(state & (GDK_SHIFT_MASK | GDK_ALT_MASK)) && keyval == GDK_KEY_space) {
+        code_complete_trigger(tab->app, tab);
+        return TRUE;
+    }
     gunichar k = vim_key_from_gdk(keyval, state);
     if (k == 0) return FALSE;
     if (k == VIM_KEY_CTRL('w') && engine_idle(st->vim)) {
@@ -1097,5 +1103,7 @@ gboolean vim_handle_key(EditorTab* tab, EditorModeState* st, guint keyval, GdkMo
         return TRUE;
     }
     if (st->vim_echo_sticky) set_echo(tab, "", FALSE); /* a listing (:reg) goes away */
-    return vim_engine_feed(st->vim, k);
+    gboolean handled = vim_engine_feed(st->vim, k);
+    if (!vim_is_inserting(tab)) code_complete_hide(tab);
+    return handled;
 }
