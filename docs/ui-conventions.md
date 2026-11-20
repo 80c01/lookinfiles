@@ -49,6 +49,9 @@ Check these before adding or changing an action, a tooltip or a dialog:
   button is a verb (`_Create`, `_Rename`, `_Move to Trash`), never `OK`;
   information-only messages have a single `_Close` button; destructive
   confirmations default to Cancel.
+- **Tabs have no close button**: a tab header shows an icon and a name
+  only. A tab closes with `Ctrl+W`, a middle click on its header, its
+  context menu, or a close button in the page's own header bar.
 - **Empty states**: an empty container shows `(empty)`; an empty view shows
   `No <items> yet — press a to add one`.
 - **Icons**: buttons and fixed tab headers use GTK theme icons through

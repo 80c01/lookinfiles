@@ -436,8 +436,11 @@ void games_activate_selected(AppData* app) {
     games_launch(app, row->path);
 }
 
-static void on_game_tab_close_clicked(GtkButton* btn, gpointer user_data) {
-    (void)btn;
+static void on_game_tab_middle_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer user_data) {
+    (void)n_press;
+    (void)x;
+    (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
     GtkWidget* page = GTK_WIDGET(user_data);
     AppData* app = g_object_get_data(G_OBJECT(page), "app-data");
     if (app != NULL) {
@@ -557,20 +560,16 @@ void games_launch(AppData* app, const gchar* game_id) {
     g_object_set_data_full(G_OBJECT(tab_content), "game-id", g_strdup(game_id), g_free);
     g_object_set_data(G_OBJECT(tab_content), "app-data", app);
 
-    /* Tab header: icon, title, close button */
+    /* Tab header: icon and title; closed with Ctrl+W or a middle click */
     GtkWidget* tab_header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     GtkWidget* icon = glyph_image_new("applications-games");
     GtkWidget* label = gtk_label_new(tab_title);
-    GtkWidget* close_btn = icon_button_new("window-close", NULL);
-    gtk_button_set_has_frame(GTK_BUTTON(close_btn), FALSE);
-    gtk_widget_set_focusable(close_btn, FALSE);
-    gtk_widget_add_css_class(close_btn, "tab-close-btn");
-    gtk_widget_set_tooltip_text(close_btn, _("Close Game (Ctrl+W)"));
-    g_signal_connect(close_btn, "clicked", G_CALLBACK(on_game_tab_close_clicked), tab_content);
-
     gtk_box_append(GTK_BOX(tab_header), icon);
     gtk_box_append(GTK_BOX(tab_header), label);
-    gtk_box_append(GTK_BOX(tab_header), close_btn);
+    GtkGesture* mclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
+    g_signal_connect(mclick, "released", G_CALLBACK(on_game_tab_middle_click), tab_content);
+    gtk_widget_add_controller(tab_header, GTK_EVENT_CONTROLLER(mclick));
 
     /* Kept with the page while its workspace is hidden */
     g_object_set_data_full(G_OBJECT(tab_content), "game-tab-label", g_object_ref(tab_header), g_object_unref);
