@@ -557,14 +557,32 @@ void code_intel_shutdown(AppData* app) {
 /* ------------------------------------------------------------------------- */
 
 static const gchar* const DIAG_TAGS[] = {NULL, "lsp-error", "lsp-warning", "lsp-info", "lsp-hint"};
+#define DIAG_ERROR_LINE_TAG "lsp-error-line"
 
 static void ensure_diag_tags(GtkTextBuffer* buf) {
     GtkTextTagTable* table = gtk_text_buffer_get_tag_table(buf);
-    if (gtk_text_tag_table_lookup(table, "lsp-error") != NULL) return;
-    static const gchar* const COLORS[] = {NULL, "@error", "@warning", "@link", "@link"};
-    for (gint i = 1; i <= 4; i++) {
-        /* A plain line: the error (dotted) style is barely visible in GTK 4 */
-        text_tag_create(buf, DIAG_TAGS[i], "underline", PANGO_UNDERLINE_SINGLE, "underline-rgba", COLORS[i], NULL);
+    GtkTextTag* line_tag = gtk_text_tag_table_lookup(table, DIAG_ERROR_LINE_TAG);
+    if (line_tag == NULL) {
+        line_tag = text_tag_create(buf, DIAG_ERROR_LINE_TAG, "paragraph-background", "@diff_removed_bg", NULL);
+    }
+    if (gtk_text_tag_table_lookup(table, "lsp-error") == NULL) {
+        text_tag_create(buf, "lsp-error", "underline", PANGO_UNDERLINE_DOUBLE,
+                        "underline-rgba", "@error", NULL);
+        text_tag_create(buf, "lsp-warning", "underline", PANGO_UNDERLINE_DOUBLE,
+                        "underline-rgba", "@warning", "background", "@bg_code_inline", NULL);
+        text_tag_create(buf, "lsp-info", "underline", PANGO_UNDERLINE_SINGLE,
+                        "underline-rgba", "@link", NULL);
+        text_tag_create(buf, "lsp-hint", "underline", PANGO_UNDERLINE_SINGLE,
+                        "underline-rgba", "@link", NULL);
+    }
+    /* Keep diagnostic tags above GtkSourceBuffer syntax tags */
+    gint top = gtk_text_tag_table_get_size(table) - 1;
+    if (top > 0) {
+        gtk_text_tag_set_priority(line_tag, top);
+        for (gint i = 4; i >= 1; i--) {
+            GtkTextTag* t = gtk_text_tag_table_lookup(table, DIAG_TAGS[i]);
+            if (t != NULL) gtk_text_tag_set_priority(t, top);
+        }
     }
 }
 
@@ -576,28 +594,60 @@ static void iter_at(GtkTextBuffer* buf, GtkTextIter* it, gint line, gint index) 
     gtk_text_iter_set_line_index(it, CLAMP(index, 0, gtk_text_iter_get_line_index(&eol)));
 }
 
-/* Underline the diagnostics of path in its open tab */
-static void apply_diagnostics(AppData* app, const gchar* path) {
-    EditorTab* tab = editor_find_tab(app, path);
-    if (tab == NULL || tab->buffer == NULL) return;
-    GtkTextBuffer* buf = tab->buffer;
+/* Highlight and underline the diagnostics of path in buffer */
+static void apply_diagnostics_to_buffer(AppData* app, GtkTextBuffer* buf, const gchar* path) {
+    if (app == NULL || buf == NULL || path == NULL) return;
     ensure_diag_tags(buf);
     GtkTextIter s, e;
     gtk_text_buffer_get_bounds(buf, &s, &e);
+    gtk_text_buffer_remove_tag_by_name(buf, DIAG_ERROR_LINE_TAG, &s, &e);
     for (gint i = 1; i <= 4; i++) gtk_text_buffer_remove_tag_by_name(buf, DIAG_TAGS[i], &s, &e);
+    gint lines = gtk_text_buffer_get_line_count(buf);
     GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
     for (guint i = 0; diags != NULL && i < diags->len; i++) {
         LspDiagnostic* d = g_ptr_array_index(diags, i);
+        if (d->severity == LSP_SEVERITY_ERROR && lines > 0) {
+            GtkTextIter ls, le;
+            gtk_text_buffer_get_iter_at_line(buf, &ls, CLAMP(d->line, 0, lines - 1));
+            le = ls;
+            if (!gtk_text_iter_ends_line(&le)) gtk_text_iter_forward_to_line_end(&le);
+            if (!gtk_text_iter_is_end(&le)) gtk_text_iter_forward_char(&le);
+            gtk_text_buffer_apply_tag_by_name(buf, DIAG_ERROR_LINE_TAG, &ls, &le);
+        }
         GtkTextIter a, b;
         iter_at(buf, &a, d->line, d->column);
         iter_at(buf, &b, d->end_line, d->end_column);
         if (gtk_text_iter_equal(&a, &b)) {
-            /* Empty range: the word there, or one character */
-            if (gtk_text_iter_inside_word(&b) || gtk_text_iter_starts_word(&b)) gtk_text_iter_forward_word_end(&b);
-            else gtk_text_iter_forward_char(&b);
+            /* Empty range: if at end-of-line (e.g. missing ';'), cover the
+             * preceding visible word/char instead of an invisible newline */
+            if (gtk_text_iter_ends_line(&a)) {
+                if (gtk_text_iter_get_line_offset(&a) > 0) {
+                    gtk_text_iter_backward_char(&a);
+                    if (gtk_text_iter_inside_word(&a)) gtk_text_iter_backward_word_start(&a);
+                }
+            } else if (gtk_text_iter_inside_word(&b) || gtk_text_iter_starts_word(&b)) {
+                gtk_text_iter_forward_word_end(&b);
+            } else {
+                gtk_text_iter_forward_char(&b);
+            }
         }
-        gtk_text_buffer_apply_tag_by_name(buf, DIAG_TAGS[d->severity], &a, &b);
+        if (!gtk_text_iter_equal(&a, &b)) {
+            gtk_text_buffer_apply_tag_by_name(buf, DIAG_TAGS[d->severity], &a, &b);
+        }
     }
+    for (GList* l = app->editors; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t != NULL && t->buffer == buf && t->minimap != NULL) {
+            gtk_widget_queue_draw(t->minimap);
+        }
+    }
+}
+
+/* Highlight and underline the diagnostics of path in its open tab */
+static void apply_diagnostics(AppData* app, const gchar* path) {
+    EditorTab* tab = editor_find_tab(app, path);
+    if (tab == NULL || tab->buffer == NULL) return;
+    apply_diagnostics_to_buffer(app, tab->buffer, path);
 }
 
 static void on_server_notify(LspClient* client, const LspMessage* msg, gpointer data) {
@@ -817,6 +867,12 @@ void code_intel_attach(AppData* app, EditorTab* tab) {
     ss->buffer = tab->buffer;
     g_object_set_data_full(G_OBJECT(tab->buffer), SYNC_TIMER_KEY, ss, sync_state_free);
     g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_buffer_changed), ss);
+    /* Re-apply any diagnostics already known for this file */
+    gchar* canon = g_canonicalize_filename(tab->path, NULL);
+    if (g_hash_table_contains(intel_of(app)->diagnostics, canon)) {
+        apply_diagnostics_to_buffer(app, tab->buffer, canon);
+    }
+    g_free(canon);
     /* A source file with a server: start it now, its diagnostics follow */
     if (tab_lang(tab) != CODE_LANG_NONE && command_of(intel_of(app), tab_lang(tab)) != NULL) schedule_sync(ss, 50);
 }
