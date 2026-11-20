@@ -792,6 +792,9 @@ static void vim_update_status(EditorTab* tab, EditorModeState* st, const EditorI
     g_string_free(file, TRUE);
 
     GString* text = g_string_new(NULL);
+    if (info->server && info->backend != NULL) {
+        g_string_append_printf(text, "%s  ", info->backend);
+    }
     if (info->errors > 0 || info->warnings > 0) {
         g_string_append_printf(text, "E:%u W:%u  ", info->errors, info->warnings);
     }

@@ -47,6 +47,10 @@ while True:
     elif method == "initialized":
         write({"jsonrpc": "2.0", "id": "srv1", "method": "window/workDoneProgress/create",
                "params": {"token": "t"}})
+        write({"jsonrpc": "2.0", "id": 0, "method": "workspace/configuration",
+               "params": {"items": [{"section": "python"}, {"section": "pyright"}]}})
+    elif method == "workspace/didChangeConfiguration":
+        pass
     elif method == "textDocument/didOpen":
         docs[msg["params"]["textDocument"]["uri"]] = msg["params"]["textDocument"]["text"]
     elif method == "textDocument/didChange":
@@ -93,6 +97,7 @@ while True:
     elif method == "exit":
         break
     elif mid is not None and "method" not in msg:
-        pass  # answer to our server request
+        if mid == 0 and msg.get("result") != [{}, {}]:
+            sys.exit(4)
     elif mid is not None:
         write({"jsonrpc": "2.0", "id": mid, "error": {"code": -32601, "message": "unknown"}})

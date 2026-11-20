@@ -147,6 +147,9 @@ static void on_initialized(LspClient* c, const LspMessage* msg, gpointer data) {
     }
     c->caps = lsp_parse_capabilities(msg->result);
     send_now(c, lsp_notification("initialized", "{}"));
+    /* Push an empty configuration so servers that wait for it (e.g. pyright)
+     * finish workspace initialization and publish diagnostics */
+    send_now(c, lsp_notification("workspace/didChangeConfiguration", "{\"settings\":{}}"));
     c->state = LSP_CLIENT_READY;
     while (!g_queue_is_empty(c->queued)) send_now(c, g_queue_pop_head(c->queued));
     if (c->on_state != NULL) c->on_state(c, LSP_CLIENT_READY, c->state_data);
@@ -161,7 +164,7 @@ static void handle(LspClient* c, LspMessage* msg) {
                 const JsonValue* items = msg->params != NULL ? json_value_get(msg->params, "items") : NULL;
                 GString* arr = g_string_new("[");
                 for (guint i = 0; items != NULL && i < json_value_get_length(items); i++) {
-                    g_string_append(arr, i > 0 ? ",null" : "null");
+                    g_string_append(arr, i > 0 ? ",{}" : "{}");
                 }
                 g_string_append_c(arr, ']');
                 result = g_string_free(arr, FALSE);

@@ -192,9 +192,10 @@ gchar* lsp_params_initialize(gint pid, const gchar* root_path) {
                     "\"completion\":{\"completionItem\":{\"snippetSupport\":false,"
                     "\"documentationFormat\":[\"markdown\",\"plaintext\"]}},"
                     "\"rename\":{\"prepareSupport\":true},"
-                    "\"publishDiagnostics\":{}},"
+                    "\"publishDiagnostics\":{\"relatedInformation\":true}},"
                     "\"workspace\":{\"symbol\":{},\"workspaceEdit\":{\"documentChanges\":true},"
-                    "\"workspaceFolders\":true,\"configuration\":false},"
+                    "\"workspaceFolders\":true,\"configuration\":true,"
+                    "\"didChangeConfiguration\":{\"dynamicRegistration\":false}},"
                     "\"window\":{\"workDoneProgress\":false}}}");
     return g_string_free(s, FALSE);
 }

@@ -72,6 +72,7 @@ static void test_requests(void) {
     g_assert_nonnull(m);
     lsp_message_free(m);
     g_assert_nonnull(strstr(p, "\"rootUri\":\"file:///w/proj\""));
+    g_assert_nonnull(strstr(p, "\"configuration\":true"));
     g_free(p);
     gchar* reply = lsp_reply("\"abc\"", NULL);
     g_assert_cmpstr(reply, ==, "{\"jsonrpc\":\"2.0\",\"id\":\"abc\",\"result\":null}");
