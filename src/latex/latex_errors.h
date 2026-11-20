@@ -23,4 +23,8 @@ void latex_errors_workspace_hidden(AppData* app, VirtualLayout* ws);
 void latex_errors_workspace_shown(AppData* app, VirtualLayout* ws);
 void latex_errors_workspace_removed(AppData* app, VirtualLayout* ws);
 
+/* Close the LaTeX tab if it has the focus or is the current page of
+ * app->notebook (Ctrl+W). Returns TRUE when closed. */
+gboolean latex_errors_close_shown(AppData* app);
+
 #endif /* LATEX_ERRORS_H */

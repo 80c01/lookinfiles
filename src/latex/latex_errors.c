@@ -419,3 +419,21 @@ void latex_errors_workspace_removed(AppData* app, VirtualLayout* ws) {
     }
     g_clear_object(&ws->latex_page);
 }
+
+/* page has the focus, or is the current page of the preview notebook, and shows */
+static gboolean page_shown(AppData* app, GtkWidget* page) {
+    if (page == NULL || app->notebook == NULL) return FALSE;
+    GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
+    gboolean focused = focus != NULL && (focus == page || gtk_widget_is_ancestor(focus, page));
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    if (!focused && gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, page)) return FALSE;
+    return gtk_widget_get_mapped(page);
+}
+
+gboolean latex_errors_close_shown(AppData* app) {
+    if (app == NULL) return FALSE;
+    LatexPage* lp = page_state(app->latex_page);
+    if (lp == NULL || !page_shown(app, app->latex_page)) return FALSE;
+    on_close_clicked(NULL, lp);
+    return TRUE;
+}

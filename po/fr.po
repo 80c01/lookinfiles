@@ -11697,3 +11697,17 @@ msgstr "suggestion"
 
 msgid "No diagnostics in this file"
 msgstr "Aucun diagnostic dans ce fichier"
+
+#: src/chrome/help.c
+msgid "References, Search, Problems and LaTeX tabs"
+msgstr "Onglets Références, Recherche, Problèmes et LaTeX"
+
+msgid "Close the tab (also its cross or a middle click)"
+msgstr "Fermer l’onglet (aussi sa croix ou un clic milieu)"
+
+msgctxt "key"
+msgid "Drag / right-click tab"
+msgstr "Glisser / clic droit sur l’onglet"
+
+msgid "Move the tab to another pane, as an editor tab"
+msgstr "Déplacer l’onglet dans un autre volet, comme un onglet d’édition"

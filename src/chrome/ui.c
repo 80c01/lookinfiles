@@ -30,6 +30,8 @@
 #include "search/project_search.h"
 #include "search/deep_search_tab.h"
 #include "code/code_problems.h"
+#include "code/code_refs.h"
+#include "latex/latex_errors.h"
 #include "workspace/session.h"
 
 
@@ -178,7 +180,7 @@ void close_shown_tab(AppData* app) {
         if (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app)) {
             return;
         }
-        if (code_problems_close_shown(app)) {
+        if (code_problems_close_shown(app) || code_refs_close_shown(app) || latex_errors_close_shown(app)) {
             return;
         }
     }

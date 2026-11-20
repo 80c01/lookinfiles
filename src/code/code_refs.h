@@ -46,4 +46,8 @@ void code_refs_workspace_hidden(AppData* app, VirtualLayout* ws);
 void code_refs_workspace_shown(AppData* app, VirtualLayout* ws);
 void code_refs_workspace_removed(AppData* app, VirtualLayout* ws);
 
+/* Close the References or Search tab if it has the focus or is the current
+ * page of app->notebook (Ctrl+W). Returns TRUE when closed. */
+gboolean code_refs_close_shown(AppData* app);
+
 #endif /* CODE_REFS_H */

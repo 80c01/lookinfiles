@@ -779,3 +779,26 @@ gboolean code_refs_find(AppData* app, EditorTab* tab, CodeNavMessageFunc message
     g_free(name);
     return TRUE;
 }
+
+/* page has the focus, or is the current page of the preview notebook, and shows */
+static gboolean page_shown(AppData* app, GtkWidget* page) {
+    if (page == NULL || app->notebook == NULL) return FALSE;
+    GtkWidget* focus = app->window != NULL ? gtk_window_get_focus(app->window) : NULL;
+    gboolean focused = focus != NULL && (focus == page || gtk_widget_is_ancestor(focus, page));
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    if (!focused && gtk_notebook_get_current_page(nb) != gtk_notebook_page_num(nb, page)) return FALSE;
+    return gtk_widget_get_mapped(page);
+}
+
+gboolean code_refs_close_shown(AppData* app) {
+    if (app == NULL) return FALSE;
+    GtkWidget* pages[] = {app->refs_page, app->search_page};
+    for (gsize i = 0; i < G_N_ELEMENTS(pages); i++) {
+        RefsPage* rp = page_state(pages[i]);
+        if (rp != NULL && page_shown(app, pages[i])) {
+            on_close_clicked(NULL, rp);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
