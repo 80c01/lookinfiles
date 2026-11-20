@@ -1,7 +1,9 @@
 /* Language servers for code navigation (see code_intel.h) */
 #include "code/code_intel.h"
+#include "code/code_lint.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
+#include "core/i18n.h"
 #include "theme/text_tags.h"
 #include "code/code_index.h"
 #include "editor/editor.h"
@@ -517,13 +519,18 @@ gchar* code_intel_server_status(AppData* app, EditorTab* tab, guint* errors, gui
     *errors = *warnings = 0;
     if (app == NULL || app->code_intel == NULL) return NULL;
     Server* s = server_for(app, tab, FALSE);
-    if (s == NULL) return NULL;
-    switch (lsp_client_get_state(s->client)) {
-        case LSP_CLIENT_READY:
-            count_diagnostics(app, tab, errors, warnings);
-            return g_strdup(lsp_client_get_name(s->client));
-        case LSP_CLIENT_STARTING: return g_strdup_printf("%s (starting)", s->name);
-        case LSP_CLIENT_FAILED: break;
+    if (s != NULL) {
+        switch (lsp_client_get_state(s->client)) {
+            case LSP_CLIENT_READY:
+                count_diagnostics(app, tab, errors, warnings);
+                return g_strdup(lsp_client_get_name(s->client));
+            case LSP_CLIENT_STARTING: return g_strdup_printf("%s (starting)", s->name);
+            case LSP_CLIENT_FAILED: break;
+        }
+    }
+    if (tab != NULL && tab->path != NULL && code_lint_source_name(tab->path) != NULL) {
+        count_diagnostics(app, tab, errors, warnings);
+        return g_strdup(_("built-in"));
     }
     return NULL;
 }
@@ -820,7 +827,27 @@ typedef struct {
     AppData* app;
     GtkTextBuffer* buffer;
     guint timer;
+    GCancellable* lint_canc;
+    guint lint_serial;
 } SyncState;
+
+typedef struct {
+    AppData* app;
+    GtkTextBuffer* buffer; /* weak-checked via sync_tab() on completion */
+    gchar* canon_path;
+    gchar* text;
+    gsize len;
+    guint serial;
+    GPtrArray* diags;
+} LintJob;
+
+static void lint_job_free(gpointer data) {
+    LintJob* j = data;
+    g_free(j->canon_path);
+    g_free(j->text);
+    if (j->diags != NULL) g_ptr_array_unref(j->diags);
+    g_free(j);
+}
 
 static EditorTab* sync_tab(SyncState* ss) {
     for (GList* l = ss->app->editors; l != NULL; l = l->next) {
@@ -830,13 +857,81 @@ static EditorTab* sync_tab(SyncState* ss) {
     return NULL;
 }
 
+static void lint_worker(GTask* task, gpointer src, gpointer task_data, GCancellable* canc) {
+    (void)src;
+    LintJob* j = task_data;
+    if (g_cancellable_is_cancelled(canc)) {
+        g_task_return_boolean(task, FALSE);
+        return;
+    }
+    j->diags = code_lint_check(j->canon_path, j->text, j->len);
+    g_task_return_boolean(task, !g_cancellable_is_cancelled(canc));
+}
+
+static void on_lint_done(GObject* src, GAsyncResult* res, gpointer data) {
+    (void)src; (void)data;
+    GTask* task = G_TASK(res);
+    LintJob* j = g_task_get_task_data(task);
+    if (j == NULL || j->app == NULL || j->app->code_intel == NULL) return;
+    if (!g_task_propagate_boolean(task, NULL)) return;
+
+    /* Find an open tab still using this buffer */
+    EditorTab* tab = NULL;
+    for (GList* l = j->app->editors; l != NULL; l = l->next) {
+        EditorTab* t = l->data;
+        if (t != NULL && t->buffer == j->buffer) {
+            tab = t;
+            break;
+        }
+    }
+    if (tab == NULL) return;
+    SyncState* ss = g_object_get_data(G_OBJECT(j->buffer), SYNC_TIMER_KEY);
+    if (ss == NULL || ss->lint_serial != j->serial) return;
+    /* LSP always wins if a server started in the meantime */
+    if (server_for(j->app, tab, FALSE) != NULL) return;
+
+    GPtrArray* diags = j->diags;
+    j->diags = NULL;
+    g_hash_table_replace(intel_of(j->app)->diagnostics, g_strdup(j->canon_path), diags);
+    apply_diagnostics_to_buffer(j->app, j->buffer, j->canon_path);
+    app_emit(j->app, APP_EVENT_STATUS_CHANGED);
+    app_emit(j->app, APP_EVENT_DIAGNOSTICS_CHANGED);
+}
+
+static void start_builtin_lint(SyncState* ss, EditorTab* tab) {
+    if (tab == NULL || tab->path == NULL || tab->buffer == NULL) return;
+    if (ss->lint_canc != NULL) {
+        g_cancellable_cancel(ss->lint_canc);
+        g_clear_object(&ss->lint_canc);
+    }
+    ss->lint_serial++;
+    ss->lint_canc = g_cancellable_new();
+
+    LintJob* j = g_new0(LintJob, 1);
+    j->app = ss->app;
+    j->buffer = ss->buffer;
+    j->canon_path = g_canonicalize_filename(tab->path, NULL);
+    j->text = buffer_text(tab->buffer);
+    j->len = strlen(j->text);
+    j->serial = ss->lint_serial;
+
+    GTask* task = g_task_new(NULL, ss->lint_canc, on_lint_done, NULL);
+    g_task_set_task_data(task, j, lint_job_free);
+    g_task_run_in_thread(task, lint_worker);
+    g_object_unref(task);
+}
+
 static gboolean on_sync_timer(gpointer data) {
     SyncState* ss = data;
     ss->timer = 0;
     EditorTab* tab = sync_tab(ss);
     if (tab == NULL) return G_SOURCE_REMOVE;
     Server* s = server_for(ss->app, tab, TRUE);
-    if (s != NULL) sync_documents(ss->app, s, tab);
+    if (s != NULL) {
+        sync_documents(ss->app, s, tab);
+    } else if (tab->path != NULL && code_lint_source_name(tab->path) != NULL) {
+        start_builtin_lint(ss, tab);
+    }
     return G_SOURCE_REMOVE;
 }
 
@@ -848,14 +943,22 @@ static void schedule_sync(SyncState* ss, guint delay) {
 static void on_buffer_changed(GtkTextBuffer* buffer, gpointer data) {
     (void)buffer;
     SyncState* ss = data;
-    /* Only once a server runs for the tab: edits never start one */
+    /* Only once a server runs for the tab, or for built-in structured formats */
     EditorTab* tab = sync_tab(ss);
-    if (tab != NULL && server_for(ss->app, tab, FALSE) != NULL) schedule_sync(ss, SYNC_DELAY_MS);
+    if (tab == NULL) return;
+    if (server_for(ss->app, tab, FALSE) != NULL ||
+        (tab->path != NULL && code_lint_source_name(tab->path) != NULL)) {
+        schedule_sync(ss, SYNC_DELAY_MS);
+    }
 }
 
 static void sync_state_free(gpointer p) {
     SyncState* ss = p;
     if (ss->timer != 0) g_source_remove(ss->timer);
+    if (ss->lint_canc != NULL) {
+        g_cancellable_cancel(ss->lint_canc);
+        g_clear_object(&ss->lint_canc);
+    }
     g_free(ss);
 }
 
@@ -873,6 +976,9 @@ void code_intel_attach(AppData* app, EditorTab* tab) {
         apply_diagnostics_to_buffer(app, tab->buffer, canon);
     }
     g_free(canon);
-    /* A source file with a server: start it now, its diagnostics follow */
-    if (tab_lang(tab) != CODE_LANG_NONE && command_of(intel_of(app), tab_lang(tab)) != NULL) schedule_sync(ss, 50);
+    /* Start LSP server if configured, else run built-in JSON/TOML/YAML/XML checker */
+    if ((tab_lang(tab) != CODE_LANG_NONE && command_of(intel_of(app), tab_lang(tab)) != NULL) ||
+        code_lint_source_name(tab->path) != NULL) {
+        schedule_sync(ss, 50);
+    }
 }

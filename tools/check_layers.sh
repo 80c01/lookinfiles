@@ -239,6 +239,7 @@ theme_store:fonts,palette,app_paths
 text_tags:fonts,palette
 lsp_protocol:code_symbol,json_view
 lsp_edit:lsp_protocol,code_symbol
+code_lint:file_types,lsp_protocol,preview_doc,json_view,toml_view,yaml_view,xml_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
 layout_store:app_paths,tab_tree,i18n

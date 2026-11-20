@@ -40,7 +40,7 @@ Emacs, Vim). The modules are described in
 
 | Layer | Modules |
 |---|---|
-| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup, workspace symbol search), `code_tags` (ctags), `lsp_protocol`, `lsp_edit` (text edit application, buffer identifier extraction), `lsp_client`, `lsp_config`, `jump_list` |
+| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup, workspace symbol search), `code_tags` (ctags), `lsp_protocol`, `lsp_edit` (text edit application, buffer identifier extraction), `code_lint` (built-in JSON/TOML/YAML/XML syntax diagnostics), `lsp_client`, `lsp_config`, `jump_list` |
 | 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_problems` (Problems tab, diagnostic stepping), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (file symbol picker), `code_workspace_symbols` (project symbol picker), `code_complete` (autocompletion popover), `code_rename` (multi-file LSP rename), `editor_tagbar` (tagbar) |
 
 ## Backends

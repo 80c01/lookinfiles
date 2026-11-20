@@ -2,6 +2,7 @@
 #include "code/code_help.h"
 #include "theme/text_tags.h"
 #include "code/code_intel.h"
+#include "code/code_lint.h"
 #include "code/code_scan.h"
 #include "core/i18n.h"
 #include "markup/markdown.h"
@@ -327,7 +328,19 @@ static void on_hover(AppData* app, EditorTab* tab, const gchar* markdown, gpoint
 
 /* Help for the identifier at it (from the keyboard, or under the mouse) */
 static void request_help(CodeHelp* h, const GtkTextIter* it, CardKind kind) {
+    gchar* diagnostics = code_intel_diagnostics_at(h->app, h->tab, gtk_text_iter_get_line(it),
+                                                   gtk_text_iter_get_line_index(it));
     if (!code_nav_is_code(h->tab)) {
+        if (diagnostics != NULL) {
+            code_help_hide(h->tab);
+            g_free(h->diagnostics);
+            h->diagnostics = diagnostics;
+            h->asked = kind;
+            h->anchor_line = gtk_text_iter_get_line(it);
+            h->anchor_index = gtk_text_iter_get_line_index(it);
+            show_card(h, kind, diagnostics);
+            return;
+        }
         if (kind == CARD_HELP && h->message != NULL) h->message(h->tab, _("No code information for this file type"));
         return;
     }
@@ -338,8 +351,6 @@ static void request_help(CodeHelp* h, const GtkTextIter* it, CardKind kind) {
     gchar* line = gtk_text_iter_get_slice(&s, &e);
     gint ws = 0, we = 0;
     CodeLang lang = code_lang_from_name(h->tab->path);
-    gchar* diagnostics = code_intel_diagnostics_at(h->app, h->tab, gtk_text_iter_get_line(it),
-                                                   gtk_text_iter_get_line_index(it));
     if (!code_word_at(line, -1, gtk_text_iter_get_line_index(it), lang, &ws, &we)) {
         g_free(line);
         if (diagnostics != NULL) {
@@ -602,7 +613,9 @@ static void cancel_hover(CodeHelp* h) {
 static gboolean on_hover_timer(gpointer data) {
     CodeHelp* h = data;
     h->hover_timer = 0;
-    if (!code_nav_is_code(h->tab) || h->showing == CARD_SIGNATURE) return G_SOURCE_REMOVE;
+    if ((!code_nav_is_code(h->tab) && code_lint_source_name(h->tab->path) == NULL) || h->showing == CARD_SIGNATURE) {
+        return G_SOURCE_REMOVE;
+    }
     GtkTextView* view = GTK_TEXT_VIEW(h->tab->view);
     gint bx = 0, by = 0;
     gtk_text_view_window_to_buffer_coords(view, GTK_TEXT_WINDOW_WIDGET, (gint)h->mouse_x, (gint)h->mouse_y, &bx, &by);

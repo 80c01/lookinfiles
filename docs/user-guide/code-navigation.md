@@ -53,9 +53,11 @@ repository of the file, else its folder), and falls back to the next one:
 The bar at the bottom of an editor tab shows the source it uses: the server's name,
 `ctags` or the built-in index.
 
-With a language server, errors are underlined in red and warnings in
-yellow, counted in the bar of the editor tab, and explained when the mouse rests on
-them.
+With a language server, errors are highlighted in red and warnings underlined in
+yellow, counted in the bar of the editor tab, listed in the **Problems** panel,
+and explained when the mouse rests on them. For JSON, TOML, YAML and XML files,
+the built-in parsers provide live syntax diagnostics automatically with no server
+needed.
 
 Without a server, references are whole-word matches (comments and strings
 included), and when no definition is found the editor goes to the first

@@ -57,9 +57,11 @@ dépôt git du fichier, sinon son dossier), et se rabat sur la suivante :
 La barre en bas d’un onglet d’édition indique la source utilisée : le nom
 du serveur, `ctags` ou l’index intégré.
 
-Avec un serveur de langage, les erreurs sont soulignées en rouge et les
-avertissements en jaune, comptés dans la barre de l’onglet d’édition, et
-expliqués quand la souris reste dessus.
+Avec un serveur de langage, les erreurs sont surlignées en rouge et les
+avertissements soulignés en jaune, comptés dans la barre de l’onglet d’édition,
+listés dans le panneau **Problèmes** et expliqués quand la souris reste dessus.
+Pour les fichiers JSON, TOML, YAML et XML, les parseurs intégrés fournissent
+automatiquement des diagnostics de syntaxe en direct sans serveur externe.
 
 Sans serveur, les références sont des correspondances de mots entiers
 (commentaires et chaînes compris), et quand aucune définition n’est trouvée

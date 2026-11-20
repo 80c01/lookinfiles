@@ -597,7 +597,8 @@ Layers, from bottom to top
   markup; `FONT_SCALE_*` for headings, titles, captions and code in
   rendered documents; `fonts_math_family()` for TeX formulas (serif, not
   themed).
-- `lsp_protocol`, `lsp_edit`, `lsp_client`, `lsp_config` — Language Server Protocol:
+- `lsp_protocol`, `lsp_edit`, `code_lint`, `lsp_client`, `lsp_config` — Language Server Protocol
+  (and built-in syntax diagnostics for JSON, TOML, YAML and XML via `code_lint` when no server runs):
   messages and results (positions: UTF-16 unless the server chose UTF-8,
   `lsp_column_to_byte()`), one server process spoken to asynchronously on the
   main context (`LspClient`: queued until initialized, server requests
