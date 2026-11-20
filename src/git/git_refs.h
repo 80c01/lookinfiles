@@ -6,9 +6,9 @@
 /* Kind of a git ref pointing to a commit, in display order */
 typedef enum {
     GIT_REF_HEAD = 0, /* checked-out branch, or detached HEAD */
-    GIT_REF_BRANCH,   /* local branch (refs/heads/*) */
-    GIT_REF_TAG,      /* lightweight or annotated tag (refs/tags/*) */
-    GIT_REF_REMOTE    /* remote-tracking branch (refs/remotes/*) */
+    GIT_REF_BRANCH,   /* local branch (refs/heads/…) */
+    GIT_REF_TAG,      /* lightweight or annotated tag (refs/tags/…) */
+    GIT_REF_REMOTE    /* remote-tracking branch (refs/remotes/…) */
 } GitRefKind;
 
 /* One branch or tag pointing to a commit (git_read_refs()) */
