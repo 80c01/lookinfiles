@@ -126,7 +126,7 @@ HANDMADE = {
 ALIASES = {
     "word": ("blue", ["odt", "ott", "fodt", "rtf"]),
     "xls": ("green", ["ods", "ots", "fods"]),
-    "db": ("pink", ["sqlite", "sqlite3", "db", "db3"]),
+    "db": ("pink", ["sqlite", "sqlite3", "db", "db3", "parquet", "parq", "pqt"]),
 }
 
 

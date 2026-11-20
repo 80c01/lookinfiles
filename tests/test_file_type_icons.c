@@ -36,6 +36,7 @@ static void test_aliases(void) {
     assert_icon("letter.odt", "word", "blue");
     assert_icon("budget.ods", "xls", "green");
     assert_icon("cache.sqlite", "db", "pink");
+    assert_icon("trips.parquet", "db", "pink");
 }
 
 static void test_compound_extensions(void) {

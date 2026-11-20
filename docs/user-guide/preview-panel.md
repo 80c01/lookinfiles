@@ -35,6 +35,7 @@ panel.
 | Fonts | Names, details and samples |
 | Programs and libraries (ELF) | Architecture, linked libraries, exported symbols |
 | SQLite databases | Tables and views with their columns and first rows (opened read-only) |
+| Apache Parquet files | The first 100 rows as a table, then the schema, row groups and metadata |
 | Anything else | A hex dump of the first 64 KB |
 | A folder | Totals, file types, git changes, every entry, and its README rendered below |
 

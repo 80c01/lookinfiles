@@ -12,6 +12,7 @@ compilation. Installez-la, puis relancez `make` :
 | « Aperçu PDF désactivé » | `libpoppler-glib-dev` |
 | Les bases SQLite n’affichent que les détails du fichier | `libsqlite3-dev` |
 | Les fichiers 7z, RAR, xz, zstd, ISO ou RPM ne sont pas listés | `libarchive-dev` |
+| Les colonnes Parquet indiquent « la compression ZSTD n’est pas prise en charge » | `libzstd-dev` |
 
 Un programme sert à l’exécution, sans recompiler :
 

@@ -90,6 +90,16 @@ format.
   per-file summary, logs coloured by level and shown from their end, manual
   pages formatted like `man` (gzipped ones too), calendars (`.ics`), contacts
   (`.vcf`) and `.desktop` entries as cards.
+- Apache Parquet files (`.parquet`, or any file starting with `PAR1`): the
+  first 100 rows as a table, like a data viewer shows them (dates,
+  timestamps, decimals, UUIDs and lists as their values; nulls named),
+  then the schema (type, repetition, encodings, compression and size of
+  each column), the row groups and the key / value metadata. Only the
+  footer and the first pages of each column are read; Snappy, GZIP, LZ4
+  and ZSTD (with libzstd) pages, PLAIN, dictionary, RLE, `DELTA_*` and
+  `BYTE_STREAM_SPLIT` values. A column that cannot be decoded (Brotli or
+  LZO pages, a damaged page) says so below the table; an encrypted footer
+  is only named.
 - Archives (`.zip`, `.jar`, `.tar`, `.tar.gz`, `.a`, `.deb`...) listed with sizes and
   dates; a gzipped file shows its content. Certificates and keys (PEM, DER):
   subject, issuer, validity, alternative names, key, fingerprints (private
@@ -251,7 +261,7 @@ every common format to L3 and never leave one below L1.
   `LOOKIN_DEBUG_PREVIEW=1` prints the time from selection to display
   (`LOOKIN_PROFILE`, docs/performance.md, also does).
 
-## Coverage (updated 2026-11-15)
+## Coverage (updated 2026-11-20)
 
 | Format | Level | Module |
 |--------|-------|--------|
@@ -274,6 +284,7 @@ every common format to L3 and never leave one below L1.
 | Jupyter notebooks | L3 | `notebook` |
 | Spreadsheets `.xlsx` / `.ods` | L3 | `spreadsheet` |
 | SQLite (libsqlite3, optional) | L3 | `sqlite_view` |
+| Apache Parquet: first rows, schema, row groups, metadata (ZSTD pages with libzstd, optional) | L3 | `parquet_view`, `parquet_meta`, `parquet_pages` |
 | Fonts | L3 | `font_info` |
 | Word `.docx`: pages (size, margins, header / footer on each page); `m`: text with fonts, colours, paragraph layout, lists, tables, header / footer | L3 | `docx`, `docx_styles`, `doc_writer`, `doc_pages` |
 | OpenDocument `.odt`: pages from the styles (fonts, colours, spacing, lists, tables, pictures, master page); `m`: text (HTML) | L3 | `odt_reader`, `odp_styles`, `doc_pages`, `odf` |

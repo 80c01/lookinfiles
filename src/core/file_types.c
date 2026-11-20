@@ -261,6 +261,7 @@ static const struct {
     { "pcap", FILE_KIND_PCAP },
     { "pcapng", FILE_KIND_PCAP },
     { "cap", FILE_KIND_PCAP },
+    { "parquet", FILE_KIND_PARQUET }, { "parq", FILE_KIND_PARQUET }, { "pqt", FILE_KIND_PARQUET },
 };
 
 /* Manual page section suffix: "1".."9", optionally followed by letters ("3pm", "1ssl") */
@@ -416,6 +417,7 @@ const gchar* file_kind_label(FileKind kind) {
     case FILE_KIND_PYC:          return NC_("file kind", "Python Bytecode");
     case FILE_KIND_TFM:          return NC_("file kind", "TeX Font Metric");
     case FILE_KIND_PCAP:         return NC_("file kind", "Packet Capture");
+    case FILE_KIND_PARQUET:      return "Parquet";
     }
     return NULL;
 }
@@ -563,6 +565,9 @@ static FileKind detect_binary_magic(const gchar* name, const guchar* head, gsize
     }
     if (HAS(0, "\x0A\x0D\x0D\x0A") && (by_name == FILE_KIND_PCAP || len >= 12)) {
         return FILE_KIND_PCAP; /* pcapng capture */
+    }
+    if (HAS(0, "PAR1") || (HAS(0, "PARE") && by_name == FILE_KIND_PARQUET)) {
+        return FILE_KIND_PARQUET; /* Apache Parquet (the footer is encrypted with PARE) */
     }
     if (len >= 4 && head[2] == '\r' && head[3] == '\n') {
         guint16 pym = (guint16)(head[0] | (head[1] << 8));

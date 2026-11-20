@@ -27,7 +27,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libgtk-4-dev libgit2-dev \
             libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev \
-            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev libgstreamer-plugins-base1.0-dev
+            libsqlite3-dev libarchive-dev libzstd-dev libwebkitgtk-6.0-dev libgstreamer-plugins-base1.0-dev
 
       - name: Build .deb
         run: ./packaging/debian/build_deb.sh artifacts/
@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Install build tools & dependencies
         run: |
-          pacman -Syu --noconfirm --needed base-devel git gtk4 libgit2 vte4 gtksourceview5 poppler-glib sqlite webkitgtk-6.0 libarchive
+          pacman -Syu --noconfirm --needed base-devel git gtk4 libgit2 vte4 gtksourceview5 poppler-glib sqlite webkitgtk-6.0 libarchive zstd
 
       - uses: actions/checkout@v7
         with:
@@ -87,7 +87,7 @@ jobs:
         run: |
           dnf install -y gcc make pkgconfig desktop-file-utils libappstream-glib rpmdevtools \
             gtk4-devel libgit2-devel vte291-gtk4-devel gtksourceview5-devel poppler-glib-devel sqlite-devel \
-            webkitgtk6.0-devel libarchive-devel gstreamer1-plugins-base-devel git
+            webkitgtk6.0-devel libarchive-devel libzstd-devel gstreamer1-plugins-base-devel git
 
       - uses: actions/checkout@v7
         with:
@@ -124,7 +124,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libgtk-4-dev libgit2-dev \
             libvte-2.91-gtk4-dev libgtksourceview-5-dev libpoppler-glib-dev \
-            libsqlite3-dev libarchive-dev libwebkitgtk-6.0-dev curl file appstream
+            libsqlite3-dev libarchive-dev libzstd-dev libwebkitgtk-6.0-dev curl file appstream
           sudo apt-get install -y libfuse2t64 || sudo apt-get install -y libfuse2 || true
 
       - name: Build AppImage
@@ -158,6 +158,7 @@ jobs:
             mingw-w64-ucrt-x86_64-poppler
             mingw-w64-ucrt-x86_64-sqlite3
             mingw-w64-ucrt-x86_64-libarchive
+            mingw-w64-ucrt-x86_64-zstd
             diffutils
             make
             unzip

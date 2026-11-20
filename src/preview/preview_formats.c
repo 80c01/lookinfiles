@@ -39,6 +39,7 @@
 #include "office/spreadsheet.h"
 #include "core/text_encoding.h"
 #include "formats/sqlite_view.h"
+#include "formats/parquet_view.h"
 #include "formats/pcap_info.h"
 #include "formats/pyc_info.h"
 #include "formats/tfm_info.h"
@@ -90,6 +91,19 @@ static void append_doc(PreviewDoc* doc, const PreviewDoc* src) {
         }
         preview_doc_add_span(doc, base + span->start, base + span->end, span->style);
     }
+}
+
+/* A binary format: its body under a "label · size" title */
+static PreviewDoc* titled_body(const PreviewInput* in, const gchar* label, const PreviewDoc* body) {
+    PreviewDoc* doc = preview_doc_new();
+    doc->monospace = TRUE;
+    doc->wrap = FALSE;
+    gchar* size = preview_format_size(in->size);
+    gchar* subtitle = g_strdup_printf("%s · %s", label, size);
+    preview_doc_title(doc, in->name, subtitle);
+    g_free(subtitle); g_free(size);
+    append_doc(doc, body);
+    return doc;
 }
 
 /* --- CSV / TSV --- */
@@ -403,16 +417,7 @@ static PreviewDoc* build_certificate(const PreviewInput* in, GCancellable* cance
     gboolean ok = cert_view_append(body, (const guchar*)data, len, g_get_real_time() / G_USEC_PER_SEC,
                                    error);
     g_free(data);
-    if (!ok) return NULL;
-    PreviewDoc* doc = preview_doc_new();
-    doc->monospace = TRUE;
-    doc->wrap = FALSE;
-    gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("%s · %s", in->text != NULL ? "PEM" : "DER", size);
-    preview_doc_title(doc, in->name, subtitle);
-    g_free(subtitle); g_free(size);
-    append_doc(doc, body);
-    return doc;
+    return ok ? titled_body(in, in->text != NULL ? "PEM" : "DER", body) : NULL;
 }
 
 /* --- Calendars, contacts, desktop entries --- */
@@ -559,24 +564,20 @@ static PreviewDoc* build_translation(const PreviewInput* in, GCancellable* cance
     return doc;
 }
 
-/* --- SQLite databases --- */
+/* --- SQLite databases, Apache Parquet --- */
 
 static PreviewDoc* build_database(const PreviewInput* in, GCancellable* cancellable, GError** error) {
     (void)cancellable;
     g_autoptr(PreviewDoc) body = preview_doc_new();
-    if (!sqlite_view_append(body, in->path, in->head, in->head_len, error)) {
-        return NULL;
-    }
-    PreviewDoc* doc = preview_doc_new();
-    doc->monospace = TRUE;
-    doc->wrap = FALSE;
-    gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf(_("SQLite database · %s"), size);
-    preview_doc_title(doc, in->name, subtitle);
-    g_free(subtitle);
-    g_free(size);
-    append_doc(doc, body);
-    return doc;
+    return sqlite_view_append(body, in->path, in->head, in->head_len, error)
+               ? titled_body(in, _("SQLite database"), body) : NULL;
+}
+
+/* Apache Parquet: only the footer and the first pages are read */
+static PreviewDoc* build_parquet(const PreviewInput* in, GCancellable* cancellable, GError** error) {
+    g_autoptr(PreviewDoc) body = preview_doc_new();
+    return parquet_view_append_file(body, in->path, cancellable, error)
+               ? titled_body(in, _("Apache Parquet"), body) : NULL;
 }
 
 /* --- Fonts --- */
@@ -1027,16 +1028,7 @@ static PreviewDoc* build_binary_doc(const PreviewInput* in, const gchar* label, 
     g_autoptr(PreviewDoc) body = preview_doc_new();
     gboolean ok = append_fn(body, (const guchar*)data, len, error);
     g_free(data);
-    if (!ok) return NULL;
-    PreviewDoc* doc = preview_doc_new();
-    doc->monospace = TRUE;
-    doc->wrap = FALSE;
-    gchar* size = preview_format_size(in->size);
-    gchar* subtitle = g_strdup_printf("%s · %s", label, size);
-    preview_doc_title(doc, in->name, subtitle);
-    g_free(subtitle); g_free(size);
-    append_doc(doc, body);
-    return doc;
+    return ok ? titled_body(in, label, body) : NULL;
 }
 
 static PreviewDoc* build_class(const PreviewInput* in, GCancellable* c, GError** e) {
@@ -1089,6 +1081,7 @@ static PreviewBuildFunc builder_for(FileKind kind) {
     case FILE_KIND_PYC:          return build_pyc;
     case FILE_KIND_TFM:          return build_tfm;
     case FILE_KIND_PCAP:         return build_pcap;
+    case FILE_KIND_PARQUET:      return build_parquet;
     default:                     return NULL;
     }
 }

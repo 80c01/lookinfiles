@@ -8,6 +8,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Apache Parquet files (`.parquet`) are previewed: the first 100 rows as a
+  table (dates, timestamps, decimals and lists shown as values), then the
+  schema with each column's type, encodings, compression and size, the row
+  groups and the metadata. Only the footer and the first pages are read;
+  ZSTD-compressed files need libzstd (optional, `make deps`).
 - Preferences → **Editor** → **Show the minimap** shows or hides the minimap
   of every editor tab, the preview and Help (hidden, the scrollbar comes
   back); **Show / Hide Minimap** in the menu of an editor tab does it for

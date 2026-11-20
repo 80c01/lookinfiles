@@ -12,6 +12,7 @@ run `make` again:
 | "PDF preview disabled" | `libpoppler-glib-dev` |
 | SQLite databases show only file details | `libsqlite3-dev` |
 | 7z, RAR, xz, zstd, ISO or RPM files are not listed | `libarchive-dev` |
+| Parquet columns say "ZSTD compression is not supported" | `libzstd-dev` |
 
 One program is used at run time, without rebuilding:
 

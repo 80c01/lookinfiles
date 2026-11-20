@@ -325,7 +325,11 @@ Layers, from bottom to top
     `.mo` catalogs), `card_view` (iCalendar, vCard, `.desktop` entries),
     `cert_view` (PEM / DER certificates decoded without a TLS library;
     private keys only named), `sqlite_view` (tables and first rows with
-    SQLite, read-only and immutable; header details without it);
+    SQLite, read-only and immutable; header details without it),
+    `parquet_view` (Apache Parquet: first rows, schema, row groups) over
+    `parquet_meta` (Thrift compact footer and page headers) and
+    `parquet_pages` (decompression, levels and value encodings; ZSTD with
+    `HAVE_ZSTD`);
   - binaries: `hex_dump` (16 bytes per line, fixed width), `elf_info` (ELF
     header, libraries, symbols, read through a callback), `class_info`
     (Java), `wasm_info` (WebAssembly), `pyc_info` (Python bytecode),

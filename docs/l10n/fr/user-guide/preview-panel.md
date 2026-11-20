@@ -36,6 +36,7 @@ comment se servir du panneau.
 | Polices | Noms, détails et échantillons |
 | Programmes et bibliothèques (ELF) | Architecture, bibliothèques liées, symboles exportés |
 | Bases SQLite | Tables et vues avec leurs colonnes et premières lignes (ouvertes en lecture seule) |
+| Fichiers Apache Parquet | Les 100 premières lignes en tableau, puis le schéma, les groupes de lignes et les métadonnées |
 | Tout le reste | Un vidage hexadécimal des 64 Ko du début |
 | Un dossier | Totaux, types de fichiers, modifications git, tous les éléments, et son README rendu en dessous |
 

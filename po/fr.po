@@ -9753,10 +9753,164 @@ msgstr "traductions gettext (.po) · %s"
 msgid "gettext compiled translations (.mo) · %s"
 msgstr "traductions gettext compilées (.mo) · %s"
 
-#: src/preview/preview_formats.c:574
+#: src/formats/parquet_meta.c:493 src/formats/parquet_view.c:267
+#: src/formats/parquet_view.c:273
+msgid "invalid Parquet footer"
+msgstr "pied de fichier Parquet non valide"
+
+#: src/formats/parquet_pages.c:29
+msgid "corrupt page"
+msgstr "page corrompue"
+
+#. TRANSLATORS: %s is a compression codec, e.g. "BROTLI"
+#: src/formats/parquet_pages.c:210
 #, c-format
-msgid "SQLite database · %s"
-msgstr "Base de données SQLite · %s"
+msgid "%s compression is not supported"
+msgstr "la compression %s n’est pas prise en charge"
+
+#: src/formats/parquet_pages.c:215
+#, c-format
+msgid "corrupt %s data"
+msgstr "données %s corrompues"
+
+#. TRANSLATORS: %s is a Parquet encoding, e.g. "BIT_PACKED"
+#: src/formats/parquet_pages.c:509 src/formats/parquet_pages.c:894
+#: src/formats/parquet_pages.c:934
+#, c-format
+msgid "%s encoding is not supported"
+msgstr "l’encodage %s n’est pas pris en charge"
+
+#: src/formats/parquet_pages.c:948
+msgid "the column is in another file"
+msgstr "la colonne est dans un autre fichier"
+
+#: src/formats/parquet_view.c:78
+#, c-format
+msgid "%s row group"
+msgid_plural "%s row groups"
+msgstr[0] "%s groupe de lignes"
+msgstr[1] "%s groupes de lignes"
+
+#. TRANSLATORS: "1,000 rows × 9 columns · 2 row groups · SNAPPY"
+#: src/formats/parquet_view.c:81
+#, c-format
+msgid ""
+"%1$s × %2$s · %3$s · %4$s\n"
+"\n"
+msgstr ""
+"%1$s × %2$s · %3$s · %4$s\n"
+"\n"
+
+#: src/formats/parquet_view.c:82
+#, c-format
+msgid ""
+"%1$s × %2$s · %3$s\n"
+"\n"
+msgstr ""
+"%1$s × %2$s · %3$s\n"
+"\n"
+
+#. TRANSLATORS: "Column city: SNAPPY compression is not supported."
+#: src/formats/parquet_view.c:102
+#, c-format
+msgid "Column %1$s: %2$s."
+msgstr "Colonne %1$s : %2$s."
+
+#: src/formats/parquet_view.c:124
+#, c-format
+msgid "First %1$s of %2$s rows."
+msgstr "%1$s premières lignes sur %2$s."
+
+#: src/formats/parquet_view.c:131
+#, c-format
+msgid "First %1$s of %2$s columns."
+msgstr "%1$s premières colonnes sur %2$s."
+
+#: src/formats/parquet_view.c:143
+msgctxt "parquet column"
+msgid "required"
+msgstr "obligatoire"
+
+#: src/formats/parquet_view.c:144
+msgctxt "parquet column"
+msgid "optional"
+msgstr "facultative"
+
+#: src/formats/parquet_view.c:145
+msgctxt "parquet column"
+msgid "repeated"
+msgstr "répétée"
+
+#: src/formats/parquet_view.c:151
+msgid "Schema"
+msgstr "Schéma"
+
+#: src/formats/parquet_view.c:153
+msgid "Column"
+msgstr "Colonne"
+
+#: src/formats/parquet_view.c:153
+msgid "Repetition"
+msgstr "Répétition"
+
+#: src/formats/parquet_view.c:153
+msgid "Encodings"
+msgstr "Encodages"
+
+#: src/formats/parquet_view.c:190
+msgid "Row groups"
+msgstr "Groupes de lignes"
+
+#: src/formats/parquet_view.c:192
+msgid "Compressed"
+msgstr "Compressé"
+
+#: src/formats/parquet_view.c:209
+#, c-format
+msgid "First %1$u of %2$s row groups."
+msgstr "%1$u premiers groupes de lignes sur %2$s."
+
+#: src/formats/parquet_view.c:217
+msgid "File"
+msgstr "Fichier"
+
+#: src/formats/parquet_view.c:223
+msgid "Footer"
+msgstr "Pied de fichier"
+
+#: src/formats/parquet_view.c:226
+msgid "Metadata"
+msgstr "Métadonnées"
+
+#: src/formats/parquet_view.c:228
+msgid "Key"
+msgstr "Clé"
+
+#: src/formats/parquet_view.c:228
+msgid "Value"
+msgstr "Valeur"
+
+#: src/formats/parquet_view.c:237
+#, c-format
+msgid "Arrow schema (%s)"
+msgstr "Schéma Arrow (%s)"
+
+#: src/formats/parquet_view.c:256
+msgid "not a Parquet file"
+msgstr "pas un fichier Parquet"
+
+#: src/formats/parquet_view.c:260
+msgid "Encrypted footer: the schema and the data cannot be read."
+msgstr ""
+"Pied de fichier chiffré : le schéma et les données ne peuvent pas être lus."
+
+#: src/preview/preview_formats.c:581
+msgid "SQLite database"
+msgstr "Base de données SQLite"
+
+#: src/preview/preview_formats.c:588
+msgid "Apache Parquet"
+msgstr "Apache Parquet"
 
 #. TRANSLATORS: a pangram of your language for the font sample
 #: src/preview/preview_formats.c:585

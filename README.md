@@ -79,6 +79,7 @@ panels, `Ctrl+Q` to quit.
 | poppler-glib | `libpoppler-glib-dev` | PDF preview |
 | SQLite | `libsqlite3-dev` | Database preview |
 | libarchive | `libarchive-dev` | 7z, RAR, xz, zstd, ISO, RPM listings |
+| libzstd | `libzstd-dev` | ZSTD-compressed Apache Parquet files |
 | libjpeg (libjpeg-turbo) | `libjpeg-dev` | Faster JPEG photo preview |
 | WebKitGTK 6.0 | `libwebkitgtk-6.0-dev` | Browser tabs |
 | GStreamer base libraries | `libgstreamer-plugins-base1.0-dev` | Video player: choice of audio track and subtitles |
@@ -95,7 +96,7 @@ To install every optional library at once:
 
 ```bash
 sudo apt install libvte-2.91-gtk4-dev libgtksourceview-5-dev \
-  libpoppler-glib-dev libsqlite3-dev libarchive-dev libjpeg-dev libwebkitgtk-6.0-dev \
+  libpoppler-glib-dev libsqlite3-dev libarchive-dev libzstd-dev libjpeg-dev libwebkitgtk-6.0-dev \
   libgstreamer-plugins-base1.0-dev gettext sshfs librsvg2-common
 ```
 

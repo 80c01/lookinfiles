@@ -62,7 +62,8 @@
     cp "$ROOT/tests/fixtures/mail/winmail.dat" 42-winmail.dat  # TNEF
     cp "$ROOT/tests/fixtures/mail/archive.pst" 43-archive.pst  # header only
     cp "$ROOT/tests/fixtures/preview/deck.pptx" 44-deck.pptx   # theme, master, layouts
-    cp "$ROOT/tests/fixtures/preview/clip.mp4" 45-clip.mp4     # Enter: Video tab
+    cp "$ROOT/tests/fixtures/preview/trips.parquet" 45-trips.parquet # Apache Parquet: rows, schema
+    cp "$ROOT/tests/fixtures/preview/clip.mp4" 46-clip.mp4     # Enter: Video tab
     # Maildir folder (a directory: listed first)
     cp -r "$ROOT/tests/fixtures/mail/Maildir" 00-Maildir
     find . -exec touch -h -d '2000-01-01 00:00:00' {} +   # dates shown do not vary
@@ -147,7 +148,10 @@ format_scenario() {
     key Down;           shot fmt_tnef
     key Down;           shot fmt_outlook_pst
     key Down;           shot fmt_pptx_theme
-    key Up Up Up Up Up Up Up Up Up Up Up
+    key Down;           shot fmt_parquet        # first rows as a table, then the schema
+    key m;              shot fmt_parquet_raw    # hex dump
+    key m
+    key Up Up Up Up Up Up Up Up Up Up Up Up
     key alt+Right                               # focus the preview
     key Page_Down Page_Down; shot fmt_pdf_page_down
     # Video: Space plays the preview, Right seeks in it; Enter opens a Video

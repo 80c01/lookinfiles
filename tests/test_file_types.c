@@ -140,6 +140,10 @@ static void test_detect_binary(void) {
     g_assert_cmpint(DETECT("traffic.pcap", "\xA1\xB2\xC3\xD4\0\x02\0\x04\0\0\0\0"), ==, FILE_KIND_PCAP);
     g_assert_cmpint(DETECT("dump", "\xD4\xC3\xB2\xA1\0\x02\0\x04\0\0\0\0"), ==, FILE_KIND_PCAP);
     g_assert_cmpint(DETECT("nextgen", "\x0A\x0D\x0D\x0A\0\0\0\x1C\x1A\x2B\x3C\x4D"), ==, FILE_KIND_PCAP);
+    g_assert_cmpint(file_kind_from_name("trips.parquet"), ==, FILE_KIND_PARQUET);
+    g_assert_cmpint(file_kind_from_name("part-0.pqt"), ==, FILE_KIND_PARQUET);
+    g_assert_cmpint(DETECT("part-00000", "PAR1\x15\x04\x15\x80"), ==, FILE_KIND_PARQUET);
+    g_assert_cmpint(DETECT("secret.parquet", "PARE\x15\x04\x15\x80"), ==, FILE_KIND_PARQUET);
     /* Unknown binary signature: trust a media name (TGA has no magic number) */
     g_assert_cmpint(DETECT("pic.tga", "\0\0\x02\0\0\0\0\0"), ==, FILE_KIND_IMAGE);
     /* ZIP archives: Word documents by name or by their first entries */
