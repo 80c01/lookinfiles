@@ -53,7 +53,7 @@ static void latex_error_item_init(LatexErrorItem* it) {
 typedef struct {
     AppData* app;
     GtkWidget* page;
-    GtkWidget* label; /* tab label */
+    GtkWidget* label; /* tab label (owned ref: kept while the page is set aside) */
     GtkWidget* header;
     GtkWidget* list;
     GListStore* store;
@@ -157,20 +157,50 @@ static void on_activate(GtkListView* view, guint position, gpointer data) {
     g_object_unref(it);
 }
 
+/* The notebook holding page (the preview notebook, an editor notebook or a
+ * terminal pane), or NULL when it is out of every notebook */
+static GtkNotebook* page_notebook(GtkWidget* page) {
+    GtkWidget* parent = page != NULL ? gtk_widget_get_parent(page) : NULL;
+    GtkWidget* nb = parent != NULL ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    return (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), page) >= 0) ? GTK_NOTEBOOK(nb) : NULL;
+}
+
+/* Take page out of the notebook holding it (an editor notebook left empty goes) */
+static void remove_page(AppData* app, GtkWidget* page) {
+    GtkNotebook* nb = page_notebook(page);
+    if (nb == NULL) return;
+    if (GTK_WIDGET(nb) == app->notebook) {
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
+    } else {
+        editor_remove_page(app, page);
+    }
+}
+
 static void on_close_clicked(GtkButton* button, gpointer data) {
     (void)button;
     LatexPage* lp = data;
     AppData* app = lp->app;
     if (app->latex_page == NULL || app->notebook == NULL) return;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     GtkWidget* closed = app->latex_page;
     GtkWidget* focus_back = focus_route_return_target(app, closed);
     g_object_ref(closed);
-    gint page = gtk_notebook_page_num(nb, closed);
-    if (page >= 0) gtk_notebook_remove_page(nb, page); /* frees lp */
     app->latex_page = NULL;
+    remove_page(app, closed);
     focus_route_return(app, focus_back, closed);
-    g_object_unref(closed);
+    g_object_unref(closed); /* frees lp */
+}
+
+static void on_menu_close(GtkWidget* child, gpointer data) {
+    (void)child;
+    on_close_clicked(NULL, data);
+}
+
+/* The tab menu, as for an editor tab: move, close */
+static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press; (void)x; (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    LatexPage* lp = data;
+    editor_page_show_context_menu(lp->app, lp->page, lp->label, on_menu_close, lp);
 }
 
 static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
@@ -183,8 +213,24 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press, gdoubl
 
 static void page_free(gpointer p) {
     LatexPage* lp = p;
+    if (lp->app != NULL && lp->app->latex_page == lp->page) lp->app->latex_page = NULL;
     g_object_unref(lp->store);
+    g_clear_object(&lp->label);
     g_free(lp);
+}
+
+/* Put the page in the preview notebook, right after the Git tab and the
+ * result pages; it moves from there like an editor tab */
+static void insert_page(AppData* app, LatexPage* lp) {
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    GtkWidget* git_page = git_tab_page(app);
+    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
+    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
+    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
+    gtk_notebook_insert_page(nb, lp->page, lp->label, after + 1);
+    gtk_notebook_set_tab_reorderable(nb, lp->page, TRUE);
+    gtk_notebook_set_tab_detachable(nb, lp->page, TRUE);
+    app->latex_page = lp->page;
 }
 
 /* The page, made when missing (create) right after the Git tab and the
@@ -229,19 +275,18 @@ static LatexPage* ensure_page(AppData* app, gboolean create) {
 
     lp->page = page;
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, lp, page_free);
-    lp->label = icon_label_new("dialog-error", _("LaTeX"));
+    lp->label = g_object_ref_sink(icon_label_new("dialog-error", _("LaTeX")));
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), lp);
     gtk_widget_add_controller(lp->label, GTK_EVENT_CONTROLLER(mclick));
+    GtkGesture* rclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(rclick), GDK_BUTTON_SECONDARY);
+    g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), lp);
+    gtk_widget_add_controller(lp->label, GTK_EVENT_CONTROLLER(rclick));
+    editor_page_set_movable(page);
 
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    GtkWidget* git_page = git_tab_page(app);
-    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
-    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
-    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
-    gtk_notebook_insert_page(nb, page, lp->label, after + 1);
-    app->latex_page = page;
+    insert_page(app, lp);
     return lp;
 }
 
@@ -322,4 +367,55 @@ void latex_errors_show(AppData* app, const gchar* root, const GPtrArray* msgs, c
     g_free(hint);
     g_free(counts);
     g_free(name);
+}
+
+/* The page of the workspace left, an owned ref (or NULL): taken out of the
+ * preview notebook with its tab; in the editor panel or a terminal pane, it
+ * already left with them (editor_detach_tabs()) */
+static GtkWidget* detach_page(AppData* app) {
+    GtkWidget* page = app->latex_page;
+    if (page_state(page) == NULL || app->notebook == NULL) return NULL;
+    GtkRoot* root = gtk_widget_get_root(page);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
+    g_object_ref(page);
+    app->latex_page = NULL;
+    GtkNotebook* nb = page_notebook(page);
+    if (nb != NULL && GTK_WIDGET(nb) == app->notebook) gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
+    return page;
+}
+
+void latex_errors_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    GtkWidget* page = detach_page(app);
+    if (page == NULL) return;
+    if (ws->latex_page != NULL) g_object_unref(ws->latex_page);
+    ws->latex_page = page;
+}
+
+void latex_errors_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->latex_page == NULL) return;
+    GtkWidget* page = ws->latex_page;
+    ws->latex_page = NULL;
+    LatexPage* lp = page_state(page);
+    if (lp != NULL && app->notebook != NULL && app->latex_page == NULL) {
+        if (page_notebook(page) != NULL) {
+            app->latex_page = page; /* back with the editor panel or the terminal panes */
+        } else {
+            insert_page(app, lp);
+        }
+    }
+    g_object_unref(page);
+}
+
+void latex_errors_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        GtkWidget* page = detach_page(app);
+        if (page != NULL) {
+            remove_page(app, page); /* still in the editor panel shown */
+            g_object_unref(page);
+        }
+    }
+    g_clear_object(&ws->latex_page);
 }

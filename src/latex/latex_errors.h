@@ -15,4 +15,12 @@ void latex_errors_show(AppData* app, const gchar* root, const GPtrArray* msgs, c
 /* Put the page's header to "Compiling root…" when the page is open */
 void latex_errors_compiling(AppData* app, const gchar* root);
 
+/* Each workspace has its own LaTeX page: set aside in ws when ws is hidden,
+ * put back when ws is shown, dropped with ws. A compilation ending in
+ * another workspace shows there, as its PDF does. The page moves like an
+ * editor tab (drag, tab menu). */
+void latex_errors_workspace_hidden(AppData* app, VirtualLayout* ws);
+void latex_errors_workspace_shown(AppData* app, VirtualLayout* ws);
+void latex_errors_workspace_removed(AppData* app, VirtualLayout* ws);
+
 #endif /* LATEX_ERRORS_H */

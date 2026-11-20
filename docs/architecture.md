@@ -1267,11 +1267,16 @@ Layers, from bottom to top
   after the Git and result tabs): one row per message (kind icon, message,
   file and line, the source of an error), `Enter` opens it with
   `editor_open_at()`. Made when a compilation has errors or warnings,
-  otherwise only updated.
+  otherwise only updated. One page per workspace (`VirtualLayout.latex_page`);
+  a compilation ending in another workspace shows there, as its PDF does.
+  A movable page (drag, tab menu), like an editor tab.
 - `code_refs` — the References page of the preview notebook (after the Git
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
   pages, wherever they are), from the server or `code_index_references()`;
   also the Search page (`app->search_page`) of `project_search`, next to it.
+  Both are per workspace (`VirtualLayout.refs_page`, `WsSearch`; a lookup
+  still running when the workspace is left is dropped) and movable pages
+  (drag, tab menu), like editor tabs.
 - `project_search` — Ctrl+Shift+F: asks for the text, its options and the
   files to include / exclude (`path_globs`), runs `text_search` over
   `code_index_some_files()` in a worker (a new search cancels the

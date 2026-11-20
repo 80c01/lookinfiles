@@ -130,6 +130,8 @@ typedef struct {
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
     GtkWidget* sysmon_page;        /* its System Monitor tab while another workspace is shown (owned ref, sysmon_tab.c) */
     GtkWidget* disk_usage_page;    /* its Disk Usage tab while another workspace is shown (owned ref, disk_usage_tab.c) */
+    GtkWidget* refs_page;          /* its References tab while another workspace is shown (owned ref, code_refs.c) */
+    GtkWidget* latex_page;         /* its LaTeX tab while another workspace is shown (owned ref, latex_errors.c) */
     GtkWidget* problems_page;      /* its Problems tab while another workspace is shown (owned ref, code_problems.c) */
     GtkWidget* deep_search_page;   /* its Deep Search tab while another workspace is shown (owned ref, deep_search_tab.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */

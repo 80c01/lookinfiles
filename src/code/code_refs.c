@@ -201,21 +201,38 @@ static void on_activate(GtkListView* view, guint position, gpointer data) {
     if (it != NULL) g_object_unref(it);
 }
 
+/* The notebook holding page (the preview notebook, an editor notebook or a
+ * terminal pane), or NULL when it is out of every notebook */
+static GtkNotebook* page_notebook(GtkWidget* page) {
+    GtkWidget* parent = page != NULL ? gtk_widget_get_parent(page) : NULL;
+    GtkWidget* nb = parent != NULL ? gtk_widget_get_ancestor(parent, GTK_TYPE_NOTEBOOK) : NULL;
+    return (nb != NULL && gtk_notebook_page_num(GTK_NOTEBOOK(nb), page) >= 0) ? GTK_NOTEBOOK(nb) : NULL;
+}
+
+/* Take page out of the notebook holding it (an editor notebook left empty goes) */
+static void remove_page(AppData* app, GtkWidget* page) {
+    GtkNotebook* nb = page_notebook(page);
+    if (nb == NULL) return;
+    if (GTK_WIDGET(nb) == app->notebook) {
+        gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
+    } else {
+        editor_remove_page(app, page);
+    }
+}
+
 static void on_close_clicked(GtkButton* button, gpointer data) {
     (void)button;
     RefsPage* rp = data;
     AppData* app = rp->app;
     GtkWidget** slot = rp->slot;
     if (*slot == NULL || app->notebook == NULL) return;
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     GtkWidget* closed = *slot;
     GtkWidget* focus_back = focus_route_return_target(app, closed);
     g_object_ref(closed);
-    gint page = gtk_notebook_page_num(nb, closed);
-    if (page >= 0) gtk_notebook_remove_page(nb, page); /* frees rp */
     *slot = NULL;
+    remove_page(app, closed);
     focus_route_return(app, focus_back, closed);
-    g_object_unref(closed);
+    g_object_unref(closed); /* frees rp */
 }
 
 static void on_label_middle_click(GtkGestureClick* gesture, gint n_press,
@@ -225,15 +242,29 @@ static void on_label_middle_click(GtkGestureClick* gesture, gint n_press,
     on_close_clicked(NULL, data);
 }
 
+static void on_menu_close(GtkWidget* child, gpointer data) {
+    (void)child;
+    on_close_clicked(NULL, data);
+}
+
+/* The tab menu, as for an editor tab: move, close */
+static void on_label_right_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press; (void)x; (void)y;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    RefsPage* rp = data;
+    editor_page_show_context_menu(rp->app, rp->page, rp->label, on_menu_close, rp);
+}
+
 static void page_free(gpointer p) {
     RefsPage* rp = p;
+    if (rp->slot != NULL && *rp->slot == rp->page) *rp->slot = NULL;
     g_object_unref(rp->store);
     g_clear_object(&rp->label);
     g_free(rp);
 }
 
 /* Put the page in the notebook, right after the Git tab and the other result
- * page (editor tabs follow) */
+ * page (editor tabs follow); it moves from there like an editor tab */
 static void insert_page(AppData* app, RefsPage* rp) {
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     GtkWidget* git_page = git_tab_page(app);
@@ -241,6 +272,8 @@ static void insert_page(AppData* app, RefsPage* rp) {
     GtkWidget* other = rp->slot == &app->refs_page ? app->search_page : app->refs_page;
     if (other != NULL) after = MAX(after, gtk_notebook_page_num(nb, other));
     gtk_notebook_insert_page(nb, rp->page, rp->label, after + 1);
+    gtk_notebook_set_tab_reorderable(nb, rp->page, TRUE);
+    gtk_notebook_set_tab_detachable(nb, rp->page, TRUE);
     *rp->slot = rp->page;
 }
 
@@ -295,6 +328,11 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), rp);
     gtk_widget_add_controller(rp->label, GTK_EVENT_CONTROLLER(mclick));
+    GtkGesture* rclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(rclick), GDK_BUTTON_SECONDARY);
+    g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), rp);
+    gtk_widget_add_controller(rp->label, GTK_EVENT_CONTROLLER(rclick));
+    editor_page_set_movable(page);
     insert_page(app, rp);
     return rp;
 }
@@ -348,8 +386,10 @@ static guint fill_page(RefsPage* rp, GPtrArray* refs, const gchar* root, gsize l
 
 /* Show the page with its first occurrence selected and the focus in it */
 static void present_page(AppData* app, RefsPage* rp, gboolean any) {
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+    GtkNotebook* nb = page_notebook(rp->page);
+    if (nb == NULL) return;
+    /* The preview panel shows when the tab is there and the panel hidden */
+    if (GTK_WIDGET(nb) == app->notebook && app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
         gtk_widget_set_visible(app->viewer_box, TRUE);
     }
     gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, rp->page));
@@ -466,26 +506,75 @@ void code_refs_set_search(GtkWidget* page, const gchar* query, GPtrArray* refs, 
     if (rp != NULL) set_search(rp, query, refs, root, how, note, area);
 }
 
-GtkWidget* code_refs_detach_search(AppData* app) {
-    GtkWidget* page = app != NULL ? app->search_page : NULL;
+/* The page of slot for the workspace left, an owned ref (or NULL): taken out
+ * of the preview notebook with its tab; in the editor panel or a terminal
+ * pane, it already left with them (editor_detach_tabs()) */
+static GtkWidget* detach_slot(AppData* app, GtkWidget** slot) {
+    GtkWidget* page = *slot;
     if (page_state(page) == NULL || app->notebook == NULL) return NULL;
     GtkRoot* root = gtk_widget_get_root(page);
     GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
     if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
     g_object_ref(page);
-    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    gint n = gtk_notebook_page_num(nb, page);
-    if (n >= 0) gtk_notebook_remove_page(nb, n);
-    app->search_page = NULL;
+    *slot = NULL;
+    GtkNotebook* nb = page_notebook(page);
+    if (nb != NULL && GTK_WIDGET(nb) == app->notebook) gtk_notebook_remove_page(nb, gtk_notebook_page_num(nb, page));
     return page;
 }
 
-void code_refs_attach_search(AppData* app, GtkWidget* page) {
+/* Put back a page taken by detach_slot() (takes the ref) */
+static void attach_slot(AppData* app, GtkWidget** slot, GtkWidget* page) {
     RefsPage* rp = page_state(page);
-    if (rp != NULL && app != NULL && app->notebook != NULL && app->search_page == NULL) {
-        insert_page(app, rp);
+    if (rp != NULL && app->notebook != NULL && *slot == NULL) {
+        if (page_notebook(page) != NULL) {
+            *slot = page; /* back with the editor panel or the terminal panes */
+        } else {
+            insert_page(app, rp);
+        }
     }
     if (page != NULL) g_object_unref(page);
+}
+
+GtkWidget* code_refs_detach_search(AppData* app) {
+    return app != NULL ? detach_slot(app, &app->search_page) : NULL;
+}
+
+void code_refs_attach_search(AppData* app, GtkWidget* page) {
+    if (app != NULL) {
+        attach_slot(app, &app->search_page, page);
+    } else if (page != NULL) {
+        g_object_unref(page);
+    }
+}
+
+static guint refs_serial = 0;
+
+void code_refs_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    refs_serial++; /* a lookup still running is for the workspace left: dropped */
+    GtkWidget* page = detach_slot(app, &app->refs_page);
+    if (page == NULL) return;
+    if (ws->refs_page != NULL) g_object_unref(ws->refs_page);
+    ws->refs_page = page;
+}
+
+void code_refs_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->refs_page == NULL) return;
+    GtkWidget* page = ws->refs_page;
+    ws->refs_page = NULL;
+    attach_slot(app, &app->refs_page, page);
+}
+
+void code_refs_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        GtkWidget* page = detach_slot(app, &app->refs_page);
+        if (page != NULL) {
+            remove_page(app, page); /* still in the editor panel shown */
+            g_object_unref(page);
+        }
+    }
+    g_clear_object(&ws->refs_page);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -505,8 +594,6 @@ typedef struct {
     gboolean truncated;
     CodeNavMessageFunc message;
 } RefsLookup;
-
-static guint refs_serial = 0;
 
 static void lookup_free(gpointer p) {
     RefsLookup* rl = p;

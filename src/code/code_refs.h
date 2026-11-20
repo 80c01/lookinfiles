@@ -39,4 +39,11 @@ void code_refs_set_search(GtkWidget* page, const gchar* query, GPtrArray* refs, 
 GtkWidget* code_refs_detach_search(AppData* app);
 void code_refs_attach_search(AppData* app, GtkWidget* page); /* takes the ref */
 
+/* Each workspace has its own References page too: set aside in ws when ws is
+ * hidden (a lookup still running is dropped), put back when ws is shown,
+ * dropped with ws. Both pages move like editor tabs (drag, tab menu). */
+void code_refs_workspace_hidden(AppData* app, VirtualLayout* ws);
+void code_refs_workspace_shown(AppData* app, VirtualLayout* ws);
+void code_refs_workspace_removed(AppData* app, VirtualLayout* ws);
+
 #endif /* CODE_REFS_H */

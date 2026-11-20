@@ -416,7 +416,7 @@ terminal:core,editor,explorer,theme,widgets,workspace
 theme:core
 vim:theme
 widgets:code,core,explorer,git,preview,theme
-workspace:canvas,chrome,code,core,diskuse,editor,explorer,games,git,jupyter,media,preview,search,sysmon,terminal,theme,widgets
+workspace:canvas,chrome,code,core,diskuse,editor,explorer,games,git,jupyter,latex,media,preview,search,sysmon,terminal,theme,widgets
 "
 for d in src/*/; do
     dir=$(basename "$d")
