@@ -523,6 +523,7 @@ static ProblemsPage* ensure_page(AppData* app) {
     g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), pp);
     gtk_widget_add_controller(pp->label, GTK_EVENT_CONTROLLER(rclick));
     editor_page_set_movable(page);
+    editor_page_set_layout_key(page, "problems");
 
     insert_page(app, pp);
     return pp;

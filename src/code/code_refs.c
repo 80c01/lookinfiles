@@ -333,6 +333,7 @@ static RefsPage* ensure_page(AppData* app, GtkWidget** slot, const gchar* title)
     g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), rp);
     gtk_widget_add_controller(rp->label, GTK_EVENT_CONTROLLER(rclick));
     editor_page_set_movable(page);
+    editor_page_set_layout_key(page, slot == &app->refs_page ? "references" : "search");
     insert_page(app, rp);
     return rp;
 }

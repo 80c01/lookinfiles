@@ -167,6 +167,58 @@ static void test_summary(void) {
     saved_layout_free(l);
 }
 
+/* The places of the tool tabs: built, looked up, validated, saved */
+static void test_tool_tabs(void) {
+    gchar* t = layout_store_tool_tabs_add(NULL, "problems", 1);
+    gchar* u = layout_store_tool_tabs_add(t, "references", LAYOUT_TOOL_PREVIEW);
+    g_assert_cmpstr(u, ==, "problems=e1;references=p");
+    g_free(t);
+    t = layout_store_tool_tabs_add(u, "problems", 0); /* replaced, moved last */
+    g_assert_cmpstr(t, ==, "references=p;problems=e0");
+    gint place = 99;
+    g_assert_true(layout_store_tool_tab_place(t, "problems", &place));
+    g_assert_cmpint(place, ==, 0);
+    g_assert_true(layout_store_tool_tab_place(t, "references", &place));
+    g_assert_cmpint(place, ==, LAYOUT_TOOL_PREVIEW);
+    g_assert_false(layout_store_tool_tab_place(t, "latex", &place));
+    g_assert_false(layout_store_tool_tab_place(NULL, "latex", &place));
+    g_free(u);
+    u = layout_store_tool_tabs_add(t, "Bad Key", 0); /* invalid: unchanged */
+    g_assert_cmpstr(u, ==, t);
+    g_free(u);
+
+    gchar* n = layout_store_tool_tabs_normalize("a=p;;b=x;c=e999;D=p;e=e2;a=e3;f");
+    g_assert_cmpstr(n, ==, "e=e2;a=e3");
+    g_free(n);
+    n = layout_store_tool_tabs_normalize(NULL);
+    g_assert_cmpstr(n, ==, "");
+    g_free(n);
+
+    /* Saved, read back, copied; none: no key */
+    GKeyFile* kf = g_key_file_new();
+    SavedLayout* l = saved_layout_new("Tools");
+    g_assert_false(layout_store_is_customized(l));
+    saved_layout_write(kf, "N", l, TRUE);
+    g_assert_false(g_key_file_has_key(kf, "N", "ToolTabs", NULL));
+    g_free(l->tool_tabs);
+    l->tool_tabs = g_strdup(t);
+    g_assert_true(layout_store_is_customized(l));
+    saved_layout_write(kf, "G", l, TRUE);
+    SavedLayout* back = saved_layout_read(kf, "G", "Tools");
+    g_assert_cmpstr(back->tool_tabs, ==, t);
+    SavedLayout* copy = saved_layout_copy(back);
+    g_assert_cmpstr(copy->tool_tabs, ==, t);
+    saved_layout_free(copy);
+    saved_layout_free(back);
+    g_key_file_set_string(kf, "G", "ToolTabs", "zz");
+    back = saved_layout_read(kf, "G", "Tools");
+    g_assert_cmpstr(back->tool_tabs, ==, "");
+    saved_layout_free(back);
+    saved_layout_free(l);
+    g_key_file_free(kf);
+    g_free(t);
+}
+
 /* The splits of the editor panel are saved, read back and validated */
 static void test_editor_splits(void) {
     GKeyFile* kf = g_key_file_new();
@@ -503,6 +555,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/layout_store/summary", test_summary);
     g_test_add_func("/layout_store/editor_splits", test_editor_splits);
     g_test_add_func("/layout_store/tagbars", test_tagbars);
+    g_test_add_func("/layout_store/tool_tabs", test_tool_tabs);
     g_test_add_func("/layout_store/presets", test_presets);
     g_test_add_func("/layout_store/grid", test_grid);
     g_test_add_func("/layout_store/grid_size", test_grid_size);

@@ -285,6 +285,7 @@ static LatexPage* ensure_page(AppData* app, gboolean create) {
     g_signal_connect(rclick, "pressed", G_CALLBACK(on_label_right_click), lp);
     gtk_widget_add_controller(lp->label, GTK_EVENT_CONTROLLER(rclick));
     editor_page_set_movable(page);
+    editor_page_set_layout_key(page, "latex");
 
     insert_page(app, lp);
     return lp;

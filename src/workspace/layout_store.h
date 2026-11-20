@@ -4,7 +4,7 @@
 /* Saved workspace layouts: named panel arrangements the user saves and picks
  * from a list (layouts.c). A layout holds panel visibility, split sizes, the
  * preview/terminal orientation, the dedicated editor panel with its splits
- * and terminal tabs, the terminal pane tree, and the tagbars (shown in the
+ * and terminal tabs, the places of the tool tabs, the terminal pane tree, and the tagbars (shown in the
  * editor tabs, in the preview, and their width); not the folder, view or
  * open files. Applying one never changes
  * the default view of new workspaces, except the default layout below.
@@ -35,6 +35,7 @@ typedef struct {
                                 * text: a notebook lists LAYOUT_EDITOR_FILES ("0")
                                 * when it held files, then "t" per terminal tab,
                                 * e.g. "H:0.500([0],[t,t])"; "" if none */
+    gchar* tool_tabs;          /* where the tool tabs were (see below), "" if none */
     gboolean tagbars;          /* the three tagbar fields below were saved (layouts
                                 * saved before them keep the current tagbars) */
     gboolean editor_tagbar;    /* code and Markdown editor tabs show the tagbar */
@@ -50,6 +51,21 @@ void saved_layout_free(gpointer layout);
 
 /* Short description for the list, e.g. "Explorer · Preview · Terminal (2 terminals, beside)". Caller frees. */
 gchar* saved_layout_summary(const SavedLayout* layout);
+
+/* Tool tabs (Problems, References...) in tool_tabs: "<key>=<place>" entries
+ * joined by ';', <key> naming the tab ([a-z0-9-]), <place> "p" for the
+ * preview notebook or "e<n>" for the n-th pane (from 0, in the order of
+ * editor_splits) of the dedicated editor panel, e.g.
+ * "problems=e1;references=p". The place of a tab not listed is left alone. */
+#define LAYOUT_TOOL_PREVIEW (-1)
+#define LAYOUT_TOOL_MAX_PANE 63
+/* text with key placed at place (LAYOUT_TOOL_PREVIEW or a pane), replacing
+ * an entry of key; text may be NULL. Caller frees. */
+gchar* layout_store_tool_tabs_add(const gchar* text, const gchar* key, gint place);
+/* Where text places key: TRUE and *place set, FALSE when it is not listed */
+gboolean layout_store_tool_tab_place(const gchar* text, const gchar* key, gint* place);
+/* text without its invalid entries (the later of two entries of a key kept) */
+gchar* layout_store_tool_tabs_normalize(const gchar* text);
 
 /* Built-in default: explorer and preview side by side, no terminal */
 SavedLayout* layout_store_builtin_default(void);

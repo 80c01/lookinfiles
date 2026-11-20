@@ -18,6 +18,7 @@ SavedLayout* saved_layout_new(const gchar* name) {
     l->editor_frac = 0.50;
     l->terminals = g_strdup("");
     l->editor_splits = g_strdup("");
+    l->tool_tabs = g_strdup("");
     return l;
 }
 
@@ -27,6 +28,7 @@ SavedLayout* saved_layout_copy(const SavedLayout* layout) {
     l->name = g_strdup(layout->name);
     l->terminals = g_strdup(layout->terminals);
     l->editor_splits = g_strdup(layout->editor_splits);
+    l->tool_tabs = g_strdup(layout->tool_tabs);
     return l;
 }
 
@@ -38,6 +40,7 @@ void saved_layout_free(gpointer layout) {
     g_free(l->name);
     g_free(l->terminals);
     g_free(l->editor_splits);
+    g_free(l->tool_tabs);
     g_free(l);
 }
 
@@ -152,6 +155,10 @@ SavedLayout* saved_layout_read(GKeyFile* kf, const gchar* group, const gchar* na
     l->editor_splits = (editor != NULL) ? tab_tree_to_string(editor) : g_strdup("");
     tab_tree_free(editor);
     g_free(splits);
+    gchar* tools = g_key_file_get_string(kf, group, "ToolTabs", NULL);
+    g_free(l->tool_tabs);
+    l->tool_tabs = layout_store_tool_tabs_normalize(tools);
+    g_free(tools);
     l->tagbars = g_key_file_has_key(kf, group, "EditorTagbar", NULL) ||
                  g_key_file_has_key(kf, group, "PreviewTagbar", NULL);
     l->editor_tagbar = read_bool(kf, group, "EditorTagbar", FALSE);
@@ -347,6 +354,126 @@ SavedLayout* layout_store_auto(const SavedLayout* current, guint files, const Au
     return l;
 }
 
+/* ------------------------------------------------------------------------- */
+/* Tool tabs                                                                 */
+/* ------------------------------------------------------------------------- */
+
+static gboolean tool_key_valid(const gchar* key) {
+    if (key == NULL || key[0] == '\0' || strlen(key) > 32) {
+        return FALSE;
+    }
+    for (const gchar* c = key; *c != '\0'; c++) {
+        if (!g_ascii_islower(*c) && !g_ascii_isdigit(*c) && *c != '-') {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+/* "p" or "e<n>" into *place; FALSE when invalid */
+static gboolean tool_place_parse(const gchar* text, gint* place) {
+    if (g_strcmp0(text, "p") == 0) {
+        *place = LAYOUT_TOOL_PREVIEW;
+        return TRUE;
+    }
+    if (text == NULL || text[0] != 'e' || !g_ascii_isdigit(text[1])) {
+        return FALSE;
+    }
+    gchar* end = NULL;
+    guint64 v = g_ascii_strtoull(text + 1, &end, 10);
+    if (*end != '\0' || v > LAYOUT_TOOL_MAX_PANE) {
+        return FALSE;
+    }
+    *place = (gint)v;
+    return TRUE;
+}
+
+/* Each valid entry of text, in order, as key and place (a later entry of a
+ * key replaces the earlier one) */
+static void tool_entries(const gchar* text, GPtrArray* keys, GArray* places) {
+    gchar** parts = g_strsplit(text != NULL ? text : "", ";", -1);
+    for (gchar** p = parts; *p != NULL; p++) {
+        gchar* eq = strchr(*p, '=');
+        if (eq == NULL) {
+            continue;
+        }
+        *eq = '\0';
+        gint place = 0;
+        if (!tool_key_valid(*p) || !tool_place_parse(eq + 1, &place)) {
+            continue;
+        }
+        guint at = 0;
+        if (g_ptr_array_find_with_equal_func(keys, *p, g_str_equal, &at)) {
+            g_ptr_array_remove_index(keys, at);
+            g_array_remove_index(places, at);
+        }
+        g_ptr_array_add(keys, g_strdup(*p));
+        g_array_append_val(places, place);
+    }
+    g_strfreev(parts);
+}
+
+static gchar* tool_entries_text(GPtrArray* keys, GArray* places) {
+    GString* s = g_string_new(NULL);
+    for (guint i = 0; i < keys->len; i++) {
+        gint place = g_array_index(places, gint, i);
+        if (s->len > 0) {
+            g_string_append_c(s, ';');
+        }
+        g_string_append_printf(s, "%s=", (const gchar*)g_ptr_array_index(keys, i));
+        if (place == LAYOUT_TOOL_PREVIEW) {
+            g_string_append_c(s, 'p');
+        } else {
+            g_string_append_printf(s, "e%d", place);
+        }
+    }
+    return g_string_free(s, FALSE);
+}
+
+gchar* layout_store_tool_tabs_normalize(const gchar* text) {
+    GPtrArray* keys = g_ptr_array_new_with_free_func(g_free);
+    GArray* places = g_array_new(FALSE, FALSE, sizeof(gint));
+    tool_entries(text, keys, places);
+    gchar* out = tool_entries_text(keys, places);
+    g_ptr_array_unref(keys);
+    g_array_unref(places);
+    return out;
+}
+
+gchar* layout_store_tool_tabs_add(const gchar* text, const gchar* key, gint place) {
+    GPtrArray* keys = g_ptr_array_new_with_free_func(g_free);
+    GArray* places = g_array_new(FALSE, FALSE, sizeof(gint));
+    tool_entries(text, keys, places);
+    gboolean ok = tool_key_valid(key) && (place == LAYOUT_TOOL_PREVIEW || (place >= 0 && place <= LAYOUT_TOOL_MAX_PANE));
+    if (ok) {
+        guint at = 0;
+        if (g_ptr_array_find_with_equal_func(keys, key, g_str_equal, &at)) {
+            g_ptr_array_remove_index(keys, at);
+            g_array_remove_index(places, at);
+        }
+        g_ptr_array_add(keys, g_strdup(key));
+        g_array_append_val(places, place);
+    }
+    gchar* out = tool_entries_text(keys, places);
+    g_ptr_array_unref(keys);
+    g_array_unref(places);
+    return out;
+}
+
+gboolean layout_store_tool_tab_place(const gchar* text, const gchar* key, gint* place) {
+    GPtrArray* keys = g_ptr_array_new_with_free_func(g_free);
+    GArray* places = g_array_new(FALSE, FALSE, sizeof(gint));
+    tool_entries(text, keys, places);
+    guint at = 0;
+    gboolean found = key != NULL && g_ptr_array_find_with_equal_func(keys, key, g_str_equal, &at);
+    if (found && place != NULL) {
+        *place = g_array_index(places, gint, at);
+    }
+    g_ptr_array_unref(keys);
+    g_array_unref(places);
+    return found;
+}
+
 gboolean layout_store_is_customized(const SavedLayout* l) {
     SavedLayout* d = layout_store_builtin_default();
     gboolean differs = l->files_vis != d->files_vis || l->preview_vis != d->preview_vis ||
@@ -357,6 +484,7 @@ gboolean layout_store_is_customized(const SavedLayout* l) {
                        ABS(l->editor_frac - d->editor_frac) > 0.0005 ||
                        g_strcmp0(l->terminals, d->terminals) != 0 ||
                        g_strcmp0(l->editor_splits, d->editor_splits) != 0 ||
+                       (l->tool_tabs != NULL && l->tool_tabs[0] != '\0') ||
                        (l->tagbars && (l->editor_tagbar || l->preview_tagbar));
     saved_layout_free(d);
     return differs;
@@ -396,6 +524,9 @@ void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* l, 
     g_key_file_set_string(kf, group, "TerminalPanes", l->terminals);
     if (l->editor_splits != NULL && l->editor_splits[0] != '\0') {
         g_key_file_set_string(kf, group, "EditorSplits", l->editor_splits);
+    }
+    if (l->tool_tabs != NULL && l->tool_tabs[0] != '\0') {
+        g_key_file_set_string(kf, group, "ToolTabs", l->tool_tabs);
     }
     if (l->tagbars) {
         g_key_file_set_boolean(kf, group, "EditorTagbar", l->editor_tagbar);

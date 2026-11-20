@@ -53,6 +53,10 @@ rempli), réutilise les terminaux en cours et démarre les shells qui
 manquent ; les terminaux en cours pour lesquels elle n’a pas de place
 deviennent des onglets de son dernier panneau de terminal, si bien
 qu’appliquer une disposition n’en ferme jamais.
+Elle garde aussi l’emplacement des onglets **Problèmes**, **Références**,
+**Recherche**, **LaTeX** et **Deep Search** (l’aperçu ou un volet
+d’édition) : l’appliquer y remet ceux qui sont ouverts (sans ouvrir les
+autres).
 
 `Alt+L` (ou le bouton grille de la barre du haut) ouvre la liste des
 dispositions sous le bouton : l’agencement actuel, la disposition par

@@ -1059,6 +1059,7 @@ static DeepSearchTab* ensure_page(AppData* app) {
     g_object_set_data_full(G_OBJECT(page), PAGE_KEY, dt, tab_free);
     g_signal_connect(page, "map", G_CALLBACK(on_page_map), dt);
     editor_page_set_movable(page);
+    editor_page_set_layout_key(page, "deep-search");
 
     dt->label = g_object_ref(icon_label_new("edit-find", _("Deep Search")));
     GtkGesture* mclick = gtk_gesture_click_new();

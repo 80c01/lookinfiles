@@ -38,6 +38,8 @@ SavedLayout* layouts_capture(AppData* app, const gchar* name) {
 #endif
     g_free(l->editor_splits);
     l->editor_splits = editor_layout_capture(app);
+    g_free(l->tool_tabs);
+    l->tool_tabs = editor_layout_capture_tools(app);
     l->tagbars = TRUE;
     l->editor_tagbar = app->settings.tagbar; /* the preference */
     l->editor_tagbar_as_is = TRUE;
@@ -124,8 +126,9 @@ static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, G
         editor_set_dedicated(app, l->editor_dedicated); /* moves the open tabs */
     }
     if (splits) {
-        editor_layout_apply_spare(app, l->editor_splits, editor_spare);
+        editor_layout_apply_spare(app, l->editor_splits, editor_spare, l->tool_tabs);
     }
+    editor_layout_place_tools(app, l->tool_tabs);
 #ifdef HAVE_VTE
     TermLayoutNode* tree = l->term_vis ? term_layout_parse(l->terminals) : NULL;
     if (term_layout_count(tree) > 0) {

@@ -26,8 +26,18 @@ guint editor_layout_wanted_terminals(const gchar* text);
 void editor_layout_apply(AppData* app, const gchar* text);
 /* The same for layout previews (no view closed): two views of a file may
  * share a pane, terminals of spare (out of any notebook, referenced) fill the
- * terminal tabs after the running ones, before new shells */
-void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare);
+ * terminal tabs after the running ones, before new shells. tools (may be
+ * NULL), layout_store.h tool_tabs text, puts the tool pages it lists in
+ * their pane or the preview notebook. */
+void editor_layout_apply_spare(AppData* app, const gchar* text, GPtrArray* spare, const gchar* tools);
+
+/* Where the tool pages are (editor_page_layout_key()), as layout_store.h
+ * tool_tabs text: in the preview notebook, or the panes of the editor panel
+ * numbered as editor_layout_capture() lists them. Caller frees. */
+gchar* editor_layout_capture_tools(AppData* app);
+/* The tool pages of the editor panel that tools puts in the preview go there
+ * (the panes are placed by editor_layout_apply_spare() with tools) */
+void editor_layout_place_tools(AppData* app, const gchar* tools);
 
 /* Exact arrangement of the editor tabs: the panel's splits, which tab is in
  * which notebook and where, the current pages, the preview notebook's tabs */

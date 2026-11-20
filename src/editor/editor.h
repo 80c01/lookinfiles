@@ -154,6 +154,10 @@ void editor_remove_page(AppData* app, GtkWidget* child);
  * pages marked with editor_page_set_movable() (canvases) */
 void editor_page_set_movable(GtkWidget* page);
 gboolean editor_page_is_movable(GtkWidget* page);
+/* The name saved layouts give a movable tool page (one of its kind:
+ * "problems", "references"...), or NULL (layout_store.h tool_tabs) */
+void editor_page_set_layout_key(GtkWidget* page, const gchar* key);
+const gchar* editor_page_layout_key(GtkWidget* page);
 /* The file a movable page edits (kept by the session), or NULL */
 void editor_page_set_file(GtkWidget* page, const gchar* path);
 const gchar* editor_page_file(GtkWidget* page);
