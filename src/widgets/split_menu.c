@@ -4,9 +4,7 @@
 #include "theme/palette.h"
 #include "widgets/split_ratio.h"
 
-#define SHOW_DELAY_MS 300  /* pointer resting on the handle before the bar shows */
-#define HIDE_DELAY_MS 450  /* pointer away from the handle and the bar before it hides */
-#define POINTER_GAP 14     /* space between the pointer and the bar, along the handle */
+#define HIDE_DELAY_MS 1000 /* pointer away from the handle and the bar before it hides */
 #define BUTTON_SIZE 20
 #define BEFORE_KEY "lookin-split-before" /* gdouble*: the share before a collapse */
 #define KIND_KEY "lookin-split-kind"
@@ -25,9 +23,7 @@ struct SplitMenu {
     GtkWidget* buttons[BTN_COUNT];
     GtkWidget* hovered;       /* paned whose handle has the pointer (weak), or NULL */
     GtkWidget* shown;         /* paned the bar is shown for (weak), or NULL */
-    gdouble pointer;          /* pointer along the hovered handle, in its coordinates */
     gboolean on_bar;          /* the pointer is over the bar */
-    guint show_id;
     guint hide_id;
 };
 
@@ -194,7 +190,6 @@ static void clear_timer(guint* id) {
 
 void split_menu_hide(SplitMenu* menu) {
     if (menu == NULL) return;
-    clear_timer(&menu->show_id);
     clear_timer(&menu->hide_id);
     if (menu->bar != NULL) gtk_widget_set_visible(menu->bar, FALSE);
     g_clear_weak_pointer(&menu->shown);
@@ -244,7 +239,9 @@ static void update_buttons(SplitMenu* menu, gint sides) {
     }
 }
 
-/* Place the bar along the handle of the paned shown, next to the pointer */
+/* Place the bar in the middle of the handle of the paned shown, beside its
+ * line (after it, or before it at the edge of the window): the line stays
+ * free to drag */
 static gboolean place_bar(SplitMenu* menu) {
     GtkWidget* paned = menu->shown;
     GtkWidget* handle = paned_handle(paned);
@@ -254,47 +251,44 @@ static gboolean place_bar(SplitMenu* menu) {
     /* The bar runs along the handle: across a vertical paned's horizontal line */
     gtk_orientable_set_orientation(GTK_ORIENTABLE(menu->bar),
                                    vertical ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL);
+    /* Measured shown (a hidden widget measures 0) and without the margins
+     * that placed it last time (they count in the size) */
+    gtk_widget_set_margin_start(menu->bar, 0);
+    gtk_widget_set_margin_top(menu->bar, 0);
     gint bw = 0, bh = 0;
     gtk_widget_measure(menu->bar, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &bw, NULL, NULL);
     gtk_widget_measure(menu->bar, GTK_ORIENTATION_VERTICAL, -1, NULL, &bh, NULL, NULL);
     gint ow = gtk_widget_get_width(over), oh = gtk_widget_get_height(over);
     gint hw = gtk_widget_get_width(handle), hh = gtk_widget_get_height(handle);
     graphene_point_t at;
-    if (ow <= 0 || oh <= 0 || hw <= 0 || hh <= 0 ||
+    if (ow <= 0 || oh <= 0 || hw <= 0 || hh <= 0 || bw <= 0 || bh <= 0 ||
         !gtk_widget_compute_point(handle, over, &GRAPHENE_POINT_INIT(0.0f, 0.0f), &at)) {
         return FALSE;
     }
-    /* After the pointer along the handle, or before it when there is no room */
-    gdouble along = vertical ? at.x + menu->pointer : at.y + menu->pointer;
+    /* Visible part of the handle (the window may cut it) */
+    gdouble from = MAX(vertical ? at.x : at.y, 0.0);
+    gdouble to = MIN(vertical ? at.x + hw : at.y + hh, (gdouble)(vertical ? ow : oh));
     gdouble length = vertical ? bw : bh;
     gdouble limit = vertical ? ow : oh;
-    gdouble start = along + POINTER_GAP;
-    if (start + length > limit) start = along - POINTER_GAP - length;
-    start = CLAMP(start, 0.0, MAX(limit - length, 0.0));
-    gdouble across = vertical ? at.y + hh * 0.5 - bh * 0.5 : at.x + hw * 0.5 - bw * 0.5;
-    across = CLAMP(across, 0.0, MAX((vertical ? oh - bh : ow - bw), 0.0));
+    gdouble start = CLAMP((from + to - length) * 0.5, 0.0, MAX(limit - length, 0.0));
+    gdouble thick = vertical ? bh : bw;
+    gdouble room = vertical ? oh : ow;
+    gdouble across = vertical ? at.y + hh : at.x + hw;
+    if (across + thick > room) across = (vertical ? at.y : at.x) - thick;
+    across = CLAMP(across, 0.0, MAX(room - thick, 0.0));
     gtk_widget_set_margin_start(menu->bar, (gint)(vertical ? start : across));
     gtk_widget_set_margin_top(menu->bar, (gint)(vertical ? across : start));
     return TRUE;
 }
 
-static gboolean show_now(gpointer data) {
-    SplitMenu* menu = data;
-    menu->show_id = 0;
-    GtkWidget* paned = menu->hovered;
-    if (paned == NULL || menu->bar == NULL || !gtk_widget_get_mapped(paned) || !both_sides_shown(paned)) {
-        return G_SOURCE_REMOVE;
-    }
+static void show_for(SplitMenu* menu, GtkWidget* paned) {
+    if (menu->bar == NULL || !gtk_widget_get_mapped(paned) || !both_sides_shown(paned)) return;
     gint sides = menu->hooks.sides != NULL ? menu->hooks.sides(paned, menu->hooks.data) : 0;
-    if (sides < 0) return G_SOURCE_REMOVE;
+    if (sides < 0) return;
     g_set_weak_pointer(&menu->shown, paned);
     update_buttons(menu, sides);
-    if (!place_bar(menu)) {
-        split_menu_hide(menu);
-        return G_SOURCE_REMOVE;
-    }
     gtk_widget_set_visible(menu->bar, TRUE);
-    return G_SOURCE_REMOVE;
+    if (!place_bar(menu)) split_menu_hide(menu);
 }
 
 static gboolean hide_now(gpointer data) {
@@ -311,7 +305,7 @@ static void schedule_hide(SplitMenu* menu) {
 
 /* --- Pointer on a handle ------------------------------------------------- */
 
-static void handle_pointer(SplitMenu* menu, GtkEventController* ctrl, gdouble x, gdouble y) {
+static void handle_pointer(SplitMenu* menu, GtkEventController* ctrl) {
     GtkWidget* paned = gtk_widget_get_parent(gtk_event_controller_get_widget(ctrl));
     if ((gtk_event_controller_get_current_event_state(ctrl) & GDK_BUTTON1_MASK) != 0) {
         split_menu_hide(menu); /* a drag */
@@ -320,25 +314,27 @@ static void handle_pointer(SplitMenu* menu, GtkEventController* ctrl, gdouble x,
     g_set_weak_pointer(&menu->hovered, paned);
     clear_timer(&menu->hide_id);
     if (menu->shown == paned) return; /* the bar stays where it is */
-    menu->pointer = paned_vertical(paned) ? x : y;
     if (menu->shown != NULL) split_menu_hide(menu);
-    clear_timer(&menu->show_id);
-    menu->show_id = g_timeout_add(SHOW_DELAY_MS, show_now, menu);
+    show_for(menu, paned);
 }
 
 static void on_handle_enter(GtkEventControllerMotion* ctrl, gdouble x, gdouble y, gpointer data) {
-    handle_pointer(data, GTK_EVENT_CONTROLLER(ctrl), x, y);
+    (void)x;
+    (void)y;
+    handle_pointer(data, GTK_EVENT_CONTROLLER(ctrl));
 }
 
+/* Also after a drag: the bar comes back on the first move */
 static void on_handle_motion(GtkEventControllerMotion* ctrl, gdouble x, gdouble y, gpointer data) {
-    handle_pointer(data, GTK_EVENT_CONTROLLER(ctrl), x, y);
+    (void)x;
+    (void)y;
+    handle_pointer(data, GTK_EVENT_CONTROLLER(ctrl));
 }
 
 static void on_handle_leave(GtkEventControllerMotion* ctrl, gpointer data) {
     (void)ctrl;
     SplitMenu* menu = data;
     g_clear_weak_pointer(&menu->hovered);
-    clear_timer(&menu->show_id);
     schedule_hide(menu);
 }
 
@@ -469,7 +465,6 @@ SplitMenu* split_menu_new(const SplitMenuHooks* hooks) {
 
 void split_menu_free(SplitMenu* menu) {
     if (menu == NULL) return;
-    clear_timer(&menu->show_id);
     clear_timer(&menu->hide_id);
     g_clear_weak_pointer(&menu->hovered);
     g_clear_weak_pointer(&menu->shown);

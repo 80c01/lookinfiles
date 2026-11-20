@@ -1,13 +1,13 @@
 #ifndef SPLIT_MENU_H
 #define SPLIT_MENU_H
 
-/* The menu of a split handle: when the pointer rests on the handle of a
- * GtkPaned of the layout, a small bar along the handle offers to collapse
- * either side (or to expand the collapsed one) and to put the handle at a
- * third, a half or two thirds of the room (split_ratio.h). The bar is drawn
- * over the window in an overlay, next to the pointer (which stays on the
- * handle, so a drag still works), and hides when the pointer leaves both, on
- * a press on the handle or after a click on the bar. */
+/* The menu of a split handle: as soon as the pointer is on the handle of a
+ * GtkPaned of the layout, a small bar offers to collapse either side (or to
+ * expand the collapsed one) and to put the handle at a third, a half or two
+ * thirds of the room (split_ratio.h). The bar is drawn over the window in an
+ * overlay, in the middle of the handle and beside its line (which stays free
+ * to drag); it hides on a press on the handle (a drag), after a click on the
+ * bar, or a second after the pointer has left both. */
 #include <gtk/gtk.h>
 
 typedef struct SplitMenu SplitMenu;

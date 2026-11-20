@@ -695,9 +695,10 @@ Layers, from bottom to top
   fractions live only in the workspace (`VirtualLayout`), not in `AppData`.
   A share set from the split handle menu is recorded as is (0 or 1 for a
   collapsed side); a drag keeps each side at 5 % at least.
-- `split_menu` — the bar of a split handle: when the pointer rests on the
+- `split_menu` — the bar of a split handle: as soon as the pointer is on the
   handle of a `GtkPaned` wired by `wire_paned_controllers()`, a bar drawn in
-  the window overlay (next to the pointer, so a drag still works) collapses
+  the window overlay (in the middle of the handle, beside its line, so a drag
+  still works; hidden a second after the pointer leaves) collapses
   either side or expands it back, and puts the handle at 1/3, 1/2 or 2/3
   (`split_ratio`); `split_menu_halve()` is the double click. `panels` gives
   it the sides allowed (the preview / editor split collapses only the

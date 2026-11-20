@@ -15,9 +15,9 @@ affichent ou les masquent :
   [l’éditeur](editor.md)).
 
 Faites glisser la séparation entre deux panneaux pour les redimensionner ;
-une petite étiquette affiche la taille pendant le glissement. Laissez le
-pointeur sur une séparation et une petite barre apparaît à côté : ses
-boutons aux extrémités replient le panneau de ce côté (ou le déplient à sa
+une petite étiquette affiche la taille pendant le glissement. Pointez une
+séparation et une petite barre apparaît à côté de son milieu (encore une
+seconde après que le pointeur l’a quittée) : ses boutons aux extrémités replient le panneau de ce côté (ou le déplient à sa
 taille, une fois replié), ceux du milieu placent la séparation au tiers, à
 la moitié ou aux deux tiers. Un double clic sur une séparation la met à la
 moitié. La séparation entre l’aperçu et le panneau d’édition ne replie que

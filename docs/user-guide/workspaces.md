@@ -13,8 +13,8 @@ them:
   dedicated editor panel and back (see [the editor](editor.md)).
 
 Drag the border between two panels to resize them; a small label shows
-the size while you drag. Rest the pointer on a border and a small bar
-appears beside it: its end buttons collapse the panel on that side (or
+the size while you drag. Point at a border and a small bar appears beside
+its middle (for a second once the pointer leaves it): its end buttons collapse the panel on that side (or
 expand it back to its size, once collapsed), the middle ones put the border
 at a third, a half or two thirds. A double click on a border splits it in
 half. The border between the preview and the editor panel only collapses
