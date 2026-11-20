@@ -763,6 +763,12 @@ static void show_text_preview(TextPreviewTaskData* td) {
                 first_line += (*c == '\n');
             }
             g_string_append(text, td->utf8_text);
+            /* The final line break ends the last line, as in the editor: a
+             * text view would show it as one more, empty, line. A cut
+             * preview ends at a break that more text follows. */
+            if (!td->preview) {
+                g_string_truncate(text, text->len - strlen(text_final_break(text->str, text->len)));
+            }
             gtk_text_buffer_set_text(app->buffer, text->str, (gint)text->len);
             preview_sync_text_lines(app, first_line);
             g_string_free(text, TRUE);

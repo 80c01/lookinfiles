@@ -102,7 +102,10 @@ static void on_chunk_ready(GObject* source, GAsyncResult* res, gpointer user_dat
     }
     GtkTextIter end;
     gtk_text_buffer_get_end_iter(app->buffer, &end);
-    gtk_text_buffer_insert(app->buffer, &end, t->text, -1);
+    gsize text_len = strlen(t->text);
+    /* The file's final line break ends its last line (no empty line after) */
+    if (c->offset + (gint64)t->bytes >= c->size) text_len -= strlen(text_final_break(t->text, text_len));
+    gtk_text_buffer_insert(app->buffer, &end, t->text, (gint)text_len);
     c->offset += (gint64)t->bytes;
     c->loaded += (gint64)t->bytes;
     if (c->line_numbers) {
