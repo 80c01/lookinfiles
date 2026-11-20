@@ -12,6 +12,10 @@
 #include "core/settings_store.h"
 #include "terminal/terminal.h"
 #include "workspace/workspace.h"
+#include "code/code_problems.h"
+#include "code/code_refs.h"
+#include "latex/latex_errors.h"
+#include "search/deep_search_tab.h"
 
 enum { RESPONSE_SAVE = 1, RESPONSE_DELETE = 2 };
 
@@ -116,10 +120,72 @@ static void save_tagbars(AppData* app, const SavedLayout* l) {
     g_free(path);
 }
 
+/* ------------------------------------------------------------------------- */
+/* Tool tabs a layout opens                                                  */
+/* ------------------------------------------------------------------------- */
+
+static GtkWidget* refs_open(AppData* app) {
+    return code_refs_open(app, FALSE);
+}
+
+static GtkWidget* search_open(AppData* app) {
+    return code_refs_open(app, TRUE);
+}
+
+static void refs_close(AppData* app) {
+    code_refs_close(app, FALSE);
+}
+
+static void search_close(AppData* app) {
+    code_refs_close(app, TRUE);
+}
+
+typedef struct {
+    const gchar* key; /* editor_page_layout_key() of its page */
+    gsize page;       /* offset in AppData of the open page */
+    GtkWidget* (*open)(AppData* app);
+    void (*close)(AppData* app);
+} ToolTab;
+
+static const ToolTab TOOL_TABS[] = {
+    {"problems", G_STRUCT_OFFSET(AppData, problems_page), code_problems_open, code_problems_close},
+    {"references", G_STRUCT_OFFSET(AppData, refs_page), refs_open, refs_close},
+    {"search", G_STRUCT_OFFSET(AppData, search_page), search_open, search_close},
+    {"latex", G_STRUCT_OFFSET(AppData, latex_page), latex_errors_open, latex_errors_close},
+    {"deep-search", G_STRUCT_OFFSET(AppData, deep_search_page), deep_search_tab_open, deep_search_tab_close},
+};
+
+static GtkWidget* tool_page(AppData* app, const ToolTab* t) {
+    return G_STRUCT_MEMBER(GtkWidget*, app, t->page);
+}
+
+/* Open the tool tabs l places that are closed (in the preview, without
+ * focus; arrange() moves them); opened gets them (may be NULL) */
+static void open_tools(AppData* app, const SavedLayout* l, GPtrArray* opened) {
+    for (gsize i = 0; i < G_N_ELEMENTS(TOOL_TABS); i++) {
+        const ToolTab* t = &TOOL_TABS[i];
+        if (layout_store_tool_tab_place(l->tool_tabs, t->key, NULL) && tool_page(app, t) == NULL &&
+            t->open(app) != NULL && opened != NULL) {
+            g_ptr_array_add(opened, (gpointer)t);
+        }
+    }
+}
+
+/* Close the tool tabs a preview opened */
+static void close_tools(AppData* app, GPtrArray* opened) {
+    for (guint i = 0; i < opened->len; i++) {
+        const ToolTab* t = g_ptr_array_index(opened, i);
+        if (tool_page(app, t) != NULL) t->close(app);
+    }
+    g_ptr_array_set_size(opened, 0);
+}
+
 /* Arrange the editor tabs, terminals and panels of l (shown by the caller).
  * Nothing closes: running terminals l has no room for are stacked as tabs;
  * with spares, missing ones come from there first. */
-static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, GPtrArray* editor_spare) {
+static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, GPtrArray* editor_spare,
+                    GPtrArray* opened) {
+    open_tools(app, l, opened);
     /* The editor panel's shape, when the layout saved one */
     gboolean splits = l->editor_dedicated && l->editor_splits != NULL && l->editor_splits[0] != '\0';
     if (l->editor_dedicated != app->editor_dedicated) {
@@ -143,7 +209,7 @@ static void arrange(AppData* app, const SavedLayout* l, GPtrArray* term_spare, G
 }
 
 void layouts_apply(AppData* app, const SavedLayout* l) {
-    arrange(app, l, NULL, NULL);
+    arrange(app, l, NULL, NULL, NULL);
     workspace_switch(app, app->current_ws); /* re-applies the current workspace */
     save_tagbars(app, l);
     app_emit(app, APP_EVENT_LAYOUT_CHANGED);
@@ -177,6 +243,7 @@ struct LayoutsPreview {
     TermSnapshot* terms;      /* the terminal panel at the start */
 #endif
     GPtrArray* term_spare;    /* terminals out of the panels meanwhile (referenced) */
+    GPtrArray* opened;        /* the ToolTab* the layout shown opened (closed at the next) */
     GPtrArray* editor_spare;
 };
 
@@ -192,11 +259,13 @@ LayoutsPreview* layouts_preview_begin(AppData* app) {
 #endif
     p->term_spare = g_ptr_array_new_with_free_func(g_object_unref);
     p->editor_spare = g_ptr_array_new_with_free_func(g_object_unref);
+    p->opened = g_ptr_array_new();
     return p;
 }
 
 /* Everything back as at the start: terminals started meanwhile go to the spares */
 static void restore_start(LayoutsPreview* p) {
+    close_tools(p->app, p->opened);
     editor_layout_restore(p->app, p->editor, p->editor_spare);
 #ifdef HAVE_VTE
     term_snapshot_restore(p->app, p->terms, p->term_spare);
@@ -209,7 +278,7 @@ static void restore_start(LayoutsPreview* p) {
 void layouts_preview_show(LayoutsPreview* p, const SavedLayout* l) {
     restore_start(p);
     if (l != NULL) {
-        arrange(p->app, l, p->term_spare, p->editor_spare);
+        arrange(p->app, l, p->term_spare, p->editor_spare, p->opened);
     }
     workspace_show_panels(p->app);
 }
@@ -222,7 +291,7 @@ gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
     g_ptr_array_unref(p->term_spare);
     g_ptr_array_unref(p->editor_spare);
     if (apply) {
-        arrange(app, l, NULL, NULL);
+        arrange(app, l, NULL, NULL, NULL);
         workspace_switch(app, app->current_ws); /* re-applies the current workspace */
         save_tagbars(app, l);
     } else {
@@ -234,6 +303,7 @@ gboolean layouts_preview_end(LayoutsPreview* p, const SavedLayout* l) {
     if (apply) {
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
+    g_ptr_array_unref(p->opened);
     editor_snapshot_free(p->editor);
     editor_tagbar_states_free(p->tagbars);
 #ifdef HAVE_VTE

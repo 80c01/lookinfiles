@@ -71,17 +71,20 @@ static TabTreeNode* parse_notebook(const gchar** p) {
             }
             (*p)++;
         }
-        if ((!g_ascii_isdigit(**p) && **p != 't') || n->tabs->len >= TAB_TREE_MAX_TABS) {
+        if ((!g_ascii_isdigit(**p) && **p != 't' && **p != 'o') || n->tabs->len >= TAB_TREE_MAX_TABS) {
             tab_tree_free(n);
             return NULL;
         }
         guint tab = TAB_TREE_TERMINAL;
         if (**p == 't') {
             (*p)++;
+        } else if (**p == 'o') {
+            tab = TAB_TREE_TOOL;
+            (*p)++;
         } else {
             gchar* end = NULL;
             guint64 v = g_ascii_strtoull(*p, &end, 10);
-            if (v > G_MAXINT) {
+            if (v > G_MAXINT) { /* never a terminal or tool entry */
                 tab_tree_free(n);
                 return NULL;
             }
@@ -162,6 +165,8 @@ static void append_node(GString* s, const TabTreeNode* n) {
             }
             if (tab == TAB_TREE_TERMINAL) {
                 g_string_append_c(s, 't');
+            } else if (tab == TAB_TREE_TOOL) {
+                g_string_append_c(s, 'o');
             } else {
                 g_string_append_printf(s, "%u", tab);
             }

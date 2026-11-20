@@ -660,3 +660,15 @@ gboolean code_problems_step(AppData* app, EditorTab* tab, gboolean forward, Code
     lsp_diagnostic_free(diag);
     return TRUE;
 }
+
+GtkWidget* code_problems_open(AppData* app) {
+    if (app == NULL) return NULL;
+    ProblemsPage* pp = ensure_page(app);
+    if (pp == NULL) return NULL;
+    populate(pp);
+    return pp->page;
+}
+
+void code_problems_close(AppData* app) {
+    if (app != NULL) close_page(page_state(app->problems_page));
+}

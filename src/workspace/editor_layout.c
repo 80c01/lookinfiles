@@ -38,8 +38,9 @@ static gboolean is_other(AppData* app, GtkWidget* page) {
 /* Capture                                                                   */
 /* ------------------------------------------------------------------------- */
 
-/* "[0,t...]": the files marker when it holds files, a "t" per terminal tab;
- * NULL when it holds neither */
+/* "[0,t,o...]": the files marker when it holds files, a "t" per terminal
+ * tab, an "o" per tool tab (editor_page_layout_key()); NULL when it holds
+ * none of them */
 static TabTreeNode* capture_notebook(AppData* app, GtkNotebook* nb) {
     TabTreeNode* node = tab_tree_notebook_new();
     gboolean files = FALSE;
@@ -47,6 +48,8 @@ static TabTreeNode* capture_notebook(AppData* app, GtkNotebook* nb) {
         GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
         if (is_terminal(page)) {
             tab_tree_notebook_add(node, TAB_TREE_TERMINAL);
+        } else if (editor_page_layout_key(page) != NULL) {
+            tab_tree_notebook_add(node, TAB_TREE_TOOL);
         } else if (tab_of_page(app, page) != NULL || is_other(app, page)) {
             files = TRUE;
         }
@@ -145,6 +148,18 @@ gchar* editor_layout_capture_tools(AppData* app) {
     return text;
 }
 
+/* Move page to the end of the preview notebook, its tab in front staying there */
+static void move_to_preview(AppData* app, GtkWidget* page) {
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint cur = gtk_notebook_get_current_page(nb);
+    GtkWidget* front = cur >= 0 ? gtk_notebook_get_nth_page(nb, cur) : NULL;
+    editor_move_page_to(app, page, nb, -1);
+    gint num = front != NULL ? gtk_notebook_page_num(nb, front) : -1;
+    if (num >= 0) {
+        gtk_notebook_set_current_page(nb, num);
+    }
+}
+
 /* Where tools places page: TRUE and *place set for a listed tool page */
 static gboolean tool_place(GtkWidget* page, const gchar* tools, gint* place) {
     const gchar* key = editor_page_layout_key(page);
@@ -169,7 +184,7 @@ void editor_layout_place_tools(AppData* app, const gchar* tools) {
     }
     g_ptr_array_unref(nbs);
     for (guint i = 0; i < moving->len; i++) {
-        editor_move_page_to(app, g_ptr_array_index(moving, i), GTK_NOTEBOOK(app->notebook), -1);
+        move_to_preview(app, g_ptr_array_index(moving, i));
     }
     if (moving->len > 0) {
         editor_remove_empty_notebooks(app);
@@ -193,10 +208,12 @@ guint editor_layout_terminal_count(AppData* app) {
     return n;
 }
 
+/* The movable pages of nb that are documents (canvases...), not tool tabs */
 static guint count_others(AppData* app, GtkNotebook* nb) {
     guint n = 0;
     for (gint p = 0; p < gtk_notebook_get_n_pages(nb); p++) {
-        n += is_other(app, gtk_notebook_get_nth_page(nb, p)) ? 1 : 0;
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, p);
+        n += (is_other(app, page) && editor_page_layout_key(page) == NULL) ? 1 : 0;
     }
     return n;
 }
@@ -266,7 +283,8 @@ static void build(AppData* app, const TabTreeNode* node, GtkNotebook* nb, GPtrAr
 
 static gboolean holds_files(const TabTreeNode* node) {
     for (guint i = 0; i < node->tabs->len; i++) {
-        if (g_array_index(node->tabs, guint, i) != TAB_TREE_TERMINAL) {
+        guint tab = g_array_index(node->tabs, guint, i);
+        if (tab != TAB_TREE_TERMINAL && tab != TAB_TREE_TOOL) {
             return TRUE;
         }
     }
@@ -332,7 +350,7 @@ static void rebuild(AppData* app, const TabTreeNode* tree, GtkNotebook* root, GP
         GtkWidget* page = g_ptr_array_index(others, i);
         gint place = 0;
         if (app->notebook != NULL && tool_place(page, tools, &place) && place == LAYOUT_TOOL_PREVIEW) {
-            editor_move_page_to(app, page, GTK_NOTEBOOK(app->notebook), -1);
+            move_to_preview(app, page);
             g_ptr_array_remove_index(others, i);
         }
     }

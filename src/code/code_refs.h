@@ -46,6 +46,12 @@ void code_refs_workspace_hidden(AppData* app, VirtualLayout* ws);
 void code_refs_workspace_shown(AppData* app, VirtualLayout* ws);
 void code_refs_workspace_removed(AppData* app, VirtualLayout* ws);
 
+/* The References (search FALSE) or Search page, opened empty where it goes
+ * when closed, not shown nor focused (saved layouts open it); NULL without a
+ * preview. code_refs_close() closes it when open. */
+GtkWidget* code_refs_open(AppData* app, gboolean search);
+void code_refs_close(AppData* app, gboolean search);
+
 /* Close the References or Search tab if it has the focus or is the current
  * page of app->notebook (Ctrl+W). Returns TRUE when closed. */
 gboolean code_refs_close_shown(AppData* app);

@@ -6,7 +6,8 @@
  * each notebook and the view last focused.
  *
  * A notebook is "[<tab>,<tab>...]", each tab the index of its file in the
- * session's file list or "t" for a terminal tab (a new shell when restored),
+ * session's file list, "t" for a terminal tab (a new shell when restored)
+ * or "o" for a tool tab (Problems, References..., placed by saved layouts),
  * followed by "*" for the current page and "!" for the view last focused; "H:<frac>(<a>,<b>)" splits side by side and
  * "V:<frac>(<a>,<b>)" one above the other, <frac> being the share of the
  * first child, e.g. "H:0.500([0*,2],V:0.400([1!],[0]))". A file may be in
@@ -18,10 +19,12 @@
 #define TAB_TREE_MAX_TABS 256
 /* The tab entry of a terminal ("t") */
 #define TAB_TREE_TERMINAL G_MAXUINT
+/* The tab entry of a tool tab ("o") */
+#define TAB_TREE_TOOL (G_MAXUINT - 1)
 
 typedef struct TabTreeNode {
     gboolean is_notebook;
-    GArray* tabs;    /* notebook: guint file indices (or TAB_TREE_TERMINAL), in page order */
+    GArray* tabs;    /* notebook: guint file indices (or TAB_TREE_TERMINAL / TAB_TREE_TOOL), in page order */
     gint current;    /* notebook: position in tabs of the current page, -1 if none */
     gint focused;    /* notebook: position in tabs of the view last focused, -1 if none */
     gboolean vertical;

@@ -45,9 +45,12 @@ applying it moves the open files into the editor panes that held files (an
 empty one takes a file from the fullest), reuses the running terminals and
 starts the missing shells; running terminals it has no room for become
 tabs of its last terminal pane, so applying a layout never closes one.
-It also keeps where the **Problems**, **References**, **Search**, **LaTeX**
-and **Deep Search** tabs were (the preview or an editor pane): applying it
-puts those that are open back there (it does not open the others).
+It also keeps the **Problems**, **References**, **Search**, **LaTeX** and
+**Deep Search** tabs that were open and where (the preview or an editor
+pane, a pane holding only such tabs staying theirs): applying it opens
+those that are closed, without the focus (an empty one says how to fill
+it: `Shift+F12`, `Ctrl+Shift+F`, saving a `.tex` file), and puts them
+there; one open that it does not list stays where it is.
 `Alt+L` (or the grid button of the top bar) opens the layout list under
 the button: the current arrangement, the default layout, the saved ones,
 then the built-in layouts. Moving through the list (hovering with the mouse, arrows, or `Alt+L`

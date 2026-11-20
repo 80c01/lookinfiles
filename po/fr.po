@@ -11711,3 +11711,13 @@ msgstr "Glisser / clic droit sur l’onglet"
 
 msgid "Move the tab to another pane, as an editor tab"
 msgstr "Déplacer l’onglet dans un autre volet, comme un onglet d’édition"
+
+#: src/code/code_refs.c src/latex/latex_errors.c
+msgid "No search yet — press Ctrl+Shift+F to search in files"
+msgstr "Aucune recherche pour l’instant — appuyez sur Ctrl+Shift+F pour chercher dans les fichiers"
+
+msgid "No references yet — press Shift+F12 on a name in an editor tab"
+msgstr "Aucune référence pour l’instant — appuyez sur Shift+F12 sur un nom dans un onglet d’édition"
+
+msgid "No compilation yet — save a .tex file to compile it"
+msgstr "Aucune compilation pour l’instant — enregistrez un fichier .tex pour le compiler"

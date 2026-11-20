@@ -1197,3 +1197,16 @@ void deep_search_tab_workspace_removed(AppData* app, VirtualLayout* ws) {
         g_clear_object(&ws->deep_search_page);
     }
 }
+
+GtkWidget* deep_search_tab_open(AppData* app) {
+    if (app == NULL) return NULL;
+    gboolean fresh = (app->deep_search_page == NULL);
+    DeepSearchTab* dt = ensure_page(app);
+    if (dt == NULL) return NULL;
+    if (fresh && app->base_dir != NULL) gtk_editable_set_text(GTK_EDITABLE(dt->folder), app->base_dir);
+    return dt->page;
+}
+
+void deep_search_tab_close(AppData* app) {
+    if (app != NULL && app->deep_search_page != NULL) close_page(app);
+}

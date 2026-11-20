@@ -438,3 +438,23 @@ gboolean latex_errors_close_shown(AppData* app) {
     on_close_clicked(NULL, lp);
     return TRUE;
 }
+
+GtkWidget* latex_errors_open(AppData* app) {
+    if (app == NULL) return NULL;
+    gboolean fresh = (app->latex_page == NULL);
+    LatexPage* lp = ensure_page(app, TRUE);
+    if (lp == NULL) return NULL;
+    if (fresh) {
+        gchar* markup = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", palette_color(PAL_FG_SUBTLE),
+                                                _("No compilation yet — save a .tex file to compile it"));
+        gtk_label_set_markup(GTK_LABEL(lp->header), markup);
+        g_free(markup);
+    }
+    return lp->page;
+}
+
+void latex_errors_close(AppData* app) {
+    if (app == NULL) return;
+    LatexPage* lp = page_state(app->latex_page);
+    if (lp != NULL) on_close_clicked(NULL, lp);
+}

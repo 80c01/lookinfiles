@@ -20,6 +20,11 @@
 /* Show the tab with path (a folder) as the folder to search, opened when
  * needed; the focus goes to the name field. Nothing is searched yet. */
 void deep_search_tab_show(AppData* app, const gchar* path);
+/* The tab, opened with the current folder when closed, not shown nor focused
+ * (saved layouts open it); NULL without a preview. deep_search_tab_close()
+ * closes it when open. */
+GtkWidget* deep_search_tab_open(AppData* app);
+void deep_search_tab_close(AppData* app);
 
 /* Read and validate the criteria of the open Deep Search tab into out.
  * Returns FALSE when no tab is open or a criterion is invalid (error shown). */

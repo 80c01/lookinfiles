@@ -9,6 +9,12 @@
 /* Open and focus the Problems tab in the preview notebook */
 void code_problems_show(AppData* app, EditorTab* tab);
 
+/* The Problems tab, opened where code_problems_show() puts it when closed,
+ * not shown nor focused (saved layouts open it); NULL without a preview */
+GtkWidget* code_problems_open(AppData* app);
+/* Close the Problems tab if it is open */
+void code_problems_close(AppData* app);
+
 /* Refresh the Problems tab if it is open (subscribed to
  * APP_EVENT_DIAGNOSTICS_CHANGED in main.c) */
 void code_problems_refresh(AppData* app);

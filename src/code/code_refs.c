@@ -803,3 +803,25 @@ gboolean code_refs_close_shown(AppData* app) {
     }
     return FALSE;
 }
+
+GtkWidget* code_refs_open(AppData* app, gboolean search) {
+    if (app == NULL) return NULL;
+    GtkWidget** slot = search ? &app->search_page : &app->refs_page;
+    gboolean fresh = (*slot == NULL);
+    RefsPage* rp = ensure_page(app, slot, search ? _("Search") : _("References"));
+    if (rp == NULL) return NULL;
+    if (fresh) {
+        const gchar* empty = search ? _("No search yet — press Ctrl+Shift+F to search in files")
+                                    : _("No references yet — press Shift+F12 on a name in an editor tab");
+        gchar* markup = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>", palette_color(PAL_FG_SUBTLE), empty);
+        gtk_label_set_markup(GTK_LABEL(rp->header), markup);
+        g_free(markup);
+    }
+    return rp->page;
+}
+
+void code_refs_close(AppData* app, gboolean search) {
+    if (app == NULL) return;
+    RefsPage* rp = page_state(search ? app->search_page : app->refs_page);
+    if (rp != NULL) on_close_clicked(NULL, rp);
+}
