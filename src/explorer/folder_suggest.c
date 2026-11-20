@@ -218,9 +218,13 @@ static void refresh(Suggest* s) {
         return;
     }
     gtk_list_view_scroll_to(GTK_LIST_VIEW(s->list), 0, GTK_LIST_SCROLL_NONE, NULL);
+    gtk_widget_set_size_request(s->scroll, MAX(gtk_widget_get_width(s->entry), 240), -1);
     if (!gtk_widget_get_visible(s->popover)) {
-        gtk_widget_set_size_request(s->scroll, MAX(gtk_widget_get_width(s->entry), 240), -1);
         gtk_popover_popup(GTK_POPOVER(s->popover));
+    } else {
+        /* The entry does not allocate the popover: lay it out again for
+         * the rows now shown (else it keeps its first height) */
+        gtk_popover_present(GTK_POPOVER(s->popover));
     }
 }
 
