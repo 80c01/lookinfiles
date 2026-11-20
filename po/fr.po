@@ -4676,6 +4676,10 @@ msgstr "La roue vient une fois le dossier lu"
 msgid "Parent Folder"
 msgstr "Dossier parent"
 
+#: src/search/deep_search_tab.c
+msgid "Use the Explorer's Folder"
+msgstr "Utiliser le dossier de l’explorateur"
+
 #: src/editor/editor.c:479 src/notes/notes_actions.c:121
 #: src/notes/notes_actions.c:149
 #, c-format

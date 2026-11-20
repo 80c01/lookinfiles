@@ -10,6 +10,7 @@
  * after AppData is allocated:
  *
  *   APP_EVENT_CHROME_CHANGED  -> update_path_label()          (topbar.c)
+ *                                deep_search_tab_sync_folder() (deep_search_tab.c)
  *   APP_EVENT_STATUS_CHANGED  -> update_status_bar()          (status_bar.c)
  *                                editor_modes_refresh_bars()  (editor_modes.c)
  *   APP_EVENT_LAYOUT_CHANGED  -> workspace_save_current()     (workspace.c)

@@ -32,6 +32,7 @@
 #include "widgets/minimap.h"
 #include "search/search.h"
 #include "search/deep_search_bookmark.h"
+#include "search/deep_search_tab.h"
 #include "chrome/ui.h"
 #include "editor/editor.h"
 #include "editor/editor_session.h"
@@ -517,6 +518,7 @@ int main(int argc, char** argv) {
 
     /* Event subscriptions: before any code can emit (see app_events.h) */
     app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, update_path_label);
+    app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, deep_search_tab_sync_folder);
     app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, update_status_bar);
     app_events_subscribe(app, APP_EVENT_PREVIEW_LOCATION, status_bar_show_location);
     app_events_subscribe(app, APP_EVENT_PREVIEW_PATH, preview_show_requested);

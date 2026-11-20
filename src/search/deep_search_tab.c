@@ -36,6 +36,7 @@ typedef struct {
 
     /* The form */
     GtkWidget* folder;
+    GtkWidget* use_current; /* shown when the folder is not the explorer's */
     GtkWidget* name;
     GtkWidget* extensions;
     GtkWidget* family;    /* GtkDropDown: any, then the FileFamily values */
@@ -346,18 +347,26 @@ static gboolean read_form(DeepSearchTab* dt, DeepQuery* q) {
     return TRUE;
 }
 
+/* The folder typed, '~' expanded and canonical (newly allocated), NULL
+ * when empty */
+static gchar* folder_path(DeepSearchTab* dt) {
+    gchar* path = g_strstrip(g_strdup(field_text(dt->folder)));
+    if (path[0] == '~' && (path[1] == '\0' || path[1] == '/')) {
+        gchar* home = g_build_filename(g_get_home_dir(), path + 1, NULL);
+        g_free(path);
+        path = home;
+    }
+    gchar* canon = path[0] != '\0' ? g_canonicalize_filename(path, NULL) : NULL;
+    g_free(path);
+    return canon;
+}
+
 /* Search with the criteria of the form, from the start */
 static void start_search(DeepSearchTab* dt) {
     clear_errors(dt);
-    gchar* root = g_strstrip(g_strdup(field_text(dt->folder)));
-    if (root[0] == '~') {
-        gchar* home = g_build_filename(g_get_home_dir(), root + 1, NULL);
-        g_free(root);
-        root = home;
-    }
-    if (root[0] == '\0') {
+    gchar* root = folder_path(dt);
+    if (root == NULL) {
         show_error(dt, dt->folder, g_strdup(_("Type the folder to search")));
-        g_free(root);
         return;
     }
     if (!g_file_test(root, G_FILE_TEST_IS_DIR)) {
@@ -549,6 +558,25 @@ static void on_parent_clicked(GtkButton* button, gpointer data) {
     gtk_editable_set_text(GTK_EDITABLE(dt->folder), parent);
     g_free(parent);
     g_free(path);
+}
+
+static void sync_use_current(DeepSearchTab* dt) {
+    const gchar* base = dt->app->base_dir;
+    gboolean differs = FALSE;
+    if (base != NULL && base[0] != '\0') {
+        gchar* path = folder_path(dt);
+        gchar* canon = g_canonicalize_filename(base, NULL);
+        differs = g_strcmp0(path, canon) != 0;
+        g_free(canon);
+        g_free(path);
+    }
+    gtk_widget_set_visible(dt->use_current, differs);
+}
+
+static void on_use_current_clicked(GtkButton* button, gpointer data) {
+    (void)button;
+    DeepSearchTab* dt = data;
+    if (dt->app->base_dir != NULL) gtk_editable_set_text(GTK_EDITABLE(dt->folder), dt->app->base_dir);
 }
 
 /* Regex and letters in order exclude each other */
@@ -854,6 +882,10 @@ static void build_form(DeepSearchTab* dt, GtkWidget* page) {
     GtkWidget* parent = icon_button_new("pan-up", _("Parent Folder"));
     g_signal_connect(parent, "clicked", G_CALLBACK(on_parent_clicked), dt);
     gtk_box_append(GTK_BOX(box), parent);
+    dt->use_current = icon_button_new("folder", _("Use the Explorer's Folder"));
+    g_signal_connect(dt->use_current, "clicked", G_CALLBACK(on_use_current_clicked), dt);
+    gtk_box_append(GTK_BOX(box), dt->use_current);
+    g_signal_connect_swapped(dt->folder, "changed", G_CALLBACK(sync_use_current), dt);
 
     box = form_row(g, 1, 0, _("Name"), 1);
     dt->name = field_new(dt, _("Part of the name, or *.jpg"),
@@ -1063,14 +1095,8 @@ gboolean deep_search_tab_read_saved(AppData* app, SavedDeepSearch* out) {
     deep_query_clear(&q);
     if (!ok) return FALSE;
     saved_deep_search_init(out);
-    gchar* folder = dup_nonempty(field_text(dt->folder), TRUE);
-    if (folder != NULL && folder[0] == '~' && (folder[1] == '\0' || folder[1] == '/')) {
-        gchar* home = g_build_filename(g_get_home_dir(), folder + 1, NULL);
-        g_free(folder);
-        folder = home;
-    }
-    out->folder = folder;
-    out->use_current_folder = (folder == NULL);
+    out->folder = folder_path(dt);
+    out->use_current_folder = (out->folder == NULL);
     out->name = dup_nonempty(field_text(dt->name), FALSE);
     out->family = (gint)gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->family)) - 1;
     if (out->family < 0) out->extensions = dup_nonempty(field_text(dt->extensions), TRUE);
@@ -1107,6 +1133,11 @@ void deep_search_tab_run_saved(AppData* app, const SavedDeepSearch* saved) {
         gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, dt->page));
     }
     start_search(dt);
+}
+
+void deep_search_tab_sync_folder(AppData* app) {
+    DeepSearchTab* dt = tab_state(app);
+    if (dt != NULL) sync_use_current(dt);
 }
 
 gboolean deep_search_tab_close_shown(AppData* app) {

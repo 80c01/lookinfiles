@@ -29,6 +29,10 @@ gboolean deep_search_tab_read_saved(AppData* app, SavedDeepSearch* out);
  * saved->use_current_folder is TRUE) and start the search. */
 void deep_search_tab_run_saved(AppData* app, const SavedDeepSearch* saved);
 
+/* The explorer's folder may have changed (APP_EVENT_CHROME_CHANGED): show
+ * the button that puts it in the folder field when they differ */
+void deep_search_tab_sync_folder(AppData* app);
+
 /* Close the tab if it is the current page of the preview notebook (Ctrl+W).
  * Returns TRUE if it was closed. */
 gboolean deep_search_tab_close_shown(AppData* app);

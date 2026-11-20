@@ -84,7 +84,7 @@ Fill in any of the criteria, then press `Enter` in a field (or the
 
 | Field | What it matches |
 |---|---|
-| **Folder** | Where to search, with everything below it (`~` is your home folder) |
+| **Folder** | Where to search, with everything below it (`~` is your home folder); the arrow goes up to its parent, and when it is not the explorer's folder a folder button puts that one back |
 | **Name** | A part of the name, any case (`report`); with `*` or `?`, a pattern of the whole name (`IMG_????.jpg`, `*.tar.gz`) |
 | **Extensions** | Separated by commas, any case: `c, h, md`, `tar.gz` |
 | **or** a category | Instead of extensions, a kind of file: documents, images, videos, audio, archives, text and code, programs (from the extension, as in [Disk Usage](preview-panel.md#disk-usage)); choosing one empties and dims the extensions; a click in them (or typing) sets **Any category** back |

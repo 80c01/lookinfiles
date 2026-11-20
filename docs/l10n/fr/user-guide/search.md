@@ -90,7 +90,7 @@ lequel ».
 
 | Champ | Ce qu’il retient |
 |---|---|
-| **Dossier** | Où chercher, avec tout ce qu’il contient (`~` est votre dossier personnel) |
+| **Dossier** | Où chercher, avec tout ce qu’il contient (`~` est votre dossier personnel) ; la flèche remonte à son parent, et quand ce n’est pas le dossier de l’explorateur un bouton dossier remet celui-ci |
 | **Nom** | Une partie du nom, sans tenir compte de la casse (`rapport`) ; avec `*` ou `?`, un motif du nom entier (`IMG_????.jpg`, `*.tar.gz`) |
 | **Extensions** | Séparées par des virgules, sans tenir compte de la casse : `c, h, md`, `tar.gz` |
 | **ou** une catégorie | Au lieu des extensions, un genre de fichier : documents, images, vidéos, audio, archives, texte et code, programmes (d’après l’extension, comme dans l’[Espace disque](preview-panel.md#espace-disque)) ; en choisir une vide et estompe les extensions ; un clic dedans (ou une saisie) remet **Toute catégorie** |
