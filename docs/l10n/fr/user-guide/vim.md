@@ -47,6 +47,11 @@ macro, et la règle. Les messages restent en anglais, comme dans Vim.
 `softtabstop`, `textwidth`, `clipboard`, `number` et `wrap`, avec les
 formes `no` / `inv` / `!` / `?` / `+=`.
 
+Comme dans Vim, le saut de ligne de fin de fichier n’est pas une ligne vide
+de plus, et `~` marque les lignes d’écran sous la dernière ligne.
+`fixendofline` (`fixeol`, actif par défaut) ajoute ce saut à l’écriture d’un
+fichier qui n’en avait pas ; `:set nofixeol` laisse le fichier sans.
+
 Les options ne sont pas lues dans un `.vimrc` : réglez-les dans l’onglet
 avec `:set`.
 

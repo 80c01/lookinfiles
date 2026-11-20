@@ -1166,11 +1166,7 @@ void editor_set_all_preview_paused(AppData* app, gboolean paused) {
 }
 
 gboolean editor_tab_write(EditorTab* tab, const gchar* path, GError** error) {
-    GtkTextIter start, end;
-    gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* lines = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
-    gchar* text = g_strconcat(lines, tab->final_break, NULL);
-    g_free(lines);
+    gchar* text = editor_tab_file_text(tab);
     gboolean ok = file_save_text(path, text, -1, error);
     g_free(text);
     if (ok && tab->path != NULL && g_strcmp0(path, tab->path) == 0) {

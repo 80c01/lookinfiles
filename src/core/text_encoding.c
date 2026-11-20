@@ -107,3 +107,9 @@ const gchar* text_final_break(const gchar* data, gsize len) {
     }
     return data[len - 1] == '\r' ? "\r" : "";
 }
+
+const gchar* text_line_break(const gchar* line_ending) {
+    if (g_strcmp0(line_ending, "Windows (CRLF)") == 0) return "\r\n";
+    if (g_strcmp0(line_ending, "Mac (CR)") == 0) return "\r";
+    return "\n";
+}

@@ -280,7 +280,7 @@ gchar* vim_engine_cmdline_history(VimEngine* e, gint dir, const gchar* prefix) {
 }
 
 static const gchar* const OPTION_NAMES[] = {
-    "autoindent", "autoread", "clipboard", "expandtab", "hlsearch", "ignorecase", "incsearch", "nonumber",
+    "autoindent", "autoread", "clipboard", "expandtab", "fixendofline", "hlsearch", "ignorecase", "incsearch", "nonumber",
     "number", "shiftwidth", "smartcase", "softtabstop", "tabstop", "textwidth", "wrap", "wrapscan", NULL,
 };
 
@@ -898,6 +898,7 @@ static const OptDef OPTIONS[] = {
     {"expandtab", "et", OPT_BOOL, G_STRUCT_OFFSET(VimOptions, expandtab)},
     {"autoindent", "ai", OPT_BOOL, G_STRUCT_OFFSET(VimOptions, autoindent)},
     {"autoread", "ar", OPT_BOOL, G_STRUCT_OFFSET(VimOptions, autoread)},
+    {"fixendofline", "fixeol", OPT_BOOL, G_STRUCT_OFFSET(VimOptions, fixendofline)},
     {"shiftwidth", "sw", OPT_INT, G_STRUCT_OFFSET(VimOptions, shiftwidth)},
     {"tabstop", "ts", OPT_INT, G_STRUCT_OFFSET(VimOptions, tabstop)},
     {"softtabstop", "sts", OPT_INT, G_STRUCT_OFFSET(VimOptions, softtabstop)},

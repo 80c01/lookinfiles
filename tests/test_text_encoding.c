@@ -80,6 +80,13 @@ static void test_final_break(void) {
     g_assert_cmpstr(text_final_break(NULL, 0), ==, "");
 }
 
+static void test_line_break(void) {
+    g_assert_cmpstr(text_line_break("Windows (CRLF)"), ==, "\r\n");
+    g_assert_cmpstr(text_line_break("Mac (CR)"), ==, "\r");
+    g_assert_cmpstr(text_line_break("Unix (LF)"), ==, "\n");
+    g_assert_cmpstr(text_line_break(NULL), ==, "\n");
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/text_encoding/utf8", test_utf8);
@@ -87,5 +94,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/text_encoding/legacy", test_legacy);
     g_test_add_func("/text_encoding/line_ending", test_line_ending);
     g_test_add_func("/text_encoding/final_break", test_final_break);
+    g_test_add_func("/text_encoding/line_break", test_line_break);
     return g_test_run();
 }

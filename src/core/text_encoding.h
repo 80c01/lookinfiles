@@ -27,4 +27,8 @@ const gchar* text_line_ending_detect(const gchar* data, gsize len);
  * line) and writes it back at save. */
 const gchar* text_final_break(const gchar* data, gsize len);
 
+/* Line break of a line ending named by text_line_ending_detect(): "\r\n",
+ * "\r" or "\n" (also for NULL or an unknown name) */
+const gchar* text_line_break(const gchar* line_ending);
+
 #endif /* TEXT_ENCODING_H */

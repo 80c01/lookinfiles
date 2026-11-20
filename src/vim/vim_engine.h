@@ -86,6 +86,7 @@ typedef struct {
     gint tabstop;
     gint softtabstop;       /* Tab / BS width in Insert mode (0: off, < 0: shiftwidth) */
     gint textwidth;         /* gq width (0: 79) */
+    gboolean fixendofline;  /* fixeol: a write ends the last line with a break */
 } VimOptions;
 
 VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer host_data);

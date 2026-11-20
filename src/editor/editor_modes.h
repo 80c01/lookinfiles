@@ -20,6 +20,9 @@ void editor_modes_init_watch_hooks(void);
 void editor_modes_init_tab(AppData* app, EditorTab* tab);
 void editor_modes_free_tab(EditorTab* tab);
 void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode);
+/* The bytes a write of tab puts in its file: the buffer and the final line
+ * break (added when the file had none and Vim's fixendofline is on) */
+gchar* editor_tab_file_text(EditorTab* tab);
 gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
                                  guint keycode, GdkModifierType state);
 /* Refresh the bar of tab in its mode's style: position, file (git branch,

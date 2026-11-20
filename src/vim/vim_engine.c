@@ -498,6 +498,7 @@ VimEngine* vim_engine_new(GtkTextBuffer* buffer, const VimHost* host, gpointer h
     e->opt.expandtab = TRUE;
     e->opt.autoindent = TRUE;
     e->opt.autoread = TRUE;
+    e->opt.fixendofline = TRUE;
     e->opt.unnamedplus = TRUE;
     e->opt.shiftwidth = 4;
     e->opt.tabstop = 8;

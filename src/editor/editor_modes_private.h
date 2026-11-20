@@ -217,6 +217,8 @@ gboolean vim_cancel_pending(EditorTab* tab);
 void vim_echo_error(EditorTab* tab, const gchar* msg);
 /* TRUE when :set autoread is enabled on tab's Vim engine */
 gboolean vim_autoread_enabled(EditorTab* tab);
+/* TRUE when :set fixendofline is enabled on tab's Vim engine */
+gboolean vim_fixeol_enabled(EditorTab* tab);
 /* Next (1) / previous (-1) tab of the tab's notebook, focus in the new page */
 void editor_modes_step_tab(EditorTab* tab, gint step);
 

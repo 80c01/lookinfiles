@@ -43,6 +43,11 @@ keys typed so far, `recording @x` while a macro records, and the ruler.
 `softtabstop`, `textwidth`, `clipboard`, `number` and `wrap`, with the
 `no` / `inv` / `!` / `?` / `+=` forms.
 
+As in Vim, the line break at the end of the file is not an extra empty
+line, and `~` marks the screen lines below the last line. `fixendofline`
+(`fixeol`, on by default) adds the break when writing a file that had none;
+`:set nofixeol` keeps the file without it.
+
 Options are not read from a `.vimrc`: set them in the tab with `:set`.
 
 ## Code navigation

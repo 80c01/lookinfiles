@@ -53,6 +53,11 @@ gboolean vim_autoread_enabled(EditorTab* tab) {
     return vim_engine_options(tab->mode_state->vim)->autoread;
 }
 
+gboolean vim_fixeol_enabled(EditorTab* tab) {
+    if (tab == NULL || tab->mode_state == NULL || tab->mode_state->vim == NULL) return FALSE;
+    return vim_engine_options(tab->mode_state->vim)->fixendofline;
+}
+
 void vim_cursor_get(EditorTab* tab, GtkTextIter* it) {
     EditorModeState* st = state_of(tab);
     if (st != NULL && st->vim != NULL) {

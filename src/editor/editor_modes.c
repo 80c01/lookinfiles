@@ -10,6 +10,7 @@
 #include "editor/editor_info.h"
 #include "editor/editor_watch.h"
 #include "editor/file_save.h"
+#include "core/text_encoding.h"
 #include "theme/theme.h"
 #include "theme/fonts.h"
 #include "widgets/focus_route.h"
@@ -243,11 +244,7 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
         g_free(parent);
     }
 
-    GtkTextIter start, end;
-    gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
-    gchar* lines = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
-    gchar* text = g_strconcat(lines, tab->final_break, NULL);
-    g_free(lines);
+    gchar* text = editor_tab_file_text(tab);
     GError* err = NULL;
 
     if (!file_save_text(full_path, text, -1, &err)) {
@@ -1008,6 +1005,33 @@ void editor_modes_apply_mode(AppData* app, EditorTab* tab, EditorMode mode) {
         app_emit(app, APP_EVENT_STATUS_CHANGED);
     }
 }
+
+/* A write of tab ends its last line with a break the file did not have */
+static gboolean fixes_final_break(EditorTab* tab) {
+    return tab != NULL && tab->mode == EDITOR_MODE_VIM && vim_fixeol_enabled(tab);
+}
+
+gchar* editor_tab_file_text(EditorTab* tab) {
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(tab->buffer, &start, &end);
+    gchar* lines = gtk_text_buffer_get_text(tab->buffer, &start, &end, TRUE);
+    const gchar* fb = tab->final_break != NULL ? tab->final_break : "";
+    if (fb[0] == '\0' && lines[0] != '\0' && fixes_final_break(tab)) {
+        /* From now on the file ends with a break, for every view of it */
+        fb = text_line_break(tab->line_ending);
+        tab->final_break = fb;
+        if (tab->app != NULL) {
+            for (GList* l = tab->app->editors; l != NULL; l = l->next) {
+                EditorTab* t = l->data;
+                if (t != NULL && t->buffer == tab->buffer) t->final_break = fb;
+            }
+        }
+    }
+    gchar* text = g_strconcat(lines, fb, NULL);
+    g_free(lines);
+    return text;
+}
+
 
 static gboolean watch_hook_auto_reload(EditorTab* tab) {
     if (tab == NULL) return FALSE;
