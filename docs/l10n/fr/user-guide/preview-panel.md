@@ -297,6 +297,18 @@ semaine, d’un mois, d’un an, 1 à 3 ans, plus) et par extension, les plus
 gros fichiers de tout le dossier (un clic en montre un dans
 l’explorateur), et les éléments illisibles.
 
+Dans un dépôt git, les statistiques donnent aussi la place de ses
+fichiers sous la vue d’ensemble : les fichiers suivis (ceux de l’index),
+les non suivis qui ne sont pas ignorés, les ignorés (le reste : sorties
+de compilation, dépendances, caches), l’historique (le dossier `.git`,
+quand le dossier lu est le haut du dépôt) et les sous-modules et dépôts
+qu’il contient, chacun avec sa part et son nombre de fichiers. Puis,
+après les plus gros fichiers, les plus gros éléments ignorés (les
+dossiers qui ne contiennent que des fichiers ignorés, et les fichiers
+ignorés à côté des autres) et les plus gros fichiers suivis ; un clic en
+montre un dans l’explorateur. Pour un dossier à l’intérieur d’un dépôt,
+seul ce qui est dans ce dossier compte, et le haut du dépôt est indiqué.
+
 Les liens symboliques ne sont pas suivis, un fichier qui a plusieurs liens
 physiques ne compte qu’une fois, et les autres disques montés dans le
 dossier sont laissés de côté. Le résumé sous le titre donne aussi la place

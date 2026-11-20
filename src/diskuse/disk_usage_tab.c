@@ -8,6 +8,7 @@
 #include "core/disk_stats.h"
 #include "core/i18n.h"
 #include "explorer/file_list.h"
+#include "git/git_space.h"
 #include "git/git_tab.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
@@ -23,6 +24,7 @@
 /* One reading of the tree: the scan lives as long as its worker */
 typedef struct {
     DiskScan* scan; /* owned until the tab adopts it */
+    GitSpace* git;  /* the room of its work tree, NULL outside one */
 } ScanJob;
 
 typedef struct {
@@ -46,6 +48,7 @@ typedef struct {
 
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
+    GitSpace* git;       /* the room of its work tree (owned), NULL outside one */
     DiskScan* running;   /* the scan being read (owned by its job), else NULL */
     gboolean quiet;      /* the reading running keeps the tree read shown */
     GPtrArray* excluded; /* full paths left out of the calculation */
@@ -247,6 +250,7 @@ static void show_folder(DiskUsageTab* dt, DiskNode* node, const gchar* select) {
 static void job_free(gpointer data) {
     ScanJob* job = data;
     disk_scan_free(job->scan);
+    git_space_free(job->git);
     g_free(job);
 }
 
@@ -254,6 +258,7 @@ static void scan_thread(GTask* task, gpointer source, gpointer data, GCancellabl
     (void)source;
     ScanJob* job = data;
     disk_scan_run(job->scan, cancel);
+    if (!disk_scan_cancelled(job->scan)) job->git = git_space_compute(job->scan, cancel);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -281,10 +286,12 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
         gchar* select = disk_usage_list_selected_name(dt->list);
         dt->scan = job->scan;
         job->scan = NULL;
+        git_space_free(dt->git);
+        dt->git = g_steal_pointer(&job->git);
         dt->elapsed = g_get_monotonic_time() - dt->started;
         DiskNode* node = disk_scan_find(dt->scan, path);
         show_summary(dt);
-        disk_usage_stats_show(dt->stats, dt->scan);
+        disk_usage_stats_show(dt->stats, dt->scan, dt->git);
         show_folder(dt, node != NULL ? node : disk_scan_root(dt->scan), select);
         disk_scan_free(old); /* nothing shown points into it any more */
         g_free(select);
@@ -294,9 +301,11 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
     dt->quiet = FALSE;
     dt->scan = job->scan;
     job->scan = NULL;
+    git_space_free(dt->git);
+    dt->git = g_steal_pointer(&job->git);
     dt->elapsed = g_get_monotonic_time() - dt->started;
     show_summary(dt);
-    disk_usage_stats_show(dt->stats, dt->scan);
+    disk_usage_stats_show(dt->stats, dt->scan, dt->git);
     gchar* select = disk_usage_list_selected_name(dt->list);
     show_folder(dt, disk_scan_root(dt->scan), select);
     g_free(select);
@@ -319,10 +328,11 @@ static void start_scan(DiskUsageTab* dt, gboolean quiet) {
     dt->quiet = quiet && dt->scan != NULL;
     if (!dt->quiet) {
         disk_usage_list_clear(dt->list); /* its rows point into the tree freed below */
-        disk_usage_stats_show(dt->stats, NULL);
+        disk_usage_stats_show(dt->stats, NULL, NULL);
         disk_usage_views_show(dt->views, NULL);
         dt->shown = NULL;
         g_clear_pointer(&dt->scan, disk_scan_free);
+        g_clear_pointer(&dt->git, git_space_free);
     }
 
     ScanJob* job = g_new0(ScanJob, 1);
@@ -377,7 +387,7 @@ static void on_row_exclude(gpointer data, const gchar* path) {
     }
     if (dt->shown != NULL && disk_scan_remove(dt->scan, path)) {
         show_summary(dt);
-        disk_usage_stats_show(dt->stats, dt->scan);
+        disk_usage_stats_show(dt->stats, dt->scan, dt->git);
         show_folder(dt, dt->shown, NULL);
     }
     start_scan(dt, TRUE);
@@ -492,6 +502,7 @@ static void tab_free(gpointer data) {
         g_object_unref(dt->cancel);
     }
     disk_scan_free(dt->scan);
+    git_space_free(dt->git);
     g_ptr_array_unref(dt->excluded);
     g_free(dt->root);
     g_clear_object(&dt->label);

@@ -102,7 +102,7 @@ Layers, from bottom to top
   wheel) and `DiskStats` (counts, the 50 largest files, sizes by extension,
   age and size group (`disk_size_of()`, decades of powers of 1024), deepest folder, unreadable entries); symbolic links not
   followed, hard links counted once, other filesystems skipped, the paths
-  given to `disk_scan_exclude()` left out; `disk_scan_remove()` takes an
+  given to `disk_scan_exclude()` left out (`disk_scan_is_excluded()`); `disk_scan_remove()` takes an
   entry out of a tree read (sizes and counts rolled up again). Any thread
   reads the progress with `disk_scan_snapshot()` (counters, the folders of
   the root done so far). `disk_stats` groups the statistics for display:
@@ -170,7 +170,15 @@ Layers, from bottom to top
   `git_read_branch()` (plain file reads); through libgit2, never the git
   program (worker thread only): `scan_git_statuses()`, `git_read_head_blob()`,
   `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
-  --patch`), `git_list_files()` (like `git ls-files --cached --others`).
+  --patch`), `git_list_files()` (like `git ls-files --cached --others`;
+  `git_list_files_by_kind()` says tracked, untracked or ignored).
+- `git_space` — the room of a git work tree in a finished `disk_scan`
+  (Disk Usage statistics): tracked and untracked files from
+  `git_list_files_by_kind()` (an `lstat` each, the files the scan left out
+  skipped), the history (`.git`) and the nested repositories from the
+  scan's tree, the ignored room as what is left; the largest ignored
+  entries (folders holding nothing listed, unlisted files among those the
+  scan kept) and tracked files. Worker thread, unit-tested.
 - `git_state` — `GitState`, the result of the explorer's git scan: badge of
   each changed path, repository root, uncommitted changes, upstream ahead /
   behind counts, and comparisons that skip a redraw when nothing changed. The
@@ -957,7 +965,8 @@ Layers, from bottom to top
   `disk_usage_stats` — the statistics beside it, once the tree is read
   (`disk_stats`): overview, room by kind, by age and by extension with
   bars, the files by size (a `histogram`), the largest files (a click shows one in the explorer), the
-  unreadable entries. `disk_usage_map` — the treemap under the list (a
+  unreadable entries; in a git work tree, the room of its files
+  (`git_space`, computed in the scan's worker once the tree is read). `disk_usage_map` — the treemap under the list (a
   `GtkPaned`): the folder shown in nested rectangles (`treemap_layout`,
   three folder levels, 300 rectangles per folder at most, laid out again
   only when the folder or the size changes), files coloured by kind with

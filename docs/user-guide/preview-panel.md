@@ -269,6 +269,18 @@ week, a month, a year, 1 to 3 years, more) and by extension, the largest
 files of the whole folder (a click shows one in the explorer), and the
 entries that could not be read.
 
+In a git repository, the statistics also give the room of its files
+under the overview: the tracked files (those of the index), the untracked
+ones that are not ignored, the ignored ones (what is left: build output,
+dependencies, caches), the history (the `.git` folder, when the folder
+read is the top of the repository) and the submodules and repositories
+inside it, each with its share and its number of files. Then, after the
+largest files, the largest ignored entries (the folders holding only
+ignored files, and the ignored files beside the others) and the largest
+tracked files; a click shows one in the explorer. For a folder inside a
+repository, only what lies in that folder counts, and the top of the
+repository is given.
+
 Symbolic links are not followed, a file with several hard links counts
 once, and other disks mounted inside the folder are left out. The summary
 under the title gives the room really taken on the disk too, and the

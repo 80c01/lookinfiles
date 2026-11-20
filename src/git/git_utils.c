@@ -1100,7 +1100,7 @@ gchar* git_show_commit(const gchar* root, const gchar* hash) {
     return text;
 }
 
-gboolean git_list_files(const gchar* root, gboolean with_ignored, GitFileFunc func, gpointer data) {
+gboolean git_list_files_by_kind(const gchar* root, gboolean with_ignored, GitKindFunc func, gpointer data) {
     git_repository* repo = open_work_tree(root);
     if (repo == NULL) {
         return FALSE;
@@ -1118,7 +1118,7 @@ gboolean git_list_files(const gchar* root, gboolean with_ignored, GitFileFunc fu
     for (gsize i = 0; go_on && i < count; i++) {
         const git_index_entry* e = git_index_get_byindex(index, i);
         if (e != NULL && g_hash_table_add(seen, g_strdup(e->path))) {
-            go_on = func(e->path, data);
+            go_on = func(e->path, GIT_FILE_TRACKED, data);
         }
     }
     git_index_free(index);
@@ -1141,7 +1141,7 @@ gboolean git_list_files(const gchar* root, gboolean with_ignored, GitFileFunc fu
             }
             const gchar* rel = e->index_to_workdir->new_file.path;
             if (rel != NULL && g_hash_table_add(seen, g_strdup(rel))) {
-                go_on = func(rel, data);
+                go_on = func(rel, (e->status & GIT_STATUS_IGNORED) ? GIT_FILE_IGNORED : GIT_FILE_UNTRACKED, data);
             }
         }
         git_status_list_free(list);
@@ -1149,4 +1149,20 @@ gboolean git_list_files(const gchar* root, gboolean with_ignored, GitFileFunc fu
     g_hash_table_destroy(seen);
     git_repository_free(repo);
     return TRUE;
+}
+
+typedef struct {
+    GitFileFunc func;
+    gpointer data;
+} AnyKind;
+
+static gboolean any_kind(const gchar* rel, GitFileKind kind, gpointer data) {
+    (void)kind;
+    AnyKind* a = data;
+    return a->func(rel, a->data);
+}
+
+gboolean git_list_files(const gchar* root, gboolean with_ignored, GitFileFunc func, gpointer data) {
+    AnyKind a = { func, data };
+    return git_list_files_by_kind(root, with_ignored, any_kind, &a);
 }

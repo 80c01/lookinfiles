@@ -472,6 +472,14 @@ void disk_scan_exclude(DiskScan* s, const gchar* path) {
     g_hash_table_add(s->excluded, clean);
 }
 
+gboolean disk_scan_is_excluded(const DiskScan* s, const gchar* path) {
+    if (s == NULL || path == NULL || g_hash_table_size(s->excluded) == 0) return FALSE;
+    gchar* clean = trimmed_path(path);
+    gboolean found = g_hash_table_contains(s->excluded, clean);
+    g_free(clean);
+    return found;
+}
+
 void disk_scan_run(DiskScan* s, GCancellable* cancel) {
     if (s == NULL) return;
     s->cancel = cancel;

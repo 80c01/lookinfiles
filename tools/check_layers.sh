@@ -81,6 +81,7 @@ countdown:
 run_time:
 disk_scan:
 disk_stats:disk_scan,file_types,i18n
+git_space:git_utils,disk_scan
 treemap_layout:
 date_bins:
 sunburst_layout:

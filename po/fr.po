@@ -3,12 +3,11 @@
 # Copyright (C) 2026 THE lookinfiles'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the lookinfiles package.
 # Automatically generated, 2026.
-#
 msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-20 07:12+0000\n"
+"POT-Creation-Date: 2026-11-20 08:10+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -3074,7 +3073,7 @@ msgstr "Chemin de la valeur sous le curseur (y le copie)"
 #: src/chrome/status_bar.c:491 src/explorer/bookmark_dialog.c:260
 #: src/explorer/bookmarks.c:204 src/preview/preview_summary.c:256
 #: src/search/deep_search_bookmark.c:68 src/search/deep_search_list.c:410
-#: src/search/deep_search_tab.c:851
+#: src/search/deep_search_tab.c:879
 msgid "Folder"
 msgstr "Dossier"
 
@@ -3427,7 +3426,7 @@ msgstr "Principal"
 msgid "Show / Hide Main Panel (Preview and Editor Tabs)"
 msgstr "Afficher / masquer le panneau principal (aperçu et onglets d’édition)"
 
-#: src/chrome/topbar.c:698 src/chrome/topbar.c:777 src/main.c:451
+#: src/chrome/topbar.c:698 src/chrome/topbar.c:777 src/main.c:452
 #: src/workspace/layout_store.c:50
 msgid "Preview"
 msgstr "Aperçu"
@@ -3670,8 +3669,8 @@ msgid ""
 msgstr ""
 "Repartir aussitôt avec la même durée (ou pour la même heure le lendemain)"
 
-#: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:600
-#: src/search/deep_search_tab.c:977
+#: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:611
+#: src/search/deep_search_tab.c:1009
 msgid "Stop"
 msgstr "Arrêter"
 
@@ -4345,12 +4344,12 @@ msgstr "Autres"
 msgid "Copied “%s”"
 msgstr "« %s » copié"
 
-#: src/diskuse/disk_usage_charts.c:70 src/diskuse/disk_usage_stats.c:171
+#: src/diskuse/disk_usage_charts.c:70 src/diskuse/disk_usage_stats.c:172
 #: src/search/deep_search_charts.c:228
 msgid "By Size"
 msgstr "Par taille"
 
-#: src/diskuse/disk_usage_charts.c:71 src/diskuse/disk_usage_stats.c:187
+#: src/diskuse/disk_usage_charts.c:71 src/diskuse/disk_usage_stats.c:188
 #: src/search/deep_search_charts.c:231
 msgid "By Last Change"
 msgstr "Par dernière modification"
@@ -4393,7 +4392,7 @@ msgstr "Exclure du calcul"
 #: src/office/office97.c:73 src/preview/preview_formats.c:351
 #: src/preview/preview_formats.c:352 src/preview/preview_summary.c:258
 #: src/search/deep_search_bookmark.c:62 src/search/deep_search_list.c:409
-#: src/search/deep_search_tab.c:858 src/workspace/session_bookmark.c:26
+#: src/search/deep_search_tab.c:890 src/workspace/session_bookmark.c:26
 msgid "Name"
 msgstr "Nom"
 
@@ -4401,18 +4400,18 @@ msgstr "Nom"
 msgid "Share"
 msgstr "Part"
 
-#: src/diskuse/disk_usage_list.c:421 src/diskuse/disk_usage_stats.c:120
+#: src/diskuse/disk_usage_list.c:421 src/diskuse/disk_usage_stats.c:121
 #: src/formats/torrent_info.c:371 src/mail/mail_store.c:107
 #: src/office/office97.c:73 src/preview/preview_formats.c:351
 #: src/preview/preview_formats.c:352 src/preview/preview_formats.c:919
 #: src/preview/preview_summary.c:280 src/search/deep_search_list.c:411
-#: src/search/deep_search_tab.c:900 src/widgets/histogram.c:95
+#: src/search/deep_search_tab.c:932 src/widgets/histogram.c:95
 msgid "Size"
 msgstr "Taille"
 
-#: src/diskuse/disk_usage_list.c:422 src/diskuse/disk_usage_stats.c:122
+#: src/diskuse/disk_usage_list.c:422 src/diskuse/disk_usage_stats.c:123
 #: src/formats/torrent_info.c:334 src/preview/preview_summary.c:274
-#: src/search/deep_search_tab.c:894 src/widgets/histogram.c:94
+#: src/search/deep_search_tab.c:926 src/widgets/histogram.c:94
 msgid "Files"
 msgstr "Fichiers"
 
@@ -4449,120 +4448,161 @@ msgstr "La carte arrive une fois le dossier lu"
 msgid "(empty)"
 msgstr "(vide)"
 
-#: src/diskuse/disk_usage_stats.c:118
+#: src/diskuse/disk_usage_stats.c:119
 msgid "Overview"
 msgstr "Vue d’ensemble"
 
-#: src/diskuse/disk_usage_stats.c:121
+#: src/diskuse/disk_usage_stats.c:122
 msgid "On disk"
 msgstr "Sur le disque"
 
-#: src/diskuse/disk_usage_stats.c:123 src/mail/mail_dir.c:205
-#: src/preview/preview_summary.c:276 src/search/deep_search_tab.c:894
+#: src/diskuse/disk_usage_stats.c:124 src/mail/mail_dir.c:205
+#: src/preview/preview_summary.c:276 src/search/deep_search_tab.c:926
 msgid "Folders"
 msgstr "Dossiers"
 
-#: src/diskuse/disk_usage_stats.c:124
+#: src/diskuse/disk_usage_stats.c:125
 msgid "Average file"
 msgstr "Fichier moyen"
 
-#: src/diskuse/disk_usage_stats.c:125
+#: src/diskuse/disk_usage_stats.c:126
 msgid "Empty files"
 msgstr "Fichiers vides"
 
-#: src/diskuse/disk_usage_stats.c:126
+#: src/diskuse/disk_usage_stats.c:127
 msgid "Empty folders"
 msgstr "Dossiers vides"
 
-#: src/diskuse/disk_usage_stats.c:127
+#: src/diskuse/disk_usage_stats.c:128
 msgid "Symbolic links"
 msgstr "Liens symboliques"
 
 #. TRANSLATORS: links to files already counted, left out of the sizes
-#: src/diskuse/disk_usage_stats.c:130
+#: src/diskuse/disk_usage_stats.c:131
 msgid "Hard links left out"
 msgstr "Liens physiques non comptés"
 
-#: src/diskuse/disk_usage_stats.c:132
+#: src/diskuse/disk_usage_stats.c:133
 msgid "Devices, pipes, sockets"
 msgstr "Périphériques, tubes, sockets"
 
-#: src/diskuse/disk_usage_stats.c:133
+#: src/diskuse/disk_usage_stats.c:134
 msgid "Other filesystems left out"
 msgstr "Autres systèmes de fichiers non lus"
 
 #. TRANSLATORS: files and folders excluded from the calculation on request
-#: src/diskuse/disk_usage_stats.c:135
+#: src/diskuse/disk_usage_stats.c:136
 msgid "Excluded"
 msgstr "Exclues"
 
-#: src/diskuse/disk_usage_stats.c:137
+#: src/diskuse/disk_usage_stats.c:138
 msgid "Oldest change"
 msgstr "Plus ancienne modification"
 
-#: src/diskuse/disk_usage_stats.c:138
+#: src/diskuse/disk_usage_stats.c:139
 msgid "Newest change"
 msgstr "Plus récente modification"
 
 #. TRANSLATORS: depth of the deepest folder, and its path
-#: src/diskuse/disk_usage_stats.c:142
+#: src/diskuse/disk_usage_stats.c:143
 msgid "Deepest folder"
 msgstr "Dossier le plus profond"
 
-#: src/diskuse/disk_usage_stats.c:143
+#: src/diskuse/disk_usage_stats.c:144
 #, c-format
 msgid "%1$u level: %2$s"
 msgid_plural "%1$u levels: %2$s"
 msgstr[0] "%1$u niveau : %2$s"
 msgstr[1] "%1$u niveaux : %2$s"
 
-#: src/diskuse/disk_usage_stats.c:161
+#: src/diskuse/disk_usage_stats.c:162
 msgid "By Kind"
 msgstr "Par type"
 
-#: src/diskuse/disk_usage_stats.c:193
+#: src/diskuse/disk_usage_stats.c:194
 msgid "By Extension"
 msgstr "Par extension"
 
-#: src/diskuse/disk_usage_stats.c:196 src/preview/preview_summary.c:92
+#: src/diskuse/disk_usage_stats.c:197 src/preview/preview_summary.c:92
 msgid "(none)"
 msgstr "(aucun)"
 
-#: src/diskuse/disk_usage_stats.c:212
-msgid "Largest Files"
-msgstr "Plus gros fichiers"
-
 #. TRANSLATORS: tooltip of a file of the largest files: its path
-#: src/diskuse/disk_usage_stats.c:230
+#: src/diskuse/disk_usage_stats.c:228
 #, c-format
 msgid "Show in Explorer: %s"
 msgstr "Montrer dans l’explorateur : %s"
 
+#: src/diskuse/disk_usage_stats.c:241
+msgid "Largest Files"
+msgstr "Plus gros fichiers"
+
+#: src/diskuse/disk_usage_stats.c:250
+msgid "Git Repository"
+msgstr "Dépôt git"
+
+#. TRANSLATORS: the top of the git work tree holding the folder analysed
+#: src/diskuse/disk_usage_stats.c:254
+msgid "Repository"
+msgstr "Dépôt"
+
+#. TRANSLATORS: files of the git index
+#: src/diskuse/disk_usage_stats.c:257
+msgid "Tracked"
+msgstr "Suivis"
+
+#. TRANSLATORS: files of the work tree not in the git index and not ignored
+#: src/diskuse/disk_usage_stats.c:259
+msgid "Untracked"
+msgstr "Non suivis"
+
+#. TRANSLATORS: files left out of git by .gitignore
+#: src/diskuse/disk_usage_stats.c:261
+msgid "Ignored"
+msgstr "Ignorés"
+
+#. TRANSLATORS: the .git folder: the commits, the objects, the index
+#: src/diskuse/disk_usage_stats.c:263
+msgid "History (.git)"
+msgstr "Historique (.git)"
+
+#: src/diskuse/disk_usage_stats.c:264
+msgid "Submodules, nested repositories"
+msgstr "Sous-modules, dépôts imbriqués"
+
 #. TRANSLATORS: %s is a number of entries
-#: src/diskuse/disk_usage_stats.c:245
+#: src/diskuse/disk_usage_stats.c:280
 #, c-format
 msgid "Unreadable (%s entry)"
 msgid_plural "Unreadable (%s entries)"
 msgstr[0] "Illisible (%s élément)"
 msgstr[1] "Illisibles (%s éléments)"
 
-#: src/diskuse/disk_usage_stats.c:269
+#: src/diskuse/disk_usage_stats.c:304
 msgid "The statistics come once the folder is read"
 msgstr "Les statistiques arrivent une fois le dossier lu"
 
-#: src/diskuse/disk_usage_tab.c:103 src/search/deep_search_tab.c:117
+#: src/diskuse/disk_usage_stats.c:322
+msgid "Largest Ignored Entries"
+msgstr "Plus gros éléments ignorés"
+
+#: src/diskuse/disk_usage_stats.c:323
+msgid "Largest Tracked Files"
+msgstr "Plus gros fichiers suivis"
+
+#: src/diskuse/disk_usage_tab.c:106 src/search/deep_search_tab.c:118
 #, c-format
 msgid "%.1f s"
 msgstr "%.1f s"
 
-#: src/diskuse/disk_usage_tab.c:105 src/search/deep_search_tab.c:119
+#: src/diskuse/disk_usage_tab.c:108 src/search/deep_search_tab.c:120
 #, c-format
 msgid "%u min %02u s"
 msgstr "%u min %02u s"
 
 #. TRANSLATORS: %s is a number of folders
 #. TRANSLATORS: %s is a number of folders read
-#: src/diskuse/disk_usage_tab.c:113 src/search/deep_search_tab.c:139
+#: src/diskuse/disk_usage_tab.c:116 src/search/deep_search_tab.c:140
 #, c-format
 msgid "%s folder"
 msgid_plural "%s folders"
@@ -4571,75 +4611,75 @@ msgstr[1] "%s dossiers"
 
 #. TRANSLATORS: %s is a number of files and folders excluded from the calculation
 #. TRANSLATORS: %s is a number of entries excluded from the calculation
-#: src/diskuse/disk_usage_tab.c:138 src/diskuse/disk_usage_tab.c:225
+#: src/diskuse/disk_usage_tab.c:141 src/diskuse/disk_usage_tab.c:228
 #, c-format
 msgid "%s excluded"
 msgid_plural "%s excluded"
 msgstr[0] "%s exclue"
 msgstr[1] "%s exclues"
 
-#: src/diskuse/disk_usage_tab.c:140 src/diskuse/disk_usage_tab.c:595
+#: src/diskuse/disk_usage_tab.c:143 src/diskuse/disk_usage_tab.c:606
 msgid "Include the Excluded Entries Again"
 msgstr "Réintégrer les entrées exclues"
 
 #. TRANSLATORS: bytes read so far, of the bytes used on the filesystem
-#: src/diskuse/disk_usage_tab.c:163
+#: src/diskuse/disk_usage_tab.c:166
 #, c-format
 msgid "%1$s of %2$s used on this filesystem"
 msgstr "%1$s sur %2$s utilisés sur ce système de fichiers"
 
 #. TRANSLATORS: folders of the analysed folder read in full, of all of them
-#: src/diskuse/disk_usage_tab.c:171
+#: src/diskuse/disk_usage_tab.c:174
 #, c-format
 msgid "%1$u of %2$u folders"
 msgstr "%1$u dossiers sur %2$u"
 
 #. TRANSLATORS: counts and size, the room taken on disk, the time of the reading
-#: src/diskuse/disk_usage_tab.c:210
+#: src/diskuse/disk_usage_tab.c:213
 #, c-format
 msgid "%1$s (%2$s on disk) · read in %3$s"
 msgstr "%1$s (%2$s sur le disque) · lu en %3$s"
 
 #. TRANSLATORS: %s is a number of entries that could not be read
 #. TRANSLATORS: %s is a number of files or folders that could not be read
-#: src/diskuse/disk_usage_tab.c:218 src/search/deep_search_tab.c:152
+#: src/diskuse/disk_usage_tab.c:221 src/search/deep_search_tab.c:153
 #, c-format
 msgid "%s unreadable"
 msgid_plural "%s unreadable"
 msgstr[0] "%s illisible"
 msgstr[1] "%s illisibles"
 
-#: src/diskuse/disk_usage_tab.c:230 src/search/deep_search_tab.c:207
+#: src/diskuse/disk_usage_tab.c:233 src/search/deep_search_tab.c:208
 msgid "stopped before the end"
 msgstr "arrêté avant la fin"
 
-#: src/diskuse/disk_usage_tab.c:343
+#: src/diskuse/disk_usage_tab.c:353
 msgid "Reading…"
 msgstr "Lecture…"
 
-#: src/diskuse/disk_usage_tab.c:357
+#: src/diskuse/disk_usage_tab.c:367
 msgid "The folders open once the whole tree is read"
 msgstr "Les dossiers s’ouvrent une fois toute l’arborescence lue"
 
-#: src/diskuse/disk_usage_tab.c:585 src/diskuse/disk_usage_tab.c:654
+#: src/diskuse/disk_usage_tab.c:596 src/diskuse/disk_usage_tab.c:665
 #: src/explorer/files_menu.c:190 src/explorer/files_menu.c:207
 #: src/preview/dir_preview.c:447
 msgid "Disk Usage"
 msgstr "Espace disque"
 
-#: src/diskuse/disk_usage_tab.c:589
+#: src/diskuse/disk_usage_tab.c:600
 msgid "Parent Folder (Backspace / Left)"
 msgstr "Dossier parent (Backspace / Left)"
 
-#: src/diskuse/disk_usage_tab.c:592
+#: src/diskuse/disk_usage_tab.c:603
 msgid "Read Again (F5)"
 msgstr "Relire (F5)"
 
-#: src/diskuse/disk_usage_tab.c:599
+#: src/diskuse/disk_usage_tab.c:610
 msgid "Stop Reading (Escape)"
 msgstr "Arrêter la lecture (Escape)"
 
-#: src/diskuse/disk_usage_tab.c:603
+#: src/diskuse/disk_usage_tab.c:614
 msgid "Close Disk Usage"
 msgstr "Fermer l’espace disque"
 
@@ -4672,13 +4712,9 @@ msgstr "Fichiers par taille et par âge (v : vue suivante)"
 msgid "The wheel comes once the folder is read"
 msgstr "La roue vient une fois le dossier lu"
 
-#: src/diskuse/disk_usage_wheel.c:247 src/search/deep_search_tab.c:854
+#: src/diskuse/disk_usage_wheel.c:247 src/search/deep_search_tab.c:882
 msgid "Parent Folder"
 msgstr "Dossier parent"
-
-#: src/search/deep_search_tab.c
-msgid "Use the Explorer's Folder"
-msgstr "Utiliser le dossier de l’explorateur"
 
 #: src/editor/editor.c:479 src/notes/notes_actions.c:121
 #: src/notes/notes_actions.c:149
@@ -5877,7 +5913,7 @@ msgstr[1] ""
 #: src/formats/card_view.c:588 src/formats/elf_info.c:640
 #: src/formats/elf_info.c:643 src/formats/sqlite_view.c:222
 #: src/preview/preview_summary.c:274 src/preview/preview_summary.c:276
-#: src/search/deep_search_tab.c:893
+#: src/search/deep_search_tab.c:925
 msgid "Type"
 msgstr "Type"
 
@@ -8234,7 +8270,7 @@ msgstr "Message transféré"
 msgid "Encrypted message: the body needs the recipient's key."
 msgstr "Message chiffré : le corps demande la clé du destinataire."
 
-#: src/main.c:180
+#: src/main.c:181
 #, c-format
 msgid ""
 "Usage: %s [options] [<file>|<folder>]\n"
@@ -8278,22 +8314,22 @@ msgstr ""
 "  -f, --fullscreen                 démarre en plein écran\n"
 "  -s, --size LARGEURxHAUTEUR       taille de la fenêtre (ex. 1920x1080)\n"
 
-#: src/main.c:235
+#: src/main.c:236
 #, c-format
 msgid "%s: option '%s' requires an argument\n"
 msgstr "%s : l’option « %s » attend un argument\n"
 
-#: src/main.c:291
+#: src/main.c:292
 #, c-format
 msgid "%s: only one file or folder can be given\n"
 msgstr "%s : un seul fichier ou dossier peut être donné\n"
 
-#: src/main.c:310
+#: src/main.c:311
 #, c-format
 msgid "%s: unknown editor '%s' (expected emacs, vim or notepad)\n"
 msgstr "%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
 
-#: src/main.c:316
+#: src/main.c:317
 #, c-format
 msgid ""
 "[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"
@@ -8301,23 +8337,23 @@ msgstr ""
 "[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size "
 "1920x1080) ]\n"
 
-#: src/main.c:320
+#: src/main.c:321
 #, c-format
 msgid "%s: unknown option '%s'\n"
 msgstr "%s : option inconnue « %s »\n"
 
-#: src/main.c:327
+#: src/main.c:328
 #, c-format
 msgid "%s: option '-n' needs a note name\n"
 msgstr "%s : l’option « -n » attend un nom de note\n"
 
-#: src/main.c:389
+#: src/main.c:390
 #, c-format
 msgid "[ '%s' is not a file or a directory: showing %s instead ]\n"
 msgstr ""
 "[ « %s » n’est ni un fichier ni un dossier : affichage de %s à la place ]\n"
 
-#: src/main.c:507
+#: src/main.c:508
 msgid ""
 "Terminal panel disabled:\n"
 "install libvte-2.91-gtk4-dev then rebuild (make)."
@@ -8325,15 +8361,15 @@ msgstr ""
 "Panneau Terminal désactivé :\n"
 "installez libvte-2.91-gtk4-dev puis recompilez (make)."
 
-#: src/main.c:562
+#: src/main.c:564
 msgid "Workspace Layouts (Alt+L)"
 msgstr "Dispositions de l’espace de travail (Alt+L)"
 
-#: src/main.c:566
+#: src/main.c:568
 msgid "Preferences (Ctrl+,)"
 msgstr "Préférences (Ctrl+,)"
 
-#: src/main.c:765
+#: src/main.c:767
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
@@ -9348,7 +9384,7 @@ msgstr[1] "%u renommés"
 msgid "  … and %1$u more (showing %2$u)\n"
 msgstr "  … et %1$u de plus (%2$u affichées)\n"
 
-#: src/preview/dir_preview.c:445 src/search/deep_search_tab.c:973
+#: src/preview/dir_preview.c:445 src/search/deep_search_tab.c:1005
 msgctxt "action"
 msgid "Search"
 msgstr "Rechercher"
@@ -10078,11 +10114,11 @@ msgstr "Dossier courant"
 msgid "Category"
 msgstr "Catégorie"
 
-#: src/preview/preview_summary.c:263 src/search/deep_search_tab.c:862
+#: src/preview/preview_summary.c:263 src/search/deep_search_tab.c:894
 msgid "Extensions"
 msgstr "Extensions"
 
-#: src/preview/preview_summary.c:266 src/search/deep_search_tab.c:881
+#: src/preview/preview_summary.c:266 src/search/deep_search_tab.c:913
 msgid "Contains"
 msgstr "Contient"
 
@@ -10090,19 +10126,19 @@ msgstr "Contient"
 msgid "Options"
 msgstr "Options"
 
-#: src/preview/preview_summary.c:285 src/search/deep_search_tab.c:908
+#: src/preview/preview_summary.c:285 src/search/deep_search_tab.c:940
 msgid "Last change"
 msgstr "Dernière modification"
 
-#: src/preview/preview_summary.c:289 src/search/deep_search_tab.c:917
+#: src/preview/preview_summary.c:289 src/search/deep_search_tab.c:949
 msgid "Exclude"
 msgstr "Exclure"
 
-#: src/preview/preview_summary.c:292 src/search/deep_search_tab.c:920
+#: src/preview/preview_summary.c:292 src/search/deep_search_tab.c:952
 msgid "Depth"
 msgstr "Profondeur"
 
-#: src/preview/preview_summary.c:295 src/search/deep_search_tab.c:925
+#: src/preview/preview_summary.c:295 src/search/deep_search_tab.c:957
 msgid "Hidden entries"
 msgstr "Entrées cachées"
 
@@ -10110,7 +10146,7 @@ msgstr "Entrées cachées"
 msgid "Yes"
 msgstr "Oui"
 
-#: src/preview/preview_summary.c:298 src/search/deep_search_tab.c:928
+#: src/preview/preview_summary.c:298 src/search/deep_search_tab.c:960
 msgid "This filesystem only"
 msgstr "Ce système de fichiers seulement"
 
@@ -10307,7 +10343,7 @@ msgid "The first date is not before the second"
 msgstr "La première date n’est pas avant la seconde"
 
 #. TRANSLATORS: %s is the error of the regular expression
-#: src/search/deep_query.c:165 src/search/deep_search_tab.c:336
+#: src/search/deep_query.c:165 src/search/deep_search_tab.c:337
 #, c-format
 msgid "Invalid regular expression: %s"
 msgstr "Expression régulière invalide : %s"
@@ -10403,13 +10439,13 @@ msgstr "Occurrences"
 msgid "First Match"
 msgstr "Première occurrence"
 
-#: src/search/deep_search_store.c:218 src/search/deep_search_tab.c:961
-#: src/search/deep_search_tab.c:1029
+#: src/search/deep_search_store.c:218 src/search/deep_search_tab.c:993
+#: src/search/deep_search_tab.c:1061
 msgid "Deep Search"
 msgstr "Recherche approfondie"
 
 #. TRANSLATORS: %s is a number of entries found
-#: src/search/deep_search_tab.c:135
+#: src/search/deep_search_tab.c:136
 #, c-format
 msgid "%s found"
 msgid_plural "%s found"
@@ -10417,7 +10453,7 @@ msgstr[0] "%s trouvé"
 msgstr[1] "%s trouvés"
 
 #. TRANSLATORS: %s is a number of files and folders tested
-#: src/search/deep_search_tab.c:137
+#: src/search/deep_search_tab.c:138
 #, c-format
 msgid "%s entry"
 msgid_plural "%s entries"
@@ -10425,19 +10461,19 @@ msgstr[0] "%s entrée"
 msgstr[1] "%s entrées"
 
 #. TRANSLATORS: entries found · entries tested in folders read
-#: src/search/deep_search_tab.c:142
+#: src/search/deep_search_tab.c:143
 #, c-format
 msgid "%1$s · %2$s in %3$s"
 msgstr "%1$s · %2$s dans %3$s"
 
 #. TRANSLATORS: %s is a size, as "120 MB"
-#: src/search/deep_search_tab.c:147
+#: src/search/deep_search_tab.c:148
 #, c-format
 msgid "%s read"
 msgstr "%s lus"
 
 #. TRANSLATORS: %s is a number of files
-#: src/search/deep_search_tab.c:158
+#: src/search/deep_search_tab.c:159
 #, c-format
 msgid "%s binary file skipped"
 msgid_plural "%s binary files skipped"
@@ -10445,7 +10481,7 @@ msgstr[0] "%s fichier binaire ignoré"
 msgstr[1] "%s fichiers binaires ignorés"
 
 #. TRANSLATORS: %s is a number of results, those of the bars chosen in the charts
-#: src/search/deep_search_tab.c:182
+#: src/search/deep_search_tab.c:183
 #, c-format
 msgid "%s listed"
 msgid_plural "%s listed"
@@ -10453,23 +10489,23 @@ msgstr[0] "%s listé"
 msgstr[1] "%s listés"
 
 #. TRANSLATORS: %u is the most results kept
-#: src/search/deep_search_tab.c:211 src/search/project_search.c:113
+#: src/search/deep_search_tab.c:212 src/search/project_search.c:113
 #, c-format
 msgid "stopped at %u results"
 msgstr "arrêt à %u résultats"
 
-#: src/search/deep_search_tab.c:213
+#: src/search/deep_search_tab.c:214
 msgid "The folder cannot be read"
 msgstr "Le dossier ne peut pas être lu"
 
 #. TRANSLATORS: %s is the size typed
-#: src/search/deep_search_tab.c:288
+#: src/search/deep_search_tab.c:289
 #, c-format
 msgid "Not a size: %s (sizes look like 42, 500k, 10M, 2G)"
 msgstr "Taille invalide : %s (les tailles s’écrivent 42, 500k, 10M, 2G)"
 
 #. TRANSLATORS: %s is the date typed; keep today, yesterday and the units in English, they are what is read
-#: src/search/deep_search_tab.c:295
+#: src/search/deep_search_tab.c:296
 #, c-format
 msgid ""
 "Not a date: %s (dates look like 2026-11-01, today, yesterday, 7d, 3h, 2w, "
@@ -10478,34 +10514,34 @@ msgstr ""
 "Date invalide : %s (les dates s’écrivent 2026-11-01, today, yesterday, 7d, "
 "3h, 2w, 6m, 1y)"
 
-#: src/search/deep_search_tab.c:328
+#: src/search/deep_search_tab.c:329
 msgid "The depth is a number of levels: 1 for the folder's own entries"
 msgstr ""
 "La profondeur est un nombre de niveaux : 1 pour les seules entrées du dossier"
 
-#: src/search/deep_search_tab.c:359
+#: src/search/deep_search_tab.c:369
 msgid "Type the folder to search"
 msgstr "Saisissez le dossier où chercher"
 
 #. TRANSLATORS: %s is a folder path
-#: src/search/deep_search_tab.c:365
+#: src/search/deep_search_tab.c:374
 #, c-format
 msgid "No such folder: %s"
 msgstr "Dossier introuvable : %s"
 
-#: src/search/deep_search_tab.c:393
+#: src/search/deep_search_tab.c:402
 msgid "Searching…"
 msgstr "Recherche en cours…"
 
-#: src/search/deep_search_tab.c:453
+#: src/search/deep_search_tab.c:462
 msgid "Fill in the criteria, then press Enter"
 msgstr "Remplissez les critères, puis appuyez sur Enter"
 
-#: src/search/deep_search_tab.c:757 src/workspace/workspace_menu.c:81
+#: src/search/deep_search_tab.c:785 src/workspace/workspace_menu.c:81
 msgid "Save as Bookmark…"
 msgstr "Enregistrer comme signet…"
 
-#: src/search/deep_search_tab.c:841
+#: src/search/deep_search_tab.c:869
 msgid ""
 "Patterns separated by commas: node_modules (a name at any depth), src/build "
 "(from the folder searched), build/ (folders only); the folders left out are "
@@ -10515,19 +10551,23 @@ msgstr ""
 "src/build (depuis le dossier de la recherche), build/ (dossiers seulement) ; "
 "les dossiers écartés ne sont pas parcourus"
 
-#: src/search/deep_search_tab.c:852
+#: src/search/deep_search_tab.c:880
 msgid "Folder to search"
 msgstr "Dossier où chercher"
 
-#: src/search/deep_search_tab.c:852
+#: src/search/deep_search_tab.c:880
 msgid "The folder searched, with everything below it"
 msgstr "Le dossier de la recherche, avec tout ce qu’il contient"
 
-#: src/search/deep_search_tab.c:859
+#: src/search/deep_search_tab.c:885
+msgid "Use the Explorer's Folder"
+msgstr "Utiliser le dossier de l’explorateur"
+
+#: src/search/deep_search_tab.c:891
 msgid "Part of the name, or *.jpg"
 msgstr "Partie du nom, ou *.jpg"
 
-#: src/search/deep_search_tab.c:860
+#: src/search/deep_search_tab.c:892
 msgid ""
 "A part of the name, any case; with * or ? a pattern of the whole name "
 "(IMG_????.jpg)"
@@ -10535,83 +10575,83 @@ msgstr ""
 "Une partie du nom, sans tenir compte de la casse ; avec * ou ? un motif du "
 "nom entier (IMG_????.jpg)"
 
-#: src/search/deep_search_tab.c:863
+#: src/search/deep_search_tab.c:895
 msgid "c, h, md"
 msgstr "c, h, md"
 
-#: src/search/deep_search_tab.c:863
+#: src/search/deep_search_tab.c:895
 msgid "Extensions separated by commas, any case"
 msgstr "Extensions séparées par des virgules, sans tenir compte de la casse"
 
 #. TRANSLATORS: between the extensions and the category of file
-#: src/search/deep_search_tab.c:871
+#: src/search/deep_search_tab.c:903
 msgid "or"
 msgstr "ou"
 
-#: src/search/deep_search_tab.c:873
+#: src/search/deep_search_tab.c:905
 msgid "Any category"
 msgstr "Toute catégorie"
 
-#: src/search/deep_search_tab.c:877
+#: src/search/deep_search_tab.c:909
 msgid "A category of files, from their extension, instead of extensions"
 msgstr ""
 "Une catégorie de fichiers, d’après leur extension, au lieu des extensions"
 
-#: src/search/deep_search_tab.c:882
+#: src/search/deep_search_tab.c:914
 msgid "Text in the file"
 msgstr "Texte dans le fichier"
 
-#: src/search/deep_search_tab.c:882
+#: src/search/deep_search_tab.c:914
 msgid "A text the file holds (files only; binary files are skipped)"
 msgstr ""
 "Un texte que contient le fichier (fichiers seulement ; les fichiers binaires "
 "sont ignorés)"
 
-#: src/search/deep_search_tab.c:887 src/search/project_search.c:394
+#: src/search/deep_search_tab.c:919 src/search/project_search.c:394
 msgid "Match Case (Alt+M)"
 msgstr "Respecter la casse (Alt+M)"
 
-#: src/search/deep_search_tab.c:888 src/search/project_search.c:395
+#: src/search/deep_search_tab.c:920 src/search/project_search.c:395
 msgid "Whole Word (Alt+W)"
 msgstr "Mot entier (Alt+W)"
 
-#: src/search/deep_search_tab.c:889 src/search/project_search.c:396
+#: src/search/deep_search_tab.c:921 src/search/project_search.c:396
 msgid "Regular Expression, PCRE Syntax (Alt+R)"
 msgstr "Expression régulière, syntaxe PCRE (Alt+R)"
 
-#: src/search/deep_search_tab.c:891 src/search/project_search.c:399
+#: src/search/deep_search_tab.c:923 src/search/project_search.c:399
 msgid ""
 "Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)"
 msgstr ""
 "Lettres dans l’ordre, pas forcément voisines : edvim trouve editor_vim "
 "(Alt+L)"
 
-#: src/search/deep_search_tab.c:894
+#: src/search/deep_search_tab.c:926
 msgid "Files and folders"
 msgstr "Fichiers et dossiers"
 
-#: src/search/deep_search_tab.c:896
+#: src/search/deep_search_tab.c:928
 msgid "The kind of entries found (links count as files)"
 msgstr "Le genre des entrées trouvées (les liens comptent comme des fichiers)"
 
-#: src/search/deep_search_tab.c:899
+#: src/search/deep_search_tab.c:931
 msgid ""
 "In bytes, or with k, M, G (powers of 1024); both ends included; files only"
 msgstr ""
 "En octets, ou avec k, M, G (puissances de 1024) ; bornes comprises ; "
 "fichiers seulement"
 
-#: src/search/deep_search_tab.c:901 src/search/deep_search_tab.c:904
-#: src/search/deep_search_tab.c:909 src/search/deep_search_tab.c:913
-#: src/search/deep_search_tab.c:921
+#: src/search/deep_search_tab.c:933 src/search/deep_search_tab.c:936
+#: src/search/deep_search_tab.c:941 src/search/deep_search_tab.c:945
+#: src/search/deep_search_tab.c:953
 msgid "any"
 msgstr "libre"
 
-#: src/search/deep_search_tab.c:903 src/search/deep_search_tab.c:912
+#: src/search/deep_search_tab.c:935 src/search/deep_search_tab.c:944
 msgid "to"
 msgstr "à"
 
-#: src/search/deep_search_tab.c:906
+#: src/search/deep_search_tab.c:938
 msgid ""
 "A day (2026-11-01, 2026-11-01 14:30, today, yesterday) or a time ago (30min, "
 "3h, 7d, 2w, 6m, 1y); a day given as the second date is included"
@@ -10620,48 +10660,48 @@ msgstr ""
 "écoulée (30min, 3h, 7d, 2w, 6m, 1y) ; un jour donné comme seconde date est "
 "compris"
 
-#: src/search/deep_search_tab.c:918
+#: src/search/deep_search_tab.c:950
 msgid "node_modules, .git, build/"
 msgstr "node_modules, .git, build/"
 
-#: src/search/deep_search_tab.c:921
+#: src/search/deep_search_tab.c:953
 msgid "Levels below the folder: 1 for its own entries only"
 msgstr "Niveaux sous le dossier : 1 pour ses seules entrées"
 
-#: src/search/deep_search_tab.c:926
+#: src/search/deep_search_tab.c:958
 msgid "Also the names starting with a dot"
 msgstr "Aussi les noms qui commencent par un point"
 
-#: src/search/deep_search_tab.c:929
+#: src/search/deep_search_tab.c:961
 msgid "Do not enter the other filesystems mounted below the folder"
 msgstr ""
 "Ne pas entrer dans les autres systèmes de fichiers montés sous le dossier"
 
-#: src/search/deep_search_tab.c:968
+#: src/search/deep_search_tab.c:1000
 msgid "Reset the Criteria and the Results"
 msgstr "Réinitialiser les critères et les résultats"
 
-#: src/search/deep_search_tab.c:969
+#: src/search/deep_search_tab.c:1001
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: src/search/deep_search_tab.c:972
+#: src/search/deep_search_tab.c:1004
 msgid "Search (Enter / F5)"
 msgstr "Rechercher (Enter / F5)"
 
-#: src/search/deep_search_tab.c:976
+#: src/search/deep_search_tab.c:1008
 msgid "Stop the Search (Escape)"
 msgstr "Arrêter la recherche (Escape)"
 
-#: src/search/deep_search_tab.c:980
+#: src/search/deep_search_tab.c:1012
 msgid "Save Search as Bookmark…"
 msgstr "Enregistrer la recherche comme signet…"
 
-#: src/search/deep_search_tab.c:983
+#: src/search/deep_search_tab.c:1015
 msgid "Show the Preview on the Right"
 msgstr "Afficher l’aperçu à droite"
 
-#: src/search/deep_search_tab.c:986
+#: src/search/deep_search_tab.c:1018
 msgid "Close Deep Search"
 msgstr "Fermer la recherche approfondie"
 

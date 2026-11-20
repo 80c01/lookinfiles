@@ -2,6 +2,7 @@
 #include "diskuse/disk_usage_stats.h"
 #include "core/disk_stats.h"
 #include "core/i18n.h"
+#include "git/git_space.h"
 #include "theme/icons.h"
 #include "widgets/histogram.h"
 
@@ -206,35 +207,69 @@ static void on_file_clicked(GtkButton* button, gpointer data) {
     if (ds->reveal != NULL && path != NULL) ds->reveal(ds->data, path);
 }
 
+/* A path of the folder analysed (root) as a flat button, its size beside
+ * it in column 1 of row; a click shows it in the explorer */
+static void path_row(DuStats* ds, GtkWidget* grid, gint row, const gchar* path, gboolean dir, guint64 size,
+                     const gchar* root) {
+    GtkWidget* button = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(button), FALSE);
+    gtk_widget_add_css_class(button, "du-file");
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget* icon = file_type_image_new();
+    gchar* base = g_path_get_basename(path);
+    file_type_image_set(icon, base, dir);
+    g_free(base);
+    gtk_box_append(GTK_BOX(box), icon);
+    GtkWidget* name = label_new(inside(path, root), NULL, 0.0f);
+    gtk_widget_set_hexpand(name, TRUE);
+    gtk_box_append(GTK_BOX(box), name);
+    gtk_button_set_child(GTK_BUTTON(button), box);
+    /* TRANSLATORS: tooltip of a file of the largest files: its path */
+    gchar* tip = g_strdup_printf(_("Show in Explorer: %s"), path);
+    gtk_widget_set_tooltip_text(button, tip);
+    g_free(tip);
+    g_object_set_data_full(G_OBJECT(button), PATH_KEY, g_strdup(path), g_free);
+    g_signal_connect(button, "clicked", G_CALLBACK(on_file_clicked), ds);
+    gtk_widget_set_hexpand(button, TRUE);
+    gtk_grid_attach(GTK_GRID(grid), button, 0, row, 1, 1);
+    gtk_grid_attach(GTK_GRID(grid), number_take(g_format_size(size), "du-num"), 1, row, 1, 1);
+}
+
 /* The largest files: a click shows one in the explorer */
 static void show_largest(DuStats* ds, const DiskStats* st, const gchar* root) {
     if (st->largest->len == 0) return;
     GtkWidget* g = section(ds, _("Largest Files"));
     for (guint i = 0; i < st->largest->len && i < TOP_FILES; i++) {
         const DiskBigFile* f = &g_array_index(st->largest, DiskBigFile, i);
-        const gchar* rel = inside(f->path, root);
-        GtkWidget* button = gtk_button_new();
-        gtk_button_set_has_frame(GTK_BUTTON(button), FALSE);
-        gtk_widget_add_css_class(button, "du-file");
-        GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-        GtkWidget* icon = file_type_image_new();
-        gchar* base = g_path_get_basename(f->path);
-        file_type_image_set(icon, base, FALSE);
-        g_free(base);
-        gtk_box_append(GTK_BOX(row), icon);
-        GtkWidget* name = label_new(rel, NULL, 0.0f);
-        gtk_widget_set_hexpand(name, TRUE);
-        gtk_box_append(GTK_BOX(row), name);
-        gtk_button_set_child(GTK_BUTTON(button), row);
-        /* TRANSLATORS: tooltip of a file of the largest files: its path */
-        gchar* tip = g_strdup_printf(_("Show in Explorer: %s"), f->path);
-        gtk_widget_set_tooltip_text(button, tip);
-        g_free(tip);
-        g_object_set_data_full(G_OBJECT(button), PATH_KEY, g_strdup(f->path), g_free);
-        g_signal_connect(button, "clicked", G_CALLBACK(on_file_clicked), ds);
-        gtk_widget_set_hexpand(button, TRUE);
-        gtk_grid_attach(GTK_GRID(g), button, 0, (gint)i, 1, 1);
-        gtk_grid_attach(GTK_GRID(g), number_take(g_format_size(f->size), "du-num"), 1, (gint)i, 1, 1);
+        path_row(ds, g, (gint)i, f->path, FALSE, f->size, root);
+    }
+}
+
+/* The room of the work tree: tracked, untracked, ignored, history, nested */
+static void show_git(DuStats* ds, const GitSpace* git, const DiskStats* st) {
+    GtkWidget* g = section(ds, _("Git Repository"));
+    gint row = 0;
+    if (git->inside) {
+        /* TRANSLATORS: the top of the git work tree holding the folder analysed */
+        fact(g, row++, _("Repository"), g_strdup(git->top));
+    }
+    /* TRANSLATORS: files of the git index */
+    tally_row(g, row++, _("Tracked"), &git->tracked, st->size);
+    /* TRANSLATORS: files of the work tree not in the git index and not ignored */
+    if (git->untracked.size > 0 || git->untracked.count > 0) tally_row(g, row++, _("Untracked"), &git->untracked, st->size);
+    /* TRANSLATORS: files left out of git by .gitignore */
+    tally_row(g, row++, _("Ignored"), &git->ignored, st->size);
+    /* TRANSLATORS: the .git folder: the commits, the objects, the index */
+    if (git->history.size > 0) tally_row(g, row++, _("History (.git)"), &git->history, st->size);
+    if (git->nested.size > 0) tally_row(g, row++, _("Submodules, nested repositories"), &git->nested, st->size);
+}
+
+static void show_git_entries(DuStats* ds, const gchar* title, const GArray* entries, const gchar* root) {
+    if (entries->len == 0) return;
+    GtkWidget* g = section(ds, title);
+    for (guint i = 0; i < entries->len; i++) {
+        const GitSpaceEntry* e = &g_array_index(entries, GitSpaceEntry, i);
+        path_row(ds, g, (gint)i, e->path, e->dir, e->size, root);
     }
 }
 
@@ -260,7 +295,7 @@ static void show_errors(DuStats* ds, const DiskStats* st) {
     }
 }
 
-void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan) {
+void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan, const GitSpace* git) {
     DuStats* ds = stats != NULL ? g_object_get_data(G_OBJECT(stats), STATS_KEY) : NULL;
     if (ds == NULL) return;
     GtkWidget* child;
@@ -273,13 +308,19 @@ void disk_usage_stats_show(GtkWidget* stats, const DiskScan* scan) {
         return;
     }
     const DiskStats* st = disk_scan_stats(scan);
-    show_overview(ds, st, disk_scan_root_path(scan));
+    const gchar* root = disk_scan_root_path(scan);
+    show_overview(ds, st, root);
+    if (git != NULL) show_git(ds, git, st);
     if (st->n_files > 0) {
         show_kinds(ds, st);
         show_sizes(ds, st);
         show_ages(ds, st);
         show_extensions(ds, st);
-        show_largest(ds, st, disk_scan_root_path(scan));
+        show_largest(ds, st, root);
+    }
+    if (git != NULL) {
+        show_git_entries(ds, _("Largest Ignored Entries"), git->ignored_top, root);
+        show_git_entries(ds, _("Largest Tracked Files"), git->tracked_top, root);
     }
     show_errors(ds, st);
 }
@@ -295,6 +336,6 @@ GtkWidget* disk_usage_stats_new(void (*reveal)(gpointer data, const gchar* path)
     gtk_widget_set_vexpand(scroll, TRUE);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), ds->box);
     g_object_set_data_full(G_OBJECT(scroll), STATS_KEY, ds, g_free);
-    disk_usage_stats_show(scroll, NULL);
+    disk_usage_stats_show(scroll, NULL, NULL);
     return scroll;
 }

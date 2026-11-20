@@ -141,6 +141,8 @@ void disk_scan_free(DiskScan* scan);
 /* Leave path (a file or a folder below the root, full path) out of the
  * reading; call it before disk_scan_run() */
 void disk_scan_exclude(DiskScan* scan, const gchar* path);
+/* TRUE when path (full path) was given to disk_scan_exclude() */
+gboolean disk_scan_is_excluded(const DiskScan* scan, const gchar* path);
 
 /* Read the tree: blocks until it is read or cancel is triggered (a cancelled
  * scan keeps what it read). Call it once, in a worker thread. */

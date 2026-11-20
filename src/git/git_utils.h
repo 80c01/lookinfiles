@@ -86,6 +86,19 @@ typedef gboolean (*GitFileFunc)(const gchar* rel, gpointer data);
  * the top of a work tree. Worker thread. */
 gboolean git_list_files(const gchar* root, gboolean with_ignored, GitFileFunc func, gpointer data);
 
+/* Where a file of git_list_files_by_kind() comes from */
+typedef enum {
+    GIT_FILE_TRACKED = 0, /* in the index */
+    GIT_FILE_UNTRACKED,   /* in the work tree only, not ignored */
+    GIT_FILE_IGNORED      /* in the work tree only, ignored (with_ignored) */
+} GitFileKind;
+
+typedef gboolean (*GitKindFunc)(const gchar* rel, GitFileKind kind, gpointer data);
+
+/* git_list_files(), with where each file comes from. An untracked folder
+ * that is a repository of its own is listed once, as "name/". */
+gboolean git_list_files_by_kind(const gchar* root, gboolean with_ignored, GitKindFunc func, gpointer data);
+
 /* Age of a commit made seconds ago, like git's relative dates: "5 minutes
  * ago", "3 weeks ago", "1 year, 2 months ago", "in the future". Caller frees. */
 gchar* git_relative_date(gint64 seconds);
