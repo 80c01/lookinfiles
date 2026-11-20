@@ -309,17 +309,15 @@ ignorés à côté des autres) et les plus gros fichiers suivis ; un clic en
 montre un dans l’explorateur. Pour un dossier à l’intérieur d’un dépôt,
 seul ce qui est dans ce dossier compte, et le haut du dépôt est indiqué.
 
-Dans un dépôt, une liste dans l’en-tête choisit les fichiers comptés :
-**Tous les fichiers**, **Fichiers du dépôt** (suivis et non suivis, non
-ignorés, avec les sous-modules et dépôts imbriqués entiers ; ni
-l’historique ni les fichiers ignorés) ou **Fichiers ignorés** (sorties de
-compilation, dépendances, caches : ce qu’on peut nettoyer). Un clic sur
-**Suivis** ou **Non suivis** dans les statistiques compte les fichiers du
-dépôt, sur **Ignorés** les fichiers ignorés. Le dossier est relu avec les
-fichiers choisis ; la liste, la carte et les statistiques ne contiennent
+Un clic sur **Suivis** ou **Non suivis** ne compte que les fichiers du
+dépôt (suivis et non suivis, non ignorés, avec les sous-modules et dépôts
+imbriqués entiers ; ni l’historique ni les fichiers ignorés), un clic sur
+**Ignorés** que les fichiers ignorés (sorties de compilation,
+dépendances, caches : ce qu’on peut nettoyer). Le dossier est relu avec
+ces fichiers ; la liste, la carte et les statistiques ne contiennent
 qu’eux, et le résumé le dit. **Compter tous les fichiers** dans les
-statistiques, ou **Tous les fichiers** dans la liste, revient en
-arrière. Un autre dossier compte de nouveau tous ses fichiers.
+statistiques revient en arrière ; un autre dossier compte de nouveau
+tous ses fichiers.
 
 Les liens symboliques ne sont pas suivis, un fichier qui a plusieurs liens
 physiques ne compte qu’une fois, et les autres disques montés dans le

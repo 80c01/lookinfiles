@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-20 08:19+0000\n"
+"POT-Creation-Date: 2026-11-20 08:28+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -3669,7 +3669,7 @@ msgid ""
 msgstr ""
 "Repartir aussitôt avec la même durée (ou pour la même heure le lendemain)"
 
-#: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:673
+#: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:645
 #: src/search/deep_search_tab.c:1009
 msgid "Stop"
 msgstr "Arrêter"
@@ -4618,19 +4618,19 @@ msgstr "Plus gros éléments ignorés"
 msgid "Largest Tracked Files"
 msgstr "Plus gros fichiers suivis"
 
-#: src/diskuse/disk_usage_tab.c:115 src/search/deep_search_tab.c:118
+#: src/diskuse/disk_usage_tab.c:112 src/search/deep_search_tab.c:118
 #, c-format
 msgid "%.1f s"
 msgstr "%.1f s"
 
-#: src/diskuse/disk_usage_tab.c:117 src/search/deep_search_tab.c:120
+#: src/diskuse/disk_usage_tab.c:114 src/search/deep_search_tab.c:120
 #, c-format
 msgid "%u min %02u s"
 msgstr "%u min %02u s"
 
 #. TRANSLATORS: %s is a number of folders
 #. TRANSLATORS: %s is a number of folders read
-#: src/diskuse/disk_usage_tab.c:125 src/search/deep_search_tab.c:140
+#: src/diskuse/disk_usage_tab.c:122 src/search/deep_search_tab.c:140
 #, c-format
 msgid "%s folder"
 msgid_plural "%s folders"
@@ -4639,103 +4639,83 @@ msgstr[1] "%s dossiers"
 
 #. TRANSLATORS: %s is a number of files and folders excluded from the calculation
 #. TRANSLATORS: %s is a number of entries excluded from the calculation
-#: src/diskuse/disk_usage_tab.c:156 src/diskuse/disk_usage_tab.c:243
+#: src/diskuse/disk_usage_tab.c:147 src/diskuse/disk_usage_tab.c:234
 #, c-format
 msgid "%s excluded"
 msgid_plural "%s excluded"
 msgstr[0] "%s exclue"
 msgstr[1] "%s exclues"
 
-#: src/diskuse/disk_usage_tab.c:158 src/diskuse/disk_usage_tab.c:659
+#: src/diskuse/disk_usage_tab.c:149 src/diskuse/disk_usage_tab.c:640
 msgid "Include the Excluded Entries Again"
 msgstr "Réintégrer les entrées exclues"
 
 #. TRANSLATORS: bytes read so far, of the bytes used on the filesystem
-#: src/diskuse/disk_usage_tab.c:181
+#: src/diskuse/disk_usage_tab.c:172
 #, c-format
 msgid "%1$s of %2$s used on this filesystem"
 msgstr "%1$s sur %2$s utilisés sur ce système de fichiers"
 
 #. TRANSLATORS: folders of the analysed folder read in full, of all of them
-#: src/diskuse/disk_usage_tab.c:189
+#: src/diskuse/disk_usage_tab.c:180
 #, c-format
 msgid "%1$u of %2$u folders"
 msgstr "%1$u dossiers sur %2$u"
 
 #. TRANSLATORS: counts and size, the room taken on disk, the time of the reading
-#: src/diskuse/disk_usage_tab.c:228
+#: src/diskuse/disk_usage_tab.c:219
 #, c-format
 msgid "%1$s (%2$s on disk) · read in %3$s"
 msgstr "%1$s (%2$s sur le disque) · lu en %3$s"
 
 #. TRANSLATORS: %s is a number of entries that could not be read
 #. TRANSLATORS: %s is a number of files or folders that could not be read
-#: src/diskuse/disk_usage_tab.c:236 src/search/deep_search_tab.c:153
+#: src/diskuse/disk_usage_tab.c:227 src/search/deep_search_tab.c:153
 #, c-format
 msgid "%s unreadable"
 msgid_plural "%s unreadable"
 msgstr[0] "%s illisible"
 msgstr[1] "%s illisibles"
 
-#: src/diskuse/disk_usage_tab.c:248
+#: src/diskuse/disk_usage_tab.c:239
 msgid "repository files only"
 msgstr "fichiers du dépôt seulement"
 
-#: src/diskuse/disk_usage_tab.c:248
+#: src/diskuse/disk_usage_tab.c:239
 msgid "ignored files only"
 msgstr "fichiers ignorés seulement"
 
-#: src/diskuse/disk_usage_tab.c:252 src/search/deep_search_tab.c:208
+#: src/diskuse/disk_usage_tab.c:243 src/search/deep_search_tab.c:208
 msgid "stopped before the end"
 msgstr "arrêté avant la fin"
 
-#: src/diskuse/disk_usage_tab.c:385
+#: src/diskuse/disk_usage_tab.c:374
 msgid "Reading…"
 msgstr "Lecture…"
 
-#: src/diskuse/disk_usage_tab.c:399
+#: src/diskuse/disk_usage_tab.c:388
 msgid "The folders open once the whole tree is read"
 msgstr "Les dossiers s’ouvrent une fois toute l’arborescence lue"
 
-#: src/diskuse/disk_usage_tab.c:649 src/diskuse/disk_usage_tab.c:727
+#: src/diskuse/disk_usage_tab.c:630 src/diskuse/disk_usage_tab.c:699
 #: src/explorer/files_menu.c:190 src/explorer/files_menu.c:207
 #: src/preview/dir_preview.c:447
 msgid "Disk Usage"
 msgstr "Espace disque"
 
-#: src/diskuse/disk_usage_tab.c:653
+#: src/diskuse/disk_usage_tab.c:634
 msgid "Parent Folder (Backspace / Left)"
 msgstr "Dossier parent (Backspace / Left)"
 
-#: src/diskuse/disk_usage_tab.c:656
+#: src/diskuse/disk_usage_tab.c:637
 msgid "Read Again (F5)"
 msgstr "Relire (F5)"
 
-#: src/diskuse/disk_usage_tab.c:664
-msgid "All Files"
-msgstr "Tous les fichiers"
-
-#: src/diskuse/disk_usage_tab.c:664
-msgid "Repository Files"
-msgstr "Fichiers du dépôt"
-
-#: src/diskuse/disk_usage_tab.c:664
-msgid "Ignored Files"
-msgstr "Fichiers ignorés"
-
-#: src/diskuse/disk_usage_tab.c:666
-msgid ""
-"The files counted: all of them, those of the git repository (tracked and "
-"untracked, not ignored), or the ignored ones"
-msgstr ""
-"Les fichiers comptés : tous, ceux du dépôt git (suivis et non suivis, non "
-"ignorés), ou les ignorés"
-
-#: src/diskuse/disk_usage_tab.c:672
+#: src/diskuse/disk_usage_tab.c:644
 msgid "Stop Reading (Escape)"
 msgstr "Arrêter la lecture (Escape)"
 
-#: src/diskuse/disk_usage_tab.c:676
+#: src/diskuse/disk_usage_tab.c:648
 msgid "Close Disk Usage"
 msgstr "Fermer l’espace disque"
 

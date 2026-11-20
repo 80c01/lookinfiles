@@ -974,8 +974,7 @@ Layers, from bottom to top
   bars, the files by size (a `histogram`), the largest files (a click shows one in the explorer), the
   unreadable entries; in a git work tree, the room of its files
   (`git_space`, computed in the scan's worker once the tree is read). A
-  drop-down in the header (shown in a work tree) or a click on a git row
-  of the statistics reads the folder again with a `git_filter` (built in
+  click on a git row of the statistics reads the folder again with a `git_filter` (built in
   the worker before the reading); the git room is then not computed. `disk_usage_map` — the treemap under the list (a
   `GtkPaned`): the folder shown in nested rectangles (`treemap_layout`,
   three folder levels, 300 rectangles per folder at most, laid out again

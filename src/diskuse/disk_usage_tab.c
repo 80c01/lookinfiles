@@ -40,8 +40,6 @@ typedef struct {
     GtkWidget* refresh;
     GtkWidget* stop;
     GtkWidget* include;  /* the excluded entries back in */
-    GtkWidget* filter_dd;/* GtkDropDown: every file, the repository's, the ignored ones */
-    gboolean syncing;    /* filter_dd set from the code */
     GtkWidget* progress; /* GtkProgressBar, while the tree is read */
     GtkWidget* status;   /* counters, then the summary */
     GtkWidget* current;  /* folder being read, then the folder shown */
@@ -55,9 +53,8 @@ typedef struct {
     gchar* root;         /* folder analysed */
     DiskScan* scan;      /* the tree read (owned), NULL while it is read */
     GitSpace* git;       /* the room of its work tree (owned), NULL outside one */
-    GitFilterMode filter;    /* the files asked (filter_dd) */
+    GitFilterMode filter;    /* the files asked (a git row of the statistics) */
     GitFilterMode scan_mode; /* the files the tree read holds */
-    gboolean in_repo;    /* root is in a git work tree (known once read) */
     DiskScan* running;   /* the scan being read (owned by its job), else NULL */
     gboolean quiet;      /* the reading running keeps the tree read shown */
     GPtrArray* excluded; /* full paths left out of the calculation */
@@ -142,12 +139,6 @@ static void sync_buttons(DiskUsageTab* dt) {
     gtk_widget_set_sensitive(dt->up, dt->shown != NULL && dt->shown->parent != NULL);
     gtk_widget_set_visible(dt->stop, dt->running != NULL);
     gtk_widget_set_visible(dt->refresh, dt->running == NULL);
-    gtk_widget_set_visible(dt->filter_dd, dt->in_repo || dt->filter != GIT_FILTER_NONE);
-    if (gtk_drop_down_get_selected(GTK_DROP_DOWN(dt->filter_dd)) != (guint)dt->filter) {
-        dt->syncing = TRUE;
-        gtk_drop_down_set_selected(GTK_DROP_DOWN(dt->filter_dd), (guint)dt->filter);
-        dt->syncing = FALSE;
-    }
     guint n = dt->excluded->len;
     gtk_widget_set_visible(dt->include, n > 0);
     if (n > 0) {
@@ -300,8 +291,6 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
     }
     gtk_widget_set_visible(dt->progress, FALSE);
     if (job->dropped) dt->filter = GIT_FILTER_NONE; /* not a work tree (any more) */
-    if (job->git != NULL || job->filter != NULL) dt->in_repo = TRUE;
-    else if (!disk_scan_cancelled(job->scan)) dt->in_repo = FALSE;
     if (dt->quiet && dt->scan != NULL) {
         dt->quiet = FALSE;
         if (disk_scan_cancelled(job->scan)) { /* stopped: the tree read stays */
@@ -482,14 +471,6 @@ static void set_filter(DiskUsageTab* dt, GitFilterMode mode) {
     start_scan(dt, TRUE);
 }
 
-static void on_filter_selected(GObject* dd, GParamSpec* pspec, gpointer data) {
-    (void)pspec;
-    DiskUsageTab* dt = data;
-    if (dt->syncing) return;
-    guint selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(dd));
-    if (selected <= GIT_FILTER_IGNORED) set_filter(dt, (GitFilterMode)selected);
-}
-
 /* A row of the git statistics clicked */
 static void on_stats_filter(gpointer data, GitFilterMode mode) {
     set_filter(data, mode);
@@ -660,15 +641,6 @@ static DiskUsageTab* ensure_page(AppData* app) {
     g_signal_connect(dt->include, "clicked", G_CALLBACK(on_include_clicked), dt);
     gtk_widget_set_visible(dt->include, FALSE);
     gtk_box_append(GTK_BOX(bar), dt->include);
-    /* Same order as GitFilterMode */
-    const gchar* modes[] = { _("All Files"), _("Repository Files"), _("Ignored Files"), NULL };
-    dt->filter_dd = gtk_drop_down_new_from_strings(modes);
-    gtk_widget_set_tooltip_text(dt->filter_dd, _("The files counted: all of them, those of the git repository "
-                                                 "(tracked and untracked, not ignored), or the ignored ones"));
-    gtk_widget_set_valign(dt->filter_dd, GTK_ALIGN_CENTER);
-    gtk_widget_set_visible(dt->filter_dd, FALSE);
-    g_signal_connect(dt->filter_dd, "notify::selected", G_CALLBACK(on_filter_selected), dt);
-    gtk_box_append(GTK_BOX(bar), dt->filter_dd);
     dt->stop = icon_button_new("process-stop", _("Stop Reading (Escape)"));
     icon_button_set_content(dt->stop, "process-stop", _("Stop")); /* not taken for the close button */
     g_signal_connect(dt->stop, "clicked", G_CALLBACK(on_stop_clicked), dt);
@@ -741,7 +713,6 @@ void disk_usage_tab_show(AppData* app, const gchar* path) {
     if (g_strcmp0(dt->root, path) != 0) { /* another folder */
         g_ptr_array_set_size(dt->excluded, 0);
         dt->filter = GIT_FILTER_NONE;
-        dt->in_repo = FALSE;
     }
     g_free(dt->root);
     dt->root = g_strdup(path);
