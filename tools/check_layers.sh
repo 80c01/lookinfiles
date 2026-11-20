@@ -72,6 +72,7 @@ latex_synctex:
 preview_cache:
 path_kind:
 pane_geometry:
+split_ratio:
 minimap_geometry:
 ui_probe:
 profile:
@@ -260,7 +261,8 @@ preview_doc_view:preview_doc,html,html_tags,markdown,image_utils,text_style,app_
 tree_nav:app_types
 app_events:app_types
 path_copy:app_types,app_events,git_utils,i18n
-panels:app_types,app_events,nav_keys
+panels:app_types,app_events,nav_keys,split_menu,split_ratio
+split_menu:i18n,palette,split_ratio
 outline_pane:code_outline_tree,code_symbol,icons,panels,i18n,nav_keys
 focus_route:app_types,app_events,nav_keys,panels
 icons:file_type_icons,palette

@@ -395,6 +395,10 @@ Layers, from bottom to top
   Endgame riddles), driven by `editor_dunnet` (`M-x dunnet`).
 - `line_diff` — Myers line diff of a text against its previous version,
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
+- `split_ratio` — where a split handle goes for a share of its room
+  (`split_ratio_position()`, kept clear of the sides' minimum sizes), whether
+  a side is collapsed, and the position that expands it back; used by
+  `split_menu`.
 - `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
   direction (same row or column only), used to move editor tabs between
   notebooks; `pane_drop_zone()` / `pane_zone_rect()`: the side of a pane a
@@ -689,6 +693,15 @@ Layers, from bottom to top
   neighbouring panels and blocks text selection near the edge.
   The focused panel and the drag state stay private (`struct Panels`); split
   fractions live only in the workspace (`VirtualLayout`), not in `AppData`.
+  A share set from the split handle menu is recorded as is (0 or 1 for a
+  collapsed side); a drag keeps each side at 5 % at least.
+- `split_menu` — the bar of a split handle: when the pointer rests on the
+  handle of a `GtkPaned` wired by `wire_paned_controllers()`, a bar drawn in
+  the window overlay (next to the pointer, so a drag still works) collapses
+  either side or expands it back, and puts the handle at 1/3, 1/2 or 2/3
+  (`split_ratio`); `split_menu_halve()` is the double click. `panels` gives
+  it the sides allowed (the preview / editor split collapses only the
+  editor) and records the move.
 - `outline_pane` — a tagbar beside some content: a `GtkPaned` with a
   `GtkListView` over a `GtkTreeListModel` of an outline (`code_outline_tree`),
   its width shared through an `int*`, collapsed rows kept across refreshes;

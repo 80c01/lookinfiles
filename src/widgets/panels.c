@@ -2,6 +2,8 @@
  * highlight, workspace width, split-handle drag feedback and split fractions. */
 #include "widgets/panels.h"
 #include "core/app_events.h"
+#include "widgets/split_menu.h"
+#include "widgets/split_ratio.h"
 
 /* Focused panel and split-handle drag (app->panels), created on first use */
 typedef struct Panels Panels;
@@ -15,11 +17,17 @@ struct Panels {
     GtkWidget* paned;   /* paned whose handle is being dragged, or NULL */
     gboolean active;    /* a split handle is being dragged */
     gboolean following_main; /* the right pane follows a main pane drag: not a drag of its own */
+    SplitMenu* menu;    /* the bar shown on a resting pointer over a split handle */
 };
+
+static gint split_menu_sides(GtkWidget* paned, gpointer data);
+static void split_menu_apply(GtkWidget* paned, gint pos, gpointer data);
 
 static Panels* panels_get(AppData* app) {
     if (app->panels == NULL) {
         app->panels = g_new0(Panels, 1);
+        SplitMenuHooks hooks = {split_menu_sides, split_menu_apply, app};
+        app->panels->menu = split_menu_new(&hooks);
     }
     return app->panels;
 }
@@ -209,7 +217,6 @@ static gboolean pane_dims_idle(gpointer data) {
 
 static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
                              gdouble x, gdouble y, gpointer data) {
-    (void)n_press;
     AppData* app = (AppData*)data;
     Panels* d = app->panels;
     if (d == NULL || d->popup == NULL) {
@@ -244,12 +251,21 @@ static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
             return;
         }
     }
+    split_menu_hide(d->menu);
+    if (n_press == 2 && on_own_sep) {
+        split_menu_halve(d->menu, widget); /* double click: a half */
+        return;
+    }
     d->active = TRUE;
     d->paned = widget;
     update_pane_dims(widget, app);
 }
 
-static void record_paned_fraction(AppData* app, GtkWidget* widget) {
+/* Record the share of a layout split in the workspace. A drag keeps each
+ * side at 5 % at least; exact (the split handle menu) records a collapsed
+ * side as it is. */
+static void record_paned_fraction(AppData* app, GtkWidget* widget, gboolean exact) {
+    gdouble lo = exact ? 0.0 : 0.05, hi = exact ? 1.0 : 0.95;
     if (app == NULL || widget == NULL || !GTK_IS_PANED(widget) ||
         app->switching_ws || app_layout_held(app) ||
         (app->panels != NULL && app->panels->following_main) ||
@@ -266,8 +282,8 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
             if (total_w <= 0) {
                 total_w = mw;
             }
-            if (total_w > 60 && pos > 0 && pos < total_w) {
-                ws->main_frac = CLAMP((gdouble)pos / total_w, 0.05, 0.95);
+            if (total_w > 60 && (exact || (pos > 0 && pos < total_w))) {
+                ws->main_frac = CLAMP((gdouble)pos / total_w, lo, hi);
                 if (app->right_paned != NULL && (ws->preview_vis || ws->editor_dedicated) && ws->term_vis &&
                     ws->right_orient == GTK_ORIENTATION_HORIZONTAL) {
                     gint rw = mw - pos;
@@ -284,10 +300,10 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
         if (ws->preview_vis && ws->editor_dedicated) {
             gint len = gtk_widget_get_width(app->editor_paned);
             gint pos = gtk_paned_get_position(GTK_PANED(app->editor_paned));
-            if (len > 40 && pos > 0 && pos < len) {
+            if (len > 40 && (exact || (pos > 0 && pos < len))) {
                 gdouble start = (gdouble)pos / len;
                 /* The preview's share, whichever side it is on (editor_swap.h) */
-                ws->editor_frac = CLAMP(ws->editor_first ? 1.0 - start : start, 0.05, 0.95);
+                ws->editor_frac = CLAMP(ws->editor_first ? 1.0 - start : start, lo, hi);
             }
         }
     } else if (widget == app->right_paned) {
@@ -296,27 +312,47 @@ static void record_paned_fraction(AppData* app, GtkWidget* widget) {
                            ? gtk_widget_get_height(app->right_paned)
                            : gtk_widget_get_width(app->right_paned);
             gint pos = gtk_paned_get_position(GTK_PANED(app->right_paned));
-            if (len > 40 && pos > 0 && pos < len) {
-                ws->right_frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+            if (len > 40 && (exact || (pos > 0 && pos < len))) {
+                ws->right_frac = CLAMP((gdouble)pos / len, lo, hi);
             }
         }
     } else {
         GtkWidget* c1 = gtk_paned_get_start_child(GTK_PANED(widget));
         GtkWidget* c2 = gtk_paned_get_end_child(GTK_PANED(widget));
         if (c1 != NULL && c2 != NULL &&
-            gtk_widget_get_width(c1) > 0 && gtk_widget_get_width(c2) > 0) {
+            (exact || (gtk_widget_get_width(c1) > 0 && gtk_widget_get_width(c2) > 0))) {
             GtkOrientation o = gtk_orientable_get_orientation(GTK_ORIENTABLE(widget));
             gint len = (o == GTK_ORIENTATION_VERTICAL)
                            ? gtk_widget_get_height(widget)
                            : gtk_widget_get_width(widget);
             gint pos = gtk_paned_get_position(GTK_PANED(widget));
-            if (len > 40 && pos > 0 && pos < len) {
+            if (len > 40 && (exact || (pos > 0 && pos < len))) {
                 gdouble* frac = g_new(gdouble, 1);
-                *frac = CLAMP((gdouble)pos / len, 0.05, 0.95);
+                *frac = CLAMP((gdouble)pos / len, lo, hi);
                 g_object_set_data_full(G_OBJECT(widget), "term-paned-frac", frac, g_free);
             }
         }
     }
+}
+
+/* The split handle menu: every side collapses, but the preview, which keeps
+ * its own toggles (the editor side of the preview / editor split only) */
+static gint split_menu_sides(GtkWidget* paned, gpointer data) {
+    AppData* app = data;
+    if (panels_is_resizing(app)) return -1;
+    if (paned == app->editor_paned) {
+        gboolean editor_first = app->current_ws >= 0 && app->current_ws < app->num_workspaces &&
+                                app->workspaces[app->current_ws].editor_first;
+        return editor_first ? SPLIT_SIDE_START : SPLIT_SIDE_END;
+    }
+    return SPLIT_SIDE_START | SPLIT_SIDE_END;
+}
+
+static void split_menu_apply(GtkWidget* paned, gint pos, gpointer data) {
+    AppData* app = data;
+    gtk_paned_set_position(GTK_PANED(paned), pos);
+    record_paned_fraction(app, paned, TRUE);
+    app_emit(app, APP_EVENT_LAYOUT_CHANGED);
 }
 
 static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
@@ -326,7 +362,7 @@ static gboolean on_paned_legacy_event(GtkEventControllerLegacy* ctrl,
     Panels* d = app->panels;
     if (d != NULL && d->active && gdk_event_get_event_type(event) == GDK_BUTTON_RELEASE) {
         if (d->paned != NULL) {
-            record_paned_fraction(app, d->paned);
+            record_paned_fraction(app, d->paned, FALSE);
         }
         d->active = FALSE;
         d->paned = NULL;
@@ -347,7 +383,7 @@ static void on_paned_notify_position(GObject* object, GParamSpec* pspec, gpointe
     GtkWidget* widget = GTK_WIDGET(object);
     if (d->paned == NULL || d->paned == widget) {
         d->paned = widget;
-        record_paned_fraction(app, widget);
+        record_paned_fraction(app, widget, FALSE);
         g_idle_add(pane_dims_idle, app);
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
@@ -365,7 +401,7 @@ static void on_paned_released(GtkGestureClick* gesture, gint n_press,
         return;
     }
     if (d->active && d->paned != NULL) {
-        record_paned_fraction(app, d->paned);
+        record_paned_fraction(app, d->paned, FALSE);
     }
     d->active = FALSE;
     d->paned = NULL;
@@ -385,6 +421,7 @@ void paned_use_thin_handle(GtkWidget* paned) {
 
 void wire_paned_controllers(GtkWidget* paned, AppData* app) {
     paned_use_thin_handle(paned);
+    split_menu_attach(panels_get(app)->menu, paned);
     GtkGesture* click = gtk_gesture_click_new();
     gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click),
                                                GTK_PHASE_CAPTURE);
@@ -414,6 +451,7 @@ void panels_size_popup_attach(AppData* app, GtkOverlay* overlay) {
     Panels* d = panels_get(app);
     d->popup = popup;
     d->label = label;
+    split_menu_set_overlay(d->menu, overlay);
 }
 
 gboolean panels_is_resizing(const AppData* app) {
@@ -421,7 +459,8 @@ gboolean panels_is_resizing(const AppData* app) {
 }
 
 void panels_free(AppData* app) {
-    if (app != NULL) {
+    if (app != NULL && app->panels != NULL) {
+        split_menu_free(app->panels->menu);
         g_clear_pointer(&app->panels, g_free);
     }
 }
