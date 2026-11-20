@@ -41,9 +41,13 @@ par une icône de serveur et le nom de la machine, et le bouton **Terminal**
 de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell
 local.
 
-Les machines sont montées sous `~/.cache/lookinfiles/remotes/`. Les
-machines ajoutées à la main sont enregistrées dans
-`~/.config/lookinfiles/remotes.xml`.
+Les machines sont montées sous `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
+(en général `/run/user/1000/…` ; sans `$XDG_RUNTIME_DIR`,
+`/tmp/lookinfiles-<uid>/remotes/`), un dossier privé que les nettoyeurs de
+cache et les sauvegardes laissent de côté. Si LookinFiles s’arrête sans se
+déconnecter (un plantage), le démarrage suivant démonte ce qui était resté
+monté ; rien n’est touché sur la machine. Les machines ajoutées à la main
+sont enregistrées dans `~/.config/lookinfiles/remotes.xml`.
 
 ## Vitesse
 

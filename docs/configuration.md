@@ -18,7 +18,9 @@ Settings and data are kept in `~/.config/lookinfiles/`
 | `theme.ini` | The chosen theme and your fonts (written by Preferences → Appearance, `Alt+T`) |
 | `themes/` | Your themes, one `.ini` file each (see [Themes](#themes)) |
 
-Remote machines are mounted under `~/.cache/lookinfiles/remotes/`.
+Remote machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
+(`/tmp/lookinfiles-<uid>/remotes/` without `$XDG_RUNTIME_DIR`), never under
+`~/.cache`; mounts left by a crash are unmounted at the next start.
 
 ## Preferences
 

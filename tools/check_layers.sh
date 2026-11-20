@@ -59,6 +59,7 @@ done
 # module:allowed-project-headers (comma separated)
 RULES="
 app_paths:
+remote_mounts:app_paths
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
@@ -273,7 +274,7 @@ frame_watch:profile
 tab_drop:pane_geometry
 after_frame:
 explorer_tree:explorer_row,icons
-remote_store:app_types,app_paths,notebook_icons
+remote_store:app_types,app_paths,notebook_icons,remote_mounts
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,deep_search_store,file_types,i18n
 fs_watch:app_types,app_events,git_utils,git_tab,preview_state
 preview_state:app_types

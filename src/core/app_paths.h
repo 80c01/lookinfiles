@@ -24,4 +24,12 @@ gchar* app_config_dir(void);
 /* ~/.cache/lookinfiles ($XDG_CACHE_HOME honoured). Not created. Caller frees. */
 gchar* app_cache_dir(void);
 
+/* Per-session directory for live state such as mount points, never cleaned
+ * by cache cleaners: $XDG_RUNTIME_DIR/lookinfiles (/run/user/<uid>/...), or
+ * <tmp>/lookinfiles-<uid> without $XDG_RUNTIME_DIR. Created 0700; NULL when it
+ * cannot be made private (not ours, a symlink, open to others). Caller frees. */
+gchar* app_runtime_dir(void);
+/* Same from the given $XDG_RUNTIME_DIR (NULL: unset) and temporary directory */
+gchar* app_runtime_dir_for(const gchar* xdg_runtime_dir, const gchar* tmp_dir);
+
 #endif

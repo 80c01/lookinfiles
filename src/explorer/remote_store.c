@@ -2,6 +2,7 @@
  * ~/.ssh/config discovery and lookups. No widgets (unit-tested in tests/). */
 #include "explorer/remote_store.h"
 #include "core/app_paths.h"
+#include "explorer/remote_mounts.h"
 #include "notes/notebook_icons.h"
 
 #include <stdio.h>
@@ -71,14 +72,6 @@ static gchar* remote_get_config_path(void) {
     gchar* file = g_build_filename(app_dir, REMOTES_XML_FILE, NULL);
     g_free(app_dir);
     return file;
-}
-
-gchar* remote_get_cache_dir(const gchar* machine_id) {
-    gchar* cache_dir = app_cache_dir();
-    gchar* dir = g_build_filename(cache_dir, "remotes", machine_id, NULL);
-    g_free(cache_dir);
-    g_mkdir_with_parents(dir, 0700);
-    return dir;
 }
 
 RemoteMachine* remote_find_by_id(AppData* app, const gchar* id) {
@@ -428,12 +421,7 @@ void remote_free(AppData* app) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL) {
             if (rm->is_connected && rm->mount_point != NULL) {
-                /* Clean unmount */
-                gchar* cmd = g_strdup_printf("fusermount3 -u \"%s\" 2>/dev/null || fusermount -u \"%s\" 2>/dev/null",
-                                             rm->mount_point, rm->mount_point);
-                int ignored = system(cmd);
-                (void)ignored;
-                g_free(cmd);
+                remote_mounts_unmount(rm->mount_point);
             }
             remote_machine_free(rm);
         }

@@ -44,8 +44,14 @@ Layers, from bottom to top
 (a module may only depend on modules in its own layer or below):
 
 **1. Foundation — pure helpers, no `AppData`, no widgets, unit-tested in `tests/`:**
-- `app_paths` — application name (`APP_NAME`), config and cache directories
-  (`app_config_dir()`, `app_cache_dir()`: never hard-code the directory name).
+- `app_paths` — application name (`APP_NAME`), config, cache and runtime directories
+  (`app_config_dir()`, `app_cache_dir()`, `app_runtime_dir()`: never hard-code the
+  directory name; the runtime one is private, 0700, and never under the cache).
+- `remote_mounts` — sshfs mount points of the remote machines
+  (`app_runtime_dir()/remotes/<id>`, never under `~/.cache`, where a cache cleaner
+  would recurse into a forgotten mount), owner files, `/proc/self/mounts`
+  parsing, unmount, and the startup cleanup of the mounts a crashed session left
+  (`remote_mounts_cleanup_stale()`, called by `main.c`).
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).

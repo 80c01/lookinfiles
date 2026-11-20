@@ -11648,3 +11648,12 @@ msgstr "Fermer l’espace de travail"
 
 #~ msgid "Hidden: Off"
 #~ msgstr "Cachés : non"
+
+msgid ""
+"Could not create a private folder to mount the machine in. Check that "
+"$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other "
+"users."
+msgstr ""
+"Impossible de créer un dossier privé où monter la machine. Vérifiez que "
+"$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et n’est pas "
+"accessible aux autres utilisateurs."

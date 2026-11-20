@@ -38,8 +38,12 @@ While you browse a connected machine, the breadcrumbs start with a server icon a
 the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.
 
-Machines are mounted under `~/.cache/lookinfiles/remotes/`. Machines added
-by hand are saved in `~/.config/lookinfiles/remotes.xml`.
+Machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
+(usually `/run/user/1000/…`; without `$XDG_RUNTIME_DIR`,
+`/tmp/lookinfiles-<uid>/remotes/`), a private folder that cache cleaners and
+backups leave alone. If LookinFiles stops without disconnecting (a crash), the
+next start unmounts what it left mounted; nothing on the machine is touched.
+Machines added by hand are saved in `~/.config/lookinfiles/remotes.xml`.
 
 ## Speed
 

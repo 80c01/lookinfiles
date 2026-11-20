@@ -43,6 +43,7 @@
 #include "explorer/bookmarks.h"
 #include "notes/notes.h"
 #include "explorer/remote.h"
+#include "explorer/remote_mounts.h"
 #include "games/games.h"
 #include "explorer/files_menu.h"
 #include "workspace/session.h"
@@ -587,6 +588,7 @@ int main(int argc, char** argv) {
     bookmarks_attach_context_menu(app);
     notes_init(app);
     notes_attach_context_menu(app);
+    remote_mounts_cleanup_stale(); /* mounts a crashed session left */
     remote_init(app);
     remote_attach_context_menu(app);
     games_init(app);

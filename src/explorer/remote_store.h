@@ -15,7 +15,7 @@ typedef struct {
     gint port;             /* SSH port (default 22) */
     gchar* remote_path;    /* default directory on remote (default: "~" or "/") */
     gchar* identity_file;  /* optional private key path */
-    gchar* mount_point;    /* local path where sshfs mounted it */
+    gchar* mount_point;    /* local path where sshfs mounted it (remote_mounts_dir()) */
     gboolean is_connected; /* whether currently mounted */
     gboolean from_ssh_config; /* whether parsed from ~/.ssh/config */
     gchar* folder_id;      /* RemoteFolder id, NULL at the top level */
@@ -63,8 +63,5 @@ guint remote_folder_count(AppData* app, const RemoteFolder* folder);
 void remote_machine_set_folder(RemoteMachine* rm, const RemoteFolder* folder);
 /* Machine of the current workspace connection (app->current_remote_id), NULL if local */
 RemoteMachine* remote_get_active_machine(AppData* app);
-
-/* Local cache directory used as sshfs mount point for a machine. Caller frees. */
-gchar* remote_get_cache_dir(const gchar* machine_id);
 
 #endif /* REMOTE_STORE_H */

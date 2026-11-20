@@ -1,4 +1,5 @@
 #include "explorer/remote.h"
+#include "explorer/remote_mounts.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
 #include "widgets/dialog.h"
@@ -586,6 +587,19 @@ void remote_delete_folder_selected(AppData* app) {
 /* Connecting, Mounting & Disconnecting                                      */
 /* ------------------------------------------------------------------------- */
 
+/* Message dialog with a Close button */
+static void remote_show_message(AppData* app, const gchar* title, const gchar* text) {
+    GtkWidget* dlg = app_dialog_new(title, app->window, _("_Close"), APP_RESPONSE_OK, NULL);
+    GtkWidget* box = remote_dialog_body(dlg);
+    GtkWidget* lbl = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
+    gtk_box_append(GTK_BOX(box), lbl);
+    RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
+    remote_run_modal(dlg, &d, NULL);
+    app_dialog_destroy(APP_DIALOG(dlg));
+}
+
 gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     if (app == NULL || rm == NULL) {
         return FALSE;
@@ -612,10 +626,26 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         return FALSE;
     }
 
-    gchar* mount_dir = remote_get_cache_dir(rm->id);
+    gchar* mount_dir = remote_mounts_dir(rm->id);
+    if (mount_dir == NULL) {
+        remote_show_message(app, _("Connection Failed"),
+                            _("Could not create a private folder to mount the machine in. Check that "
+                              "$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other users."));
+        return FALSE;
+    }
+
+    /* Mounted by an earlier session or another window: use it as it is */
+    if (!rm->is_connected && remote_mounts_is_mounted(mount_dir)) {
+        rm->is_connected = TRUE;
+        g_free(rm->mount_point);
+        rm->mount_point = g_strdup(mount_dir);
+        if (remote_mounts_owner(mount_dir) == 0) {
+            remote_mounts_claim(mount_dir);
+        }
+    }
 
     /* If already mounted and connected, simply switch to files view */
-    if (rm->is_connected && rm->mount_point != NULL && g_file_test(rm->mount_point, G_FILE_TEST_IS_DIR)) {
+    if (rm->is_connected && rm->mount_point != NULL) {
         g_free(app->current_remote_id);
         app->current_remote_id = g_strdup(rm->id);
         if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
@@ -696,6 +726,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     }
     g_free(stderr_buf);
 
+    remote_mounts_claim(mount_dir);
     rm->is_connected = TRUE;
     g_free(rm->mount_point);
     rm->mount_point = mount_dir;
@@ -721,11 +752,7 @@ gboolean remote_disconnect_machine(AppData* app, RemoteMachine* rm) {
         return FALSE;
     }
     if (rm->mount_point != NULL) {
-        gchar* cmd = g_strdup_printf("fusermount3 -u \"%s\" 2>/dev/null || fusermount -u \"%s\" 2>/dev/null || umount \"%s\" 2>/dev/null",
-                                     rm->mount_point, rm->mount_point, rm->mount_point);
-        int ignored = system(cmd);
-        (void)ignored;
-        g_free(cmd);
+        remote_mounts_unmount(rm->mount_point);
     }
     rm->is_connected = FALSE;
 
