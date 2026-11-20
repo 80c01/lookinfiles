@@ -100,6 +100,9 @@ static NavAction emacs_key(guint keyval, GdkModifierType state, NavPrefix* next)
         case GDK_KEY_less: return NAV_FIRST;
         case GDK_KEY_greater: return NAV_LAST;
         case GDK_KEY_v: case GDK_KEY_V: return NAV_PAGE_UP;
+        case GDK_KEY_g: case GDK_KEY_G:
+            *next = NAV_PREFIX_META_G;
+            return NAV_PENDING;
         default: return NAV_NONE;
         }
     }
@@ -168,6 +171,11 @@ NavAction nav_keys_lookup(NavStyle style, NavPrefix prefix, guint keyval,
     /* Second key of a mode prefix: C-x o, C-x <right> / <left>, Ctrl+W w */
     if (prefix == NAV_PREFIX_CTRL_X) {
         return nav_keys_ctrl_x(keyval, state);
+    }
+    /* M-g s: the symbols of the project; anything else drops the prefix */
+    if (prefix == NAV_PREFIX_META_G) {
+        if ((state & CTRL_ALT) == 0 && gdk_keyval_to_lower(keyval) == GDK_KEY_s) return NAV_WORKSPACE_SYMBOLS;
+        return NAV_CANCEL;
     }
     if (prefix == NAV_PREFIX_CTRL_W) {
         if ((state & GDK_ALT_MASK) != 0) return NAV_CANCEL;

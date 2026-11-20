@@ -89,6 +89,9 @@ Notes:
   buffer) when the file is not code. `Ctrl-O` / `Tab` walk the engine's
   jump list in the buffer, then continue in the shared history across files.
 - `Ctrl+Click` also works in the read-only preview of source files.
+- Symbols of the project also work outside editor tabs (`Ctrl+Alt+O`,
+  Emacs `M-g s`): the project of the explorer's folder, every language,
+  ctags or the built-in index (no language server without a file).
 - Org-mode tabs are not concerned (no code language).
 - Tagbar: a `GtkPaned` in each editor tab (thin handle), shown or hidden
   per tab by its key (not saved); a new tab follows the Preferences

@@ -28,7 +28,8 @@ typedef enum {
     NAV_PREFIX_G,      /* g (gg) */
     NAV_PREFIX_Z,      /* z (zz, zt, zb) */
     NAV_PREFIX_CTRL_W, /* Vim Ctrl+W (window command) */
-    NAV_PREFIX_CTRL_X  /* Emacs C-x */
+    NAV_PREFIX_CTRL_X, /* Emacs C-x */
+    NAV_PREFIX_META_G  /* Emacs M-g */
 } NavPrefix;
 
 typedef enum {
@@ -58,7 +59,8 @@ typedef enum {
     NAV_TAB_NEXT,     /* next / previous tab of the notebook (gt, C-x <right>, Ctrl+Tab) */
     NAV_TAB_PREV,
     NAV_TAB_CLOSE,    /* close the focused tab, or the current one on screen (Vim Ctrl+W c) */
-    NAV_QUICK_OPEN    /* go to a project file (Emacs C-x C-f; Ctrl+P is a window key) */
+    NAV_QUICK_OPEN,   /* go to a project file (Emacs C-x C-f; Ctrl+P is a window key) */
+    NAV_WORKSPACE_SYMBOLS /* symbols of the project (Emacs M-g s; Ctrl+Alt+O is a window key) */
 } NavAction;
 
 /* Action of keyval with state in style, after the pending prefix.

@@ -27,6 +27,9 @@ it is used, and show what it is, in all three modes.
   by file. `Enter` or a double click opens one; the cross closes the tab.
 - The other uses of the name under the cursor are highlighted.
 - `Ctrl+Click` also works in the preview of a source file.
+- The symbols of the project can also be searched from the explorer:
+  `Ctrl+Alt+O` (`M-g s` in Emacs mode) looks in the project of the
+  current folder, in every language.
 
 The **tagbar** shows the symbols of a code file beside the text, grouped by
 kind (Functions, Types...) and nested in their struct or class, or the

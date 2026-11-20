@@ -358,8 +358,8 @@ gboolean on_tree_key_press(GtkEventControllerKey* controller, guint keyval,
     NavPrefix next = NAV_PREFIX_NONE;
     NavAction action = nav_keys_lookup(app_nav_style(app), prefix, keyval, state, &next);
 
-    /* The key after C-x / Ctrl+W belongs to the prefix, whatever it is */
-    if (prefix == NAV_PREFIX_CTRL_X || prefix == NAV_PREFIX_CTRL_W) {
+    /* The key after C-x / Ctrl+W / M-g belongs to the prefix, whatever it is */
+    if (prefix == NAV_PREFIX_CTRL_X || prefix == NAV_PREFIX_CTRL_W || prefix == NAV_PREFIX_META_G) {
         app->nav_prefix = next;
         run_nav(app, action);
         return TRUE;

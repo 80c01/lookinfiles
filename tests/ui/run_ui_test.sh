@@ -478,6 +478,10 @@ key Escape;             shot files_context_menu_closed
 key ctrl+p; xdotool type --delay 60 "plan"
                         shot quick_open_filtered
 key Escape;             shot quick_open_closed
+# Ctrl+Alt+O from the explorer: symbols of the project of its folder
+key ctrl+alt+o; xdotool type --delay 60 "main"
+                        shot workspace_symbols_explorer
+key Escape;             shot workspace_symbols_explorer_closed
 # Search in files options: an invalid regex disables Search; letters in
 # order greys out whole word; files to include / exclude, ignored files;
 # cancelled, the options are left as they were

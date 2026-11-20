@@ -29,6 +29,9 @@ dans les trois modes.
   une ; la croix ferme l’onglet.
 - Les autres utilisations du nom sous le curseur sont surlignées.
 - `Ctrl+clic` marche aussi dans l’aperçu d’un fichier source.
+- Les symboles du projet se cherchent aussi depuis l’explorateur :
+  `Ctrl+Alt+O` (`M-g s` en mode Emacs) cherche dans le projet du dossier
+  courant, dans tous les langages.
 
 La **barre de symboles** affiche les symboles d’un fichier de code à côté
 du texte, regroupés par sorte (fonctions, types…) et imbriqués dans leur

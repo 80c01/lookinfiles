@@ -7,8 +7,9 @@
 #include "core/app_types.h"
 #include "code/code_nav.h"
 
-/* Open the Workspace Symbols picker for the project of tab (or app->base_dir
- * when tab has no file). */
+/* Open the Workspace Symbols picker for the project (git root, else the
+ * folder) of tab's file, or of app->base_dir when tab is NULL or has no file.
+ * message may be NULL. */
 void code_workspace_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFunc message);
 
 #endif /* CODE_WORKSPACE_SYMBOLS_H */

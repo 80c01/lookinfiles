@@ -337,6 +337,8 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Global"), "Ctrl+P", N_("Go to a file of the project: type part of its name (Enter shows it, Ctrl+Enter edits it; not in Vim editor tabs)"), VI},
     {N_("Global"), "C-x C-f", N_("Go to a file of the project: type part of its name (Enter shows it, Ctrl+Enter edits it)"), EM},
     {N_("Global"), "Ctrl+P", N_("Go to a file of the project: type part of its name (Enter shows it, Ctrl+Enter edits it)"), NP},
+    {N_("Global"), "Ctrl+Alt+O", N_("Symbols of the project of the current folder, every language (Enter opens the file at the symbol; editor tabs: the project of their file)"), 0},
+    {N_("Global"), "M-g s", N_("Symbols of the project of the current folder (Enter opens the file at the symbol)"), EM},
     {N_("Global"), "Ctrl+Shift+F", N_("Search the text in every file of the project, on the Notes page in the notes (results in the Search tab, Enter opens; not in Emacs editor tabs)"), 0},
     {N_("Global"), "Alt+M / Alt+W / Alt+R / Alt+L", N_("In Search in Files: match case / whole word / regular expression / letters in order"), 0},
     {N_("Global"), "Alt+N / Alt+X / Alt+I", N_("In Search in Files: files to include / to exclude (*.c, src/) / include the files git ignores"), 0},

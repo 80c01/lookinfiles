@@ -378,8 +378,7 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
 
 void code_workspace_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFunc message) {
     if (app == NULL || app->window == NULL || app_dialog_is_open(app->window)) return;
-    gchar* root = (tab != NULL && tab->path != NULL) ? code_index_project_root(tab->path)
-                                                     : g_strdup(app->base_dir);
+    gchar* root = code_index_project_root(tab != NULL && tab->path != NULL ? tab->path : app->base_dir);
     if (root == NULL) {
         if (message != NULL && tab != NULL) message(tab, _("No project folder open"));
         return;

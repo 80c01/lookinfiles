@@ -2327,6 +2327,21 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie)"
 
+#: src/chrome/help.c
+msgid ""
+"Symbols of the project of the current folder, every language (Enter opens "
+"the file at the symbol; editor tabs: the project of their file)"
+msgstr ""
+"Symboles du projet du dossier courant, tous langages (Enter ouvre le fichier "
+"au symbole ; onglets d’édition : le projet de leur fichier)"
+
+#: src/chrome/help.c
+msgid ""
+"Symbols of the project of the current folder (Enter opens the file at the "
+"symbol)"
+msgstr ""
+"Symboles du projet du dossier courant (Enter ouvre le fichier au symbole)"
+
 #: src/chrome/help.c:340
 msgid ""
 "Search the text in every file of the project, on the Notes page in the notes "

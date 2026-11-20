@@ -134,6 +134,17 @@ static void test_tab_keys(void) {
     /* C-x C-f: find-file (quick open); C-x f is not */
     g_assert_cmpint(nav_keys_ctrl_x(GDK_KEY_f, GDK_CONTROL_MASK), ==, NAV_QUICK_OPEN);
     g_assert_cmpint(nav_keys_ctrl_x(GDK_KEY_f, 0), ==, NAV_CANCEL);
+    /* M-g s: symbols of the project; M-g then another key drops the prefix */
+    next = NAV_PREFIX_NONE;
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_NONE, GDK_KEY_g, GDK_ALT_MASK, &next), ==,
+                    NAV_PENDING);
+    g_assert_cmpint(next, ==, NAV_PREFIX_META_G);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, next, GDK_KEY_s, 0, &next), ==, NAV_WORKSPACE_SYMBOLS);
+    g_assert_cmpint(next, ==, NAV_PREFIX_NONE);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_META_G, GDK_KEY_x, 0, NULL), ==, NAV_CANCEL);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_EMACS, NAV_PREFIX_META_G, GDK_KEY_s, GDK_CONTROL_MASK, NULL), ==,
+                    NAV_CANCEL);
+    g_assert_cmpint(nav_keys_lookup(NAV_STYLE_NOTEPAD, NAV_PREFIX_NONE, GDK_KEY_g, GDK_ALT_MASK, NULL), ==, NAV_NONE);
 }
 
 static void test_search_keys(void) {

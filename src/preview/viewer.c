@@ -128,8 +128,9 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     (void)keycode;
     AppData* app = (AppData*)data;
 
-    /* The key after C-x / Ctrl+W belongs to the prefix, whatever it is */
-    if (app->nav_prefix == NAV_PREFIX_CTRL_X || app->nav_prefix == NAV_PREFIX_CTRL_W) {
+    /* The key after C-x / Ctrl+W / M-g belongs to the prefix, whatever it is */
+    if (app->nav_prefix == NAV_PREFIX_CTRL_X || app->nav_prefix == NAV_PREFIX_CTRL_W ||
+        app->nav_prefix == NAV_PREFIX_META_G) {
         NavPrefix next = NAV_PREFIX_NONE;
         NavAction action = nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, &next);
         app->nav_prefix = next;

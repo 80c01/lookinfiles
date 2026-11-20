@@ -31,6 +31,7 @@
 #include "search/deep_search_tab.h"
 #include "code/code_problems.h"
 #include "code/code_refs.h"
+#include "code/code_workspace_symbols.h"
 #include "latex/latex_errors.h"
 #include "workspace/session.h"
 
@@ -302,6 +303,15 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
         return TRUE;
     }
 
+    /* Symbols of the project: Emacs M-g s in the explorer, the viewer and the list pages */
+    if (info.nav_keys &&
+        nav_keys_lookup(app_nav_style(app), (NavPrefix)app->nav_prefix, keyval, state, NULL) ==
+            NAV_WORKSPACE_SYMBOLS) {
+        app->nav_prefix = NAV_PREFIX_NONE;
+        code_workspace_symbols_show(app, NULL, NULL);
+        return TRUE;
+    }
+
     /* Navigation keys of the global mode go to the explorer, the viewer and
      * the list pages (Emacs C-s / C-r search there, Vim Ctrl+W starts a
      * window command) */
@@ -408,6 +418,15 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     if (!is_modal_tab && (state & GDK_CONTROL_MASK) && !(state & (GDK_SHIFT_MASK | GDK_ALT_MASK)) &&
         (keyval == GDK_KEY_p || keyval == GDK_KEY_P) && !focus_in_terminal(app)) {
         quick_open_show(app);
+        return TRUE;
+    }
+
+    /* Ctrl+Alt+O: symbols of the project of the explorer's folder (editor
+     * tabs have their own key, for the project of their file; a terminal
+     * keeps it) */
+    if (info.area != FOCUS_AREA_EDITOR && (state & GDK_CONTROL_MASK) && (state & GDK_ALT_MASK) &&
+        !(state & GDK_SHIFT_MASK) && (keyval == GDK_KEY_o || keyval == GDK_KEY_O) && !focus_in_terminal(app)) {
+        code_workspace_symbols_show(app, NULL, NULL);
         return TRUE;
     }
 
