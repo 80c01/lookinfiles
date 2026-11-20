@@ -577,6 +577,8 @@ key Return; sleep 0.5;  shot code_refs_opened         # first reference opened
 key ctrl+shift+o; sleep 0.5; shot code_symbols_dialog
 xdotool type --delay 80 "ma"
                         shot code_symbols_filtered
+key alt+k;              shot code_symbols_functions   # only the functions, counts in the drop-down
+key alt+shift+k;        shot code_symbols_all_kinds
 key Return; sleep 0.5;  shot code_symbols_jumped      # cursor on main()
 key ctrl+k ctrl+o; sleep 1; shot tagbar_shown       # symbols beside the text, on main()
 key c;                  shot tagbar_collapsed     # every group collapsed

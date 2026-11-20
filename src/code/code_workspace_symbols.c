@@ -2,7 +2,7 @@
 #include "code/code_workspace_symbols.h"
 #include "code/code_index.h"
 #include "code/code_intel.h"
-#include "code/code_outline_tree.h"
+#include "code/code_kind_drop.h"
 #include "code/code_tags.h"
 #include "core/app_paths.h"
 #include "core/i18n.h"
@@ -14,15 +14,7 @@
 #define DEBOUNCE_MS     120
 #define MAX_RESULTS     200
 
-/* Kinds the picker offers, in the order of the tagbar groups; row 0 of the
- * drop-down is every kind */
-static const CodeSymbolKind KIND_CHOICES[] = {
-    CODE_SYM_FUNCTION, CODE_SYM_METHOD, CODE_SYM_MACRO,  CODE_SYM_TYPE,   CODE_SYM_CLASS,
-    CODE_SYM_VARIABLE, CODE_SYM_CONSTANT, CODE_SYM_FIELD, CODE_SYM_MODULE, CODE_SYM_TARGET,
-};
-#define N_KIND_CHOICES G_N_ELEMENTS(KIND_CHOICES)
-
-/* Row of the drop-down chosen last, kept for the next picker */
+/* Kind chosen last, kept for the next picker */
 static guint last_kind_row = 0;
 
 #define CODE_TYPE_WS_SYM (code_ws_sym_get_type())
@@ -65,9 +57,7 @@ typedef struct {
     CodeLang lang;
     GtkWidget* dialog;
     GtkWidget* entry;
-    GtkWidget* kind_drop;
-    GtkStringList* kind_list;               /* rows of kind_drop */
-    guint kind_counts[CODE_SYM_N_KINDS];    /* matches of each kind, last answer */
+    CodeKindDrop* kinds;
     GtkWidget* list;
     GtkWidget* note;
     GListStore* store;
@@ -86,60 +76,6 @@ static const gchar* rel_of(const gchar* root, const gchar* path) {
     while (n > 1 && root[n - 1] == '/') n--;
     if (n > 0 && strncmp(path, root, n) == 0 && path[n] == '/') return path + n + 1;
     return path;
-}
-
-/* Mask of the kinds chosen in the drop-down */
-static guint chosen_kinds(WsPicker* p) {
-    guint row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
-    if (row == 0 || row > N_KIND_CHOICES) return CODE_SYM_KINDS_ALL;
-    return CODE_SYM_KIND_BIT(KIND_CHOICES[row - 1]);
-}
-
-static void on_kind_changed(GObject* drop, GParamSpec* pspec, gpointer data);
-
-/* Label of a row of the drop-down: the kind and how many symbols of it
- * match the query (no number before the first answer) */
-static gchar* kind_row_label(WsPicker* p, guint row, gboolean counted) {
-    const gchar* name = row == 0 ? _("All kinds") : code_outline_group_label(KIND_CHOICES[row - 1]);
-    if (!counted) return g_strdup(name);
-    guint n = 0;
-    if (row == 0) {
-        for (guint k = 0; k < CODE_SYM_N_KINDS; k++) n += p->kind_counts[k];
-    } else {
-        n = p->kind_counts[KIND_CHOICES[row - 1]];
-    }
-    /* TRANSLATORS: a kind of symbol and how many match, "Functions (12)" */
-    return g_strdup_printf(C_("symbol kind count", "%1$s (%2$u)"), name, n);
-}
-
-/* Shows counts (CODE_SYM_N_KINDS entries) in the drop-down, the row chosen
- * kept */
-static void set_kind_counts(WsPicker* p, const guint* counts) {
-    memcpy(p->kind_counts, counts, sizeof(p->kind_counts));
-    guint rows = N_KIND_CHOICES + 1;
-    const gchar* labels[N_KIND_CHOICES + 2];
-    gchar* owned[N_KIND_CHOICES + 1];
-    for (guint i = 0; i < rows; i++) labels[i] = owned[i] = kind_row_label(p, i, TRUE);
-    labels[rows] = NULL;
-    guint sel = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
-    g_signal_handlers_block_by_func(p->kind_drop, on_kind_changed, p);
-    gtk_string_list_splice(p->kind_list, 0, rows, labels);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), sel);
-    g_signal_handlers_unblock_by_func(p->kind_drop, on_kind_changed, p);
-    for (guint i = 0; i < rows; i++) g_free(owned[i]);
-}
-
-/* Next / previous row of the drop-down (step +1 / -1), past the kinds no
- * symbol matches; every kind (row 0) is always a stop */
-static void step_kind(WsPicker* p, gint step) {
-    guint rows = N_KIND_CHOICES + 1;
-    guint row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
-    if (row >= rows) row = 0;
-    for (guint i = 0; i < rows; i++) {
-        row = (row + rows + (guint)(step > 0 ? 1 : rows - 1)) % rows;
-        if (row == 0 || p->kind_counts[KIND_CHOICES[row - 1]] > 0) break;
-    }
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), row);
 }
 
 static void cancel_pending(WsPicker* p) {
@@ -261,7 +197,7 @@ static void on_worker_done(GObject* src, GAsyncResult* res, gpointer data) {
         add_row(p, m->symbol->name, detail, code_symbol_kind_name(m->symbol->kind),
                 m->path, m->symbol->line, m->symbol->column);
     }
-    set_kind_counts(p, j->counts);
+    code_kind_drop_set_counts(p->kinds, j->counts);
     update_note(p, j->source != NULL ? j->source : _("built-in index"), j->truncated);
 }
 
@@ -284,7 +220,7 @@ static void start_worker_search(WsPicker* p, const gchar* query) {
     j->serial = p->serial;
     j->root = g_strdup(p->root);
     j->query = g_strdup(query);
-    j->kinds = chosen_kinds(p);
+    j->kinds = code_kind_drop_kinds(p->kinds);
     j->lang = p->lang;
     j->texts = snapshot_open_buffers(p->app);
     gchar* cdir = app_cache_dir();
@@ -332,8 +268,8 @@ static void on_lsp_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, gpo
         LspSymbol* s = g_ptr_array_index(symbols, i);
         if ((guint)s->kind < CODE_SYM_N_KINDS) counts[s->kind]++;
     }
-    set_kind_counts(p, counts);
-    guint kinds = chosen_kinds(p);
+    code_kind_drop_set_counts(p->kinds, counts);
+    guint kinds = code_kind_drop_kinds(p->kinds);
     guint taken = 0;
     gboolean more = FALSE;
     for (guint i = 0; i < symbols->len; i++) {
@@ -442,11 +378,7 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
     (void)ctrl; (void)keycode;
     WsPicker* p = data;
     /* Alt+K / Alt+Shift+K: next / previous kind */
-    if ((state & (GDK_ALT_MASK | GDK_CONTROL_MASK)) == GDK_ALT_MASK &&
-        (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
-        step_kind(p, (state & GDK_SHIFT_MASK) != 0 ? -1 : 1);
-        return TRUE;
-    }
+    if (code_kind_drop_key(p->kinds, keyval, state)) return TRUE;
     /* Escape closes the picker (the search entry would only clear its text) */
     if (keyval == GDK_KEY_Escape) {
         app_dialog_response(APP_DIALOG(p->dialog), APP_RESPONSE_CANCEL);
@@ -463,11 +395,8 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
     return TRUE;
 }
 
-static void on_kind_changed(GObject* drop, GParamSpec* pspec, gpointer data) {
-    (void)drop;
-    (void)pspec;
+static void on_kind_changed(gpointer data) {
     WsPicker* p = data;
-    last_kind_row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
     g_clear_handle_id(&p->debounce_id, g_source_remove);
     run_search(p);
 }
@@ -532,21 +461,10 @@ void code_workspace_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFun
     gtk_widget_add_controller(p->entry, keys);
     gtk_widget_set_hexpand(p->entry, TRUE);
 
-    p->kind_list = gtk_string_list_new(NULL);
-    for (guint i = 0; i < N_KIND_CHOICES + 1; i++) {
-        gchar* label = kind_row_label(p, i, FALSE);
-        gtk_string_list_append(p->kind_list, label);
-        g_free(label);
-    }
-    p->kind_drop = gtk_drop_down_new(G_LIST_MODEL(p->kind_list), NULL);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), last_kind_row <= N_KIND_CHOICES ? last_kind_row : 0);
-    gtk_widget_set_tooltip_text(p->kind_drop, _("Kind of symbol (Alt+K / Alt+Shift+K)"));
-    gtk_widget_set_focus_on_click(p->kind_drop, FALSE);
-    g_signal_connect(p->kind_drop, "notify::selected", G_CALLBACK(on_kind_changed), p);
-
+    p->kinds = code_kind_drop_new(&last_kind_row, on_kind_changed, p);
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_box_append(GTK_BOX(row), p->entry);
-    gtk_box_append(GTK_BOX(row), p->kind_drop);
+    gtk_box_append(GTK_BOX(row), code_kind_drop_widget(p->kinds));
     gtk_box_append(GTK_BOX(area), row);
 
     p->selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(p->store)));
@@ -569,9 +487,7 @@ void code_workspace_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFun
     gtk_label_set_xalign(GTK_LABEL(p->note), 0.0f);
     gtk_widget_set_hexpand(p->note, TRUE);
     gtk_label_set_ellipsize(GTK_LABEL(p->note), PANGO_ELLIPSIZE_END);
-    GtkWidget* hint = gtk_label_new(_("Alt+K / Alt+Shift+K: next / previous kind"));
-    gtk_widget_add_css_class(hint, "dim-label");
-    gtk_label_set_xalign(GTK_LABEL(hint), 1.0f);
+    GtkWidget* hint = code_kind_drop_hint_new();
     GtkWidget* foot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
     gtk_widget_set_margin_top(foot, 4);
     gtk_box_append(GTK_BOX(foot), p->note);

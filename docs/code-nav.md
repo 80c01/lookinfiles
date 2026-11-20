@@ -41,7 +41,7 @@ Emacs, Vim). The modules are described in
 | Layer | Modules |
 |---|---|
 | 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup, workspace symbol search), `code_tags` (ctags), `lsp_protocol`, `lsp_edit` (text edit application, buffer identifier extraction), `code_lint` (built-in JSON/TOML/YAML/XML syntax diagnostics), `lsp_client`, `lsp_config`, `jump_list` |
-| 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_problems` (Problems tab, diagnostic stepping), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (file symbol picker), `code_workspace_symbols` (project symbol picker), `code_complete` (autocompletion popover), `code_rename` (multi-file LSP rename), `editor_tagbar` (tagbar) |
+| 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_problems` (Problems tab, diagnostic stepping), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (file symbol picker), `code_workspace_symbols` (project symbol picker), `code_kind_drop` (kind drop-down of both pickers), `code_complete` (autocompletion popover), `code_rename` (multi-file LSP rename), `editor_tagbar` (tagbar) |
 
 ## Backends
 
@@ -92,12 +92,14 @@ Notes:
 - Symbols of the project also work outside editor tabs (`Ctrl+Alt+O`,
   Emacs `M-g s`): the project of the explorer's folder, every language,
   ctags or the built-in index (no language server without a file).
-- The project symbol picker has a drop-down of kinds beside its search
+- Both symbol pickers (file and project; not for a Markdown file, whose
+  entries are headings) have a drop-down of kinds beside their search
   field (every kind, or functions, methods, macros, types...; `Alt+K` /
   `Alt+Shift+K` from the field step through it). The kind is filtered
   before the results are capped (`code_index_search_symbols()`,
   `code_tags_index_search()`), on the server's answer with a language
-  server; the choice is kept for the next picker. Each row of the
+  server; each picker keeps its choice for the next time. In the file
+  picker the counts follow the filter text. Each row of the
   drop-down gives how many symbols of its kind match the query, whatever
   the kind chosen and the cap (`kind_counts` of
   `code_index_search_symbols()`, `code_tags_index_count()`), and `Alt+K`

@@ -1,6 +1,7 @@
 /* Symbols of the current file in an AppDialog (see code_symbols.h) */
 #include "code/code_symbols.h"
 #include "theme/palette.h"
+#include "code/code_kind_drop.h"
 #include "code/code_outline.h"
 #include "code/code_scan.h"
 #include "widgets/dialog.h"
@@ -8,6 +9,9 @@
 #include <string.h>
 
 #define RESPONSE_GO 1
+
+/* Kind chosen last, kept for the next picker */
+static guint last_kind_row = 0;
 
 /* ------------------------------------------------------------------------- */
 /* One symbol                                                                */
@@ -21,6 +25,8 @@ struct _CodeSymbolItem {
     gchar* name;
     gchar* detail;     /* signature / type / container, or NULL */
     const gchar* kind; /* "function", "heading"... (static) */
+    CodeSymbolKind kind_id;
+    gboolean heading;  /* Markdown heading: not a kind of the drop-down */
     gint line;
     gint column;
 };
@@ -42,12 +48,14 @@ static void code_symbol_item_init(CodeSymbolItem* it) {
     (void)it;
 }
 
-static void add_item(GListStore* store, const gchar* name, const gchar* detail, const gchar* kind, gint line,
-                     gint column) {
+static void add_item(GListStore* store, const gchar* name, const gchar* detail, CodeSymbolKind kind,
+                     gboolean heading, gint line, gint column) {
     CodeSymbolItem* it = g_object_new(CODE_TYPE_SYMBOL_ITEM, NULL);
     it->name = g_strdup(name);
     it->detail = detail != NULL && detail[0] != '\0' ? g_strdup(detail) : NULL;
-    it->kind = kind;
+    it->kind = heading ? C_("symbol kind", "heading") : code_symbol_kind_name(kind);
+    it->kind_id = kind;
+    it->heading = heading;
     it->line = line;
     it->column = column;
     g_list_store_append(store, it);
@@ -64,6 +72,8 @@ typedef struct {
     GtkWidget* dialog;
     GtkWidget* entry;
     GtkWidget* list;
+    GListStore* store;
+    CodeKindDrop* kinds; /* NULL when the file has only headings */
     GtkCustomFilter* filter;
     GtkFilterListModel* filtered;
     GtkSingleSelection* selection;
@@ -71,26 +81,59 @@ typedef struct {
 } Picker;
 
 static void picker_free(Picker* p) {
+    g_clear_object(&p->store);
     g_free(p->needle);
     g_free(p);
 }
 
-static gboolean filter_func(gpointer item, gpointer data) {
-    Picker* p = data;
+/* TRUE when the name of it holds the filter text */
+static gboolean name_matches(Picker* p, CodeSymbolItem* it) {
     if (p->needle == NULL || p->needle[0] == '\0') return TRUE;
-    CodeSymbolItem* it = item;
     gchar* low = g_utf8_strdown(it->name, -1);
     gboolean match = strstr(low, p->needle) != NULL;
     g_free(low);
     return match;
 }
 
+static gboolean filter_func(gpointer item, gpointer data) {
+    Picker* p = data;
+    CodeSymbolItem* it = item;
+    if (!name_matches(p, it)) return FALSE;
+    return p->kinds == NULL || it->heading || code_symbol_kind_in(it->kind_id, code_kind_drop_kinds(p->kinds));
+}
+
+/* How many symbols of each kind match the filter text, in the drop-down */
+static void update_counts(Picker* p) {
+    if (p->kinds == NULL) return;
+    guint counts[CODE_SYM_N_KINDS] = {0};
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(p->store));
+    for (guint i = 0; i < n; i++) {
+        CodeSymbolItem* it = g_list_model_get_item(G_LIST_MODEL(p->store), i);
+        if (!it->heading && (guint)it->kind_id < CODE_SYM_N_KINDS && name_matches(p, it)) counts[it->kind_id]++;
+        g_object_unref(it);
+    }
+    code_kind_drop_set_counts(p->kinds, counts);
+}
+
+/* The filter changed: the list again, its first row selected */
+static void refilter(Picker* p) {
+    gtk_filter_changed(GTK_FILTER(p->filter), GTK_FILTER_CHANGE_DIFFERENT);
+    if (g_list_model_get_n_items(G_LIST_MODEL(p->filtered)) > 0) {
+        gtk_single_selection_set_selected(p->selection, 0);
+        gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), 0, GTK_LIST_SCROLL_NONE, NULL);
+    }
+}
+
 static void on_search_changed(GtkSearchEntry* entry, gpointer data) {
     Picker* p = data;
     g_free(p->needle);
     p->needle = g_utf8_strdown(gtk_editable_get_text(GTK_EDITABLE(entry)), -1);
-    gtk_filter_changed(GTK_FILTER(p->filter), GTK_FILTER_CHANGE_DIFFERENT);
-    if (g_list_model_get_n_items(G_LIST_MODEL(p->filtered)) > 0) gtk_single_selection_set_selected(p->selection, 0);
+    update_counts(p);
+    refilter(p);
+}
+
+static void on_kind_changed(gpointer data) {
+    refilter(data);
 }
 
 static void go_to_selected(Picker* p) {
@@ -126,7 +169,6 @@ static void on_entry_activate(GtkSearchEntry* entry, gpointer data) {
     go_to_selected(data);
 }
 
-/* Up / Down in the entry move in the list */
 /* Rows a key of the entry moves in the list: Up / Down one, Page Up /
  * Page Down ten (as in Quick Open); 0 for the entry's own keys */
 static gint list_key_delta(guint keyval) {
@@ -143,8 +185,9 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
                              gpointer data) {
     (void)ctrl;
     (void)keycode;
-    (void)state;
     Picker* p = data;
+    /* Alt+K / Alt+Shift+K: next / previous kind */
+    if (p->kinds != NULL && code_kind_drop_key(p->kinds, keyval, state)) return TRUE;
     /* Escape closes the picker (the search entry would only clear its text) */
     if (keyval == GDK_KEY_Escape) {
         app_dialog_response(APP_DIALOG(p->dialog), APP_RESPONSE_CANCEL);
@@ -210,7 +253,23 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
     g_signal_connect(keys, "key-pressed", G_CALLBACK(on_entry_key), p);
     gtk_widget_add_controller(p->entry, keys);
-    gtk_box_append(GTK_BOX(area), p->entry);
+    gtk_widget_set_hexpand(p->entry, TRUE);
+    p->store = store; /* taken */
+
+    /* The kinds, unless the file has only headings (Markdown) */
+    gboolean has_kinds = FALSE;
+    for (guint i = 0; i < g_list_model_get_n_items(G_LIST_MODEL(store)) && !has_kinds; i++) {
+        CodeSymbolItem* it = g_list_model_get_item(G_LIST_MODEL(store), i);
+        has_kinds = !it->heading;
+        g_object_unref(it);
+    }
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_append(GTK_BOX(row), p->entry);
+    if (has_kinds) {
+        p->kinds = code_kind_drop_new(&last_kind_row, on_kind_changed, p);
+        gtk_box_append(GTK_BOX(row), code_kind_drop_widget(p->kinds));
+    }
+    gtk_box_append(GTK_BOX(area), row);
 
     p->filter = gtk_custom_filter_new(filter_func, p, NULL);
     /* The filter model takes a reference of its own (transfer full) */
@@ -236,21 +295,27 @@ static void show_picker(AppData* app, EditorTab* tab, GListStore* store, const g
     g_free(hint);
     gtk_widget_add_css_class(note, "dim-label");
     gtk_label_set_xalign(GTK_LABEL(note), 0.0f);
-    gtk_widget_set_margin_top(note, 4);
-    gtk_box_append(GTK_BOX(area), note);
+    gtk_widget_set_hexpand(note, TRUE);
+    gtk_label_set_ellipsize(GTK_LABEL(note), PANGO_ELLIPSIZE_END);
+    GtkWidget* foot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_set_margin_top(foot, 4);
+    gtk_box_append(GTK_BOX(foot), note);
+    if (p->kinds != NULL) gtk_box_append(GTK_BOX(foot), code_kind_drop_hint_new());
+    gtk_box_append(GTK_BOX(area), foot);
+    update_counts(p);
 
-    /* The symbol at or before the cursor is selected first */
+    /* The symbol at or before the cursor is selected first (among the kind
+     * chosen) */
     GtkTextIter cur;
     gtk_text_buffer_get_iter_at_mark(tab->buffer, &cur, gtk_text_buffer_get_insert(tab->buffer));
     gint cursor_line = gtk_text_iter_get_line(&cur);
     guint best = 0;
-    for (guint i = 0; i < g_list_model_get_n_items(G_LIST_MODEL(store)); i++) {
-        CodeSymbolItem* it = g_list_model_get_item(G_LIST_MODEL(store), i);
+    for (guint i = 0; i < g_list_model_get_n_items(G_LIST_MODEL(p->filtered)); i++) {
+        CodeSymbolItem* it = g_list_model_get_item(G_LIST_MODEL(p->filtered), i);
         if (it->line <= cursor_line) best = i;
         g_object_unref(it);
     }
     gtk_single_selection_set_selected(p->selection, best);
-    g_object_unref(store);
 
     g_signal_connect(p->dialog, "response", G_CALLBACK(on_response), p);
     g_object_set_data_full(G_OBJECT(p->dialog), "picker", p, (GDestroyNotify)picker_free);
@@ -276,7 +341,7 @@ static void on_outline(AppData* app, EditorTab* tab, GPtrArray* entries, const g
                         : e->detail != NULL && e->container != NULL ? g_strdup_printf(_("%1$s · in %2$s"), e->detail, e->container)
                         : e->container != NULL                      ? g_strdup_printf(_("in %s"), e->container)
                                                                     : g_strdup(e->detail);
-        add_item(store, e->name, detail, e->level > 0 ? C_("symbol kind", "heading") : code_symbol_kind_name(e->kind), e->line, e->column);
+        add_item(store, e->name, detail, e->kind, e->level > 0, e->line, e->column);
         g_free(detail);
     }
     show_picker(app, tab, store, source);

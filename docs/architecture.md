@@ -1311,6 +1311,9 @@ Layers, from bottom to top
   scanner, or Markdown headings) collected in a worker, for the picker and
   the tagbar.
 - `code_symbols` — symbols of the file in an `AppDialog` with a filter.
+- `code_kind_drop` — the kind drop-down of both symbol pickers (match
+  count of each kind, `Alt+K` / `Alt+Shift+K`, the hint of the foot, the
+  kind kept for the next picker).
 - `code_workspace_symbols` — project-wide symbol search `AppDialog` (`workspace/symbol`
   with fallback to `ctags` / `code_index_search_symbols()` in a worker).
 - `code_problems` — **Problems** tab in `app->notebook` (severity filters,

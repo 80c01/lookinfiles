@@ -4404,6 +4404,14 @@ msgstr "Sorte de symbole (Alt+K / Alt+Shift+K)"
 msgid "Alt+K / Alt+Shift+K: next / previous kind"
 msgstr "Alt+K / Alt+Shift+K : sorte suivante / précédente"
 
+#: src/chrome/help.c
+msgid ""
+"(In the symbols of the file or of the project) Next / previous kind that has "
+"matches (functions, macros, types...)"
+msgstr ""
+"(Dans les symboles du fichier ou du projet) Sorte suivante / précédente qui "
+"a des résultats (fonctions, macros, types…)"
+
 #. TRANSLATORS: a kind of symbol and how many match, "Functions (12)"
 #: src/code/code_workspace_symbols.c
 #, c-format
