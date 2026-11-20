@@ -50,18 +50,6 @@ gint vim_e_last_line(VimEngine* e) {
     return gtk_text_buffer_get_line_count(e->buf) - 1;
 }
 
-/* Last line a Normal-mode cursor can reach: Vim does not count the empty
- * line GtkTextBuffer shows after the final newline. */
-gint vim_e_last_text_line(VimEngine* e) {
-    gint last = vim_e_last_line(e);
-    if (last > 0) {
-        GtkTextIter it;
-        gtk_text_buffer_get_iter_at_line(e->buf, &it, last);
-        if (gtk_text_iter_starts_line(&it) && gtk_text_iter_is_end(&it)) last--;
-    }
-    return last;
-}
-
 void vim_e_set_cursor(VimEngine* e, const GtkTextIter* it) {
     gtk_text_buffer_place_cursor(e->buf, it);
     if (vim_e_is_visual(e->mode)) vim_e_update_visual(e);
@@ -76,8 +64,7 @@ void vim_e_remember_column(VimEngine* e) {
 
 void vim_e_set_cursor_line(VimEngine* e, gint line, gboolean first_nonblank) {
     if (line < 0) line = 0;
-    gint max_line = vim_e_is_insert(e->mode) ? vim_e_last_line(e) : vim_e_last_text_line(e);
-    if (line > max_line) line = max_line;
+    if (line > vim_e_last_line(e)) line = vim_e_last_line(e);
     GtkTextIter it;
     vim_e_iter_line(e, &it, line);
     if (first_nonblank) vim_iter_first_nonblank(&it);

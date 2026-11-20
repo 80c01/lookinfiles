@@ -179,6 +179,11 @@ static void test_motions(void) {
     check("|a\nb\nc\nd", "G", "a\nb\nc\n|d");
     check("a\nb\nc\n|d", "gg", "|a\nb\nc\nd");
     check("|a\nb\nc\nd", "3G", "a\nb\n|c\nd");
+    /* A file ending with an empty line: the buffer's last line is that line */
+    check("|a\nb\n", "G", "a\nb\n|");
+    check("a\n|b\n", "j", "a\nb\n|");
+    check("a\nb\n|", "k", "a\n|b\n");
+    check("a\nb\n|", "dd", "a\n|b");
     check("|a\nb\n\nc\nd", "}", "a\nb\n|\nc\nd");
     check("a\nb\n\nc\n|d", "{", "a\nb\n|\nc\nd");
     check("|abcdef\nab\nabcdef", "$jj", "abcdef\nab\nabcde|f");

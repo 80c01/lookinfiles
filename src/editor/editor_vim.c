@@ -7,6 +7,7 @@
 #include "theme/palette.h"
 #include "widgets/color_column.h"
 #include "widgets/diff_gutter.h"
+#include "widgets/filler_lines.h"
 #include "code/code_nav.h"
 #include "code/code_help.h"
 #include "code/code_complete.h"
@@ -237,10 +238,15 @@ static void on_cmdline_open(gpointer data, gunichar prompt, const gchar* text) {
     gtk_editable_set_position(GTK_EDITABLE(st->vim_cl_entry), -1);
 }
 
+/* As Vim counts them: the file's lines and bytes, final line break included */
 static void report_written(EditorTab* tab) {
-    gint lines = gtk_text_buffer_get_line_count(tab->buffer);
-    gint chars = gtk_text_buffer_get_char_count(tab->buffer);
-    gchar* msg = g_strdup_printf("\"%s\" %dL, %dB written", tab->name, lines, chars);
+    GtkTextIter s, t;
+    gtk_text_buffer_get_bounds(tab->buffer, &s, &t);
+    gchar* text = gtk_text_buffer_get_text(tab->buffer, &s, &t, TRUE);
+    gsize bytes = strlen(text) + (tab->final_break != NULL ? strlen(tab->final_break) : 0);
+    gint lines = bytes > 0 ? gtk_text_buffer_get_line_count(tab->buffer) : 0;
+    g_free(text);
+    gchar* msg = g_strdup_printf("\"%s\" %dL, %" G_GSIZE_FORMAT "B written", tab->name, lines, bytes);
     vim_echo(tab, msg);
     g_free(msg);
 }
@@ -986,6 +992,7 @@ void vim_activate(EditorTab* tab) {
     clip_watch_add(tab);
     hide_cmdline(st);
     gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
+    filler_lines_set(tab->view, TRUE);
     vim_engine_reset(st->vim);
     on_state_changed(tab);
     gtk_widget_grab_focus(tab->view); /* also after picking Vim in a menu */
@@ -1017,6 +1024,7 @@ void vim_deactivate(EditorTab* tab) {
     release_engine(st);
     hide_cmdline(st);
     gtk_text_view_set_overwrite(GTK_TEXT_VIEW(tab->view), FALSE);
+    filler_lines_set(tab->view, FALSE);
 }
 
 /* The tab is being destroyed: its widgets may already be gone */

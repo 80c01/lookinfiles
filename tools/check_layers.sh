@@ -192,6 +192,7 @@ vim_engine_visual:vim_engine_private,vim_keys,vim_motion
 vim_engine_ex:vim_engine_private,vim_ex,vim_keys,vim_motion,vim_regex
 diff_gutter:git_utils,line_diff,palette
 color_column:palette
+filler_lines:palette
 explorer_row:
 code_symbol:i18n
 code_scan_c:code_symbol

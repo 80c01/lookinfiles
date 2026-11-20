@@ -751,6 +751,10 @@ Layers, from bottom to top
   around the editor's and the preview's scrolled windows, `color_column_set()`:
   Preferences, `:set colorcolumn`; in the preview for code only, hidden by
   any buffer change: `color_column_hide_on_change()`), colour `editor_ruler`.
+- `filler_lines` — Vim's `~` filler lines below the end of a text view's
+  buffer, drawn over the view in an overlay (`filler_lines_wrap()` around
+  the editor's color column overlay, `filler_lines_set()`: shown in Vim
+  mode), colour `accent_fg`.
 - `frame_watch` — frame timings for `profile`: each frame of the window
   timed from `before-paint` to `after-paint` (painted or not), the first one
   marked, start-up over at the first idle moment after it; nothing without

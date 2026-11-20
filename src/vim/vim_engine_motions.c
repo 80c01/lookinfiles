@@ -12,7 +12,7 @@
 
 static gboolean motion_lines(VimEngine* e, const GtkTextIter* from, gint delta, Motion* m) {
     gint line = gtk_text_iter_get_line(from) + delta;
-    gint last = vim_e_is_insert(e->mode) ? vim_e_last_line(e) : vim_e_last_text_line(e);
+    gint last = vim_e_last_line(e);
     if (line < 0) line = 0;
     if (line > last) line = last;
     if (line == gtk_text_iter_get_line(from)) return FALSE;
@@ -138,8 +138,8 @@ gboolean vim_e_do_motion(VimEngine* e, const VimCmd* cmd, gboolean for_op, const
                 return TRUE;
             case 'G':
                 m->jump = TRUE;
-                return motion_line_nonblank(e, cmd->count > 0 ? MIN(cmd->count - 1, vim_e_last_text_line(e))
-                                                              : vim_e_last_text_line(e), m);
+                return motion_line_nonblank(e, cmd->count > 0 ? MIN(cmd->count - 1, vim_e_last_line(e))
+                                                              : vim_e_last_line(e), m);
             case '+': return motion_line_nonblank(e, gtk_text_iter_get_line(&p) + n, m);
             case '-': return motion_line_nonblank(e, gtk_text_iter_get_line(&p) - n, m);
             case '_': return motion_line_nonblank(e, gtk_text_iter_get_line(&p) + n - 1, m);

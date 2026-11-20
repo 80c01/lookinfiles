@@ -233,7 +233,6 @@ void vim_e_clamp_cursor(VimEngine* e);
 gboolean vim_e_host_goto_definition(VimEngine* e, gboolean declaration);
 void vim_e_insert_at_cursor(VimEngine* e, const gchar* text);
 void vim_e_jump_older(VimEngine* e, gint count, gboolean older);
-gint vim_e_last_text_line(VimEngine* e);
 gchar* vim_e_line_indent_text(VimEngine* e, gint line);
 void vim_e_on_insert_text(GtkTextBuffer* buf, GtkTextIter* location, gchar* text, gint len, gpointer data);
 void vim_e_record_insert_key(VimEngine* e, gunichar k);

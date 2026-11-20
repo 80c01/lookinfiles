@@ -8,6 +8,7 @@
 #include "theme/text_style.h"
 #include "widgets/minimap.h"
 #include "widgets/color_column.h"
+#include "widgets/filler_lines.h"
 #include "widgets/diff_gutter.h"
 #include "code/code_help.h"
 #include "code/code_complete.h"
@@ -392,7 +393,7 @@ void editor_view_build(AppData* app, EditorTab* tab, GtkTextBuffer* buffer) {
     GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(hbox, TRUE);
     gtk_widget_set_vexpand(hbox, TRUE);
-    gtk_box_append(GTK_BOX(hbox), color_column_wrap(scroll, view));
+    gtk_box_append(GTK_BOX(hbox), filler_lines_wrap(color_column_wrap(scroll, view), view));
     color_column_set(view, app->settings.color_column);
     if (tab->minimap != NULL) {
         gtk_box_append(GTK_BOX(hbox), tab->minimap);
