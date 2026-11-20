@@ -1,0 +1,507 @@
+/* Problems tab (LSP diagnostics) and diagnostic stepping (see code_problems.h) */
+#include "code/code_problems.h"
+#include "code/code_index.h"
+#include "code/code_intel.h"
+#include "core/i18n.h"
+#include "editor/editor.h"
+#include "git/git_tab.h"
+#include "theme/icons.h"
+#include "theme/palette.h"
+#include "theme/theme.h"
+#include "widgets/focus_route.h"
+#include <string.h>
+
+#define PAGE_KEY "code-problems-page"
+
+#define CODE_TYPE_PROB_ITEM (code_prob_item_get_type())
+G_DECLARE_FINAL_TYPE(CodeProbItem, code_prob_item, CODE, PROB_ITEM, GObject)
+
+struct _CodeProbItem {
+    GObject parent;
+    gboolean header;
+    gchar* path;
+    gchar* shown;       /* relative path for header */
+    gchar* message;     /* single-line diagnostic text */
+    gchar* source;      /* e.g. "clang" */
+    LspSeverity severity;
+    gint line;          /* 0-based */
+    gint column;        /* byte index */
+    guint count;        /* header item count */
+};
+
+G_DEFINE_FINAL_TYPE(CodeProbItem, code_prob_item, G_TYPE_OBJECT)
+
+static void code_prob_item_finalize(GObject* obj) {
+    CodeProbItem* it = CODE_PROB_ITEM(obj);
+    g_free(it->path);
+    g_free(it->shown);
+    g_free(it->message);
+    g_free(it->source);
+    G_OBJECT_CLASS(code_prob_item_parent_class)->finalize(obj);
+}
+
+static void code_prob_item_class_init(CodeProbItemClass* klass) {
+    G_OBJECT_CLASS(klass)->finalize = code_prob_item_finalize;
+}
+
+static void code_prob_item_init(CodeProbItem* it) {
+    (void)it;
+}
+
+typedef struct {
+    AppData* app;
+    GtkWidget* page;
+    GtkWidget* label; /* tab label, owned ref */
+    GtkWidget* summary;
+    GtkWidget* btn_err;
+    GtkWidget* btn_warn;
+    GtkWidget* btn_info;
+    GtkWidget* filter_entry;
+    GtkWidget* list;
+    GListStore* store;
+    GtkSingleSelection* selection;
+    gboolean show_errors;
+    gboolean show_warnings;
+    gboolean show_info;
+    gchar* needle;
+} ProblemsPage;
+
+static ProblemsPage* page_state(GtkWidget* page) {
+    return page != NULL ? g_object_get_data(G_OBJECT(page), PAGE_KEY) : NULL;
+}
+
+static void close_page(ProblemsPage* pp) {
+    if (pp == NULL || pp->app == NULL || pp->app->notebook == NULL) return;
+    GtkNotebook* nb = GTK_NOTEBOOK(pp->app->notebook);
+    gint num = gtk_notebook_page_num(nb, pp->page);
+    pp->app->problems_page = NULL;
+    if (num >= 0) gtk_notebook_remove_page(nb, num);
+}
+
+static void on_close_clicked(GtkButton* btn, gpointer data) {
+    (void)btn;
+    close_page(data);
+}
+
+static void on_label_middle_click(GtkGestureClick* g, gint n, gdouble x, gdouble y, gpointer data) {
+    (void)g; (void)n; (void)x; (void)y;
+    close_page(data);
+}
+
+static void page_free(gpointer data) {
+    ProblemsPage* pp = data;
+    if (pp->app != NULL && pp->app->problems_page == pp->page) {
+        pp->app->problems_page = NULL;
+    }
+    g_object_unref(pp->store);
+    g_clear_object(&pp->label);
+    g_free(pp->needle);
+    g_free(pp);
+}
+
+/* Flatten newlines in diagnostic messages for single-line display */
+static gchar* one_line_message(const gchar* msg) {
+    if (msg == NULL) return g_strdup("");
+    GString* s = g_string_new(NULL);
+    gboolean prev_space = FALSE;
+    for (const gchar* p = msg; *p != '\0'; p++) {
+        if (*p == '\n' || *p == '\r' || *p == '\t') {
+            if (!prev_space && s->len > 0) g_string_append_c(s, ' ');
+            prev_space = TRUE;
+        } else {
+            g_string_append_c(s, *p);
+            prev_space = (*p == ' ');
+        }
+    }
+    return g_string_free(s, FALSE);
+}
+
+static gboolean severity_visible(ProblemsPage* pp, LspSeverity sev) {
+    if (sev == LSP_SEVERITY_ERROR) return pp->show_errors;
+    if (sev == LSP_SEVERITY_WARNING) return pp->show_warnings;
+    return pp->show_info;
+}
+
+static gboolean matches_filter(ProblemsPage* pp, const CodeDiagEntry* e) {
+    if (!severity_visible(pp, e->diag.severity)) return FALSE;
+    if (pp->needle == NULL || pp->needle[0] == '\0') return TRUE;
+    gchar* low_msg = g_utf8_strdown(e->diag.message != NULL ? e->diag.message : "", -1);
+    gchar* low_path = g_utf8_strdown(e->path != NULL ? e->path : "", -1);
+    gboolean hit = strstr(low_msg, pp->needle) != NULL || strstr(low_path, pp->needle) != NULL;
+    if (!hit && e->diag.source != NULL) {
+        gchar* low_src = g_utf8_strdown(e->diag.source, -1);
+        hit = strstr(low_src, pp->needle) != NULL;
+        g_free(low_src);
+    }
+    g_free(low_msg);
+    g_free(low_path);
+    return hit;
+}
+
+static gchar* rel_path_for(AppData* app, const gchar* path) {
+    if (path == NULL) return g_strdup("");
+    const gchar* base = app != NULL ? app->base_dir : NULL;
+    if (base != NULL) {
+        gsize n = strlen(base);
+        while (n > 1 && base[n - 1] == '/') n--;
+        if (n > 0 && strncmp(path, base, n) == 0 && path[n] == '/') {
+            return g_strdup(path + n + 1);
+        }
+    }
+    gchar* root = code_index_project_root(path);
+    if (root != NULL) {
+        gsize n = strlen(root);
+        while (n > 1 && root[n - 1] == '/') n--;
+        if (n > 0 && strncmp(path, root, n) == 0 && path[n] == '/') {
+            gchar* rel = g_strdup(path + n + 1);
+            g_free(root);
+            return rel;
+        }
+        g_free(root);
+    }
+    return g_strdup(path);
+}
+
+static void populate(ProblemsPage* pp) {
+    if (pp == NULL || pp->app == NULL) return;
+    GPtrArray* all = code_intel_all_diagnostics(pp->app);
+    guint total_err = 0, total_warn = 0, total_info = 0;
+    GPtrArray* kept = g_ptr_array_new();
+
+    for (guint i = 0; i < all->len; i++) {
+        CodeDiagEntry* e = g_ptr_array_index(all, i);
+        if (e->diag.severity == LSP_SEVERITY_ERROR) total_err++;
+        else if (e->diag.severity == LSP_SEVERITY_WARNING) total_warn++;
+        else total_info++;
+        if (matches_filter(pp, e)) g_ptr_array_add(kept, e);
+    }
+
+    g_list_store_remove_all(pp->store);
+    const gchar* cur_path = NULL;
+    for (guint i = 0; i < kept->len; i++) {
+        CodeDiagEntry* e = g_ptr_array_index(kept, i);
+        if (cur_path == NULL || g_strcmp0(cur_path, e->path) != 0) {
+            guint count = 0;
+            for (guint j = i; j < kept->len && g_strcmp0(((CodeDiagEntry*)g_ptr_array_index(kept, j))->path, e->path) == 0; j++) {
+                count++;
+            }
+            CodeProbItem* hdr = g_object_new(CODE_TYPE_PROB_ITEM, NULL);
+            hdr->header = TRUE;
+            hdr->path = g_strdup(e->path);
+            hdr->shown = rel_path_for(pp->app, e->path);
+            hdr->count = count;
+            g_list_store_append(pp->store, hdr);
+            g_object_unref(hdr);
+            cur_path = e->path;
+        }
+        CodeProbItem* it = g_object_new(CODE_TYPE_PROB_ITEM, NULL);
+        it->path = g_strdup(e->path);
+        it->message = one_line_message(e->diag.message);
+        it->source = g_strdup(e->diag.source);
+        it->severity = e->diag.severity;
+        it->line = e->diag.line;
+        it->column = e->diag.column;
+        g_list_store_append(pp->store, it);
+        g_object_unref(it);
+    }
+
+    if (all->len == 0) {
+        gchar* m = g_markup_printf_escaped("<span foreground=\"%s\">%s</span>",
+                                           palette_color(PAL_FG_SUBTLE),
+                                           _("No problems detected in open files"));
+        gtk_label_set_markup(GTK_LABEL(pp->summary), m);
+        g_free(m);
+    } else {
+        gchar* es = g_strdup_printf(ngettext("%u error", "%u errors", total_err), total_err);
+        gchar* ws = g_strdup_printf(ngettext("%u warning", "%u warnings", total_warn), total_warn);
+        gchar* m;
+        if (total_info > 0) {
+            gchar* is = g_strdup_printf(ngettext("%u info", "%u infos", total_info), total_info);
+            m = g_markup_printf_escaped("<span foreground=\"%s\"><b>%s</b></span> · "
+                                        "<span foreground=\"%s\"><b>%s</b></span> · "
+                                        "<span foreground=\"%s\">%s</span>",
+                                        palette_color(total_err > 0 ? PAL_ERROR : PAL_FG_SUBTLE), es,
+                                        palette_color(total_warn > 0 ? PAL_WARNING : PAL_FG_SUBTLE), ws,
+                                        palette_color(PAL_LINK), is);
+            g_free(is);
+        } else {
+            m = g_markup_printf_escaped("<span foreground=\"%s\"><b>%s</b></span> · "
+                                        "<span foreground=\"%s\"><b>%s</b></span>",
+                                        palette_color(total_err > 0 ? PAL_ERROR : PAL_FG_SUBTLE), es,
+                                        palette_color(total_warn > 0 ? PAL_WARNING : PAL_FG_SUBTLE), ws);
+        }
+        gtk_label_set_markup(GTK_LABEL(pp->summary), m);
+        g_free(m);
+        g_free(es);
+        g_free(ws);
+    }
+
+    g_ptr_array_free(kept, TRUE);
+    g_ptr_array_unref(all);
+}
+
+static void on_filter_toggled(GtkToggleButton* btn, gpointer data) {
+    (void)btn;
+    ProblemsPage* pp = data;
+    pp->show_errors = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pp->btn_err));
+    pp->show_warnings = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pp->btn_warn));
+    pp->show_info = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pp->btn_info));
+    populate(pp);
+}
+
+static void on_search_changed(GtkSearchEntry* entry, gpointer data) {
+    ProblemsPage* pp = data;
+    g_free(pp->needle);
+    pp->needle = g_utf8_strdown(gtk_editable_get_text(GTK_EDITABLE(entry)), -1);
+    populate(pp);
+}
+
+static void on_activate(GtkListView* view, guint position, gpointer data) {
+    (void)view;
+    ProblemsPage* pp = data;
+    CodeProbItem* it = g_list_model_get_item(G_LIST_MODEL(pp->store), position);
+    if (it == NULL) return;
+    if (!it->header && it->path != NULL) {
+        editor_open_at(pp->app, it->path, it->line, it->column);
+    }
+    g_object_unref(it);
+}
+
+static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
+    (void)f; (void)data;
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    GtkWidget* icon = file_type_image_new();
+    gtk_box_append(GTK_BOX(box), icon);
+    GtkWidget* label = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_box_append(GTK_BOX(box), label);
+    gtk_list_item_set_child(item, box);
+}
+
+static const gchar* sev_tag(LspSeverity sev, PaletteRole* out_role) {
+    switch (sev) {
+    case LSP_SEVERITY_ERROR:
+        *out_role = PAL_ERROR;
+        return _("error");
+    case LSP_SEVERITY_WARNING:
+        *out_role = PAL_WARNING;
+        return _("warning");
+    case LSP_SEVERITY_INFO:
+        *out_role = PAL_LINK;
+        return _("info");
+    default:
+        *out_role = PAL_FG_MUTED;
+        return _("hint");
+    }
+}
+
+static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
+    (void)f; (void)data;
+    CodeProbItem* it = gtk_list_item_get_item(item);
+    GtkWidget* box = gtk_list_item_get_child(item);
+    GtkWidget* icon = gtk_widget_get_first_child(box);
+    GtkWidget* label = gtk_widget_get_last_child(box);
+
+    if (it->header) {
+        gtk_widget_set_margin_start(box, 6);
+        gtk_widget_set_margin_end(box, 6);
+        gtk_widget_set_visible(icon, TRUE);
+        file_type_image_set(icon, it->shown, FALSE);
+        gchar* m = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">(%u)</span>",
+                                           it->shown, palette_color(PAL_FG_SUBTLE), it->count);
+        gtk_label_set_markup(GTK_LABEL(label), m);
+        g_free(m);
+    } else {
+        gtk_widget_set_margin_start(box, 22);
+        gtk_widget_set_margin_end(box, 6);
+        gtk_widget_set_visible(icon, FALSE);
+        PaletteRole role = PAL_ERROR;
+        const gchar* tag = sev_tag(it->severity, &role);
+        gchar* src = it->source != NULL && it->source[0] != '\0'
+                         ? g_strdup_printf(" [%s]", it->source) : g_strdup("");
+        gchar* m = g_markup_printf_escaped(
+            "<span foreground=\"%s\"><b>%s</b></span>  %s  "
+            "<span foreground=\"%s\">%s (%d:%d)</span>",
+            palette_color(role), tag, it->message,
+            palette_color(PAL_FG_SUBTLE), src, it->line + 1, it->column + 1);
+        gtk_label_set_markup(GTK_LABEL(label), m);
+        g_free(m);
+        g_free(src);
+    }
+}
+
+static void ensure_css(void) {
+    static gboolean done = FALSE;
+    if (done) return;
+    done = TRUE;
+    static const gchar* const CSS =
+        ".code-problems-bar {\n"
+        "  background-color: @bg_bar;\n"
+        "  border-bottom: 1px solid @border;\n"
+        "  padding: 4px 8px;\n"
+        "}\n"
+        ".code-problems-bar label {\n"
+        "  font-size: @size_bar;\n"
+        "}\n";
+    theme_add_css(CSS);
+}
+
+static ProblemsPage* ensure_page(AppData* app) {
+    ProblemsPage* pp = page_state(app->problems_page);
+    if (pp != NULL) return pp;
+    if (app->notebook == NULL) return NULL;
+    ensure_css();
+
+    pp = g_new0(ProblemsPage, 1);
+    pp->app = app;
+    pp->show_errors = TRUE;
+    pp->show_warnings = TRUE;
+    pp->show_info = TRUE;
+    pp->store = g_list_store_new(CODE_TYPE_PROB_ITEM);
+
+    GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_hexpand(page, TRUE);
+    gtk_widget_set_vexpand(page, TRUE);
+
+    GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_add_css_class(bar, "code-problems-bar");
+
+    pp->summary = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(pp->summary), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(pp->summary), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(pp->summary, TRUE);
+    gtk_box_append(GTK_BOX(bar), pp->summary);
+
+    pp->btn_err = gtk_toggle_button_new_with_label(_("Errors"));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pp->btn_err), TRUE);
+    gtk_widget_add_css_class(pp->btn_err, "flat");
+    g_signal_connect(pp->btn_err, "toggled", G_CALLBACK(on_filter_toggled), pp);
+    gtk_box_append(GTK_BOX(bar), pp->btn_err);
+
+    pp->btn_warn = gtk_toggle_button_new_with_label(_("Warnings"));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pp->btn_warn), TRUE);
+    gtk_widget_add_css_class(pp->btn_warn, "flat");
+    g_signal_connect(pp->btn_warn, "toggled", G_CALLBACK(on_filter_toggled), pp);
+    gtk_box_append(GTK_BOX(bar), pp->btn_warn);
+
+    pp->btn_info = gtk_toggle_button_new_with_label(_("Info"));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pp->btn_info), TRUE);
+    gtk_widget_add_css_class(pp->btn_info, "flat");
+    g_signal_connect(pp->btn_info, "toggled", G_CALLBACK(on_filter_toggled), pp);
+    gtk_box_append(GTK_BOX(bar), pp->btn_info);
+
+    pp->filter_entry = gtk_search_entry_new();
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(pp->filter_entry), _("Filter…"));
+    gtk_editable_set_width_chars(GTK_EDITABLE(pp->filter_entry), 14);
+    g_signal_connect(pp->filter_entry, "search-changed", G_CALLBACK(on_search_changed), pp);
+    gtk_box_append(GTK_BOX(bar), pp->filter_entry);
+
+    GtkWidget* close = icon_button_new("window-close", _("Close Problems"));
+    g_signal_connect(close, "clicked", G_CALLBACK(on_close_clicked), pp);
+    gtk_box_append(GTK_BOX(bar), close);
+
+    gtk_box_append(GTK_BOX(page), bar);
+
+    GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
+    g_signal_connect(factory, "setup", G_CALLBACK(on_setup), NULL);
+    g_signal_connect(factory, "bind", G_CALLBACK(on_bind), NULL);
+    pp->selection = gtk_single_selection_new(G_LIST_MODEL(g_object_ref(pp->store)));
+    pp->list = gtk_list_view_new(GTK_SELECTION_MODEL(pp->selection), factory);
+    g_signal_connect(pp->list, "activate", G_CALLBACK(on_activate), pp);
+    focus_route_attach_list(app, pp->list, pp->selection);
+
+    GtkWidget* scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_vexpand(scroll, TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), pp->list);
+    gtk_box_append(GTK_BOX(page), scroll);
+
+    pp->page = page;
+    g_object_set_data_full(G_OBJECT(page), PAGE_KEY, pp, page_free);
+    /* No close button on the tab header (ui-conventions.md) */
+    pp->label = g_object_ref_sink(icon_label_new("dialog-warning", _("Problems")));
+    GtkGesture* mclick = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
+    g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), pp);
+    gtk_widget_add_controller(pp->label, GTK_EVENT_CONTROLLER(mclick));
+
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    GtkWidget* git_page = git_tab_page(app);
+    gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
+    if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
+    if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
+    gtk_notebook_insert_page(nb, pp->page, pp->label, after + 1);
+    app->problems_page = pp->page;
+    return pp;
+}
+
+void code_problems_show(AppData* app, EditorTab* tab) {
+    (void)tab;
+    if (app == NULL) return;
+    ProblemsPage* pp = ensure_page(app);
+    if (pp == NULL) return;
+    populate(pp);
+    if (app->viewer_box != NULL && !gtk_widget_get_visible(app->viewer_box)) {
+        gtk_widget_set_visible(app->viewer_box, TRUE);
+    }
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, pp->page));
+    if (g_list_model_get_n_items(G_LIST_MODEL(pp->store)) > 1) {
+        gtk_single_selection_set_selected(pp->selection, 1);
+    }
+    gtk_widget_grab_focus(pp->list);
+}
+
+void code_problems_refresh(AppData* app) {
+    if (app == NULL || app->problems_page == NULL) return;
+    ProblemsPage* pp = page_state(app->problems_page);
+    if (pp != NULL) populate(pp);
+}
+
+gboolean code_problems_close_shown(AppData* app) {
+    if (app == NULL || app->notebook == NULL || app->problems_page == NULL) return FALSE;
+    GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+    gint cur = gtk_notebook_get_current_page(nb);
+    if (cur < 0 || gtk_notebook_get_nth_page(nb, cur) != app->problems_page) return FALSE;
+    close_page(page_state(app->problems_page));
+    return TRUE;
+}
+
+gboolean code_problems_step(AppData* app, EditorTab* tab, gboolean forward, CodeNavMessageFunc message) {
+    if (app == NULL || tab == NULL || tab->buffer == NULL || tab->view == NULL) return FALSE;
+    GtkTextIter cur;
+    gtk_text_buffer_get_iter_at_mark(tab->buffer, &cur, gtk_text_buffer_get_insert(tab->buffer));
+    gint line = gtk_text_iter_get_line(&cur);
+    gint idx = gtk_text_iter_get_line_index(&cur);
+
+    gint target_line = 0, target_idx = 0;
+    LspDiagnostic* diag = NULL;
+    if (!code_intel_step_diagnostic(app, tab, line, idx, forward, &target_line, &target_idx, &diag)) {
+        if (message != NULL) message(tab, _("No diagnostics in this file"));
+        return FALSE;
+    }
+
+    gint lines = gtk_text_buffer_get_line_count(tab->buffer);
+    GtkTextIter dst;
+    gtk_text_buffer_get_iter_at_line(tab->buffer, &dst, CLAMP(target_line, 0, lines - 1));
+    GtkTextIter eol = dst;
+    if (!gtk_text_iter_ends_line(&eol)) gtk_text_iter_forward_to_line_end(&eol);
+    gtk_text_iter_set_line_index(&dst, CLAMP(target_idx, 0, gtk_text_iter_get_line_index(&eol)));
+    gtk_text_buffer_place_cursor(tab->buffer, &dst);
+    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(tab->view), gtk_text_buffer_get_insert(tab->buffer),
+                                 0.15, FALSE, 0.0, 0.3);
+
+    if (message != NULL && diag != NULL) {
+        PaletteRole unused = PAL_ERROR;
+        const gchar* tag = sev_tag(diag->severity, &unused);
+        gchar* flat = one_line_message(diag->message);
+        gchar* msg = g_strdup_printf("[%s] %s (%d:%d)", tag, flat, target_line + 1, target_idx + 1);
+        message(tab, msg);
+        g_free(msg);
+        g_free(flat);
+    }
+    lsp_diagnostic_free(diag);
+    return TRUE;
+}

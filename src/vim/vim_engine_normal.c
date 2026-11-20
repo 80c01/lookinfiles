@@ -561,6 +561,11 @@ void vim_e_exec_simple(VimEngine* e, const VimCmd* cmd) {
     GtkTextIter cur;
     vim_e_cursor(e, &cur);
 
+    if ((k == ']' || k == '[') && k1 == 'd') {
+        if (e->host.diagnostic_step == NULL || !e->host.diagnostic_step(e->hd, k == ']')) vim_e_beep(e);
+        return;
+    }
+
     if (k == 'g') {
         switch (k1) {
             case 'r':

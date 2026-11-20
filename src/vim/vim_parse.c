@@ -157,6 +157,14 @@ static gsize parse_simple(const gunichar* keys, gsize pos, gsize n, gboolean vis
         }
         return 0;
     }
+    if (!visual && (k == '[' || k == ']')) {
+        if (!more) {
+            *status = VIM_PARSE_INCOMPLETE;
+            return 0;
+        }
+        if (k1 == 'd') return simple_done(out, status, k, k1, 0, 2);
+        return 0;
+    }
     static const gunichar CTRL_KEYS[] = {
         VIM_KEY_CTRL('r'), VIM_KEY_CTRL('a'), VIM_KEY_CTRL('x'), VIM_KEY_CTRL('e'),
         VIM_KEY_CTRL('y'), VIM_KEY_CTRL('d'), VIM_KEY_CTRL('u'), VIM_KEY_CTRL('f'),

@@ -31,7 +31,10 @@ typedef enum {
     REQ_LOCATIONS,
     REQ_HOVER,
     REQ_SIGNATURE,
-    REQ_SYMBOLS
+    REQ_SYMBOLS,
+    REQ_COMPLETION,
+    REQ_PREPARE_RENAME,
+    REQ_RENAME
 } RequestKind;
 
 typedef struct {
@@ -258,6 +261,48 @@ static void on_answer(LspClient* client, const LspMessage* msg, gpointer data) {
             if (syms != NULL) g_ptr_array_unref(syms);
             break;
         }
+        case REQ_COMPLETION: {
+            LspCompletionList* cl = msg != NULL ? lsp_parse_completions(result) : NULL;
+            gchar* path = g_canonicalize_filename(r->tab->path, NULL);
+            for (guint i = 0; cl != NULL && i < cl->items->len; i++) {
+                LspCompletionItem* it = g_ptr_array_index(cl->items, i);
+                if (!it->has_edit) continue;
+                gchar* text = line_text(app, path, it->edit_start_line);
+                it->edit_start_col = lsp_column_to_byte(text, -1, it->edit_start_col, utf8);
+                g_free(text);
+                text = line_text(app, path, it->edit_end_line);
+                it->edit_end_col = lsp_column_to_byte(text, -1, it->edit_end_col, utf8);
+                g_free(text);
+            }
+            g_free(path);
+            ((CodeIntelCompletionFunc)r->func)(app, r->tab, cl, r->data);
+            lsp_completion_list_free(cl);
+            break;
+        }
+        case REQ_PREPARE_RENAME: {
+            gint sl = -1, sc = -1, el = -1, ec = -1;
+            gchar* placeholder = NULL;
+            gboolean ok = msg != NULL && lsp_parse_prepare_rename(result, &sl, &sc, &el, &ec, &placeholder);
+            if (ok && sl >= 0) {
+                gchar* path = g_canonicalize_filename(r->tab->path, NULL);
+                gchar* text = line_text(app, path, sl);
+                sc = lsp_column_to_byte(text, -1, sc, utf8);
+                g_free(text);
+                text = line_text(app, path, el);
+                ec = lsp_column_to_byte(text, -1, ec, utf8);
+                g_free(text);
+                g_free(path);
+            }
+            ((CodeIntelPrepareRenameFunc)r->func)(app, r->tab, ok, placeholder, sl, sc, el, ec, r->data);
+            g_free(placeholder);
+            break;
+        }
+        case REQ_RENAME: {
+            LspWorkspaceEdit* edit = msg != NULL ? lsp_parse_workspace_edit(result) : NULL;
+            ((CodeIntelWorkspaceEditFunc)r->func)(app, r->tab, edit, r->data);
+            lsp_workspace_edit_free(edit);
+            break;
+        }
     }
 }
 
@@ -268,7 +313,11 @@ typedef enum {
     CAP_REFERENCES,
     CAP_HOVER,
     CAP_SIGNATURE,
-    CAP_SYMBOLS
+    CAP_SYMBOLS,
+    CAP_WORKSPACE_SYMBOLS,
+    CAP_COMPLETION,
+    CAP_RENAME,
+    CAP_PREPARE_RENAME
 } Capability;
 
 static gboolean has_capability(Server* s, Capability cap) {
@@ -282,6 +331,10 @@ static gboolean has_capability(Server* s, Capability cap) {
         case CAP_HOVER: return c->hover;
         case CAP_SIGNATURE: return c->signature_help;
         case CAP_SYMBOLS: return c->document_symbol;
+        case CAP_WORKSPACE_SYMBOLS: return c->workspace_symbol;
+        case CAP_COMPLETION: return c->completion;
+        case CAP_RENAME: return c->rename;
+        case CAP_PREPARE_RENAME: return c->prepare_rename;
     }
     return FALSE;
 }
@@ -343,11 +396,119 @@ gboolean code_intel_document_symbols(AppData* app, EditorTab* tab, CodeIntelSymb
                    data);
 }
 
+static gint64 send_custom_request(AppData* app, EditorTab* tab, Capability cap, const gchar* method,
+                                  const gchar* params, RequestKind kind, gpointer func, gpointer data) {
+    if (app == NULL || tab == NULL || tab->path == NULL || tab->buffer == NULL) return 0;
+    Server* s = server_for(app, tab, TRUE);
+    if (s == NULL || !has_capability(s, cap)) return 0;
+    sync_documents(app, s, tab);
+    Request* r = g_new0(Request, 1);
+    r->app = app;
+    r->tab = tab;
+    r->kind = kind;
+    r->func = func;
+    r->data = data;
+    return lsp_client_request(s->client, method, params, on_answer, r, g_free);
+}
+
+gint64 code_intel_workspace_symbols(AppData* app, EditorTab* tab, const gchar* query, CodeIntelSymbolsFunc func,
+                                    gpointer data) {
+    gchar* params = lsp_params_workspace_symbol(query != NULL ? query : "");
+    gint64 id = send_custom_request(app, tab, CAP_WORKSPACE_SYMBOLS, "workspace/symbol", params, REQ_SYMBOLS,
+                                    (gpointer)func, data);
+    g_free(params);
+    return id;
+}
+
+gint64 code_intel_completion(AppData* app, EditorTab* tab, gint line, gint index, const gchar* trigger_char,
+                             CodeIntelCompletionFunc func, gpointer data) {
+    if (app == NULL || tab == NULL || tab->path == NULL || tab->buffer == NULL) return 0;
+    Server* s = server_for(app, tab, FALSE);
+    if (s == NULL || !has_capability(s, CAP_COMPLETION)) return 0;
+    sync_documents(app, s, tab);
+    gchar* path = g_canonicalize_filename(tab->path, NULL);
+    gchar* text = line_text(app, path, line);
+    gint column = lsp_byte_to_column(text, -1, index, utf8_positions(s->client));
+    g_free(text);
+    gchar* params = lsp_params_completion(path, line, column, trigger_char);
+    g_free(path);
+    Request* r = g_new0(Request, 1);
+    r->app = app;
+    r->tab = tab;
+    r->kind = REQ_COMPLETION;
+    r->func = (gpointer)func;
+    r->data = data;
+    gint64 id = lsp_client_request(s->client, "textDocument/completion", params, on_answer, r, g_free);
+    g_free(params);
+    return id;
+}
+
+void code_intel_cancel(AppData* app, EditorTab* tab, gint64 req_id) {
+    if (app == NULL || tab == NULL || req_id <= 0) return;
+    Server* s = server_for(app, tab, FALSE);
+    if (s != NULL) lsp_client_cancel(s->client, req_id);
+}
+
+gboolean code_intel_supports_rename(AppData* app, EditorTab* tab) {
+    if (app == NULL || tab == NULL || tab->path == NULL) return FALSE;
+    Server* s = server_for(app, tab, FALSE);
+    return s != NULL && lsp_client_get_state(s->client) == LSP_CLIENT_READY && has_capability(s, CAP_RENAME);
+}
+
+gboolean code_intel_utf8_positions(AppData* app, EditorTab* tab) {
+    if (app == NULL || tab == NULL) return FALSE;
+    Server* s = server_for(app, tab, FALSE);
+    return s != NULL && utf8_positions(s->client);
+}
+
+gboolean code_intel_prepare_rename(AppData* app, EditorTab* tab, gint line, gint index,
+                                   CodeIntelPrepareRenameFunc func, gpointer data) {
+    if (app == NULL || tab == NULL || tab->path == NULL || tab->buffer == NULL) return FALSE;
+    Server* s = server_for(app, tab, FALSE);
+    if (s == NULL || lsp_client_get_state(s->client) != LSP_CLIENT_READY || !has_capability(s, CAP_PREPARE_RENAME)) {
+        return FALSE;
+    }
+    return request(app, tab, CAP_PREPARE_RENAME, "textDocument/prepareRename", line, index, -1,
+                   REQ_PREPARE_RENAME, (gpointer)func, data);
+}
+
+gboolean code_intel_rename(AppData* app, EditorTab* tab, gint line, gint index, const gchar* new_name,
+                           CodeIntelWorkspaceEditFunc func, gpointer data) {
+    if (app == NULL || tab == NULL || tab->path == NULL || tab->buffer == NULL || new_name == NULL) return FALSE;
+    Server* s = server_for(app, tab, FALSE);
+    if (s == NULL || !has_capability(s, CAP_RENAME)) return FALSE;
+    sync_documents(app, s, tab);
+    gchar* path = g_canonicalize_filename(tab->path, NULL);
+    gchar* text = line_text(app, path, line);
+    gint column = lsp_byte_to_column(text, -1, index, utf8_positions(s->client));
+    g_free(text);
+    gchar* params = lsp_params_rename(path, line, column, new_name);
+    g_free(path);
+    Request* r = g_new0(Request, 1);
+    r->app = app;
+    r->tab = tab;
+    r->kind = REQ_RENAME;
+    r->func = (gpointer)func;
+    r->data = data;
+    gint64 id = lsp_client_request(s->client, "textDocument/rename", params, on_answer, r, g_free);
+    g_free(params);
+    return id > 0;
+}
+
 const gchar* code_intel_signature_triggers(AppData* app, EditorTab* tab) {
     Server* s = app != NULL ? server_for(app, tab, FALSE) : NULL;
     const LspCapabilities* c = s != NULL ? lsp_client_get_capabilities(s->client) : NULL;
     if (c != NULL && c->signature_triggers != NULL && c->signature_triggers[0] != '\0') return c->signature_triggers;
     return "(,";
+}
+
+const gchar* code_intel_completion_triggers(AppData* app, EditorTab* tab) {
+    Server* s = app != NULL ? server_for(app, tab, FALSE) : NULL;
+    const LspCapabilities* c = s != NULL ? lsp_client_get_capabilities(s->client) : NULL;
+    if (c != NULL && c->completion_triggers != NULL && c->completion_triggers[0] != '\0') {
+        return c->completion_triggers;
+    }
+    return NULL;
 }
 
 static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint* warnings);
@@ -464,6 +625,104 @@ static void on_server_notify(LspClient* client, const LspMessage* msg, gpointer 
     apply_diagnostics(app, canon);
     g_free(canon);
     app_emit(app, APP_EVENT_STATUS_CHANGED);
+    app_emit(app, APP_EVENT_DIAGNOSTICS_CHANGED);
+}
+
+void code_diag_entry_free(CodeDiagEntry* entry) {
+    if (entry == NULL) return;
+    g_free(entry->path);
+    g_free(entry->diag.message);
+    g_free(entry->diag.source);
+    g_free(entry);
+}
+
+static gint cmp_diag_entry(gconstpointer a, gconstpointer b) {
+    const CodeDiagEntry* da = *(const CodeDiagEntry* const*)a;
+    const CodeDiagEntry* db = *(const CodeDiagEntry* const*)b;
+    gint p = g_strcmp0(da->path, db->path);
+    if (p != 0) return p;
+    if (da->diag.line != db->diag.line) return da->diag.line - db->diag.line;
+    if (da->diag.column != db->diag.column) return da->diag.column - db->diag.column;
+    return (gint)da->diag.severity - (gint)db->diag.severity;
+}
+
+GPtrArray* code_intel_all_diagnostics(AppData* app) {
+    GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_diag_entry_free);
+    if (app == NULL || app->code_intel == NULL) return out;
+    GHashTableIter it;
+    gpointer key = NULL, val = NULL;
+    g_hash_table_iter_init(&it, intel_of(app)->diagnostics);
+    while (g_hash_table_iter_next(&it, &key, &val)) {
+        const gchar* path = key;
+        GPtrArray* list = val;
+        for (guint i = 0; list != NULL && i < list->len; i++) {
+            const LspDiagnostic* d = g_ptr_array_index(list, i);
+            CodeDiagEntry* e = g_new0(CodeDiagEntry, 1);
+            e->path = g_strdup(path);
+            e->diag = *d;
+            e->diag.message = g_strdup(d->message);
+            e->diag.source = g_strdup(d->source);
+            g_ptr_array_add(out, e);
+        }
+    }
+    g_ptr_array_sort(out, cmp_diag_entry);
+    return out;
+}
+
+static gint cmp_diag_pos(gconstpointer a, gconstpointer b) {
+    const LspDiagnostic* da = *(const LspDiagnostic* const*)a;
+    const LspDiagnostic* db = *(const LspDiagnostic* const*)b;
+    if (da->line != db->line) return da->line - db->line;
+    if (da->column != db->column) return da->column - db->column;
+    return (gint)da->severity - (gint)db->severity;
+}
+
+gboolean code_intel_step_diagnostic(AppData* app, EditorTab* tab, gint line, gint index, gboolean forward,
+                                    gint* out_line, gint* out_index, LspDiagnostic** out_diag) {
+    if (out_diag != NULL) *out_diag = NULL;
+    if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL) return FALSE;
+    gchar* path = g_canonicalize_filename(tab->path, NULL);
+    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    g_free(path);
+    if (diags == NULL || diags->len == 0) return FALSE;
+
+    GPtrArray* sorted = g_ptr_array_sized_new(diags->len);
+    for (guint i = 0; i < diags->len; i++) g_ptr_array_add(sorted, g_ptr_array_index(diags, i));
+    g_ptr_array_sort(sorted, cmp_diag_pos);
+
+    const LspDiagnostic* chosen = NULL;
+    if (forward) {
+        for (guint i = 0; i < sorted->len; i++) {
+            const LspDiagnostic* d = g_ptr_array_index(sorted, i);
+            if (d->line > line || (d->line == line && d->column > index)) {
+                chosen = d;
+                break;
+            }
+        }
+        if (chosen == NULL) chosen = g_ptr_array_index(sorted, 0);
+    } else {
+        for (gint i = (gint)sorted->len - 1; i >= 0; i--) {
+            const LspDiagnostic* d = g_ptr_array_index(sorted, (guint)i);
+            if (d->line < line || (d->line == line && d->column < index)) {
+                chosen = d;
+                break;
+            }
+        }
+        if (chosen == NULL) chosen = g_ptr_array_index(sorted, sorted->len - 1);
+    }
+    g_ptr_array_free(sorted, TRUE);
+    if (chosen == NULL) return FALSE;
+
+    if (out_line != NULL) *out_line = chosen->line;
+    if (out_index != NULL) *out_index = chosen->column;
+    if (out_diag != NULL) {
+        LspDiagnostic* copy = g_new0(LspDiagnostic, 1);
+        *copy = *chosen;
+        copy->message = g_strdup(chosen->message);
+        copy->source = g_strdup(chosen->source);
+        *out_diag = copy;
+    }
+    return TRUE;
 }
 
 gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint index) {

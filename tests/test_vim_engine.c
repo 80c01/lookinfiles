@@ -675,6 +675,12 @@ static gboolean nav_history(gpointer data, gboolean older) {
     return TRUE;
 }
 
+static gboolean nav_diag_step(gpointer data, gboolean forward) {
+    NavHost* n = data;
+    g_string_append_printf(n->log, "diag:%s;", forward ? "next" : "prev");
+    return TRUE;
+}
+
 static void nav_message(gpointer data, const gchar* text, gboolean error) {
     (void)data;
     (void)text;
@@ -698,12 +704,15 @@ static void test_host_navigation(void) {
     h.message = nav_message;
     h.goto_definition = nav_definition;
     h.jump_history = nav_history;
+    h.diagnostic_step = nav_diag_step;
     VimEngine* e = vim_engine_new(buf, &h, &nav);
     gint start = cursor_offset(e);
     vim_engine_feed_keys(e, "gd");
     vim_engine_feed_keys(e, "gD");
     vim_engine_feed(e, VIM_KEY_CTRL(']'));
-    g_assert_cmpstr(nav.log->str, ==, "def:foo;def:foo!;def:foo;");
+    vim_engine_feed_keys(e, "]d");
+    vim_engine_feed_keys(e, "[d");
+    g_assert_cmpstr(nav.log->str, ==, "def:foo;def:foo!;def:foo;diag:next;diag:prev;");
     g_assert_cmpint(cursor_offset(e), ==, start); /* the host moves the cursor later */
     /* Not a code file: gd searches the buffer as in Vim */
     nav.code = FALSE;

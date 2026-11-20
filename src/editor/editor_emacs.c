@@ -5,6 +5,7 @@
 #include "code/code_nav.h"
 #include "code/code_help.h"
 #include "code/code_refs.h"
+#include "code/code_problems.h"
 #include "code/code_symbols.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
@@ -301,8 +302,9 @@ void emacs_close_minibuffer(EditorTab* tab) {
 
 /* M-x command names offered by Tab completion */
 static const gchar* MX_COMMANDS[] = {
-    "auto-revert-mode", "display-line-numbers-mode", "dunnet", "fill-paragraph", "goto-line",
-    "imenu-list", "notepad-mode", "org-mode", "query-replace", "redo", "revert-buffer",
+    "auto-revert-mode", "display-line-numbers-mode", "dunnet", "fill-paragraph",
+    "flymake-show-buffer-diagnostics", "goto-line",
+    "imenu-list", "lsp-rename", "notepad-mode", "org-mode", "query-replace", "redo", "revert-buffer",
     "save-buffer", "set-justification-center", "set-justification-full",
     "set-justification-left", "set-justification-right", "text-mode",
     "toggle-truncate-lines", "undo", "vim-mode", "visual-line-mode",
@@ -492,6 +494,9 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                 /* imenu-list: the tagbar */
                 emacs_close_minibuffer(tab);
                 editor_tagbar_toggle(tab->app, tab, editor_mode_message);
+            } else if (g_strcmp0(cmd, "flymake-show-buffer-diagnostics") == 0) {
+                emacs_close_minibuffer(tab);
+                code_problems_show(tab->app, tab);
             } else if (strstr(cmd, "goto-line")) {
                 emacs_open_minibuffer(tab, EMACS_MINI_GOTO_LINE, "Goto line: ", "");
             } else if (strstr(cmd, "query-replace")) {
@@ -788,6 +793,12 @@ static gboolean on_emacs_mb_key_press(GtkEventControllerKey* controller, guint k
 /* ------------------------------------------------------------------------- */
 
 /* Build the emacs bars (stored in st) below the editor view */
+static void on_emacs_modes_clicked(GtkGestureClick* g, gint n, gdouble x, gdouble y, gpointer data) {
+    (void)g; (void)n; (void)x; (void)y;
+    EditorTab* tab = data;
+    if (tab != NULL && tab->app != NULL) code_problems_show(tab->app, tab);
+}
+
 void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
     GtkWidget* emacs_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
@@ -803,6 +814,10 @@ void emacs_build_ui(EditorTab* tab, EditorModeState* st) {
 
     st->emacs_ml_modes = gtk_label_new("  (Text Fill)  ");
     gtk_widget_add_css_class(st->emacs_ml_modes, "emacs-modeline-mode");
+    gtk_widget_set_cursor_from_name(st->emacs_ml_modes, "pointer");
+    GtkGesture* ml_click = gtk_gesture_click_new();
+    g_signal_connect(ml_click, "released", G_CALLBACK(on_emacs_modes_clicked), tab);
+    gtk_widget_add_controller(st->emacs_ml_modes, GTK_EVENT_CONTROLLER(ml_click));
 
     st->emacs_ml_pos = gtk_label_new("Top");
     gtk_widget_add_css_class(st->emacs_ml_pos, "emacs-modeline-pos");
@@ -1039,6 +1054,14 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
         if (keyval == GDK_KEY_i || keyval == GDK_KEY_I) {
             /* imenu: the symbols of the buffer */
             code_symbols_show(tab->app, tab, editor_mode_message);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_n || keyval == GDK_KEY_N) {
+            code_problems_step(tab->app, tab, TRUE, editor_mode_message);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_p || keyval == GDK_KEY_P) {
+            code_problems_step(tab->app, tab, FALSE, editor_mode_message);
             return TRUE;
         }
         return TRUE;

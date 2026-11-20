@@ -49,6 +49,10 @@ gchar* lsp_params_did_close(const gchar* path);
 /* textDocument + position (definition, declaration, hover, signatureHelp,
  * and references when include_declaration >= 0) */
 gchar* lsp_params_position(const gchar* path, gint line, gint column, gint include_declaration);
+/* textDocument/completion params; trigger_char (NULL when invoked manually) */
+gchar* lsp_params_completion(const gchar* path, gint line, gint column, const gchar* trigger_char);
+/* textDocument/rename params */
+gchar* lsp_params_rename(const gchar* path, gint line, gint column, const gchar* new_name);
 gchar* lsp_params_document(const gchar* path);
 gchar* lsp_params_workspace_symbol(const gchar* query);
 gchar* lsp_params_cancel(gint64 id);
@@ -73,7 +77,7 @@ void lsp_message_free(LspMessage* msg);
 /* --- Results --- */
 
 typedef struct {
-    gboolean utf8_positions;   /* positionEncoding "utf-8" */
+    gboolean utf8_positions;      /* positionEncoding "utf-8" */
     gboolean definition;
     gboolean declaration;
     gboolean references;
@@ -81,8 +85,12 @@ typedef struct {
     gboolean document_symbol;
     gboolean workspace_symbol;
     gboolean signature_help;
-    gchar* signature_triggers; /* trigger characters, e.g. "(," */
-    gchar* server_name;        /* serverInfo.name, or NULL */
+    gboolean completion;
+    gboolean rename;
+    gboolean prepare_rename;
+    gchar* signature_triggers;    /* trigger characters, e.g. "(," */
+    gchar* completion_triggers;   /* trigger characters, e.g. ".>:" */
+    gchar* server_name;           /* serverInfo.name, or NULL */
 } LspCapabilities;
 
 /* From the initialize result */
@@ -150,6 +158,63 @@ void lsp_diagnostic_free(LspDiagnostic* diag);
 /* The params of textDocument/publishDiagnostics: the diagnostics
  * (LspDiagnostic*) of *path (caller frees); NULL when not a file */
 GPtrArray* lsp_parse_diagnostics(const JsonValue* params, gchar** path);
+
+/* --- Completion --- */
+
+typedef struct {
+    gchar* label;
+    gchar* detail;        /* type / signature, or NULL */
+    gchar* documentation; /* Markdown or plain text, or NULL */
+    gchar* insert_text;   /* NULL => use label */
+    gchar* filter_text;   /* NULL => use label */
+    gchar* sort_text;     /* NULL => use label */
+    CodeSymbolKind kind;
+    gboolean has_edit;
+    gint edit_start_line, edit_start_col;
+    gint edit_end_line, edit_end_col;
+    gchar* edit_text;
+} LspCompletionItem;
+
+typedef struct {
+    GPtrArray* items;     /* LspCompletionItem* */
+    gboolean incomplete;
+} LspCompletionList;
+
+void lsp_completion_item_free(LspCompletionItem* item);
+void lsp_completion_list_free(LspCompletionList* list);
+/* CompletionList or CompletionItem[] (null: empty list) */
+LspCompletionList* lsp_parse_completions(const JsonValue* result);
+
+/* --- Rename & WorkspaceEdit --- */
+
+typedef struct {
+    gint start_line, start_col; /* server encoding */
+    gint end_line, end_col;
+    gchar* new_text;
+} LspTextEdit;
+
+typedef struct {
+    gchar* path;      /* local filesystem path */
+    GPtrArray* edits; /* LspTextEdit* */
+} LspFileEdits;
+
+typedef struct {
+    GPtrArray* files; /* LspFileEdits* */
+} LspWorkspaceEdit;
+
+void lsp_text_edit_free(LspTextEdit* edit);
+void lsp_file_edits_free(LspFileEdits* fe);
+void lsp_workspace_edit_free(LspWorkspaceEdit* edit);
+
+/* Result of textDocument/prepareRename: Range, {range, placeholder} or
+ * {defaultBehavior: true}. Returns FALSE when rename is not valid here
+ * (null/false). *placeholder may be NULL when only a range or defaultBehavior
+ * was returned. */
+gboolean lsp_parse_prepare_rename(const JsonValue* result, gint* start_line, gint* start_col,
+                                  gint* end_line, gint* end_col, gchar** placeholder);
+/* Result of textDocument/rename: WorkspaceEdit (changes and/or documentChanges).
+ * NULL when result is null or has no edits. */
+LspWorkspaceEdit* lsp_parse_workspace_edit(const JsonValue* result);
 
 /* --- Positions --- */
 

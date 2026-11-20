@@ -267,6 +267,87 @@ static void test_positions(void) {
     g_assert_cmpint(lsp_column_to_byte(NULL, -1, 3, FALSE), ==, 0);
 }
 
+static void test_completions(void) {
+    gchar* p = lsp_params_completion("/p/a.c", 3, 5, ".");
+    g_assert_nonnull(strstr(p, "\"triggerKind\":2"));
+    g_assert_nonnull(strstr(p, "\"triggerCharacter\":\".\""));
+    g_free(p);
+
+    LspMessage* m = parse("{\"id\":1,\"result\":{\"isIncomplete\":true,\"items\":["
+                          "{\"label\":\"alpha\",\"kind\":3,\"detail\":\"int alpha(void)\","
+                          "\"documentation\":{\"kind\":\"markdown\",\"value\":\"docs\"},"
+                          "\"textEdit\":{\"range\":{\"start\":{\"line\":3,\"character\":2},"
+                          "\"end\":{\"line\":3,\"character\":5}},\"newText\":\"alpha()\"}}]}}");
+    LspCompletionList* cl = lsp_parse_completions(m->result);
+    g_assert_true(cl->incomplete);
+    g_assert_cmpuint(cl->items->len, ==, 1);
+    LspCompletionItem* it = g_ptr_array_index(cl->items, 0);
+    g_assert_cmpstr(it->label, ==, "alpha");
+    g_assert_cmpint(it->kind, ==, CODE_SYM_FUNCTION);
+    g_assert_cmpstr(it->detail, ==, "int alpha(void)");
+    g_assert_cmpstr(it->documentation, ==, "docs");
+    g_assert_true(it->has_edit);
+    g_assert_cmpint(it->edit_start_col, ==, 2);
+    g_assert_cmpint(it->edit_end_col, ==, 5);
+    g_assert_cmpstr(it->edit_text, ==, "alpha()");
+    lsp_completion_list_free(cl);
+    lsp_message_free(m);
+
+    /* Plain array form */
+    m = parse("{\"id\":1,\"result\":[{\"label\":\"beta\",\"kind\":5}]}");
+    cl = lsp_parse_completions(m->result);
+    g_assert_false(cl->incomplete);
+    g_assert_cmpuint(cl->items->len, ==, 1);
+    g_assert_cmpint(((LspCompletionItem*)g_ptr_array_index(cl->items, 0))->kind, ==, CODE_SYM_FIELD);
+    lsp_completion_list_free(cl);
+    lsp_message_free(m);
+}
+
+static void test_rename(void) {
+    gchar* p = lsp_params_rename("/p/a.c", 1, 4, "new_fn");
+    g_assert_nonnull(strstr(p, "\"newName\":\"new_fn\""));
+    g_free(p);
+
+    LspMessage* m = parse("{\"id\":1,\"result\":{\"range\":{\"start\":{\"line\":1,\"character\":4},"
+                          "\"end\":{\"line\":1,\"character\":7}},\"placeholder\":\"foo\"}}");
+    gint sl = 0, sc = 0, el = 0, ec = 0;
+    gchar* ph = NULL;
+    g_assert_true(lsp_parse_prepare_rename(m->result, &sl, &sc, &el, &ec, &ph));
+    g_assert_cmpint(sl, ==, 1);
+    g_assert_cmpint(sc, ==, 4);
+    g_assert_cmpint(ec, ==, 7);
+    g_assert_cmpstr(ph, ==, "foo");
+    g_free(ph);
+    lsp_message_free(m);
+
+    /* WorkspaceEdit with changes map */
+    m = parse("{\"id\":2,\"result\":{\"changes\":{\"file:///p/a.c\":["
+              "{\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":0,\"character\":3}},"
+              "\"newText\":\"bar\"}]}}}");
+    LspWorkspaceEdit* ws = lsp_parse_workspace_edit(m->result);
+    g_assert_nonnull(ws);
+    g_assert_cmpuint(ws->files->len, ==, 1);
+    LspFileEdits* fe = g_ptr_array_index(ws->files, 0);
+    assert_path(fe->path, "/p/a.c");
+    g_assert_cmpuint(fe->edits->len, ==, 1);
+    g_assert_cmpstr(((LspTextEdit*)g_ptr_array_index(fe->edits, 0))->new_text, ==, "bar");
+    lsp_workspace_edit_free(ws);
+    lsp_message_free(m);
+
+    /* WorkspaceEdit with documentChanges */
+    m = parse("{\"id\":3,\"result\":{\"documentChanges\":[{\"textDocument\":{\"uri\":\"file:///p/b.c\",\"version\":1},"
+              "\"edits\":[{\"range\":{\"start\":{\"line\":2,\"character\":1},\"end\":{\"line\":2,\"character\":4}},"
+              "\"newText\":\"baz\"}]}]}}");
+    ws = lsp_parse_workspace_edit(m->result);
+    g_assert_nonnull(ws);
+    g_assert_cmpuint(ws->files->len, ==, 1);
+    fe = g_ptr_array_index(ws->files, 0);
+    assert_path(fe->path, "/p/b.c");
+    g_assert_cmpstr(((LspTextEdit*)g_ptr_array_index(fe->edits, 0))->new_text, ==, "baz");
+    lsp_workspace_edit_free(ws);
+    lsp_message_free(m);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/lsp_protocol/framing", test_framing);
@@ -279,5 +360,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/lsp_protocol/symbols", test_symbols);
     g_test_add_func("/lsp_protocol/positions", test_positions);
     g_test_add_func("/lsp_protocol/diagnostics", test_diagnostics);
+    g_test_add_func("/lsp_protocol/completions", test_completions);
+    g_test_add_func("/lsp_protocol/rename", test_rename);
     return g_test_run();
 }

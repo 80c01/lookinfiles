@@ -173,9 +173,19 @@ void focus_prev_panel(AppData* app) {
 void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
-    if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL) &&
-        (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app))) {
-        return;
+    if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL)) {
+        if (canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app)) {
+            return;
+        }
+        if (app->notebook != NULL && app->problems_page != NULL) {
+            GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+            gint cur = gtk_notebook_get_current_page(nb);
+            if (cur >= 0 && gtk_notebook_get_nth_page(nb, cur) == app->problems_page) {
+                app->problems_page = NULL;
+                gtk_notebook_remove_page(nb, cur);
+                return;
+            }
+        }
     }
     EditorTab* t = info.area == FOCUS_AREA_EDITOR && info.tab != NULL ? info.tab : editor_current_tab(app);
     if (t != NULL && t->container != NULL && gtk_widget_get_mapped(t->container)) {
@@ -470,7 +480,7 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     /* Ctrl+R or F2: rename current note / notebook if notes view is active */
     if ((!is_emacs_tab && (state & GDK_CONTROL_MASK) && !(state & GDK_SHIFT_MASK) &&
          (keyval == GDK_KEY_r || keyval == GDK_KEY_R)) ||
-        keyval == GDK_KEY_F2) {
+        (keyval == GDK_KEY_F2 && !(state & GDK_SHIFT_MASK) && !(state & GDK_CONTROL_MASK))) {
         if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             notes_edit_selected(app);
             return TRUE;

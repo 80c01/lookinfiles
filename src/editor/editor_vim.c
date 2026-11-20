@@ -9,6 +9,7 @@
 #include "code/code_nav.h"
 #include "code/code_help.h"
 #include "code/code_refs.h"
+#include "code/code_problems.h"
 #include "code/code_symbols.h"
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
@@ -404,6 +405,10 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
         code_refs_find(app, tab, editor_mode_message);
         return TRUE;
     }
+    if (strcmp(name, "Problems") == 0) {
+        code_problems_show(app, tab);
+        return TRUE;
+    }
     if (strcmp(name, "tag") == 0) {
         /* :tag {name}: its definition; :tag! {name}: its declaration */
         code_nav_goto_symbol(app, tab, args, bang, editor_mode_message);
@@ -504,6 +509,12 @@ static gboolean on_keyword_help(gpointer data, const gchar* word) {
 static gboolean on_references(gpointer data) {
     EditorTab* tab = data;
     return code_refs_find(tab->app, tab, editor_mode_message);
+}
+
+/* ]d / [d: next / previous diagnostic in the file */
+static gboolean on_diagnostic_step(gpointer data, gboolean forward) {
+    EditorTab* tab = data;
+    return code_problems_step(tab->app, tab, forward, editor_mode_message);
 }
 
 /* Ctrl-O / Tab past the buffer's jump list: the history across files */
@@ -802,6 +813,12 @@ static void on_cl_focus_leave(GtkEventControllerFocus* ctrl, gpointer data) {
 
 static void on_view_focus_enter(GtkEventControllerFocus* ctrl, gpointer data);
 
+static void on_vim_info_clicked(GtkGestureClick* g, gint n, gdouble x, gdouble y, gpointer data) {
+    (void)g; (void)n; (void)x; (void)y;
+    EditorTab* tab = data;
+    if (tab != NULL && tab->app != NULL) code_problems_show(tab->app, tab);
+}
+
 void vim_build_ui(EditorTab* tab, EditorModeState* st) {
     GtkWidget* vim_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     /* The focused view of a split file hosts the shared engine */
@@ -834,6 +851,10 @@ void vim_build_ui(EditorTab* tab, EditorModeState* st) {
 
     st->vim_sl_info = gtk_label_new("");
     editor_bar_label_shrinkable(st->vim_sl_info, PANGO_ELLIPSIZE_START);
+    gtk_widget_set_cursor_from_name(st->vim_sl_info, "pointer");
+    GtkGesture* vim_info_click = gtk_gesture_click_new();
+    g_signal_connect(vim_info_click, "released", G_CALLBACK(on_vim_info_clicked), tab);
+    gtk_widget_add_controller(st->vim_sl_info, GTK_EVENT_CONTROLLER(vim_info_click));
 
     st->vim_sl_ruler = gtk_label_new("  0% ☰    1/1 ㏑ :  1");
     gtk_label_set_xalign(GTK_LABEL(st->vim_sl_ruler), 1.0f);
@@ -940,6 +961,7 @@ void vim_activate(EditorTab* tab) {
             .jump_history = on_jump_history,
             .keyword_help = on_keyword_help,
             .references = on_references,
+            .diagnostic_step = on_diagnostic_step,
         };
         st->vim = vim_engine_new(tab->buffer, &host, tab);
         shared = g_new0(SharedEngine, 1);

@@ -6,6 +6,7 @@
 #include "code/code_nav.h"
 #include "code/code_help.h"
 #include "code/code_refs.h"
+#include "code/code_problems.h"
 #include "code/code_symbols.h"
 #include "editor/editor_tagbar.h"
 #include "core/app_events.h"
@@ -450,6 +451,12 @@ static GtkWidget* np_button(const gchar* label, const gchar* tooltip) {
 }
 
 /* Build the notepad bars (stored in st) below the editor view */
+static void on_np_info_clicked(GtkGestureClick* g, gint n, gdouble x, gdouble y, gpointer data) {
+    (void)g; (void)n; (void)x; (void)y;
+    EditorTab* tab = data;
+    if (tab != NULL && tab->app != NULL) code_problems_show(tab->app, tab);
+}
+
 void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     st->np_ms = st->np_me = -1;
     GtkWidget* np_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -573,6 +580,11 @@ void notepad_build_ui(EditorTab* tab, EditorModeState* st) {
     st->np_info_label = gtk_label_new("Ln 1, Col 1   |   100%   |   Unix (LF)   |   UTF-8");
     editor_bar_label_shrinkable(st->np_info_label, PANGO_ELLIPSIZE_END);
     gtk_label_set_xalign(GTK_LABEL(st->np_info_label), 1.0f);
+    gtk_widget_set_cursor_from_name(st->np_info_label, "pointer");
+    gtk_widget_set_tooltip_text(st->np_info_label, _("Click to open Problems panel (Ctrl+Shift+M)"));
+    GtkGesture* info_click = gtk_gesture_click_new();
+    g_signal_connect(info_click, "released", G_CALLBACK(on_np_info_clicked), tab);
+    gtk_widget_add_controller(st->np_info_label, GTK_EVENT_CONTROLLER(info_click));
 
     gtk_box_append(GTK_BOX(np_status), st->np_file_label);
     gtk_box_append(GTK_BOX(np_status), st->np_status_label);
@@ -681,6 +693,14 @@ gboolean notepad_handle_key(EditorTab* tab, EditorModeState* st,
     }
     if (ctrl && shift && !alt && (keyval == GDK_KEY_o || keyval == GDK_KEY_O)) {
         code_symbols_show(tab->app, tab, editor_mode_message);
+        return TRUE;
+    }
+    if (ctrl && shift && !alt && (keyval == GDK_KEY_m || keyval == GDK_KEY_M)) {
+        code_problems_show(tab->app, tab);
+        return TRUE;
+    }
+    if (keyval == GDK_KEY_F8 && !ctrl && !alt) {
+        code_problems_step(tab->app, tab, !shift, editor_mode_message);
         return TRUE;
     }
     if (ctrl && shift && !alt && keyval == GDK_KEY_space) {

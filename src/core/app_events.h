@@ -39,6 +39,8 @@ typedef enum {
     APP_EVENT_CHROME_CHANGED = 0,
     /* Selection, file info or editor mode shown in the status bar changed */
     APP_EVENT_STATUS_CHANGED,
+    /* Language server diagnostics changed for a file: refresh Problems panel */
+    APP_EVENT_DIAGNOSTICS_CHANGED,
     /* Panel visibility or split fractions changed: snapshot the current workspace */
     APP_EVENT_LAYOUT_CHANGED,
     /* Panes were shown, hidden or rebuilt: re-apply the saved split positions */

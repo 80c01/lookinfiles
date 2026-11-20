@@ -67,6 +67,9 @@ typedef struct {
     /* gr: list the references of the identifier under the cursor. TRUE when
      * the host looks them up. */
     gboolean (*references)(gpointer data);
+    /* ]d / [d: step to the next / previous diagnostic in the file. TRUE when
+     * the host jumped to one. */
+    gboolean (*diagnostic_step)(gpointer data, gboolean forward);
 } VimHost;
 
 typedef struct {

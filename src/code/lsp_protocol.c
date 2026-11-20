@@ -189,8 +189,12 @@ gchar* lsp_params_initialize(gint pid, const gchar* root_path) {
                     "\"definition\":{\"linkSupport\":true},\"declaration\":{\"linkSupport\":true},"
                     "\"references\":{},"
                     "\"documentSymbol\":{\"hierarchicalDocumentSymbolSupport\":true},"
+                    "\"completion\":{\"completionItem\":{\"snippetSupport\":false,"
+                    "\"documentationFormat\":[\"markdown\",\"plaintext\"]}},"
+                    "\"rename\":{\"prepareSupport\":true},"
                     "\"publishDiagnostics\":{}},"
-                    "\"workspace\":{\"symbol\":{},\"workspaceFolders\":true,\"configuration\":false},"
+                    "\"workspace\":{\"symbol\":{},\"workspaceEdit\":{\"documentChanges\":true},"
+                    "\"workspaceFolders\":true,\"configuration\":false},"
                     "\"window\":{\"workDoneProgress\":false}}}");
     return g_string_free(s, FALSE);
 }
@@ -238,6 +242,30 @@ gchar* lsp_params_position(const gchar* path, gint line, gint column, gint inclu
     if (include_declaration >= 0) {
         g_string_append_printf(s, ",\"context\":{\"includeDeclaration\":%s}", include_declaration ? "true" : "false");
     }
+    g_string_append_c(s, '}');
+    return g_string_free(s, FALSE);
+}
+
+gchar* lsp_params_completion(const gchar* path, gint line, gint column, const gchar* trigger_char) {
+    GString* s = g_string_new("{");
+    append_document(s, path);
+    g_string_append_printf(s, "},\"position\":{\"line\":%d,\"character\":%d}", line, column);
+    if (trigger_char != NULL && trigger_char[0] != '\0') {
+        g_string_append(s, ",\"context\":{\"triggerKind\":2,\"triggerCharacter\":");
+        lsp_json_append_string(s, trigger_char);
+        g_string_append_c(s, '}');
+    } else {
+        g_string_append(s, ",\"context\":{\"triggerKind\":1}");
+    }
+    g_string_append_c(s, '}');
+    return g_string_free(s, FALSE);
+}
+
+gchar* lsp_params_rename(const gchar* path, gint line, gint column, const gchar* new_name) {
+    GString* s = g_string_new("{");
+    append_document(s, path);
+    g_string_append_printf(s, "},\"position\":{\"line\":%d,\"character\":%d},\"newName\":", line, column);
+    lsp_json_append_string(s, new_name != NULL ? new_name : "");
     g_string_append_c(s, '}');
     return g_string_free(s, FALSE);
 }
@@ -344,6 +372,12 @@ LspCapabilities* lsp_parse_capabilities(const JsonValue* result) {
     c->document_symbol = provides(caps, "documentSymbolProvider");
     c->workspace_symbol = provides(caps, "workspaceSymbolProvider");
     c->signature_help = provides(caps, "signatureHelpProvider");
+    c->completion = provides(caps, "completionProvider");
+    c->rename = provides(caps, "renameProvider");
+    const JsonValue* ren = caps != NULL ? json_value_get(caps, "renameProvider") : NULL;
+    if (ren != NULL && json_value_get_type(ren) == JSON_VALUE_OBJECT) {
+        c->prepare_rename = provides(ren, "prepareProvider");
+    }
     GString* triggers = g_string_new(NULL);
     const JsonValue* sig = caps != NULL ? json_value_get(caps, "signatureHelpProvider") : NULL;
     const JsonValue* tr = sig != NULL ? json_value_get(sig, "triggerCharacters") : NULL;
@@ -359,6 +393,17 @@ LspCapabilities* lsp_parse_capabilities(const JsonValue* result) {
         g_free(t);
     }
     c->signature_triggers = g_string_free(triggers, FALSE);
+
+    GString* comp_tr = g_string_new(NULL);
+    const JsonValue* comp = caps != NULL ? json_value_get(caps, "completionProvider") : NULL;
+    tr = comp != NULL ? json_value_get(comp, "triggerCharacters") : NULL;
+    for (guint i = 0; tr != NULL && json_value_get_type(tr) == JSON_VALUE_ARRAY && i < json_value_get_length(tr); i++) {
+        gchar* t = json_value_dup_string(json_value_get_item(tr, i));
+        if (t != NULL && strstr(comp_tr->str, t) == NULL) g_string_append(comp_tr, t);
+        g_free(t);
+    }
+    c->completion_triggers = g_string_free(comp_tr, FALSE);
+
     const JsonValue* info = result != NULL ? json_value_get(result, "serverInfo") : NULL;
     c->server_name = dup_member(info, "name");
     return c;
@@ -367,6 +412,7 @@ LspCapabilities* lsp_parse_capabilities(const JsonValue* result) {
 void lsp_capabilities_free(LspCapabilities* caps) {
     if (caps == NULL) return;
     g_free(caps->signature_triggers);
+    g_free(caps->completion_triggers);
     g_free(caps->server_name);
     g_free(caps);
 }
@@ -615,6 +661,248 @@ GPtrArray* lsp_parse_diagnostics(const JsonValue* params, gchar** path) {
         g_ptr_array_add(out, diag);
     }
     return out;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Completion                                                                */
+/* ------------------------------------------------------------------------- */
+
+static gboolean read_range(const JsonValue* range, gint* sl, gint* sc, gint* el, gint* ec) {
+    if (range == NULL || json_value_get_type(range) != JSON_VALUE_OBJECT) return FALSE;
+    const JsonValue* start = json_value_get(range, "start");
+    const JsonValue* end = json_value_get(range, "end");
+    if (start == NULL || end == NULL) return FALSE;
+    const JsonValue* slv = json_value_get(start, "line");
+    const JsonValue* scv = json_value_get(start, "character");
+    const JsonValue* elv = json_value_get(end, "line");
+    const JsonValue* ecv = json_value_get(end, "character");
+    if (slv == NULL || scv == NULL || elv == NULL || ecv == NULL) return FALSE;
+    *sl = (gint)json_value_get_number(slv);
+    *sc = (gint)json_value_get_number(scv);
+    *el = (gint)json_value_get_number(elv);
+    *ec = (gint)json_value_get_number(ecv);
+    return TRUE;
+}
+
+static CodeSymbolKind completion_kind(gint k) {
+    /* LSP CompletionItemKind */
+    switch (k) {
+        case 2: case 4: return CODE_SYM_METHOD;       /* Method, Constructor */
+        case 3: return CODE_SYM_FUNCTION;             /* Function */
+        case 5: case 10: return CODE_SYM_FIELD;       /* Field, Property */
+        case 6: return CODE_SYM_VARIABLE;             /* Variable */
+        case 7: return CODE_SYM_CLASS;                /* Class */
+        case 8: case 13: case 22: case 25: return CODE_SYM_TYPE; /* Interface, Enum, Struct, TypeParameter */
+        case 9: return CODE_SYM_MODULE;               /* Module */
+        case 20: case 21: return CODE_SYM_CONSTANT;   /* EnumMember, Constant */
+        case 14: case 15: return CODE_SYM_MACRO;      /* Keyword, Snippet */
+        default: return CODE_SYM_VARIABLE;
+    }
+}
+
+void lsp_completion_item_free(LspCompletionItem* item) {
+    if (item == NULL) return;
+    g_free(item->label);
+    g_free(item->detail);
+    g_free(item->documentation);
+    g_free(item->insert_text);
+    g_free(item->filter_text);
+    g_free(item->sort_text);
+    g_free(item->edit_text);
+    g_free(item);
+}
+
+void lsp_completion_list_free(LspCompletionList* list) {
+    if (list == NULL) return;
+    if (list->items != NULL) g_ptr_array_unref(list->items);
+    g_free(list);
+}
+
+LspCompletionList* lsp_parse_completions(const JsonValue* result) {
+    LspCompletionList* out = g_new0(LspCompletionList, 1);
+    out->items = g_ptr_array_new_with_free_func((GDestroyNotify)lsp_completion_item_free);
+    if (is_null(result)) return out;
+
+    const JsonValue* arr = NULL;
+    if (json_value_get_type(result) == JSON_VALUE_ARRAY) {
+        arr = result;
+    } else if (json_value_get_type(result) == JSON_VALUE_OBJECT) {
+        out->incomplete = provides(result, "isIncomplete");
+        arr = json_value_get(result, "items");
+    }
+    if (arr == NULL || json_value_get_type(arr) != JSON_VALUE_ARRAY) return out;
+
+    guint n = json_value_get_length(arr);
+    for (guint i = 0; i < n; i++) {
+        const JsonValue* obj = json_value_get_item(arr, i);
+        if (obj == NULL || json_value_get_type(obj) != JSON_VALUE_OBJECT) continue;
+        gchar* label = dup_member(obj, "label");
+        if (label == NULL || label[0] == '\0') {
+            g_free(label);
+            continue;
+        }
+        LspCompletionItem* it = g_new0(LspCompletionItem, 1);
+        it->label = label;
+        it->detail = dup_member(obj, "detail");
+        it->documentation = marked_string(json_value_get(obj, "documentation"));
+        it->insert_text = dup_member(obj, "insertText");
+        it->filter_text = dup_member(obj, "filterText");
+        it->sort_text = dup_member(obj, "sortText");
+        const JsonValue* k = json_value_get(obj, "kind");
+        it->kind = completion_kind(k != NULL ? (gint)json_value_get_number(k) : 0);
+
+        const JsonValue* te = json_value_get(obj, "textEdit");
+        if (te != NULL && json_value_get_type(te) == JSON_VALUE_OBJECT) {
+            const JsonValue* rng = json_value_get(te, "range");
+            if (rng == NULL) rng = json_value_get(te, "insert"); /* InsertReplaceEdit */
+            gchar* nt = dup_member(te, "newText");
+            if (nt != NULL && read_range(rng, &it->edit_start_line, &it->edit_start_col,
+                                         &it->edit_end_line, &it->edit_end_col)) {
+                it->has_edit = TRUE;
+                it->edit_text = nt;
+            } else {
+                g_free(nt);
+            }
+        }
+        g_ptr_array_add(out->items, it);
+    }
+    return out;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Rename & WorkspaceEdit                                                    */
+/* ------------------------------------------------------------------------- */
+
+void lsp_text_edit_free(LspTextEdit* edit) {
+    if (edit == NULL) return;
+    g_free(edit->new_text);
+    g_free(edit);
+}
+
+void lsp_file_edits_free(LspFileEdits* fe) {
+    if (fe == NULL) return;
+    g_free(fe->path);
+    if (fe->edits != NULL) g_ptr_array_unref(fe->edits);
+    g_free(fe);
+}
+
+void lsp_workspace_edit_free(LspWorkspaceEdit* edit) {
+    if (edit == NULL) return;
+    if (edit->files != NULL) g_ptr_array_unref(edit->files);
+    g_free(edit);
+}
+
+gboolean lsp_parse_prepare_rename(const JsonValue* result, gint* start_line, gint* start_col,
+                                  gint* end_line, gint* end_col, gchar** placeholder) {
+    if (placeholder != NULL) *placeholder = NULL;
+    if (start_line != NULL) *start_line = -1;
+    if (start_col != NULL) *start_col = -1;
+    if (end_line != NULL) *end_line = -1;
+    if (end_col != NULL) *end_col = -1;
+    if (is_null(result) || json_value_get_type(result) != JSON_VALUE_OBJECT) return FALSE;
+
+    gint sl = 0, sc = 0, el = 0, ec = 0;
+    const JsonValue* rng = json_value_get(result, "range");
+    if (rng != NULL) {
+        if (!read_range(rng, &sl, &sc, &el, &ec)) return FALSE;
+        if (start_line != NULL) *start_line = sl;
+        if (start_col != NULL) *start_col = sc;
+        if (end_line != NULL) *end_line = el;
+        if (end_col != NULL) *end_col = ec;
+        if (placeholder != NULL) *placeholder = dup_member(result, "placeholder");
+        return TRUE;
+    }
+    if (read_range(result, &sl, &sc, &el, &ec)) {
+        if (start_line != NULL) *start_line = sl;
+        if (start_col != NULL) *start_col = sc;
+        if (end_line != NULL) *end_line = el;
+        if (end_col != NULL) *end_col = ec;
+        return TRUE;
+    }
+    return provides(result, "defaultBehavior");
+}
+
+static void append_edits_for_path(LspWorkspaceEdit* ws, const gchar* path, const JsonValue* arr) {
+    if (path == NULL || arr == NULL || json_value_get_type(arr) != JSON_VALUE_ARRAY) return;
+    guint n = json_value_get_length(arr);
+    if (n == 0) return;
+
+    LspFileEdits* fe = NULL;
+    for (guint i = 0; i < ws->files->len; i++) {
+        LspFileEdits* existing = g_ptr_array_index(ws->files, i);
+        if (g_strcmp0(existing->path, path) == 0) {
+            fe = existing;
+            break;
+        }
+    }
+    if (fe == NULL) {
+        fe = g_new0(LspFileEdits, 1);
+        fe->path = g_strdup(path);
+        fe->edits = g_ptr_array_new_with_free_func((GDestroyNotify)lsp_text_edit_free);
+        g_ptr_array_add(ws->files, fe);
+    }
+    for (guint i = 0; i < n; i++) {
+        const JsonValue* item = json_value_get_item(arr, i);
+        if (item == NULL || json_value_get_type(item) != JSON_VALUE_OBJECT) continue;
+        gint sl = 0, sc = 0, el = 0, ec = 0;
+        if (!read_range(json_value_get(item, "range"), &sl, &sc, &el, &ec)) continue;
+        gchar* nt = dup_member(item, "newText");
+        if (nt == NULL) nt = g_strdup("");
+        LspTextEdit* te = g_new0(LspTextEdit, 1);
+        te->start_line = sl;
+        te->start_col = sc;
+        te->end_line = el;
+        te->end_col = ec;
+        te->new_text = nt;
+        g_ptr_array_add(fe->edits, te);
+    }
+}
+
+LspWorkspaceEdit* lsp_parse_workspace_edit(const JsonValue* result) {
+    if (is_null(result) || json_value_get_type(result) != JSON_VALUE_OBJECT) return NULL;
+    LspWorkspaceEdit* ws = g_new0(LspWorkspaceEdit, 1);
+    ws->files = g_ptr_array_new_with_free_func((GDestroyNotify)lsp_file_edits_free);
+
+    /* Prefer documentChanges when present (per LSP spec), else changes */
+    const JsonValue* doc_changes = json_value_get(result, "documentChanges");
+    if (doc_changes != NULL && json_value_get_type(doc_changes) == JSON_VALUE_ARRAY) {
+        guint n = json_value_get_length(doc_changes);
+        for (guint i = 0; i < n; i++) {
+            const JsonValue* entry = json_value_get_item(doc_changes, i);
+            if (entry == NULL || json_value_get_type(entry) != JSON_VALUE_OBJECT) continue;
+            const JsonValue* td = json_value_get(entry, "textDocument");
+            const JsonValue* edits = json_value_get(entry, "edits");
+            if (td == NULL || edits == NULL) continue;
+            gchar* uri = dup_member(td, "uri");
+            gchar* path = lsp_uri_to_path(uri);
+            g_free(uri);
+            if (path != NULL) {
+                append_edits_for_path(ws, path, edits);
+                g_free(path);
+            }
+        }
+    } else {
+        const JsonValue* changes = json_value_get(result, "changes");
+        if (changes != NULL && json_value_get_type(changes) == JSON_VALUE_OBJECT) {
+            guint n = json_value_get_length(changes);
+            for (guint i = 0; i < n; i++) {
+                const JsonValue* arr = json_value_get_item(changes, i);
+                gchar* uri = json_value_dup_key(arr);
+                gchar* path = lsp_uri_to_path(uri);
+                g_free(uri);
+                if (path != NULL) {
+                    append_edits_for_path(ws, path, arr);
+                    g_free(path);
+                }
+            }
+        }
+    }
+
+    if (ws->files->len == 0) {
+        lsp_workspace_edit_free(ws);
+        return NULL;
+    }
+    return ws;
 }
 
 /* ------------------------------------------------------------------------- */

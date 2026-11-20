@@ -227,6 +227,7 @@ typedef struct AppData {
     struct CodeIntel* code_intel;   /* language servers (code_intel.c), created on first use */
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
+    GtkWidget* problems_page;       /* Problems page (LSP diagnostics, code_problems.c), or NULL */
     GtkWidget* latex_page;          /* LaTeX page (compilation messages, latex_errors.c), or NULL */
     struct LatexBuild* latex_build; /* compilation of saved LaTeX documents (latex_build.c), or NULL */
     struct LatexSync* latex_sync;   /* PDF preview following a LaTeX source (latex_sync.c), or NULL */
