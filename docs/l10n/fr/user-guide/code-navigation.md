@@ -33,8 +33,9 @@ dans les trois modes.
   `Ctrl+Alt+O` (`M-g s` en mode Emacs) cherche dans le projet du dossier
   courant, dans tous les langages.
 - Dans les symboles du projet, la liste à côté du champ de recherche ne
-  garde qu’une sorte (fonctions, macros, types…) ; `Alt+K` /
-  `Alt+Shift+K` passent à la sorte suivante / précédente.
+  garde qu’une sorte (fonctions, macros, types…), chacune avec le nombre
+  de symboles trouvés ; `Alt+K` / `Alt+Shift+K` passent à la sorte
+  suivante / précédente qui en a.
 
 La **barre de symboles** affiche les symboles d’un fichier de code à côté
 du texte, regroupés par sorte (fonctions, types…) et imbriqués dans leur

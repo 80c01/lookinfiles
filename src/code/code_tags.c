@@ -508,6 +508,31 @@ GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, gui
     return out;
 }
 
+guint code_tags_index_count(CodeTagsIndex* index, const gchar* prefix, GHashTable* skip_paths, guint* counts) {
+    if (index == NULL || prefix == NULL) return 0;
+    guint total = 0;
+    gchar* low = g_ascii_strdown(prefix, -1);
+    gsize n = strlen(low);
+    g_mutex_lock(&index->lock);
+    rebuild_names(index);
+    GHashTableIter it;
+    gpointer key, value;
+    g_hash_table_iter_init(&it, index->names);
+    while (g_hash_table_iter_next(&it, &key, &value)) {
+        if (g_ascii_strncasecmp(key, low, n) != 0) continue;
+        GArray* refs = value;
+        for (guint i = 0; i < refs->len; i++) {
+            const TagRef* r = &g_array_index(refs, TagRef, i);
+            if (skip_paths != NULL && g_hash_table_contains(skip_paths, r->path)) continue;
+            if (counts != NULL && (guint)r->symbol->kind < CODE_SYM_N_KINDS) counts[r->symbol->kind]++;
+            total++;
+        }
+    }
+    g_mutex_unlock(&index->lock);
+    g_free(low);
+    return total;
+}
+
 void code_tags_index_stats(CodeTagsIndex* index, guint* files, guint* symbols) {
     guint nf = 0, ns = 0;
     if (index != NULL) {

@@ -49,6 +49,7 @@ typedef enum {
     CODE_SYM_MODULE,    /* namespace, module, package */
     CODE_SYM_TARGET     /* Makefile target */
 } CodeSymbolKind;
+#define CODE_SYM_N_KINDS (CODE_SYM_TARGET + 1)
 
 typedef struct {
     gchar* name;

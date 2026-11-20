@@ -266,7 +266,7 @@ static void test_references(void) {
 static void test_search_symbols(void) {
     gchar* root = make_project();
     GPtrArray* files = code_index_project_files(root, CODE_LANG_C, NULL, NULL);
-    GPtrArray* hits = code_index_search_symbols("shop", CODE_SYM_KINDS_ALL, CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL);
+    GPtrArray* hits = code_index_search_symbols("shop", CODE_SYM_KINDS_ALL, CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL, NULL);
     g_assert_cmpuint(hits->len, >=, 2);
     /* Exact/prefix definitions appear before declarations */
     CodeMatch* first = g_ptr_array_index(hits, 0);
@@ -274,16 +274,26 @@ static void test_search_symbols(void) {
     g_ptr_array_unref(hits);
 
     /* Substring match ("total" -> "shop_total") */
-    hits = code_index_search_symbols("TOTAL", CODE_SYM_KINDS_ALL, CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL);
+    hits = code_index_search_symbols("TOTAL", CODE_SYM_KINDS_ALL, CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL, NULL);
     g_assert_cmpuint(hits->len, >=, 1);
     first = g_ptr_array_index(hits, 0);
     g_assert_cmpstr(first->symbol->name, ==, "shop_total");
     g_assert_false(first->symbol->declaration);
     g_ptr_array_unref(hits);
 
+    /* Counts per kind: every match, whatever the kinds asked for and the limit */
+    guint counts[CODE_SYM_N_KINDS];
+    hits = code_index_search_symbols("shop", CODE_SYM_KIND_BIT(CODE_SYM_MACRO), CODE_LANG_C, NULL, NULL, files, 1,
+                                     NULL, NULL, counts);
+    g_assert_cmpuint(hits->len, ==, 1);
+    g_assert_cmpstr(((CodeMatch*)g_ptr_array_index(hits, 0))->symbol->name, ==, "SHOP_H");
+    g_assert_cmpuint(counts[CODE_SYM_MACRO], ==, 1);    /* SHOP_H (any case) */
+    g_assert_cmpuint(counts[CODE_SYM_FUNCTION], >=, 2); /* shop_total, not in the result */
+    g_assert_cmpuint(counts[CODE_SYM_TYPE], >=, 1);     /* Shop */
+    g_ptr_array_unref(hits);
     /* Kinds: only those asked for, the limit counted after the filter */
     hits = code_index_search_symbols("", CODE_SYM_KIND_BIT(CODE_SYM_MACRO), CODE_LANG_C, NULL, NULL, files, 50,
-                                     NULL, NULL);
+                                     NULL, NULL, NULL);
     g_assert_cmpuint(hits->len, >=, 1);
     for (guint i = 0; i < hits->len; i++) {
         CodeMatch* m = g_ptr_array_index(hits, i);
@@ -291,7 +301,7 @@ static void test_search_symbols(void) {
     }
     g_ptr_array_unref(hits);
     hits = code_index_search_symbols("shop", CODE_SYM_KIND_BIT(CODE_SYM_FUNCTION) | CODE_SYM_KIND_BIT(CODE_SYM_MACRO),
-                                     CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL);
+                                     CODE_LANG_C, NULL, NULL, files, 50, NULL, NULL, NULL);
     for (guint i = 0; i < hits->len; i++) {
         CodeMatch* m = g_ptr_array_index(hits, i);
         g_assert_true(m->symbol->kind == CODE_SYM_FUNCTION || m->symbol->kind == CODE_SYM_MACRO);
@@ -299,7 +309,7 @@ static void test_search_symbols(void) {
     g_ptr_array_unref(hits);
 
     /* Limit honoured */
-    hits = code_index_search_symbols("", CODE_SYM_KINDS_ALL, CODE_LANG_C, NULL, NULL, files, 2, NULL, NULL);
+    hits = code_index_search_symbols("", CODE_SYM_KINDS_ALL, CODE_LANG_C, NULL, NULL, files, 2, NULL, NULL, NULL);
     g_assert_cmpuint(hits->len, ==, 2);
     g_ptr_array_unref(hits);
 

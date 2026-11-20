@@ -440,9 +440,10 @@ static gint cmp_search_ranked(gconstpointer a, gconstpointer b) {
 }
 
 static void add_search_hit(GArray* ranked, const gchar* path, CodeSymbol* sym,
-                           const gchar* q_low, gsize q_len, guint kinds) {
-    gint rank = code_symbol_kind_in(sym->kind, kinds) ? match_query_rank(sym->name, q_low, q_len) : -1;
-    if (rank < 0) {
+                           const gchar* q_low, gsize q_len, guint kinds, guint* counts) {
+    gint rank = match_query_rank(sym->name, q_low, q_len);
+    if (rank >= 0 && counts != NULL && (guint)sym->kind < CODE_SYM_N_KINDS) counts[sym->kind]++;
+    if (rank < 0 || !code_symbol_kind_in(sym->kind, kinds)) {
         code_symbol_free(sym);
         return;
     }
@@ -455,9 +456,10 @@ static void add_search_hit(GArray* ranked, const gchar* path, CodeSymbol* sym,
 
 GPtrArray* code_index_search_symbols(const gchar* query, guint kinds, CodeLang lang, CodeTagsIndex* tags,
                                      GHashTable* texts, GPtrArray* files, guint limit, GCancellable* cancellable,
-                                     gboolean* truncated) {
+                                     gboolean* truncated, guint* kind_counts) {
     GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_match_free);
     if (truncated != NULL) *truncated = FALSE;
+    if (kind_counts != NULL) memset(kind_counts, 0, CODE_SYM_N_KINDS * sizeof(guint));
     if (limit == 0) return out;
 
     const gchar* q = query != NULL ? query : "";
@@ -468,14 +470,20 @@ GPtrArray* code_index_search_symbols(const gchar* query, guint kinds, CodeLang l
 
     gboolean used_tags = FALSE;
     if (tags != NULL && files != NULL && code_tags_index_update(tags, files, cancellable)) {
-        /* ctags search by prefix (empty prefix retrieves all up to cap) */
+        /* ctags search by prefix (empty prefix retrieves all up to cap);
+         * the counts cover every match, the hits only the cap */
+        guint tag_counts[CODE_SYM_N_KINDS] = {0};
+        guint matching = code_tags_index_count(tags, q, texts, tag_counts);
         GPtrArray* hits = code_tags_index_search(tags, q, kinds, limit * 4);
-        if (hits != NULL && (hits->len > 0 || q_len == 0)) {
+        if (hits != NULL && (matching > 0 || q_len == 0)) {
             used_tags = TRUE;
+            if (kind_counts != NULL) {
+                for (guint k = 0; k < CODE_SYM_N_KINDS; k++) kind_counts[k] += tag_counts[k];
+            }
             for (guint i = 0; i < hits->len; i++) {
                 CodeTagsHit* h = g_ptr_array_index(hits, i);
                 if (texts != NULL && g_hash_table_contains(texts, h->path)) continue;
-                add_search_hit(ranked, h->path, code_symbol_copy(h->symbol), q_low, q_len, kinds);
+                add_search_hit(ranked, h->path, code_symbol_copy(h->symbol), q_low, q_len, kinds, NULL);
             }
         }
         if (hits != NULL) g_ptr_array_unref(hits);
@@ -495,7 +503,7 @@ GPtrArray* code_index_search_symbols(const gchar* query, guint kinds, CodeLang l
                 if (fl == CODE_LANG_NONE) fl = lang;
                 GPtrArray* syms = code_scan_text(text, strlen(text), fl, NULL);
                 for (guint i = 0; i < syms->len; i++) {
-                    add_search_hit(ranked, path, g_ptr_array_index(syms, i), q_low, q_len, kinds);
+                    add_search_hit(ranked, path, g_ptr_array_index(syms, i), q_low, q_len, kinds, kind_counts);
                 }
                 g_ptr_array_set_free_func(syms, NULL);
                 g_ptr_array_free(syms, TRUE);
@@ -525,7 +533,7 @@ GPtrArray* code_index_search_symbols(const gchar* query, guint kinds, CodeLang l
             if (fl == CODE_LANG_NONE) fl = lang;
             GPtrArray* syms = code_scan_text(text, len, fl, NULL);
             for (guint j = 0; j < syms->len; j++) {
-                add_search_hit(ranked, path, g_ptr_array_index(syms, j), q_low, q_len, kinds);
+                add_search_hit(ranked, path, g_ptr_array_index(syms, j), q_low, q_len, kinds, kind_counts);
             }
             g_ptr_array_set_free_func(syms, NULL);
             g_ptr_array_free(syms, TRUE);

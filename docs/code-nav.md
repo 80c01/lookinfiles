@@ -97,7 +97,11 @@ Notes:
   `Alt+Shift+K` from the field step through it). The kind is filtered
   before the results are capped (`code_index_search_symbols()`,
   `code_tags_index_search()`), on the server's answer with a language
-  server; the choice is kept for the next picker.
+  server; the choice is kept for the next picker. Each row of the
+  drop-down gives how many symbols of its kind match the query, whatever
+  the kind chosen and the cap (`kind_counts` of
+  `code_index_search_symbols()`, `code_tags_index_count()`), and `Alt+K`
+  skips the kinds with none; the foot of the dialog names the keys.
 - Org-mode tabs are not concerned (no code language).
 - Tagbar: a `GtkPaned` in each editor tab (thin handle), shown or hidden
   per tab by its key (not saved); a new tab follows the Preferences

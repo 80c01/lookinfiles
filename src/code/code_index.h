@@ -90,9 +90,11 @@ GPtrArray* code_index_references(const gchar* name, CodeLang lang, const gchar* 
 /* Search project symbols of the kinds (mask, code_symbol_kind_in()) matching
  * query (case-insensitive substring; empty query matches all), ranked: exact > prefix > substring, definitions before
  * declarations, capped at limit. Uses ctags (tags) when available, else the
- * built-in scanners over files and open buffers (texts). Returns CodeMatch*. */
+ * built-in scanners over files and open buffers (texts). Returns CodeMatch*.
+ * kind_counts (CODE_SYM_N_KINDS entries, may be NULL) receives how many
+ * symbols of each kind match query, whatever kinds and limit. */
 GPtrArray* code_index_search_symbols(const gchar* query, guint kinds, CodeLang lang, CodeTagsIndex* tags,
-                                     GHashTable* texts,
-                                     GPtrArray* files, guint limit, GCancellable* cancellable, gboolean* truncated);
+                                     GHashTable* texts, GPtrArray* files, guint limit, GCancellable* cancellable,
+                                     gboolean* truncated, guint* kind_counts);
 
 #endif /* CODE_INDEX_H */

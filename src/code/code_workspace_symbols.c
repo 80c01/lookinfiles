@@ -66,6 +66,8 @@ typedef struct {
     GtkWidget* dialog;
     GtkWidget* entry;
     GtkWidget* kind_drop;
+    GtkStringList* kind_list;               /* rows of kind_drop */
+    guint kind_counts[CODE_SYM_N_KINDS];    /* matches of each kind, last answer */
     GtkWidget* list;
     GtkWidget* note;
     GListStore* store;
@@ -91,6 +93,53 @@ static guint chosen_kinds(WsPicker* p) {
     guint row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
     if (row == 0 || row > N_KIND_CHOICES) return CODE_SYM_KINDS_ALL;
     return CODE_SYM_KIND_BIT(KIND_CHOICES[row - 1]);
+}
+
+static void on_kind_changed(GObject* drop, GParamSpec* pspec, gpointer data);
+
+/* Label of a row of the drop-down: the kind and how many symbols of it
+ * match the query (no number before the first answer) */
+static gchar* kind_row_label(WsPicker* p, guint row, gboolean counted) {
+    const gchar* name = row == 0 ? _("All kinds") : code_outline_group_label(KIND_CHOICES[row - 1]);
+    if (!counted) return g_strdup(name);
+    guint n = 0;
+    if (row == 0) {
+        for (guint k = 0; k < CODE_SYM_N_KINDS; k++) n += p->kind_counts[k];
+    } else {
+        n = p->kind_counts[KIND_CHOICES[row - 1]];
+    }
+    /* TRANSLATORS: a kind of symbol and how many match, "Functions (12)" */
+    return g_strdup_printf(C_("symbol kind count", "%1$s (%2$u)"), name, n);
+}
+
+/* Shows counts (CODE_SYM_N_KINDS entries) in the drop-down, the row chosen
+ * kept */
+static void set_kind_counts(WsPicker* p, const guint* counts) {
+    memcpy(p->kind_counts, counts, sizeof(p->kind_counts));
+    guint rows = N_KIND_CHOICES + 1;
+    const gchar* labels[N_KIND_CHOICES + 2];
+    gchar* owned[N_KIND_CHOICES + 1];
+    for (guint i = 0; i < rows; i++) labels[i] = owned[i] = kind_row_label(p, i, TRUE);
+    labels[rows] = NULL;
+    guint sel = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
+    g_signal_handlers_block_by_func(p->kind_drop, on_kind_changed, p);
+    gtk_string_list_splice(p->kind_list, 0, rows, labels);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), sel);
+    g_signal_handlers_unblock_by_func(p->kind_drop, on_kind_changed, p);
+    for (guint i = 0; i < rows; i++) g_free(owned[i]);
+}
+
+/* Next / previous row of the drop-down (step +1 / -1), past the kinds no
+ * symbol matches; every kind (row 0) is always a stop */
+static void step_kind(WsPicker* p, gint step) {
+    guint rows = N_KIND_CHOICES + 1;
+    guint row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
+    if (row >= rows) row = 0;
+    for (guint i = 0; i < rows; i++) {
+        row = (row + rows + (guint)(step > 0 ? 1 : rows - 1)) % rows;
+        if (row == 0 || p->kind_counts[KIND_CHOICES[row - 1]] > 0) break;
+    }
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), row);
 }
 
 static void cancel_pending(WsPicker* p) {
@@ -152,6 +201,7 @@ typedef struct {
     GHashTable* texts; /* open buffer snapshots */
     gchar* cache_path;
     GPtrArray* matches; /* CodeMatch* */
+    guint counts[CODE_SYM_N_KINDS];
     gchar* source;
     gboolean truncated;
 } SearchJob;
@@ -186,7 +236,7 @@ static void search_worker(GTask* task, gpointer source_obj, gpointer task_data, 
     }
     gboolean scan_trunc = FALSE;
     j->matches = code_index_search_symbols(j->query, j->kinds, j->lang, tags, j->texts, files,
-                                           MAX_RESULTS, cancellable, &scan_trunc);
+                                           MAX_RESULTS, cancellable, &scan_trunc, j->counts);
     if (scan_trunc) j->truncated = TRUE;
     j->source = g_strdup(tags != NULL ? "ctags" : _("built-in index"));
     if (tags != NULL) code_tags_index_free(tags);
@@ -211,6 +261,7 @@ static void on_worker_done(GObject* src, GAsyncResult* res, gpointer data) {
         add_row(p, m->symbol->name, detail, code_symbol_kind_name(m->symbol->kind),
                 m->path, m->symbol->line, m->symbol->column);
     }
+    set_kind_counts(p, j->counts);
     update_note(p, j->source != NULL ? j->source : _("built-in index"), j->truncated);
 }
 
@@ -276,6 +327,12 @@ static void on_lsp_symbols(AppData* app, EditorTab* tab, GPtrArray* symbols, gpo
     g_free(query);
 
     g_list_store_remove_all(p->store);
+    guint counts[CODE_SYM_N_KINDS] = {0};
+    for (guint i = 0; i < symbols->len; i++) {
+        LspSymbol* s = g_ptr_array_index(symbols, i);
+        if ((guint)s->kind < CODE_SYM_N_KINDS) counts[s->kind]++;
+    }
+    set_kind_counts(p, counts);
     guint kinds = chosen_kinds(p);
     guint taken = 0;
     gboolean more = FALSE;
@@ -375,10 +432,7 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
     /* Alt+K / Alt+Shift+K: next / previous kind */
     if ((state & (GDK_ALT_MASK | GDK_CONTROL_MASK)) == GDK_ALT_MASK &&
         (keyval == GDK_KEY_k || keyval == GDK_KEY_K)) {
-        guint rows = N_KIND_CHOICES + 1;
-        guint row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
-        row = (state & GDK_SHIFT_MASK) != 0 ? (row + rows - 1) % rows : (row + 1) % rows;
-        gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), row);
+        step_kind(p, (state & GDK_SHIFT_MASK) != 0 ? -1 : 1);
         return TRUE;
     }
     guint n = g_list_model_get_n_items(G_LIST_MODEL(p->store));
@@ -393,7 +447,8 @@ static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint ke
 }
 
 static void on_kind_changed(GObject* drop, GParamSpec* pspec, gpointer data) {
-    (void)drop; (void)pspec;
+    (void)drop;
+    (void)pspec;
     WsPicker* p = data;
     last_kind_row = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->kind_drop));
     g_clear_handle_id(&p->debounce_id, g_source_remove);
@@ -460,11 +515,13 @@ void code_workspace_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFun
     gtk_widget_add_controller(p->entry, keys);
     gtk_widget_set_hexpand(p->entry, TRUE);
 
-    const gchar* kind_labels[N_KIND_CHOICES + 2];
-    kind_labels[0] = _("All kinds");
-    for (guint i = 0; i < N_KIND_CHOICES; i++) kind_labels[i + 1] = code_outline_group_label(KIND_CHOICES[i]);
-    kind_labels[N_KIND_CHOICES + 1] = NULL;
-    p->kind_drop = gtk_drop_down_new_from_strings(kind_labels);
+    p->kind_list = gtk_string_list_new(NULL);
+    for (guint i = 0; i < N_KIND_CHOICES + 1; i++) {
+        gchar* label = kind_row_label(p, i, FALSE);
+        gtk_string_list_append(p->kind_list, label);
+        g_free(label);
+    }
+    p->kind_drop = gtk_drop_down_new(G_LIST_MODEL(p->kind_list), NULL);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(p->kind_drop), last_kind_row <= N_KIND_CHOICES ? last_kind_row : 0);
     gtk_widget_set_tooltip_text(p->kind_drop, _("Kind of symbol (Alt+K / Alt+Shift+K)"));
     gtk_widget_set_focus_on_click(p->kind_drop, FALSE);
@@ -493,8 +550,16 @@ void code_workspace_symbols_show(AppData* app, EditorTab* tab, CodeNavMessageFun
     p->note = gtk_label_new(_("Searching…"));
     gtk_widget_add_css_class(p->note, "dim-label");
     gtk_label_set_xalign(GTK_LABEL(p->note), 0.0f);
-    gtk_widget_set_margin_top(p->note, 4);
-    gtk_box_append(GTK_BOX(area), p->note);
+    gtk_widget_set_hexpand(p->note, TRUE);
+    gtk_label_set_ellipsize(GTK_LABEL(p->note), PANGO_ELLIPSIZE_END);
+    GtkWidget* hint = gtk_label_new(_("Alt+K / Alt+Shift+K: next / previous kind"));
+    gtk_widget_add_css_class(hint, "dim-label");
+    gtk_label_set_xalign(GTK_LABEL(hint), 1.0f);
+    GtkWidget* foot = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_set_margin_top(foot, 4);
+    gtk_box_append(GTK_BOX(foot), p->note);
+    gtk_box_append(GTK_BOX(foot), hint);
+    gtk_box_append(GTK_BOX(area), foot);
 
     g_signal_connect(p->dialog, "response", G_CALLBACK(on_response), p);
     g_object_set_data_full(G_OBJECT(p->dialog), "ws-picker", p, (GDestroyNotify)picker_free);

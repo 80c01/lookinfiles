@@ -4400,6 +4400,17 @@ msgstr "Toutes les sortes"
 msgid "Kind of symbol (Alt+K / Alt+Shift+K)"
 msgstr "Sorte de symbole (Alt+K / Alt+Shift+K)"
 
+#: src/code/code_workspace_symbols.c
+msgid "Alt+K / Alt+Shift+K: next / previous kind"
+msgstr "Alt+K / Alt+Shift+K : sorte suivante / précédente"
+
+#. TRANSLATORS: a kind of symbol and how many match, "Functions (12)"
+#: src/code/code_workspace_symbols.c
+#, c-format
+msgctxt "symbol kind count"
+msgid "%1$s (%2$u)"
+msgstr "%1$s (%2$u)"
+
 #: src/core/disk_stats.c:62
 msgid "Less than a day"
 msgstr "Moins d’un jour"

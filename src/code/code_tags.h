@@ -43,6 +43,10 @@ GPtrArray* code_tags_index_lookup(CodeTagsIndex* index, const gchar* name);
 /* Symbols of the kinds (mask, code_symbol_kind_in()) whose name starts with
  * prefix (case-insensitive), at most limit (symbol pickers) */
 GPtrArray* code_tags_index_search(CodeTagsIndex* index, const gchar* prefix, guint kinds, guint limit);
+/* Adds to counts[kind] (CODE_SYM_N_KINDS entries) the symbols whose name
+ * starts with prefix (case-insensitive), the files of skip_paths (may be
+ * NULL) left out; returns how many were counted */
+guint code_tags_index_count(CodeTagsIndex* index, const gchar* prefix, GHashTable* skip_paths, guint* counts);
 /* Number of files and symbols indexed */
 void code_tags_index_stats(CodeTagsIndex* index, guint* files, guint* symbols);
 
