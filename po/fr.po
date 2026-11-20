@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-20 08:28+0000\n"
+"POT-Creation-Date: 2026-11-20 17:57+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -28,29 +28,32 @@ msgid "Crop Image"
 msgstr "Recadrer l’image"
 
 #: src/canvas/canvas_crop.c:372 src/clock/clock_pill.c:531
-#: src/workspace/layouts.c:563
+#: src/workspace/layouts.c:636
 msgid "_Reset"
 msgstr "_Réinitialiser"
 
 #: src/canvas/canvas_crop.c:373 src/chrome/preferences.c:546
 #: src/chrome/themes.c:222 src/chrome/themes.c:237 src/chrome/themes.c:682
-#: src/code/code_symbols.c:176 src/editor/editor.c:700
-#: src/explorer/bookmark_dialog.c:202 src/explorer/bookmarks.c:595
-#: src/explorer/file_actions.c:42 src/explorer/file_actions.c:235
-#: src/explorer/remote.c:322 src/explorer/remote.c:389
-#: src/explorer/remote.c:456 src/explorer/remote.c:486
-#: src/explorer/remote.c:563 src/jupyter/ipynb_save.c:100
-#: src/jupyter/ipynb_save.c:132 src/jupyter/ipynb_save.c:184
-#: src/notes/notes_dialogs.c:113 src/notes/notes_dialogs.c:294
-#: src/notes/notes_dialogs.c:378 src/preview/preview_full.c:31
-#: src/search/deep_search_bookmark.c:49 src/search/project_search.c:369
-#: src/search/quick_open.c:367 src/workspace/layouts.c:50
-#: src/workspace/layouts.c:298 src/workspace/session_bookmark.c:13
+#: src/code/code_rename.c:309 src/code/code_symbols.c:176
+#: src/code/code_workspace_symbols.c:396 src/editor/editor.c:704
+#: src/editor/editor_watch.c:715 src/editor/editor_watch.c:721
+#: src/editor/editor_watch.c:763 src/explorer/bookmark_dialog.c:203
+#: src/explorer/bookmarks.c:595 src/explorer/file_actions.c:42
+#: src/explorer/file_actions.c:235 src/explorer/remote.c:323
+#: src/explorer/remote.c:390 src/explorer/remote.c:457
+#: src/explorer/remote.c:487 src/explorer/remote.c:564
+#: src/jupyter/ipynb_save.c:100 src/jupyter/ipynb_save.c:132
+#: src/jupyter/ipynb_save.c:184 src/notes/notes_dialogs.c:113
+#: src/notes/notes_dialogs.c:294 src/notes/notes_dialogs.c:378
+#: src/preview/preview_full.c:31 src/search/deep_search_bookmark.c:49
+#: src/search/project_search.c:416 src/search/quick_open.c:367
+#: src/workspace/layouts.c:56 src/workspace/layouts.c:371
+#: src/workspace/session_bookmark.c:13
 msgid "_Cancel"
 msgstr "_Annuler"
 
 #: src/canvas/canvas_crop.c:374 src/chrome/preferences.c:546
-#: src/workspace/layouts.c:501
+#: src/workspace/layouts.c:574
 msgid "_Apply"
 msgstr "A_ppliquer"
 
@@ -465,11 +468,11 @@ msgstr "Zoom : Ctrl+molette, Ctrl+= / Ctrl+- ; clic : 100 % (Ctrl+0)"
 #: src/chrome/help.c:46 src/chrome/help.c:47 src/chrome/help.c:48
 #: src/chrome/help.c:49 src/chrome/help.c:50 src/chrome/help.c:51
 #: src/chrome/help.c:52 src/chrome/help.c:53 src/chrome/help.c:54
-#: src/chrome/help.c:55 src/chrome/help.c:56 src/chrome/help.c:177
-#: src/chrome/help.c:178 src/chrome/help.c:179 src/chrome/help.c:180
-#: src/chrome/help.c:181 src/chrome/help.c:182 src/chrome/help.c:183
-#: src/chrome/help.c:184 src/chrome/help.c:185 src/chrome/help.c:186
-#: src/chrome/help.c:187 src/chrome/help.c:188 src/chrome/help.c:189
+#: src/chrome/help.c:55 src/chrome/help.c:56 src/chrome/help.c:187
+#: src/chrome/help.c:188 src/chrome/help.c:189 src/chrome/help.c:190
+#: src/chrome/help.c:191 src/chrome/help.c:192 src/chrome/help.c:193
+#: src/chrome/help.c:194 src/chrome/help.c:195 src/chrome/help.c:196
+#: src/chrome/help.c:197 src/chrome/help.c:198 src/chrome/help.c:199
 msgid "Explorer panel"
 msgstr "Panneau Explorateur"
 
@@ -534,11 +537,11 @@ msgstr ""
 "Rechercher une sous-chaîne (Enter / F3 : occurrence suivante, Shift+Enter / "
 "Shift+F3 : précédente, Esc : fermer)"
 
-#: src/chrome/help.c:49 src/chrome/help.c:202
+#: src/chrome/help.c:49 src/chrome/help.c:212
 msgid "Next / previous match of the last search"
 msgstr "Occurrence suivante / précédente de la dernière recherche"
 
-#: src/chrome/help.c:50 src/chrome/help.c:203
+#: src/chrome/help.c:50 src/chrome/help.c:213
 msgid ""
 "Search forward / backward as you type (again: next / previous match, RET: "
 "stop, C-g: back to the start)"
@@ -561,7 +564,7 @@ msgstr ""
 "Afficher le fichier sélectionné dans le panneau d’édition dédié (le focus "
 "reste dans l’explorateur)"
 
-#: src/chrome/help.c:53 src/chrome/help.c:114
+#: src/chrome/help.c:53 src/chrome/help.c:114 src/chrome/help.c:176
 msgctxt "key"
 msgid "Enter / Double-click"
 msgstr "Enter / double-clic"
@@ -631,7 +634,7 @@ msgid "Cycle sort: A-Z / Z-A"
 msgstr "Changer le tri : A-Z / Z-A"
 
 #: src/chrome/help.c:65 src/chrome/help.c:74 src/chrome/help.c:81
-#: src/chrome/help.c:182 src/chrome/help.c:210
+#: src/chrome/help.c:192 src/chrome/help.c:220
 msgctxt "key"
 msgid "Right-click"
 msgstr "Clic droit"
@@ -907,7 +910,7 @@ msgid "Close the Canvas tab (saved automatically)"
 msgstr "Fermer l’onglet Canvas (enregistré automatiquement)"
 
 #: src/chrome/help.c:104 src/chrome/help.c:111 src/chrome/help.c:126
-#: src/chrome/help.c:153 src/chrome/help.c:170
+#: src/chrome/help.c:156 src/chrome/help.c:174 src/chrome/help.c:180
 msgctxt "key"
 msgid "Ctrl+Alt+Arrow / right-click tab"
 msgstr "Ctrl+Alt+flèche / clic droit sur l’onglet"
@@ -1050,8 +1053,8 @@ msgstr ""
 
 #: src/chrome/help.c:127 src/chrome/help.c:128 src/chrome/help.c:129
 #: src/chrome/help.c:130 src/chrome/help.c:131 src/chrome/help.c:132
-#: src/chrome/help.c:345 src/chrome/help.c:346 src/chrome/help.c:347
-#: src/chrome/help.c:348 src/chrome/help.c:349
+#: src/chrome/help.c:360 src/chrome/help.c:361 src/chrome/help.c:362
+#: src/chrome/help.c:363 src/chrome/help.c:364
 msgid "Help tab"
 msgstr "Onglet Aide"
 
@@ -1113,57 +1116,74 @@ msgid "Close the System Monitor tab"
 msgstr "Fermer l’onglet Moniteur système"
 
 #: src/chrome/help.c:137 src/chrome/help.c:138 src/chrome/help.c:139
+msgid "References, Search, Problems and LaTeX tabs"
+msgstr "Onglets Références, Recherche, Problèmes et LaTeX"
+
+#: src/chrome/help.c:137 src/chrome/help.c:138
+msgid "Close the tab (also its cross or a middle click)"
+msgstr "Fermer l’onglet (aussi sa croix ou un clic milieu)"
+
+#: src/chrome/help.c:139
+msgctxt "key"
+msgid "Drag / right-click tab"
+msgstr "Glisser / clic droit sur l’onglet"
+
+#: src/chrome/help.c:139
+msgid "Move the tab to another pane, as an editor tab"
+msgstr "Déplacer l’onglet dans un autre volet, comme un onglet d’édition"
+
 #: src/chrome/help.c:140 src/chrome/help.c:141 src/chrome/help.c:142
 #: src/chrome/help.c:143 src/chrome/help.c:144 src/chrome/help.c:145
 #: src/chrome/help.c:146 src/chrome/help.c:147 src/chrome/help.c:148
+#: src/chrome/help.c:149 src/chrome/help.c:150 src/chrome/help.c:151
 msgid "Disk Usage tab"
 msgstr "Onglet Espace disque"
 
-#: src/chrome/help.c:137
+#: src/chrome/help.c:140
 msgid ""
 "Disk usage of the selected folder (from the explorer; also its context menu)"
 msgstr ""
 "Espace disque du dossier sélectionné (depuis l’explorateur ; aussi son menu "
 "contextuel)"
 
-#: src/chrome/help.c:138
+#: src/chrome/help.c:141
 msgid "Open the selected folder; on a file, show it in the explorer"
 msgstr ""
 "Ouvrir le dossier sélectionné ; sur un fichier, le montrer dans l’explorateur"
 
-#: src/chrome/help.c:139 src/chrome/help.c:140
+#: src/chrome/help.c:142 src/chrome/help.c:143
 msgid "Open the selected folder"
 msgstr "Ouvrir le dossier sélectionné"
 
-#: src/chrome/help.c:141 src/chrome/help.c:142 src/chrome/help.c:143
+#: src/chrome/help.c:144 src/chrome/help.c:145 src/chrome/help.c:146
 msgid "Back to the parent folder"
 msgstr "Revenir au dossier parent"
 
-#: src/chrome/help.c:144
+#: src/chrome/help.c:147
 msgid "Read the folder again"
 msgstr "Relire le dossier"
 
-#: src/chrome/help.c:145
+#: src/chrome/help.c:148
 msgid "Next view under the list: treemap, wheel, histograms"
 msgstr "Vue suivante sous la liste : treemap, roue, histogrammes"
 
-#: src/chrome/help.c:146
+#: src/chrome/help.c:149
 msgid "Stop the reading (what was read stays)"
 msgstr "Arrêter la lecture (ce qui a été lu reste)"
 
-#: src/chrome/help.c:147 src/chrome/help.c:148
+#: src/chrome/help.c:150 src/chrome/help.c:151
 msgid "Close the Disk Usage tab"
 msgstr "Fermer l’onglet Espace disque"
 
-#: src/chrome/help.c:149 src/chrome/help.c:150 src/chrome/help.c:151
 #: src/chrome/help.c:152 src/chrome/help.c:153 src/chrome/help.c:154
 #: src/chrome/help.c:155 src/chrome/help.c:156 src/chrome/help.c:157
 #: src/chrome/help.c:158 src/chrome/help.c:159 src/chrome/help.c:160
-#: src/chrome/help.c:161
+#: src/chrome/help.c:161 src/chrome/help.c:162 src/chrome/help.c:163
+#: src/chrome/help.c:164 src/chrome/help.c:165
 msgid "Deep Search tab"
 msgstr "Onglet Recherche approfondie"
 
-#: src/chrome/help.c:149
+#: src/chrome/help.c:152
 msgid ""
 "Search the selected folder by name, extensions, type, size, date and content "
 "(from the explorer; also its context menu)"
@@ -1171,18 +1191,18 @@ msgstr ""
 "Rechercher dans le dossier sélectionné par nom, extensions, type, taille, "
 "date et contenu (depuis l’explorateur ; aussi son menu contextuel)"
 
-#: src/chrome/help.c:150
+#: src/chrome/help.c:153
 msgid "In a field: search; on a result: show it in the explorer"
 msgstr ""
 "Dans un champ : rechercher ; sur un résultat : le montrer dans l’explorateur"
 
-#: src/chrome/help.c:151
+#: src/chrome/help.c:154
 msgid "Open the selected file in an editor tab, at its first match"
 msgstr ""
 "Ouvrir le fichier sélectionné dans un onglet d’édition, à sa première "
 "occurrence"
 
-#: src/chrome/help.c:152
+#: src/chrome/help.c:155
 msgid ""
 "Preview the selected result, at its first match (Escape in the preview: back "
 "to the results)"
@@ -1190,7 +1210,7 @@ msgstr ""
 "Afficher l’aperçu du résultat sélectionné, à sa première occurrence (Échap "
 "dans l’aperçu : retour aux résultats)"
 
-#: src/chrome/help.c:153
+#: src/chrome/help.c:156
 msgid ""
 "Move the Deep Search tab to another pane, as an editor tab (beside the "
 "preview, the result moved to is previewed)"
@@ -1198,26 +1218,26 @@ msgstr ""
 "Déplacer l’onglet Recherche approfondie vers un autre volet, comme un onglet "
 "d’édition (à côté de l’aperçu, le résultat atteint y est affiché)"
 
-#: src/chrome/help.c:154
+#: src/chrome/help.c:157
 msgid "Search again"
 msgstr "Relancer la recherche"
 
-#: src/chrome/help.c:155
+#: src/chrome/help.c:158
 msgid "Stop the search (what was found stays)"
 msgstr "Arrêter la recherche (ce qui a été trouvé reste)"
 
-#: src/chrome/help.c:156
+#: src/chrome/help.c:159
 msgid ""
 "Content: match case / whole word / regular expression / letters in order"
 msgstr ""
 "Contenu : respecter la casse / mot entier / expression régulière / lettres "
 "dans l’ordre"
 
-#: src/chrome/help.c:157
+#: src/chrome/help.c:160
 msgid "From a field: to the results"
 msgstr "Depuis un champ : vers les résultats"
 
-#: src/chrome/help.c:158
+#: src/chrome/help.c:161
 msgid ""
 "In the folder: suggest folders (also as you type; Tab completes, Enter takes "
 "one)"
@@ -1225,27 +1245,27 @@ msgstr ""
 "Dans le dossier : suggérer des dossiers (aussi pendant la saisie ; Tab "
 "complète, Entrée en prend un)"
 
-#: src/chrome/help.c:158
+#: src/chrome/help.c:162
 msgid "In a chart: previous / next bar, first / last bar"
 msgstr "Dans un graphique : barre précédente / suivante, première / dernière"
 
-#: src/chrome/help.c:159
+#: src/chrome/help.c:163
 msgid "On a bar of a chart: list only its files (again: every result)"
 msgstr ""
 "Sur une barre d’un graphique : ne lister que ses fichiers (de nouveau : tous "
 "les résultats)"
 
-#: src/chrome/help.c:160 src/chrome/help.c:161
+#: src/chrome/help.c:164 src/chrome/help.c:165
 msgid "Close the Deep Search tab"
 msgstr "Fermer l’onglet Recherche approfondie"
 
-#: src/chrome/help.c:162 src/chrome/help.c:163 src/chrome/help.c:164
-#: src/chrome/help.c:165 src/chrome/help.c:166 src/chrome/help.c:167
-#: src/chrome/help.c:168 src/chrome/help.c:169 src/chrome/help.c:170
+#: src/chrome/help.c:166 src/chrome/help.c:167 src/chrome/help.c:168
+#: src/chrome/help.c:169 src/chrome/help.c:170 src/chrome/help.c:171
+#: src/chrome/help.c:172 src/chrome/help.c:173 src/chrome/help.c:174
 msgid "Browser tab"
 msgstr "Onglet Navigateur"
 
-#: src/chrome/help.c:162
+#: src/chrome/help.c:166
 msgid ""
 "Open an empty browser tab (also Help links, web bookmarks, right click on an "
 "HTML file)"
@@ -1253,102 +1273,130 @@ msgstr ""
 "Ouvrir un onglet navigateur vide (aussi les liens de l’aide, les signets "
 "web, un clic droit sur un fichier HTML)"
 
-#: src/chrome/help.c:163
+#: src/chrome/help.c:167
 msgid ""
 "Go to the address bar: an address, a file path or words to search, then Enter"
 msgstr ""
 "Aller à la barre d’adresse : une adresse, un chemin de fichier ou des mots à "
 "chercher, puis Enter"
 
-#: src/chrome/help.c:164
+#: src/chrome/help.c:168
 msgid "Address bar: back to the page; page: stop loading"
 msgstr "Barre d’adresse : retour à la page ; page : arrêter le chargement"
 
-#: src/chrome/help.c:165
+#: src/chrome/help.c:169
 msgid "Reload the page"
 msgstr "Recharger la page"
 
-#: src/chrome/help.c:166
+#: src/chrome/help.c:170
 msgctxt "key"
 msgid "Mouse back / forward"
 msgstr "Souris précédent / suivant"
 
-#: src/chrome/help.c:166
+#: src/chrome/help.c:170
 msgid "Back / forward in the pages visited (also the arrows of the tab)"
 msgstr ""
 "Reculer / avancer dans les pages visitées (aussi les flèches de l’onglet)"
 
-#: src/chrome/help.c:167
+#: src/chrome/help.c:171
 msgid "Next / previous tab of its pane"
 msgstr "Onglet suivant / précédent de son volet"
 
-#: src/chrome/help.c:168
+#: src/chrome/help.c:172
 msgid "Focus the next / previous panel"
 msgstr "Focus sur le panneau suivant / précédent"
 
-#: src/chrome/help.c:169
+#: src/chrome/help.c:173
 msgid "Close the tab (also its cross, or a middle click on the tab)"
 msgstr "Fermer l’onglet (aussi sa croix, ou un clic du milieu sur l’onglet)"
 
-#: src/chrome/help.c:170
+#: src/chrome/help.c:174
 msgid "Move the browser tab to another pane, as an editor tab"
 msgstr "Déplacer l’onglet web dans un autre volet, comme un onglet d’édition"
 
-#: src/chrome/help.c:171 src/chrome/help.c:172 src/chrome/help.c:173
-#: src/chrome/help.c:174 src/chrome/help.c:175 src/chrome/help.c:176
+#: src/chrome/help.c:175 src/chrome/help.c:176 src/chrome/help.c:177
+#: src/chrome/help.c:178 src/chrome/help.c:179 src/chrome/help.c:180
+msgid "Diff tab"
+msgstr "Onglet Diff"
+
+#: src/chrome/help.c:175
+msgid "Next / previous change hunk (also ]c / [c in Vim, M-n / M-p in Emacs)"
+msgstr ""
+"Bloc de modifications suivant / précédent (aussi ]c / [c dans Vim, M-n / M-p "
+"dans Emacs)"
+
+#: src/chrome/help.c:176
+msgid "Open the compared file in an editor tab at the current line"
+msgstr ""
+"Ouvrir le fichier comparé dans un onglet d’édition, à la ligne courante"
+
+#: src/chrome/help.c:177
+msgid "Refresh the comparison from disk / HEAD"
+msgstr "Actualiser la comparaison depuis le disque / HEAD"
+
+#: src/chrome/help.c:178 src/chrome/help.c:179
+msgid "Close the Diff tab (also a middle click on the tab)"
+msgstr "Fermer l’onglet Diff (aussi un clic du milieu sur l’onglet)"
+
+#: src/chrome/help.c:180
+msgid "Move the Diff tab to another pane, as an editor tab"
+msgstr "Déplacer l’onglet Diff dans un autre volet, comme un onglet d’édition"
+
+#: src/chrome/help.c:181 src/chrome/help.c:182 src/chrome/help.c:183
+#: src/chrome/help.c:184 src/chrome/help.c:185 src/chrome/help.c:186
 msgid "Remote view"
 msgstr "Vue Distant"
 
-#: src/chrome/help.c:171
+#: src/chrome/help.c:181
 msgid "Connect selected machine (SSHFS) and browse it in Explorer"
 msgstr ""
 "Connecter la machine sélectionnée (SSHFS) et la parcourir dans l’explorateur"
 
-#: src/chrome/help.c:172
+#: src/chrome/help.c:182
 msgid "Open SSH terminal to selected machine"
 msgstr "Ouvrir un terminal SSH vers la machine sélectionnée"
 
-#: src/chrome/help.c:173
+#: src/chrome/help.c:183
 msgid "Add remote machine (inside the selected folder) / new folder"
 msgstr ""
 "Ajouter une machine distante (dans le dossier sélectionné) / un dossier"
 
-#: src/chrome/help.c:174
+#: src/chrome/help.c:184
 msgid "Edit selected machine (also its folder) or folder (name and icon)"
 msgstr ""
 "Modifier la machine sélectionnée (aussi son dossier) ou le dossier (nom et "
 "icône)"
 
-#: src/chrome/help.c:175
+#: src/chrome/help.c:185
 msgid "Delete selected machine, or folder (its machines move to the top level)"
 msgstr ""
 "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au "
 "premier niveau)"
 
-#: src/chrome/help.c:176 src/explorer/remote.c:1004
+#: src/chrome/help.c:186 src/explorer/remote.c:1031
 #: src/preview/preview_summary.c:82
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
 
-#: src/chrome/help.c:177
+#: src/chrome/help.c:187
 msgid "Switch between files and notes view in Explorer"
 msgstr "Basculer entre les vues Fichiers et Notes de l’explorateur"
 
-#: src/chrome/help.c:178
+#: src/chrome/help.c:188
 msgid "New file / new folder in the selected directory"
 msgstr "Nouveau fichier / nouveau dossier dans le dossier sélectionné"
 
-#: src/chrome/help.c:179
+#: src/chrome/help.c:189
 msgid "Rename selected file or folder"
 msgstr "Renommer le fichier ou le dossier sélectionné"
 
-#: src/chrome/help.c:180
+#: src/chrome/help.c:190
 msgid "Move selected file or folder to the trash (asks first)"
 msgstr ""
 "Mettre le fichier ou le dossier sélectionné à la corbeille (avec "
 "confirmation)"
 
-#: src/chrome/help.c:181
+#: src/chrome/help.c:191
 msgid ""
 "Back / forward in the folders shown in this workspace (also the mouse's "
 "back / forward buttons and the top bar arrows; right-click an arrow: the "
@@ -1358,7 +1406,7 @@ msgstr ""
 "(aussi les boutons précédent / suivant de la souris et les flèches de la "
 "barre du haut ; clic droit sur une flèche : la liste)"
 
-#: src/chrome/help.c:182
+#: src/chrome/help.c:192
 msgid ""
 "Context menu: open, side panel, default app, terminal here, disk usage, "
 "rename, trash, copy name or path, bookmark"
@@ -1366,70 +1414,70 @@ msgstr ""
 "Menu contextuel : ouvrir, panneau latéral, application par défaut, terminal "
 "ici, espace disque, renommer, corbeille, copier le nom ou le chemin, signet"
 
-#: src/chrome/help.c:183
+#: src/chrome/help.c:193
 msgid ""
 "Undo the last move to the trash or rename (also Undo in the explorer bar)"
 msgstr ""
 "Annuler la dernière mise à la corbeille ou le dernier renommage (aussi "
 "Annuler dans la barre de l’explorateur)"
 
-#: src/chrome/help.c:184
+#: src/chrome/help.c:194
 msgid "Toggle hidden files"
 msgstr "Afficher / masquer les fichiers cachés"
 
-#: src/chrome/help.c:185
+#: src/chrome/help.c:195
 msgid "Cycle sort: name, date, size, extension"
 msgstr "Changer le tri : nom, date, taille, extension"
 
-#: src/chrome/help.c:186
+#: src/chrome/help.c:196
 msgid "Disk usage of the selected folder, in the Disk Usage tab"
 msgstr "Espace disque du dossier sélectionné, dans l’onglet Espace disque"
 
-#: src/chrome/help.c:187
+#: src/chrome/help.c:197
 msgid "Deep search in the selected folder, in the Deep Search tab"
 msgstr ""
 "Recherche approfondie dans le dossier sélectionné, dans l’onglet Recherche "
 "approfondie"
 
-#: src/chrome/help.c:188
+#: src/chrome/help.c:198
 msgid "Zoom the previewed image, PDF or slides in / out / to the fitted size"
 msgstr ""
 "Agrandir / réduire / ajuster l’image, le PDF ou les diapositives en aperçu"
 
-#: src/chrome/help.c:189
+#: src/chrome/help.c:199
 msgid "Show / hide this help panel"
 msgstr "Afficher / masquer ce panneau d’aide"
 
-#: src/chrome/help.c:191 src/chrome/help.c:192 src/chrome/help.c:193
-#: src/chrome/help.c:194 src/chrome/help.c:195 src/chrome/help.c:196
-#: src/chrome/help.c:197 src/chrome/help.c:198 src/chrome/help.c:199
-#: src/chrome/help.c:200 src/chrome/help.c:201 src/chrome/help.c:202
-#: src/chrome/help.c:203 src/chrome/help.c:204 src/chrome/help.c:205
-#: src/chrome/help.c:206 src/chrome/help.c:207 src/chrome/help.c:208
-#: src/chrome/help.c:209 src/chrome/help.c:210 src/chrome/help.c:211
-#: src/chrome/help.c:212 src/chrome/help.c:213 src/chrome/help.c:215
-#: src/chrome/help.c:216 src/chrome/help.c:217
+#: src/chrome/help.c:201 src/chrome/help.c:202 src/chrome/help.c:203
+#: src/chrome/help.c:204 src/chrome/help.c:205 src/chrome/help.c:206
+#: src/chrome/help.c:207 src/chrome/help.c:208 src/chrome/help.c:209
+#: src/chrome/help.c:210 src/chrome/help.c:211 src/chrome/help.c:212
+#: src/chrome/help.c:213 src/chrome/help.c:214 src/chrome/help.c:215
+#: src/chrome/help.c:216 src/chrome/help.c:217 src/chrome/help.c:218
+#: src/chrome/help.c:219 src/chrome/help.c:220 src/chrome/help.c:221
+#: src/chrome/help.c:222 src/chrome/help.c:223 src/chrome/help.c:225
+#: src/chrome/help.c:226 src/chrome/help.c:227
 msgid "Preview panel"
 msgstr "Panneau Aperçu"
 
-#: src/chrome/help.c:191 src/chrome/help.c:192 src/chrome/help.c:193
+#: src/chrome/help.c:201 src/chrome/help.c:202 src/chrome/help.c:203
 msgid "Scroll a line down / up"
 msgstr "Défiler d’une ligne vers le bas / le haut"
 
-#: src/chrome/help.c:194 src/chrome/help.c:195
+#: src/chrome/help.c:204 src/chrome/help.c:205
 msgid "Scroll a page down / up"
 msgstr "Défiler d’une page vers le bas / le haut"
 
-#: src/chrome/help.c:196 src/chrome/help.c:197 src/chrome/help.c:198
-#: src/chrome/help.c:199
+#: src/chrome/help.c:206 src/chrome/help.c:207 src/chrome/help.c:208
+#: src/chrome/help.c:209
 msgid "Jump to the start / end of the file"
 msgstr "Aller au début / à la fin du fichier"
 
-#: src/chrome/help.c:200
+#: src/chrome/help.c:210
 msgid "Search in the file (n / N: next / previous match)"
 msgstr "Rechercher dans le fichier (n / N : occurrence suivante / précédente)"
 
-#: src/chrome/help.c:201
+#: src/chrome/help.c:211
 msgid ""
 "Search in the file (Enter / F3: next match, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
@@ -1437,11 +1485,11 @@ msgstr ""
 "Rechercher dans le fichier (Enter / F3 : occurrence suivante, Shift+Enter / "
 "Shift+F3 : précédente, Esc : fermer)"
 
-#: src/chrome/help.c:204
+#: src/chrome/help.c:214
 msgid "Open the previewed file in the dedicated editor panel"
 msgstr "Ouvrir le fichier en aperçu dans le panneau d’édition dédié"
 
-#: src/chrome/help.c:205
+#: src/chrome/help.c:215
 msgid ""
 "Show the previewed file in the dedicated editor panel (focus stays in the "
 "viewer)"
@@ -1449,11 +1497,11 @@ msgstr ""
 "Afficher le fichier en aperçu dans le panneau d’édition dédié (le focus "
 "reste dans l’aperçu)"
 
-#: src/chrome/help.c:206
+#: src/chrome/help.c:216
 msgid "Open the current file in the editor (text files only)"
 msgstr "Ouvrir le fichier courant dans l’éditeur (fichiers texte uniquement)"
 
-#: src/chrome/help.c:207
+#: src/chrome/help.c:217
 msgid ""
 "Toggle rendered preview / raw view (documents, tables, data tree / text, "
 "diffs, logs, archives, certificates, images, PDF, video, audio)"
@@ -1462,7 +1510,7 @@ msgstr ""
 "données / texte, diffs, journaux, archives, certificats, images, PDF, vidéo, "
 "audio)"
 
-#: src/chrome/help.c:208
+#: src/chrome/help.c:218
 msgid ""
 "Show / hide the tagbar: headings of a Markdown, HTML, Org, Word, "
 "OpenDocument or EPUB preview, the bookmarks of a PDF, or the symbols of "
@@ -1476,35 +1524,35 @@ msgstr ""
 "tout, Esc revient, q masque ; dedans, les touches de déplacement et de "
 "recherche du mode)"
 
-#: src/chrome/help.c:209
+#: src/chrome/help.c:219
 msgid ""
 "Zoom image, PDF or slides in / out / to the fitted size (also Ctrl+wheel)"
 msgstr ""
 "Agrandir / réduire / ajuster l’image, le PDF ou les diapositives (aussi "
 "Ctrl+molette)"
 
-#: src/chrome/help.c:210
+#: src/chrome/help.c:220
 msgid "On an image: Copy Image to the clipboard"
 msgstr "Sur une image : copier l’image dans le presse-papiers"
 
-#: src/chrome/help.c:211
+#: src/chrome/help.c:221
 msgid "PDF: next / previous page; mailbox: next / previous message"
 msgstr ""
 "PDF : page suivante / précédente ; boîte mail : message suivant / précédent"
 
-#: src/chrome/help.c:212
+#: src/chrome/help.c:222
 msgid "Play / pause active video or audio preview"
 msgstr "Lecture / pause de l’aperçu vidéo ou audio actif"
 
-#: src/chrome/help.c:213
+#: src/chrome/help.c:223
 msgid "Video: seek 5 seconds back / forward (also in the explorer)"
 msgstr "Vidéo : reculer / avancer de 5 secondes (aussi dans l’explorateur)"
 
-#: src/chrome/help.c:214 src/chrome/help.c:218 src/chrome/help.c:219
+#: src/chrome/help.c:224 src/chrome/help.c:228 src/chrome/help.c:229
 msgid "Org-mode"
 msgstr "Org-mode"
 
-#: src/chrome/help.c:214
+#: src/chrome/help.c:224
 msgid ""
 "In Org view: Fold/unfold heading or cycle global visibility (Overview -> "
 "Contents -> Show All)"
@@ -1512,7 +1560,7 @@ msgstr ""
 "En vue Org : replier / déplier le titre ou changer la visibilité globale "
 "(Overview -> Contents -> Show All)"
 
-#: src/chrome/help.c:215
+#: src/chrome/help.c:225
 msgid ""
 "JSON, XML, TOML, YAML: fold or open the block at the cursor / cycle the "
 "level (outer members, two levels, all open)"
@@ -1520,16 +1568,16 @@ msgstr ""
 "JSON, XML, TOML, YAML : replier ou déplier le bloc sous le curseur / changer "
 "de niveau (membres de premier niveau, deux niveaux, tout déplié)"
 
-#: src/chrome/help.c:216
+#: src/chrome/help.c:226
 msgctxt "key"
 msgid "Click a ▾ / ▸ twisty"
 msgstr "Clic sur une flèche ▾ / ▸"
 
-#: src/chrome/help.c:216
+#: src/chrome/help.c:226
 msgid "Data tree (JSON, XML...): fold or open the block"
 msgstr "Arbre de données (JSON, XML...) : replier ou déplier le bloc"
 
-#: src/chrome/help.c:217
+#: src/chrome/help.c:227
 msgid ""
 "JSON, XML, TOML, YAML: copy the path of the value at the cursor (shown in "
 "the preview bar)"
@@ -1537,7 +1585,7 @@ msgstr ""
 "JSON, XML, TOML, YAML : copier le chemin de la valeur sous le curseur "
 "(affiché dans la barre de l’aperçu)"
 
-#: src/chrome/help.c:218
+#: src/chrome/help.c:228
 msgid ""
 "In Org view: Cycle TODO keyword (#+TODO, default TODO -> DONE) / toggle "
 "checkbox"
@@ -1545,35 +1593,35 @@ msgstr ""
 "En vue Org : changer le mot-clé TODO (#+TODO, par défaut TODO -> DONE) / "
 "cocher la case"
 
-#: src/chrome/help.c:219
+#: src/chrome/help.c:229
 msgctxt "key"
 msgid "Click heading/todo/box"
 msgstr "Clic sur titre / TODO / case"
 
-#: src/chrome/help.c:219
+#: src/chrome/help.c:229
 msgid "Interactive click: toggle fold, cycle TODO, toggle checkbox, open link"
 msgstr ""
 "Clic interactif : replier / déplier, changer le TODO, cocher la case, ouvrir "
 "le lien"
 
-#: src/chrome/help.c:220 src/chrome/help.c:221 src/chrome/help.c:222
-#: src/chrome/help.c:223 src/chrome/help.c:224 src/chrome/help.c:225
-#: src/chrome/help.c:226 src/chrome/help.c:227 src/chrome/help.c:228
+#: src/chrome/help.c:230 src/chrome/help.c:231 src/chrome/help.c:232
+#: src/chrome/help.c:233 src/chrome/help.c:234 src/chrome/help.c:235
+#: src/chrome/help.c:236 src/chrome/help.c:237 src/chrome/help.c:238
 msgid "Editor tabs"
 msgstr "Onglets d’édition"
 
-#: src/chrome/help.c:220
+#: src/chrome/help.c:230
 msgid "Save the file open in the current editor tab"
 msgstr "Enregistrer le fichier ouvert dans l’onglet d’édition courant"
 
-#: src/chrome/help.c:221
+#: src/chrome/help.c:231
 msgid ""
 "Close the current editor tab (asks when unsaved; a bullet marks changed tabs)"
 msgstr ""
 "Fermer l’onglet d’édition courant (demande s’il n’est pas enregistré ; une "
 "pastille marque les onglets modifiés)"
 
-#: src/chrome/help.c:222
+#: src/chrome/help.c:232
 msgid ""
 "Move active editor tab right / left / down / up (Right from the main panel: "
 "dedicated panel; Left from it: dock back; the other way round when the "
@@ -1583,12 +1631,12 @@ msgstr ""
 "(Right depuis le panneau principal : panneau dédié ; Left depuis celui-ci : "
 "le ré-ancrer ; l’inverse quand les panneaux sont échangés)"
 
-#: src/chrome/help.c:223
+#: src/chrome/help.c:233
 msgctxt "key"
 msgid "Drag tab header"
 msgstr "Glisser l’en-tête d’onglet"
 
-#: src/chrome/help.c:223
+#: src/chrome/help.c:233
 msgid ""
 "Drop on a tab bar to move the tab there, near an editor edge to split that "
 "side"
@@ -1596,22 +1644,22 @@ msgstr ""
 "Déposer sur une barre d’onglets pour y déplacer l’onglet, près d’un bord "
 "d’éditeur pour scinder ce côté"
 
-#: src/chrome/help.c:224
+#: src/chrome/help.c:234
 msgctxt "key"
 msgid "Shift+drag tab header"
 msgstr "Shift+glisser l’en-tête d’onglet"
 
-#: src/chrome/help.c:224
+#: src/chrome/help.c:234
 msgid "Drop on another editor to swap places with the tab shown there"
 msgstr ""
 "Déposer sur un autre éditeur pour échanger sa place avec l’onglet affiché"
 
-#: src/chrome/help.c:225
+#: src/chrome/help.c:235
 msgctxt "key"
 msgid "Right-click tab header"
 msgstr "Clic droit sur l’en-tête d’onglet"
 
-#: src/chrome/help.c:225
+#: src/chrome/help.c:235
 msgid ""
 "Context menu to change mode, show line numbers, wrap lines, move, split, or "
 "close the editor tab"
@@ -1619,12 +1667,12 @@ msgstr ""
 "Menu contextuel pour changer de mode, afficher les numéros de ligne, "
 "renvoyer les lignes, déplacer, scinder ou fermer l’onglet d’édition"
 
-#: src/chrome/help.c:226
+#: src/chrome/help.c:236
 msgctxt "key"
 msgid "Middle-click tab header"
 msgstr "Clic du milieu sur l’en-tête d’onglet"
 
-#: src/chrome/help.c:226
+#: src/chrome/help.c:236
 msgid ""
 "Close the tab (editor, References and Search tabs; asks first when there are "
 "unsaved changes)"
@@ -1632,13 +1680,13 @@ msgstr ""
 "Fermer l’onglet (onglets d’édition, Références et Recherche ; demande "
 "d’abord s’il y a des modifications non enregistrées)"
 
-#: src/chrome/help.c:227
+#: src/chrome/help.c:237
 msgid "Rename current text buffer (F2 only in Emacs / Org-mode tabs)"
 msgstr ""
 "Renommer le tampon de texte courant (F2 seulement dans les onglets Emacs / "
 "Org-mode)"
 
-#: src/chrome/help.c:228
+#: src/chrome/help.c:238
 msgid ""
 "Show or hide line numbers in the current editor tab (:set number / M-x "
 "display-line-numbers-mode)"
@@ -1646,16 +1694,16 @@ msgstr ""
 "Afficher ou masquer les numéros de ligne dans l’onglet d’édition courant "
 "(:set number / M-x display-line-numbers-mode)"
 
-#: src/chrome/help.c:229 src/chrome/help.c:230 src/chrome/help.c:231
-#: src/chrome/help.c:232 src/chrome/help.c:233 src/chrome/help.c:234
-#: src/chrome/help.c:235 src/chrome/help.c:236 src/chrome/help.c:237
-#: src/chrome/help.c:238 src/chrome/help.c:239 src/chrome/help.c:240
-#: src/chrome/help.c:241 src/chrome/help.c:242 src/chrome/help.c:243
-#: src/chrome/help.c:244 src/chrome/help.c:245
+#: src/chrome/help.c:239 src/chrome/help.c:240 src/chrome/help.c:241
+#: src/chrome/help.c:242 src/chrome/help.c:243 src/chrome/help.c:244
+#: src/chrome/help.c:245 src/chrome/help.c:246 src/chrome/help.c:247
+#: src/chrome/help.c:248 src/chrome/help.c:249 src/chrome/help.c:250
+#: src/chrome/help.c:251 src/chrome/help.c:252 src/chrome/help.c:253
+#: src/chrome/help.c:254 src/chrome/help.c:255
 msgid "Org editor"
 msgstr "Éditeur Org"
 
-#: src/chrome/help.c:229
+#: src/chrome/help.c:239
 msgid ""
 "Cycle heading / drawer / block folding, next table cell, <s block; global "
 "visibility"
@@ -1663,15 +1711,15 @@ msgstr ""
 "Replier / déplier titre, tiroir ou bloc, cellule suivante du tableau, bloc "
 "<s ; visibilité globale"
 
-#: src/chrome/help.c:230
+#: src/chrome/help.c:240
 msgid "New heading or list item (TODO heading / checkbox item)"
 msgstr "Nouveau titre ou élément de liste (titre TODO / élément à case)"
 
-#: src/chrome/help.c:231
+#: src/chrome/help.c:241
 msgid "New heading (TODO heading) after the current subtree"
 msgstr "Nouveau titre (titre TODO) après le sous-arbre courant"
 
-#: src/chrome/help.c:232
+#: src/chrome/help.c:242
 msgid ""
 "Promote / demote heading (subtree), indent list item, move (insert / delete) "
 "table column"
@@ -1679,78 +1727,78 @@ msgstr ""
 "Remonter / abaisser le titre (sous-arbre), indenter l’élément de liste, "
 "déplacer (insérer / supprimer) une colonne du tableau"
 
-#: src/chrome/help.c:233
+#: src/chrome/help.c:243
 msgid "Move subtree, list item or table row (delete / insert table row)"
 msgstr ""
 "Déplacer le sous-arbre, l’élément de liste ou la ligne du tableau "
 "(supprimer / insérer une ligne)"
 
-#: src/chrome/help.c:234
+#: src/chrome/help.c:244
 msgid "Cycle TODO keyword or list bullet; previous / next day on a timestamp"
 msgstr ""
 "Changer le mot-clé TODO ou la puce de liste ; jour précédent / suivant sur "
 "un horodatage"
 
-#: src/chrome/help.c:235
+#: src/chrome/help.c:245
 msgid "Raise / lower priority; change the timestamp field under the cursor"
 msgstr ""
 "Augmenter / baisser la priorité ; changer le champ d’horodatage sous le "
 "curseur"
 
-#: src/chrome/help.c:236
+#: src/chrome/help.c:246
 msgid "Next table row / toggle the checkbox"
 msgstr "Ligne suivante du tableau / cocher la case"
 
-#: src/chrome/help.c:237
+#: src/chrome/help.c:247
 msgid "Context action (checkbox, table, tags) / cycle TODO / set priority"
 msgstr ""
 "Action contextuelle (case, tableau, étiquettes) / changer le TODO / fixer la "
 "priorité"
 
-#: src/chrome/help.c:238
+#: src/chrome/help.c:248
 msgid "Schedule / deadline (today, +3, +2w, mon, 2026-11-02 10:00, none)"
 msgstr "Planifier / échéance (today, +3, +2w, mon, 2026-11-02 10:00, none)"
 
-#: src/chrome/help.c:239
+#: src/chrome/help.c:249
 msgid "Insert active / inactive timestamp, set tags"
 msgstr "Insérer un horodatage actif / inactif, fixer les étiquettes"
 
-#: src/chrome/help.c:240
+#: src/chrome/help.c:250
 msgid "Insert a timestamp with the time of day"
 msgstr "Insérer un horodatage avec l’heure"
 
-#: src/chrome/help.c:241
+#: src/chrome/help.c:251
 msgid "Clock in / clock out (LOGBOOK drawer)"
 msgstr "Démarrer / arrêter le chrono (tiroir LOGBOOK)"
 
-#: src/chrome/help.c:242
+#: src/chrome/help.c:252
 msgid "Insert link / open link (URL, file:, *Heading, #id)"
 msgstr "Insérer un lien / ouvrir un lien (URL, file:, *Titre, #id)"
 
-#: src/chrome/help.c:243
+#: src/chrome/help.c:253
 msgid "Next / previous visible heading, same level, parent"
 msgstr "Titre visible suivant / précédent, même niveau, parent"
 
-#: src/chrome/help.c:244
+#: src/chrome/help.c:254
 msgid "List item or table rule / toggle heading / update cookies"
 msgstr ""
 "Élément de liste ou filet de tableau / basculer en titre / mettre à jour les "
 "compteurs"
 
-#: src/chrome/help.c:245
+#: src/chrome/help.c:255
 msgid "Sparse tree of open TODO entries / of a regexp"
 msgstr "Arbre filtré des entrées TODO ouvertes / d’une expression régulière"
 
-#: src/chrome/help.c:247 src/chrome/help.c:248
+#: src/chrome/help.c:257 src/chrome/help.c:258
 msgid "Editor: Mode switching"
 msgstr "Éditeur : changement de mode"
 
-#: src/chrome/help.c:247
+#: src/chrome/help.c:257
 msgctxt "key"
 msgid "Right-click on the tab"
 msgstr "Clic droit sur l’onglet"
 
-#: src/chrome/help.c:247
+#: src/chrome/help.c:257
 msgid ""
 "Switch the tab between Notepad, Emacs, and Vim modes (the menu shows the "
 "current one)"
@@ -1758,25 +1806,26 @@ msgstr ""
 "Passer l’onglet en mode Notepad, Emacs ou Vim (le menu indique le mode "
 "actuel)"
 
-#: src/chrome/help.c:248
+#: src/chrome/help.c:258
 msgid ""
 "In Emacs minibuffer: turn Org-mode editing on / off (also for .org files)"
 msgstr ""
 "Dans le minibuffer Emacs : activer / désactiver l’édition Org-mode (aussi "
 "pour les fichiers .org)"
 
-#: src/chrome/help.c:250 src/chrome/help.c:251 src/chrome/help.c:252
-#: src/chrome/help.c:253 src/chrome/help.c:254 src/chrome/help.c:255
-#: src/chrome/help.c:256 src/chrome/help.c:257 src/chrome/help.c:258
-#: src/chrome/help.c:259 src/chrome/help.c:260
+#: src/chrome/help.c:260 src/chrome/help.c:261 src/chrome/help.c:262
+#: src/chrome/help.c:263 src/chrome/help.c:264 src/chrome/help.c:265
+#: src/chrome/help.c:266 src/chrome/help.c:267 src/chrome/help.c:268
+#: src/chrome/help.c:269 src/chrome/help.c:270 src/chrome/help.c:271
+#: src/chrome/help.c:272
 msgid "Editor: Notepad mode"
 msgstr "Éditeur : mode Notepad"
 
-#: src/chrome/help.c:250
+#: src/chrome/help.c:260
 msgid "Cut, copy, and paste text to system clipboard"
 msgstr "Couper, copier et coller du texte via le presse-papiers du système"
 
-#: src/chrome/help.c:251
+#: src/chrome/help.c:261
 msgid ""
 "Find / Replace, case ignored (Enter / F3: next, Shift+Enter / Shift+F3: "
 "previous, Esc: close)"
@@ -1784,41 +1833,58 @@ msgstr ""
 "Rechercher / remplacer, sans tenir compte de la casse (Enter / F3 : suivant, "
 "Shift+Enter / Shift+F3 : précédent, Esc : fermer)"
 
-#: src/chrome/help.c:252
+#: src/chrome/help.c:262
 msgid "Align paragraph: Left, Center, Right, Justify"
 msgstr "Aligner le paragraphe : gauche, centre, droite, justifié"
 
-#: src/chrome/help.c:253
+#: src/chrome/help.c:263
 msgid "Undo / Redo text changes (also Ctrl+Shift+Z)"
 msgstr "Annuler / rétablir les modifications (aussi Ctrl+Shift+Z)"
 
-#: src/chrome/help.c:254
+#: src/chrome/help.c:264
 msgid "Save file / Save As with chosen file name prompt"
 msgstr "Enregistrer / enregistrer sous avec saisie du nom de fichier"
 
-#: src/chrome/help.c:255
+#: src/chrome/help.c:265
 msgid "Go to line number in document"
 msgstr "Aller à un numéro de ligne du document"
 
-#: src/chrome/help.c:256
+#: src/chrome/help.c:266
 msgid "Go to the definition / declaration of the identifier (code files)"
 msgstr ""
 "Aller à la définition / déclaration de l’identifiant (fichiers de code)"
 
-#: src/chrome/help.c:257
+#: src/chrome/help.c:267
 msgid "Back / forward through the definition jumps"
 msgstr "Reculer / avancer dans les sauts vers les définitions"
 
-#: src/chrome/help.c:258
+#: src/chrome/help.c:268
 msgid "Help card of the identifier / signature of the call (code files)"
 msgstr ""
 "Fiche d’aide de l’identifiant / signature de l’appel (fichiers de code)"
 
-#: src/chrome/help.c:259
-msgid "References (References tab) / symbols of the file"
-msgstr "Références (onglet Références) / symboles du fichier"
+#: src/chrome/help.c:269
+msgid ""
+"References (References tab) / symbols of the file / symbols of the project"
+msgstr ""
+"Références (onglet Références) / symboles du fichier / symboles du projet"
 
-#: src/chrome/help.c:260 src/chrome/help.c:301
+#: src/chrome/help.c:270
+msgid ""
+"Problems panel (LSP diagnostics) / next / previous diagnostic in the file"
+msgstr ""
+"Onglet Problèmes (diagnostics LSP) / diagnostic suivant / précédent dans le "
+"fichier"
+
+#: src/chrome/help.c:271
+msgid ""
+"Autocompletion popover (LSP or buffer words) / rename symbol across files "
+"(LSP)"
+msgstr ""
+"Fenêtre d’autocomplétion (LSP ou mots du tampon) / renommer le symbole dans "
+"tous les fichiers (LSP)"
+
+#: src/chrome/help.c:272 src/chrome/help.c:316
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (Enter "
 "goes, s sorts, c collapses / expands all, Esc back, q hides; in it, the "
@@ -1828,23 +1894,23 @@ msgstr ""
 "du texte (Enter y va, s trie, c replie / déplie tout, Esc revient, q "
 "masque ; dedans, les touches de déplacement et de recherche du mode)"
 
-#: src/chrome/help.c:262 src/chrome/help.c:263 src/chrome/help.c:264
-#: src/chrome/help.c:265 src/chrome/help.c:266 src/chrome/help.c:267
-#: src/chrome/help.c:268 src/chrome/help.c:269 src/chrome/help.c:270
-#: src/chrome/help.c:271 src/chrome/help.c:272 src/chrome/help.c:273
 #: src/chrome/help.c:274 src/chrome/help.c:275 src/chrome/help.c:276
 #: src/chrome/help.c:277 src/chrome/help.c:278 src/chrome/help.c:279
-#: src/chrome/help.c:280 src/chrome/help.c:281
+#: src/chrome/help.c:280 src/chrome/help.c:281 src/chrome/help.c:282
+#: src/chrome/help.c:283 src/chrome/help.c:284 src/chrome/help.c:285
+#: src/chrome/help.c:286 src/chrome/help.c:287 src/chrome/help.c:288
+#: src/chrome/help.c:289 src/chrome/help.c:290 src/chrome/help.c:291
+#: src/chrome/help.c:292 src/chrome/help.c:293 src/chrome/help.c:294
 msgid "Editor: Emacs mode"
 msgstr "Éditeur : mode Emacs"
 
-#: src/chrome/help.c:262
+#: src/chrome/help.c:274
 msgid "Save buffer / Write file (Save As with chosen file name in minibuffer)"
 msgstr ""
 "Enregistrer le tampon / écrire le fichier (enregistrer sous avec le nom "
 "saisi dans le minibuffer)"
 
-#: src/chrome/help.c:263
+#: src/chrome/help.c:275
 msgid ""
 "Split view: the file in a second window below / to the right (own point, "
 "shared text and undo)"
@@ -1852,7 +1918,7 @@ msgstr ""
 "Vue scindée : le fichier dans une seconde fenêtre en dessous / à droite "
 "(point propre, texte et annulation partagés)"
 
-#: src/chrome/help.c:264
+#: src/chrome/help.c:276
 msgid ""
 "Delete this window / delete the other windows of the file (the other windows "
 "keep the changes)"
@@ -1860,19 +1926,19 @@ msgstr ""
 "Supprimer cette fenêtre / les autres fenêtres du fichier (les autres "
 "fenêtres gardent les modifications)"
 
-#: src/chrome/help.c:265
+#: src/chrome/help.c:277
 msgid "Kill region (cut), kill ring save (copy), yank (paste)"
 msgstr "Kill region (couper), kill ring save (copier), yank (coller)"
 
-#: src/chrome/help.c:266
+#: src/chrome/help.c:278
 msgid "Delete char, kill word forward, kill line"
 msgstr "Supprimer le caractère, tuer le mot suivant, tuer la ligne"
 
-#: src/chrome/help.c:267
+#: src/chrome/help.c:279
 msgid "Set mark (select text region; twice or C-g cancels)"
 msgstr "Poser la marque (sélectionner une région ; deux fois ou C-g annule)"
 
-#: src/chrome/help.c:268
+#: src/chrome/help.c:280
 msgid ""
 "Incremental search: again for next / previous (wraps), DEL undo step, C-w "
 "add word, RET stop, C-g back"
@@ -1880,52 +1946,61 @@ msgstr ""
 "Recherche incrémentale : à nouveau pour suivant / précédent (boucle), DEL "
 "annule une étape, C-w ajoute le mot, RET arrête, C-g revient"
 
-#: src/chrome/help.c:269
+#: src/chrome/help.c:281
 msgid "Query replace words or phrases in minibuffer"
 msgstr "Remplacement interactif de mots ou de phrases dans le minibuffer"
 
-#: src/chrome/help.c:270
+#: src/chrome/help.c:282
 msgid "Fill paragraph (format and wrap text to 72 columns)"
 msgstr ""
 "Remplir le paragraphe (mettre en forme et couper le texte à 72 colonnes)"
 
-#: src/chrome/help.c:271
+#: src/chrome/help.c:283
 msgid "Uppercase, lowercase, capitalize word"
 msgstr "Mot en majuscules, en minuscules, avec majuscule initiale"
 
-#: src/chrome/help.c:272
+#: src/chrome/help.c:284
 msgid "Undo / Redo text changes (also C-_ / M-_)"
 msgstr "Annuler / rétablir les modifications (aussi C-_ / M-_)"
 
-#: src/chrome/help.c:273
+#: src/chrome/help.c:285
 msgid "Move cursor forward / backward / next line / previous line"
 msgstr ""
 "Déplacer le curseur en avant / en arrière / ligne suivante / ligne précédente"
 
-#: src/chrome/help.c:274
+#: src/chrome/help.c:286
 msgid "Move forward / backward word, line start / line end"
 msgstr "Mot suivant / précédent, début / fin de ligne"
 
-#: src/chrome/help.c:275
+#: src/chrome/help.c:287
 msgid "Goto line prompt in minibuffer"
 msgstr "Aller à une ligne saisie dans le minibuffer"
 
-#: src/chrome/help.c:276
+#: src/chrome/help.c:288
 msgid "Go to the definition / declaration (code files), back, forward"
 msgstr ""
 "Aller à la définition / déclaration (fichiers de code), reculer, avancer"
 
-#: src/chrome/help.c:277
+#: src/chrome/help.c:289
 msgid "Help card of the identifier at point (signatures go to the echo area)"
 msgstr ""
 "Fiche d’aide de l’identifiant au point (les signatures vont dans la zone "
 "d’écho)"
 
-#: src/chrome/help.c:278
-msgid "References (References tab) / symbols of the buffer (imenu)"
-msgstr "Références (onglet Références) / symboles du tampon (imenu)"
+#: src/chrome/help.c:290
+msgid ""
+"References (References tab) / symbols of the buffer (imenu) / symbols of the "
+"project"
+msgstr ""
+"Références (onglet Références) / symboles du tampon (imenu) / symboles du "
+"projet"
 
-#: src/chrome/help.c:279
+#: src/chrome/help.c:291
+msgid "Next / previous diagnostic in the buffer / autocompletion at point"
+msgstr ""
+"Diagnostic suivant / précédent dans le tampon / autocomplétion au point"
+
+#: src/chrome/help.c:292
 msgid ""
 "Show / hide the tagbar: symbols or Markdown headings beside the text (RET "
 "goes, s sorts, c collapses / expands all, Esc back, q hides; in it, the "
@@ -1935,12 +2010,15 @@ msgstr ""
 "du texte (RET y va, s trie, c replie / déplie tout, Esc revient, q masque ; "
 "dedans, les touches de déplacement et de recherche du mode)"
 
-#: src/chrome/help.c:280
-msgid "Execute command (e.g. set-justification-center, goto-line, save-buffer)"
+#: src/chrome/help.c:293
+msgid ""
+"Execute command (e.g. flymake-show-buffer-diagnostics, lsp-rename, revert-"
+"buffer, auto-revert-mode)"
 msgstr ""
-"Exécuter une commande (ex. set-justification-center, goto-line, save-buffer)"
+"Exécuter une commande (ex. flymake-show-buffer-diagnostics, lsp-rename, "
+"revert-buffer, auto-revert-mode)"
 
-#: src/chrome/help.c:281
+#: src/chrome/help.c:294
 msgid ""
 "Complete the command, tag or *Heading link (lists candidates) / quit the "
 "prompt"
@@ -1948,20 +2026,20 @@ msgstr ""
 "Compléter la commande, l’étiquette ou le lien *Titre (liste les candidats) / "
 "quitter la saisie"
 
-#: src/chrome/help.c:283 src/chrome/help.c:284 src/chrome/help.c:285
-#: src/chrome/help.c:286 src/chrome/help.c:287 src/chrome/help.c:288
-#: src/chrome/help.c:289 src/chrome/help.c:290 src/chrome/help.c:291
-#: src/chrome/help.c:292 src/chrome/help.c:293 src/chrome/help.c:294
-#: src/chrome/help.c:295 src/chrome/help.c:296 src/chrome/help.c:297
-#: src/chrome/help.c:298 src/chrome/help.c:299 src/chrome/help.c:300
-#: src/chrome/help.c:301 src/chrome/help.c:302 src/chrome/help.c:303
-#: src/chrome/help.c:304 src/chrome/help.c:305 src/chrome/help.c:306
-#: src/chrome/help.c:307 src/chrome/help.c:308 src/chrome/help.c:309
-#: src/chrome/help.c:310
+#: src/chrome/help.c:296 src/chrome/help.c:297 src/chrome/help.c:298
+#: src/chrome/help.c:299 src/chrome/help.c:300 src/chrome/help.c:301
+#: src/chrome/help.c:302 src/chrome/help.c:303 src/chrome/help.c:304
+#: src/chrome/help.c:305 src/chrome/help.c:306 src/chrome/help.c:307
+#: src/chrome/help.c:308 src/chrome/help.c:309 src/chrome/help.c:310
+#: src/chrome/help.c:311 src/chrome/help.c:312 src/chrome/help.c:313
+#: src/chrome/help.c:314 src/chrome/help.c:315 src/chrome/help.c:316
+#: src/chrome/help.c:317 src/chrome/help.c:318 src/chrome/help.c:319
+#: src/chrome/help.c:320 src/chrome/help.c:321 src/chrome/help.c:322
+#: src/chrome/help.c:323 src/chrome/help.c:324 src/chrome/help.c:325
 msgid "Editor: Vim mode"
 msgstr "Éditeur : mode Vim"
 
-#: src/chrome/help.c:283
+#: src/chrome/help.c:296
 msgid ""
 "Operators d c y > < = g~ gu gU g? gq with any motion or text object (dd, cc, "
 "yy... on lines)"
@@ -1969,80 +2047,80 @@ msgstr ""
 "Opérateurs d c y > < = g~ gu gU g? gq avec tout mouvement ou objet texte "
 "(dd, cc, yy… sur les lignes)"
 
-#: src/chrome/help.c:284
+#: src/chrome/help.c:297
 msgid "Character, line and word motions (counts everywhere)"
 msgstr "Mouvements par caractère, ligne et mot (compteurs partout)"
 
-#: src/chrome/help.c:285
+#: src/chrome/help.c:298
 msgid "Line positions and character finds (; , repeat)"
 msgstr "Positions dans la ligne et recherche de caractère (; , répètent)"
 
-#: src/chrome/help.c:286
+#: src/chrome/help.c:299
 msgid "Document, bracket, paragraph, sentence and screen motions"
 msgstr "Mouvements par document, parenthèse, paragraphe, phrase et écran"
 
-#: src/chrome/help.c:287
+#: src/chrome/help.c:300
 msgid ""
 "Text objects: words, sentences, paragraphs, brackets ( [ { <, quotes, tags"
 msgstr ""
 "Objets texte : mots, phrases, paragraphes, parenthèses ( [ { <, guillemets, "
 "balises"
 
-#: src/chrome/help.c:288
+#: src/chrome/help.c:301
 msgid "Insert / Replace mode; Esc back to Normal ([count] repeats the text)"
 msgstr ""
 "Mode Insertion / Remplacement ; Esc revient en Normal ([count] répète le "
 "texte)"
 
-#: src/chrome/help.c:289
+#: src/chrome/help.c:302
 msgid "Delete word / to line start, indent / unindent the line"
 msgstr ""
 "Supprimer le mot / jusqu’au début de ligne, indenter / désindenter la ligne"
 
-#: src/chrome/help.c:290
+#: src/chrome/help.c:303
 msgid "Insert register x, complete a word, run one Normal command"
 msgstr "Insérer le registre x, compléter un mot, lancer une commande Normal"
 
-#: src/chrome/help.c:291
+#: src/chrome/help.c:304
 msgid ""
 "Delete chars, delete / yank to line end, join, replace, case, add to number"
 msgstr ""
 "Supprimer des caractères, supprimer / copier jusqu’à la fin de ligne, "
 "joindre, remplacer, casse, ajouter à un nombre"
 
-#: src/chrome/help.c:292
+#: src/chrome/help.c:305
 msgid "Put after / before; named registers a-z (A-Z append), 0-9, -, +, _"
 msgstr "Coller après / avant ; registres nommés a-z (A-Z ajoute), 0-9, -, +, _"
 
-#: src/chrome/help.c:293
+#: src/chrome/help.c:306
 msgid "Visual char / line / block, reselect, other end; block I / A / c / $"
 msgstr ""
 "Visuel caractère / ligne / bloc, resélection, autre extrémité ; bloc I / A / "
 "c / $"
 
-#: src/chrome/help.c:294
+#: src/chrome/help.c:307
 msgid "Undo / redo a whole command / repeat the last change"
 msgstr ""
 "Annuler / rétablir une commande entière / répéter la dernière modification"
 
-#: src/chrome/help.c:295
+#: src/chrome/help.c:308
 msgid "Record a macro into register x / run it / run it again"
 msgstr "Enregistrer une macro dans le registre x / la lancer / la relancer"
 
-#: src/chrome/help.c:296
+#: src/chrome/help.c:309
 msgid "Set mark / jump to it (line) / back in the jump list (Tab: forward)"
 msgstr ""
 "Poser une marque / y aller (ligne) / reculer dans la liste des sauts (Tab : "
 "avancer)"
 
-#: src/chrome/help.c:297
+#: src/chrome/help.c:310
 msgid ""
 "Search (Vim regex, incremental, highlighted; :noh hides), word under cursor"
 msgstr ""
 "Rechercher (regex Vim, incrémentale, surlignée ; :noh masque), mot sous le "
 "curseur"
 
-#: src/chrome/help.c:298
+#: src/chrome/help.c:311
 msgid ""
 "Code files: go to the definition / declaration; Ctrl+O / Tab go on across "
 "files"
@@ -2050,50 +2128,67 @@ msgstr ""
 "Fichiers de code : aller à la définition / déclaration ; Ctrl+O / Tab "
 "continuent d’un fichier à l’autre"
 
-#: src/chrome/help.c:299
+#: src/chrome/help.c:312
 msgid "Code files: help card of the identifier under the cursor"
 msgstr "Fichiers de code : fiche d’aide de l’identifiant sous le curseur"
 
-#: src/chrome/help.c:300
-msgid "Code files: references (References tab) / symbols of the file"
+#: src/chrome/help.c:313
+msgid ""
+"Code files: references (References tab) / symbols of the file / symbols of "
+"the project"
 msgstr ""
-"Fichiers de code : références (onglet Références) / symboles du fichier"
+"Fichiers de code : références (onglet Références) / symboles du fichier / "
+"symboles du projet"
 
-#: src/chrome/help.c:302
+#: src/chrome/help.c:314
+msgid ""
+"Code files: Problems panel / next / previous diagnostic / rename symbol "
+"across files (LSP)"
+msgstr ""
+"Fichiers de code : onglet Problèmes / diagnostic suivant / précédent / "
+"renommer le symbole dans tous les fichiers (LSP)"
+
+#: src/chrome/help.c:315
+msgid "Autocompletion popover (LSP or buffer words)"
+msgstr "Fenêtre d’autocomplétion (LSP ou mots du tampon)"
+
+#: src/chrome/help.c:317
 msgid "Substitute (& \\1 \\u \\U \\r); :g/pat/cmd, :v, :&& , & repeat"
 msgstr "Substituer (& \\1 \\u \\U \\r) ; :g/pat/cmd, :v, :&& , & répète"
 
-#: src/chrome/help.c:303
+#: src/chrome/help.c:318
 msgid "Line commands on ranges (%, 'a, '<,'>, /pat/, .+1, $)"
 msgstr "Commandes de ligne sur des plages (%, 'a, '<,'>, /pat/, .+1, $)"
 
-#: src/chrome/help.c:304
+#: src/chrome/help.c:319
 msgid "Sort lines (n i u !), retab, align, list registers / :marks"
 msgstr ""
 "Trier les lignes (n i u !), retab, aligner, lister les registres / :marks"
 
-#: src/chrome/help.c:305
+#: src/chrome/help.c:320
 msgid ""
 "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, "
-"wrap, colorcolumn...)"
+"wrap, autoread, colorcolumn...)"
 msgstr ""
 "Options (shiftwidth, softtabstop, expandtab, ignorecase, hlsearch, number, "
-"wrap, colorcolumn…)"
+"wrap, autoread, colorcolumn…)"
 
-#: src/chrome/help.c:306
+#: src/chrome/help.c:321
 msgid ""
 "Complete a command or :set option, list the matches and cycle through them"
 msgstr ""
 "Compléter une commande ou une option de :set, lister les correspondances et "
 "les parcourir"
 
-#: src/chrome/help.c:307
-msgid "Save (:w file, :saveas), save and close, close discarding changes"
+#: src/chrome/help.c:322
+msgid ""
+"Save (:w! overwrites external changes, :saveas), reload (:e!), check disk, "
+"close discarding changes"
 msgstr ""
-"Enregistrer (:w fichier, :saveas), enregistrer et fermer, fermer sans "
-"enregistrer"
+"Enregistrer (:w! écrase les modifications externes, :saveas), recharger "
+"(:e!), vérifier le disque, fermer sans enregistrer"
 
-#: src/chrome/help.c:308
+#: src/chrome/help.c:323
 msgid ""
 "Split view: the file in a second view below / to the right (own cursor, "
 "shared text and undo)"
@@ -2101,7 +2196,7 @@ msgstr ""
 "Vue scindée : le fichier dans une seconde vue en dessous / à droite (curseur "
 "propre, texte et annulation partagés)"
 
-#: src/chrome/help.c:309
+#: src/chrome/help.c:324
 msgid ""
 "Close the other views of the file / close this view (the other views keep "
 "the changes)"
@@ -2109,35 +2204,35 @@ msgstr ""
 "Fermer les autres vues du fichier / fermer cette vue (les autres vues "
 "gardent les modifications)"
 
-#: src/chrome/help.c:310
+#: src/chrome/help.c:325
 msgid ""
 "Scroll the view (cursor line centered, top, bottom; lines, half pages, pages)"
 msgstr ""
 "Faire défiler la vue (ligne du curseur au centre, en haut, en bas ; lignes, "
 "demi-pages, pages)"
 
-#: src/chrome/help.c:312 src/chrome/help.c:313 src/chrome/help.c:314
-#: src/chrome/help.c:315 src/chrome/help.c:316 src/chrome/help.c:317
-#: src/chrome/help.c:318 src/chrome/help.c:319 src/chrome/help.c:320
-#: src/chrome/help.c:321 src/chrome/help.c:322 src/chrome/help.c:323
-#: src/chrome/help.c:324 src/chrome/help.c:325 src/chrome/help.c:326
 #: src/chrome/help.c:327 src/chrome/help.c:328 src/chrome/help.c:329
 #: src/chrome/help.c:330 src/chrome/help.c:331 src/chrome/help.c:332
 #: src/chrome/help.c:333 src/chrome/help.c:334 src/chrome/help.c:335
 #: src/chrome/help.c:336 src/chrome/help.c:337 src/chrome/help.c:338
 #: src/chrome/help.c:339 src/chrome/help.c:340 src/chrome/help.c:341
 #: src/chrome/help.c:342 src/chrome/help.c:343 src/chrome/help.c:344
-#: src/chrome/help.c:354
+#: src/chrome/help.c:345 src/chrome/help.c:346 src/chrome/help.c:347
+#: src/chrome/help.c:348 src/chrome/help.c:349 src/chrome/help.c:350
+#: src/chrome/help.c:351 src/chrome/help.c:352 src/chrome/help.c:353
+#: src/chrome/help.c:354 src/chrome/help.c:355 src/chrome/help.c:356
+#: src/chrome/help.c:357 src/chrome/help.c:358 src/chrome/help.c:359
+#: src/chrome/help.c:369
 msgid "Global"
 msgstr "Global"
 
-#: src/chrome/help.c:312
+#: src/chrome/help.c:327
 msgid "Switch between virtual workspaces (or click/scroll top-bar minimap)"
 msgstr ""
 "Passer d’un espace de travail virtuel à l’autre (ou cliquer / défiler sur la "
 "minicarte de la barre du haut)"
 
-#: src/chrome/help.c:313
+#: src/chrome/help.c:328
 msgid ""
 "Add a virtual workspace with the default layout (+) or close the current "
 "workspace (-)"
@@ -2145,7 +2240,7 @@ msgstr ""
 "Ajouter un espace de travail virtuel avec la disposition par défaut (+) ou "
 "fermer l’espace courant (-)"
 
-#: src/chrome/help.c:314
+#: src/chrome/help.c:329
 msgid ""
 "Recent folders and files: Enter opens a folder or shows a file (Ctrl+Enter "
 "edits it)"
@@ -2153,7 +2248,7 @@ msgstr ""
 "Dossiers et fichiers récents : Enter ouvre un dossier ou affiche un fichier "
 "(Ctrl+Enter le modifie)"
 
-#: src/chrome/help.c:315
+#: src/chrome/help.c:330
 msgid ""
 "Workspace layouts: preview while moving (Alt+L: next), Enter applies, Escape "
 "restores; Edit Layouts… saves (not in Emacs editor tabs)"
@@ -2162,7 +2257,7 @@ msgstr ""
 "suivante), Enter applique, Escape restaure ; Modifier les dispositions… "
 "enregistre (pas dans les onglets d’édition Emacs)"
 
-#: src/chrome/help.c:316
+#: src/chrome/help.c:331
 msgid ""
 "Previous / next layout in this workspace's layout history (also the arrows "
 "around the top-bar layouts button)"
@@ -2170,7 +2265,7 @@ msgstr ""
 "Disposition précédente / suivante dans l’historique de cet espace de travail "
 "(aussi les flèches autour du bouton de disposition dans la barre du haut)"
 
-#: src/chrome/help.c:317
+#: src/chrome/help.c:332
 msgid ""
 "Preferences: appearance, editor (mode, line numbers, wrap of new tabs, "
 "column line), window size, Auto layout panels, language servers"
@@ -2179,7 +2274,7 @@ msgstr ""
 "des nouveaux onglets, ligne de colonne), taille de la fenêtre, panneaux de "
 "la disposition Auto, serveurs de langage"
 
-#: src/chrome/help.c:318
+#: src/chrome/help.c:333
 msgid ""
 "Preferences on Appearance: pick a theme (applied as you select it), set your "
 "fonts, save, edit or delete your themes"
@@ -2187,14 +2282,14 @@ msgstr ""
 "Préférences, page Apparence : choisir un thème (appliqué dès la sélection), "
 "régler les polices, enregistrer, modifier ou supprimer vos thèmes"
 
-#: src/chrome/help.c:319
+#: src/chrome/help.c:334
 msgid ""
 "Larger / smaller fonts (interface and code), or back to the theme's sizes"
 msgstr ""
 "Polices plus grandes / plus petites (interface et code), ou retour aux "
 "tailles du thème"
 
-#: src/chrome/help.c:320
+#: src/chrome/help.c:335
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it; not in Vim editor tabs)"
@@ -2202,7 +2297,7 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie ; pas dans les onglets d’édition Vim)"
 
-#: src/chrome/help.c:321 src/chrome/help.c:322
+#: src/chrome/help.c:336 src/chrome/help.c:337
 msgid ""
 "Go to a file of the project: type part of its name (Enter shows it, "
 "Ctrl+Enter edits it)"
@@ -2210,7 +2305,7 @@ msgstr ""
 "Aller à un fichier du projet : taper une partie de son nom (Enter l’affiche, "
 "Ctrl+Enter le modifie)"
 
-#: src/chrome/help.c:323
+#: src/chrome/help.c:338
 msgid ""
 "Search the text in every file of the project, on the Notes page in the notes "
 "(results in the Search tab, Enter opens; not in Emacs editor tabs)"
@@ -2219,7 +2314,7 @@ msgstr ""
 "les notes (résultats dans l’onglet Recherche, Enter ouvre ; pas dans les "
 "onglets d’édition Emacs)"
 
-#: src/chrome/help.c:324
+#: src/chrome/help.c:339
 msgid ""
 "In Search in Files: match case / whole word / regular expression / letters "
 "in order"
@@ -2227,7 +2322,7 @@ msgstr ""
 "Dans Rechercher dans les fichiers : respecter la casse / mot entier / "
 "expression régulière / lettres dans l’ordre"
 
-#: src/chrome/help.c:325
+#: src/chrome/help.c:340
 msgid ""
 "In Search in Files: files to include / to exclude (*.c, src/) / include the "
 "files git ignores"
@@ -2235,7 +2330,7 @@ msgstr ""
 "Dans Rechercher dans les fichiers : fichiers à inclure / à exclure (*.c, "
 "src/) / inclure les fichiers ignorés par git"
 
-#: src/chrome/help.c:326
+#: src/chrome/help.c:341
 msgid ""
 "Open a terminal in a new tab (exit the shell to close it; drag tabs to move "
 "or split; not in Vim Insert)"
@@ -2243,20 +2338,20 @@ msgstr ""
 "Ouvrir un terminal dans un nouvel onglet (quitter le shell pour le fermer ; "
 "glisser les onglets pour déplacer ou scinder ; pas en Insertion Vim)"
 
-#: src/chrome/help.c:327
+#: src/chrome/help.c:342
 msgid "Open a terminal in a new pane below the focused one"
 msgstr "Ouvrir un terminal dans un nouveau volet sous celui qui a le focus"
 
-#: src/chrome/help.c:328
+#: src/chrome/help.c:343
 msgid "In a terminal: next / previous tab of its pane"
 msgstr "Dans un terminal : onglet suivant / précédent de son volet"
 
-#: src/chrome/help.c:329
+#: src/chrome/help.c:344
 msgid "In a terminal: copy the selected text / paste the clipboard"
 msgstr ""
 "Dans un terminal : copier le texte sélectionné / coller le presse-papiers"
 
-#: src/chrome/help.c:330
+#: src/chrome/help.c:345
 msgid ""
 "Cycle the keyboard focus between panels (a tagbar on screen comes after its "
 "text)"
@@ -2264,13 +2359,13 @@ msgstr ""
 "Faire passer le focus clavier d’un panneau à l’autre (une barre de symboles "
 "affichée vient après son texte)"
 
-#: src/chrome/help.c:331
+#: src/chrome/help.c:346
 msgid "Focus the next / previous panel (also h / l; from Vim editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant / précédent (aussi h / l ; depuis les onglets "
 "d’édition Vim aussi)"
 
-#: src/chrome/help.c:332
+#: src/chrome/help.c:347
 msgid ""
 "Close the focused editor tab, or the current one on screen (from Vim editor "
 "tabs too; asks when unsaved)"
@@ -2278,19 +2373,19 @@ msgstr ""
 "Fermer l’onglet d’édition qui a le focus, ou celui affiché (depuis les "
 "onglets d’édition Vim aussi ; demande s’il n’est pas enregistré)"
 
-#: src/chrome/help.c:333
+#: src/chrome/help.c:348
 msgid "Focus the next panel (from Emacs and Org-mode editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant (depuis les onglets d’édition Emacs et Org-mode "
 "aussi)"
 
-#: src/chrome/help.c:334
+#: src/chrome/help.c:349
 msgid "Focus the next / previous panel (from Notepad editor tabs too)"
 msgstr ""
 "Focus sur le panneau suivant / précédent (depuis les onglets d’édition "
 "Notepad aussi)"
 
-#: src/chrome/help.c:335 src/chrome/help.c:336 src/chrome/help.c:337
+#: src/chrome/help.c:350 src/chrome/help.c:351 src/chrome/help.c:352
 msgid ""
 "Next / previous tab of the focused notebook (from the explorer: the preview "
 "panel, the focus stays)"
@@ -2298,23 +2393,23 @@ msgstr ""
 "Onglet suivant / précédent du groupe d’onglets qui a le focus (depuis "
 "l’explorateur : le panneau Aperçu, le focus reste)"
 
-#: src/chrome/help.c:338
+#: src/chrome/help.c:353
 msgctxt "key"
 msgid "Git Commits / References / Search"
 msgstr "Commits Git / Références / Recherche"
 
-#: src/chrome/help.c:338
+#: src/chrome/help.c:353
 msgid "The navigation keys of the global mode move in the list (Enter opens)"
 msgstr ""
 "Les touches de navigation du mode global se déplacent dans la liste (Enter "
 "ouvre)"
 
-#: src/chrome/help.c:339
+#: src/chrome/help.c:354
 msgctxt "key"
 msgid "Top bar mode"
 msgstr "Mode de la barre du haut"
 
-#: src/chrome/help.c:339
+#: src/chrome/help.c:354
 msgid ""
 "Global mode: only the Notepad, Vim or Emacs navigation keys in the explorer, "
 "viewer and their search bars (arrows, Home / End, PgUp / PgDn in all); mode "
@@ -2324,11 +2419,11 @@ msgstr ""
 "l’explorateur, l’aperçu et leurs barres de recherche (flèches, Home / End, "
 "PgUp / PgDn partout) ; mode des nouveaux onglets d’édition"
 
-#: src/chrome/help.c:340
+#: src/chrome/help.c:355
 msgid "Toggle fullscreen"
 msgstr "Basculer en plein écran"
 
-#: src/chrome/help.c:341
+#: src/chrome/help.c:356
 msgid ""
 "Open an empty browser tab in the preview panel (needs WebKitGTK 6.0, or "
 "WebView2 on Windows; not in Emacs editor tabs)"
@@ -2336,7 +2431,7 @@ msgstr ""
 "Ouvrir un onglet navigateur vide dans le panneau Aperçu (nécessite WebKitGTK "
 "6.0, ou WebView2 sous Windows ; pas dans les onglets d’édition Emacs)"
 
-#: src/chrome/help.c:342
+#: src/chrome/help.c:357
 msgid ""
 "Stack the terminal pane under the viewer, or put it back beside it (the "
 "explorer panel stays fixed)"
@@ -2344,12 +2439,12 @@ msgstr ""
 "Placer le volet terminal sous l’aperçu, ou le remettre à côté (le panneau "
 "Explorateur reste fixe)"
 
-#: src/chrome/help.c:343
+#: src/chrome/help.c:358
 msgid "Toggle Remote (SSH) machines view in sidebar"
 msgstr ""
 "Afficher / masquer la vue des machines distantes (SSH) dans la barre latérale"
 
-#: src/chrome/help.c:344
+#: src/chrome/help.c:359
 msgid ""
 "User guide in a Help tab (also a click on the top bar's Help button; right "
 "click: this cheat sheet)"
@@ -2357,7 +2452,7 @@ msgstr ""
 "Guide d’utilisation dans un onglet Aide (aussi un clic sur le bouton Aide de "
 "la barre du haut ; clic droit : cet aide-mémoire)"
 
-#: src/chrome/help.c:345 src/chrome/help.c:346
+#: src/chrome/help.c:360 src/chrome/help.c:361
 msgid ""
 "Search every page of the guide (Enter: the sections that hold every word, "
 "Esc: back to the page)"
@@ -2365,7 +2460,7 @@ msgstr ""
 "Rechercher dans toutes les pages du guide (Enter : les sections qui "
 "contiennent tous les mots, Esc : retour à la page)"
 
-#: src/chrome/help.c:347
+#: src/chrome/help.c:362
 msgid ""
 "Search every page of the guide (RET: the sections that hold every word, Esc: "
 "back to the page)"
@@ -2373,16 +2468,16 @@ msgstr ""
 "Rechercher dans toutes les pages du guide (RET : les sections qui "
 "contiennent tous les mots, Esc : retour à la page)"
 
-#: src/chrome/help.c:348 src/chrome/help.c:349
+#: src/chrome/help.c:363 src/chrome/help.c:364
 msgid "Next / previous searched word in the page"
 msgstr "Mot recherché suivant / précédent dans la page"
 
-#: src/chrome/help.c:350 src/chrome/help.c:351 src/chrome/help.c:352
-#: src/chrome/help.c:353
+#: src/chrome/help.c:365 src/chrome/help.c:366 src/chrome/help.c:367
+#: src/chrome/help.c:368
 msgid "Help panel"
 msgstr "Panneau d’aide"
 
-#: src/chrome/help.c:350 src/chrome/help.c:351
+#: src/chrome/help.c:365 src/chrome/help.c:366
 msgid ""
 "Filter the shortcuts: only those that hold every word (Enter / Esc: back to "
 "the list)"
@@ -2390,7 +2485,7 @@ msgstr ""
 "Filtrer les raccourcis : seulement ceux qui contiennent tous les mots "
 "(Enter / Esc : retour à la liste)"
 
-#: src/chrome/help.c:352
+#: src/chrome/help.c:367
 msgid ""
 "Filter the shortcuts: only those that hold every word (RET / Esc: back to "
 "the list)"
@@ -2398,37 +2493,37 @@ msgstr ""
 "Filtrer les raccourcis : seulement ceux qui contiennent tous les mots (RET / "
 "Esc : retour à la liste)"
 
-#: src/chrome/help.c:353
+#: src/chrome/help.c:368
 msgid "Unlock Game Mode in this workspace"
 msgstr "Déverrouiller le mode Jeu dans cet espace de travail"
 
-#: src/chrome/help.c:354
+#: src/chrome/help.c:369
 msgid "Quit"
 msgstr "Quitter"
 
 #. TRANSLATORS: %s is Notepad, Vim or Emacs
-#: src/chrome/help.c:366
+#: src/chrome/help.c:381
 #, c-format
 msgid "(%s mode)"
 msgstr "(mode %s)"
 
-#: src/chrome/help.c:367
+#: src/chrome/help.c:382
 msgid "Keyboard Shortcuts"
 msgstr "Raccourcis clavier"
 
-#: src/chrome/help.c:426
+#: src/chrome/help.c:441
 msgid "No shortcut holds every word of the filter"
 msgstr "Aucun raccourci ne contient tous les mots du filtre"
 
-#: src/chrome/help.c:545
+#: src/chrome/help.c:560
 msgid "Close Help Panel (?)"
 msgstr "Fermer le panneau d’aide (?)"
 
-#: src/chrome/help.c:564
+#: src/chrome/help.c:579
 msgid "Filter shortcuts"
 msgstr "Filtrer les raccourcis"
 
-#: src/chrome/help.c:565
+#: src/chrome/help.c:580
 msgid ""
 "Show only the shortcuts that hold every word (the search key of your mode: "
 "Ctrl+F, / or C-s)"
@@ -2538,7 +2633,7 @@ msgstr "Notepad"
 
 #: src/chrome/new_tab_menu.c:105 src/chrome/topbar.c:735
 #: src/chrome/topbar.c:779 src/formats/card_view.c:589
-#: src/workspace/layout_store.c:208
+#: src/workspace/layout_store.c:215
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3079,10 +3174,10 @@ msgstr "Branche Git du dossier courant — cliquer pour voir les branches"
 msgid "Path of the value at the cursor (y copies it)"
 msgstr "Chemin de la valeur sous le curseur (y le copie)"
 
-#: src/chrome/status_bar.c:491 src/explorer/bookmark_dialog.c:260
+#: src/chrome/status_bar.c:491 src/explorer/bookmark_dialog.c:262
 #: src/explorer/bookmarks.c:204 src/preview/preview_summary.c:256
 #: src/search/deep_search_bookmark.c:68 src/search/deep_search_list.c:410
-#: src/search/deep_search_tab.c:879
+#: src/search/deep_search_tab.c:880
 msgid "Folder"
 msgstr "Dossier"
 
@@ -3210,12 +3305,12 @@ msgid "Modified %s"
 msgstr "Modifié le %s"
 
 #: src/chrome/themes.c:212 src/explorer/bookmarks.c:957
-#: src/explorer/file_actions.c:95 src/explorer/remote.c:597
-#: src/explorer/remote.c:679 src/notes/notes_dialogs.c:409
-#: src/search/deep_search_bookmark.c:122 src/search/deep_search_bookmark.c:141
-#: src/workspace/layouts.c:249 src/workspace/layouts.c:500
-#: src/workspace/session_bookmark.c:62 src/workspace/session_bookmark.c:80
-#: src/workspace/session_bookmark.c:100
+#: src/explorer/file_actions.c:95 src/explorer/remote.c:592
+#: src/explorer/remote.c:611 src/explorer/remote.c:709
+#: src/notes/notes_dialogs.c:409 src/search/deep_search_bookmark.c:122
+#: src/search/deep_search_bookmark.c:141 src/workspace/layouts.c:322
+#: src/workspace/layouts.c:573 src/workspace/session_bookmark.c:62
+#: src/workspace/session_bookmark.c:80 src/workspace/session_bookmark.c:100
 msgid "_Close"
 msgstr "_Fermer"
 
@@ -3223,12 +3318,12 @@ msgstr "_Fermer"
 msgid "Save Theme As"
 msgstr "Enregistrer le thème sous"
 
-#: src/chrome/themes.c:237 src/explorer/bookmarks.c:624
-#: src/explorer/remote.c:324 src/explorer/remote.c:390
-#: src/explorer/remote.c:540 src/jupyter/ipynb_save.c:133
-#: src/notes/notes_actions.c:357 src/notes/notes_actions.c:427
-#: src/search/deep_search_bookmark.c:50 src/workspace/layouts.c:299
-#: src/workspace/session_bookmark.c:14
+#: src/chrome/themes.c:237 src/editor/editor_watch.c:716
+#: src/explorer/bookmarks.c:624 src/explorer/remote.c:325
+#: src/explorer/remote.c:391 src/explorer/remote.c:541
+#: src/jupyter/ipynb_save.c:133 src/notes/notes_actions.c:357
+#: src/notes/notes_actions.c:427 src/search/deep_search_bookmark.c:50
+#: src/workspace/layouts.c:372 src/workspace/session_bookmark.c:14
 msgid "_Save"
 msgstr "_Enregistrer"
 
@@ -3246,7 +3341,7 @@ msgstr "Thème non appliqué"
 msgid "your theme, %s"
 msgstr "votre thème, %s"
 
-#: src/chrome/themes.c:367
+#: src/chrome/themes.c:367 src/code/code_intel.c:533
 msgid "built-in"
 msgstr "intégré"
 
@@ -3267,7 +3362,7 @@ msgid "Interface"
 msgstr "Interface"
 
 #: src/chrome/themes.c:527 src/jupyter/ipynb_tab.c:370
-#: src/workspace/layout_store.c:207
+#: src/workspace/layout_store.c:214
 msgid "Code"
 msgstr "Code"
 
@@ -3333,9 +3428,9 @@ msgstr ""
 "l’enregistrer l’applique (vos thèmes seulement)"
 
 #: src/chrome/themes.c:619 src/chrome/themes.c:791 src/explorer/bookmarks.c:595
-#: src/explorer/remote.c:457 src/explorer/remote.c:564
-#: src/notes/notes_actions.c:570 src/workspace/layouts.c:476
-#: src/workspace/layouts.c:498 src/workspace/layouts.c:571
+#: src/explorer/remote.c:458 src/explorer/remote.c:565
+#: src/notes/notes_actions.c:570 src/workspace/layouts.c:549
+#: src/workspace/layouts.c:571 src/workspace/layouts.c:644
 msgid "_Delete"
 msgstr "_Supprimer"
 
@@ -3370,7 +3465,7 @@ msgid "Theme from Image"
 msgstr "Thème depuis une image"
 
 #: src/chrome/themes.c:682 src/explorer/bookmarks.c:790
-#: src/explorer/file_actions.c:236 src/explorer/remote.c:525
+#: src/explorer/file_actions.c:236 src/explorer/remote.c:526
 #: src/notes/notes_actions.c:124 src/notes/notes_actions.c:253
 msgid "_Create"
 msgstr "_Créer"
@@ -3435,8 +3530,8 @@ msgstr "Principal"
 msgid "Show / Hide Main Panel (Preview and Editor Tabs)"
 msgstr "Afficher / masquer le panneau principal (aperçu et onglets d’édition)"
 
-#: src/chrome/topbar.c:698 src/chrome/topbar.c:777 src/main.c:452
-#: src/workspace/layout_store.c:50
+#: src/chrome/topbar.c:698 src/chrome/topbar.c:777 src/main.c:458
+#: src/workspace/layout_store.c:53
 msgid "Preview"
 msgstr "Aperçu"
 
@@ -3469,7 +3564,7 @@ msgstr ""
 msgid "Show / Hide Terminal Panel (Ctrl+T)"
 msgstr "Afficher / masquer le panneau Terminal (Ctrl+T)"
 
-#: src/chrome/topbar.c:775 src/workspace/layout_store.c:47
+#: src/chrome/topbar.c:775 src/workspace/layout_store.c:50
 msgid "Explorer"
 msgstr "Explorateur"
 
@@ -3678,8 +3773,8 @@ msgid ""
 msgstr ""
 "Repartir aussitôt avec la même durée (ou pour la même heure le lendemain)"
 
-#: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:645
-#: src/search/deep_search_tab.c:1009
+#: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:681
+#: src/search/deep_search_tab.c:1011
 msgid "Stop"
 msgstr "Arrêter"
 
@@ -3719,30 +3814,31 @@ msgstr "Retirer ce minuteur de la barre du haut"
 msgid "Timer %u"
 msgstr "Minuteur %u"
 
-#: src/code/code_help.c:287
+#: src/code/code_help.c:288
 #, c-format
 msgid "No information found for %s"
 msgstr "Aucune information trouvée pour %s"
 
 #. TRANSLATORS: %s is a symbol kind, e.g. "function"
-#: src/code/code_help.c:306
+#: src/code/code_help.c:307
 #, c-format
 msgid "%s declaration"
 msgstr "déclaration (%s)"
 
-#: src/code/code_help.c:316 src/code/code_help.c:331 src/code/code_help.c:426
+#: src/code/code_help.c:317 src/code/code_help.c:344 src/code/code_help.c:437
 msgid "No code information for this file type"
 msgstr "Pas d’informations sur le code pour ce type de fichier"
 
-#: src/code/code_help.c:356 src/code/code_nav.c:469 src/code/code_refs.c:653
+#: src/code/code_help.c:367 src/code/code_nav.c:469 src/code/code_refs.c:761
 msgid "No identifier under the cursor"
 msgstr "Aucun identifiant sous le curseur"
 
-#: src/code/code_help.c:442
+#: src/code/code_help.c:453
 msgid "The cursor is not in a function call"
 msgstr "Le curseur n’est pas dans un appel de fonction"
 
-#: src/code/code_nav.c:108
+#: src/code/code_nav.c:108 src/code/code_workspace_symbols.c:170
+#: src/code/code_workspace_symbols.c:193
 msgid "built-in index"
 msgstr "index intégré"
 
@@ -3814,7 +3910,7 @@ msgstr ""
 msgid "No definition found for %s"
 msgstr "Aucune définition trouvée pour %s"
 
-#: src/code/code_nav.c:428 src/code/code_outline.c:155 src/code/code_refs.c:628
+#: src/code/code_nav.c:428 src/code/code_outline.c:155 src/code/code_refs.c:736
 msgid "language server"
 msgstr "serveur de langage"
 
@@ -3840,8 +3936,8 @@ msgstr "Déclaration de %1$s : %2$s:%3$d (%4$s)"
 msgid "Definition of %1$s: %2$s:%3$d (%4$s)"
 msgstr "Définition de %1$s : %2$s:%3$d (%4$s)"
 
-#: src/code/code_nav.c:455 src/code/code_nav.c:506 src/code/code_refs.c:640
-#: src/code/code_symbols.c:271
+#: src/code/code_nav.c:455 src/code/code_nav.c:506 src/code/code_refs.c:748
+#: src/code/code_rename.c:366 src/code/code_symbols.c:271
 msgid "No code navigation for this file type"
 msgstr "Pas de navigation dans le code pour ce type de fichier"
 
@@ -3916,25 +4012,96 @@ msgid "Targets"
 msgstr "Cibles"
 
 #: src/code/code_outline_tree.c:269 src/formats/elf_info.c:674
-#: src/widgets/outline_pane.c:328 src/widgets/outline_pane.c:937
+#: src/widgets/outline_pane.c:332 src/widgets/outline_pane.c:942
 msgid "Symbols"
 msgstr "Symboles"
 
-#: src/code/code_refs.c:259
+#: src/code/code_problems.c:286
+msgid "No problems detected in this workspace's files"
+msgstr "Aucun problème détecté dans les fichiers de cet espace de travail"
+
+#: src/code/code_problems.c:290 src/editor/editor_modes.c:732
+#: src/latex/latex_errors.c:320 src/preview/preview_formats.c:504
+#, c-format
+msgid "%u error"
+msgid_plural "%u errors"
+msgstr[0] "%u erreur"
+msgstr[1] "%u erreurs"
+
+#: src/code/code_problems.c:291 src/editor/editor_modes.c:733
+#: src/latex/latex_errors.c:323 src/preview/preview_formats.c:508
+#, c-format
+msgid "%u warning"
+msgid_plural "%u warnings"
+msgstr[0] "%u avertissement"
+msgstr[1] "%u avertissements"
+
+#: src/code/code_problems.c:294
+#, c-format
+msgid "%u info"
+msgid_plural "%u infos"
+msgstr[0] "%u info"
+msgstr[1] "%u infos"
+
+#: src/code/code_problems.c:362 src/editor/editor_watch.c:446
+msgid "error"
+msgstr "erreur"
+
+#: src/code/code_problems.c:365
+msgid "warning"
+msgstr "avertissement"
+
+#: src/code/code_problems.c:368
+msgid "info"
+msgstr "info"
+
+#: src/code/code_problems.c:371
+msgid "hint"
+msgstr "suggestion"
+
+#: src/code/code_problems.c:469
+msgid "Errors"
+msgstr "Erreurs"
+
+#: src/code/code_problems.c:475
+msgid "Warnings"
+msgstr "Avertissements"
+
+#: src/code/code_problems.c:481 src/formats/pcap_info.c:378
+msgid "Info"
+msgstr "Info"
+
+#: src/code/code_problems.c:488
+msgid "Filter…"
+msgstr "Filtrer…"
+
+#: src/code/code_problems.c:493
+msgid "Close Problems"
+msgstr "Fermer l’onglet Problèmes"
+
+#: src/code/code_problems.c:516
+msgid "Problems"
+msgstr "Problèmes"
+
+#: src/code/code_problems.c:637
+msgid "No diagnostics in this file"
+msgstr "Aucun diagnostic dans ce fichier"
+
+#: src/code/code_refs.c:304
 #, c-format
 msgid "Close %s"
 msgstr "Fermer %s"
 
-#: src/code/code_refs.c:343
+#: src/code/code_refs.c:404 src/code/code_refs.c:811
 msgid "References"
 msgstr "Références"
 
-#: src/code/code_refs.c:350
+#: src/code/code_refs.c:411
 #, c-format
 msgid "No references to %s found"
 msgstr "Aucune référence à %s trouvée"
 
-#: src/code/code_refs.c:353 src/code/code_refs.c:416
+#: src/code/code_refs.c:414 src/code/code_refs.c:477 src/code/code_rename.c:152
 #: src/preview/dir_preview.c:216
 #, c-format
 msgid "%u file"
@@ -3943,59 +4110,121 @@ msgstr[0] "%u fichier"
 msgstr[1] "%u fichiers"
 
 #. TRANSLATORS: "References to NAME: 12 in 3 files"
-#: src/code/code_refs.c:355
+#: src/code/code_refs.c:416
 #, c-format
 msgid "References to %1$s: %2$u in %3$s"
 msgstr "Références à %1$s : %2$u dans %3$s"
 
-#: src/code/code_refs.c:358
+#: src/code/code_refs.c:419
 msgid ", list cut"
 msgstr ", liste tronquée"
 
 #. TRANSLATORS: %s is where the references come from (a language server name, _("whole words in the project"))
-#: src/code/code_refs.c:365 src/code/code_refs.c:423
-#: src/latex/latex_errors.c:317
+#: src/code/code_refs.c:426 src/code/code_refs.c:484
+#: src/latex/latex_errors.c:363
 #, c-format
 msgid "%s; Enter opens"
 msgstr "%s ; Enter ouvre"
 
-#: src/code/code_refs.c:378
+#: src/code/code_refs.c:439
 #, c-format
 msgid "%1$u reference to %2$s (References tab)"
 msgid_plural "%1$u references to %2$s (References tab)"
 msgstr[0] "%1$u référence à %2$s (onglet Références)"
 msgstr[1] "%1$u références à %2$s (onglet Références)"
 
-#: src/code/code_refs.c:387 src/code/code_refs.c:437
+#: src/code/code_refs.c:448 src/code/code_refs.c:498 src/code/code_refs.c:811
 msgid "Search"
 msgstr "Recherche"
 
-#: src/code/code_refs.c:393
+#: src/code/code_refs.c:454
 #, c-format
 msgid "Searching for %1$s in %2$s…"
 msgstr "Recherche de %1$s dans %2$s…"
 
-#: src/code/code_refs.c:414
+#: src/code/code_refs.c:475
 #, c-format
 msgid "No results for %s"
 msgstr "Aucun résultat pour %s"
 
 #. TRANSLATORS: "QUERY: 12 results in 3 files"
-#: src/code/code_refs.c:418
+#: src/code/code_refs.c:479
 #, c-format
 msgid "%1$s: %2$u result in %3$s"
 msgid_plural "%1$s: %2$u results in %3$s"
 msgstr[0] "%1$s : %2$u résultat dans %3$s"
 msgstr[1] "%1$s : %2$u résultats dans %3$s"
 
-#: src/code/code_refs.c:518
+#: src/code/code_refs.c:626
 msgid "whole words in the project"
 msgstr "mots entiers dans le projet"
 
-#: src/code/code_refs.c:659
+#: src/code/code_refs.c:767
 #, c-format
 msgid "Searching the references of %s..."
 msgstr "Recherche des références de %s…"
+
+#: src/code/code_refs.c:814
+msgid "No search yet — press Ctrl+Shift+F to search in files"
+msgstr ""
+"Aucune recherche pour l’instant — appuyez sur Ctrl+Shift+F pour chercher "
+"dans les fichiers"
+
+#: src/code/code_refs.c:815
+msgid "No references yet — press Shift+F12 on a name in an editor tab"
+msgstr ""
+"Aucune référence pour l’instant — appuyez sur Shift+F12 sur un nom dans un "
+"onglet d’édition"
+
+#: src/code/code_rename.c:151
+#, c-format
+msgid "%u edit"
+msgid_plural "%u edits"
+msgstr[0] "%u modification"
+msgstr[1] "%u modifications"
+
+#: src/code/code_rename.c:155
+#, c-format
+msgid "Renamed “%1$s” to “%2$s” (%3$s in %4$s; %5$u failed)"
+msgstr "« %1$s » renommé en « %2$s » (%3$s dans %4$s ; %5$u en échec)"
+
+#: src/code/code_rename.c:158
+#, c-format
+msgid "Renamed “%1$s” to “%2$s” (%3$s in %4$s)"
+msgstr "« %1$s » renommé en « %2$s » (%3$s dans %4$s)"
+
+#: src/code/code_rename.c:210
+msgid "No rename edits returned by language server"
+msgstr "Le serveur de langage n’a renvoyé aucune modification de renommage"
+
+#: src/code/code_rename.c:281
+msgid "Could not send rename request to language server"
+msgstr "Impossible d’envoyer la demande de renommage au serveur de langage"
+
+#: src/code/code_rename.c:308
+msgid "Rename Symbol"
+msgstr "Renommer le symbole"
+
+#: src/code/code_rename.c:310 src/explorer/file_actions.c:346
+msgid "_Rename"
+msgstr "_Renommer"
+
+#: src/code/code_rename.c:321
+#, c-format
+msgid "New name for “%s”:"
+msgstr "Nouveau nom pour « %s » :"
+
+#: src/code/code_rename.c:344
+msgid "Cannot rename the symbol at the cursor"
+msgstr "Impossible de renommer le symbole sous le curseur"
+
+#: src/code/code_rename.c:370
+msgid "Rename requires a running language server"
+msgstr "Le renommage nécessite un serveur de langage en cours d’exécution"
+
+#: src/code/code_rename.c:388
+msgid "No symbol at the cursor"
+msgstr "Aucun symbole sous le curseur"
 
 #: src/code/code_symbol.c:156
 msgctxt "symbol kind"
@@ -4057,7 +4286,7 @@ msgstr "symbole"
 msgid "Symbols of %s"
 msgstr "Symboles de %s"
 
-#: src/code/code_symbols.c:176
+#: src/code/code_symbols.c:176 src/code/code_workspace_symbols.c:396
 msgid "_Go To"
 msgstr "_Aller"
 
@@ -4066,7 +4295,7 @@ msgid "Filter the symbols by name"
 msgstr "Filtrer les symboles par nom"
 
 #. TRANSLATORS: %2$s is where the symbols come from, e.g. "built-in scanner"
-#: src/code/code_symbols.c:217
+#: src/code/code_symbols.c:217 src/code/code_workspace_symbols.c:112
 #, c-format
 msgid "%1$u symbol (%2$s)"
 msgid_plural "%1$u symbols (%2$s)"
@@ -4081,16 +4310,18 @@ msgstr "Pas d’analyseur de symboles pour ce langage"
 msgid "No symbols found in this file"
 msgstr "Aucun symbole trouvé dans ce fichier"
 
-#: src/code/code_symbols.c:258 src/widgets/outline_pane.c:460
+#: src/code/code_symbols.c:258 src/code/code_workspace_symbols.c:189
+#: src/widgets/outline_pane.c:464
 msgid "declaration"
 msgstr "déclaration"
 
-#: src/code/code_symbols.c:259
+#: src/code/code_symbols.c:259 src/code/code_workspace_symbols.c:262
 #, c-format
 msgid "%1$s · in %2$s"
 msgstr "%1$s · dans %2$s"
 
-#: src/code/code_symbols.c:260 src/search/project_search.c:151
+#: src/code/code_symbols.c:260 src/code/code_workspace_symbols.c:263
+#: src/search/project_search.c:172
 #, c-format
 msgid "in %s"
 msgstr "dans %s"
@@ -4099,6 +4330,28 @@ msgstr "dans %s"
 msgctxt "symbol kind"
 msgid "heading"
 msgstr "titre"
+
+#: src/code/code_workspace_symbols.c:114
+#, c-format
+msgid "%s — partial search"
+msgstr "%s — recherche partielle"
+
+#: src/code/code_workspace_symbols.c:281 src/code/code_workspace_symbols.c:432
+#: src/search/deep_search_tab.c:403
+msgid "Searching…"
+msgstr "Recherche en cours…"
+
+#: src/code/code_workspace_symbols.c:384
+msgid "No project folder open"
+msgstr "Aucun dossier de projet ouvert"
+
+#: src/code/code_workspace_symbols.c:395
+msgid "Workspace Symbols"
+msgstr "Symboles du projet"
+
+#: src/code/code_workspace_symbols.c:408
+msgid "Search project symbols by name…"
+msgstr "Chercher les symboles du projet par nom…"
 
 #: src/core/disk_stats.c:62
 msgid "Less than a day"
@@ -4193,7 +4446,7 @@ msgstr "3 ans +"
 
 #. TRANSLATORS: %s is a number of files
 #: src/core/disk_stats.c:126 src/diskuse/disk_usage_list.c:478
-#: src/preview/preview_formats.c:314
+#: src/preview/preview_formats.c:328
 #, c-format
 msgid "%s file"
 msgid_plural "%s files"
@@ -4201,150 +4454,150 @@ msgstr[0] "%s fichier"
 msgstr[1] "%s fichiers"
 
 #. TRANSLATORS: a size and a number of files: "2.1 GB (124 files)"
-#: src/core/disk_stats.c:148
+#: src/core/disk_stats.c:164
 #, c-format
 msgid "%s (%s)"
 msgstr "%s (%s)"
 
-#: src/core/file_types.c:383
+#: src/core/file_types.c:384
 msgctxt "file kind"
 msgid "Image"
 msgstr "Image"
 
-#: src/core/file_types.c:385
+#: src/core/file_types.c:386
 msgctxt "file kind"
 msgid "Video"
 msgstr "Vidéo"
 
-#: src/core/file_types.c:386
+#: src/core/file_types.c:387
 msgctxt "file kind"
 msgid "Audio"
 msgstr "Audio"
 
-#: src/core/file_types.c:387
+#: src/core/file_types.c:388
 msgctxt "file kind"
 msgid "Binary"
 msgstr "Binaire"
 
-#: src/core/file_types.c:389
+#: src/core/file_types.c:390
 msgctxt "file kind"
 msgid "Document"
 msgstr "Document"
 
-#: src/core/file_types.c:390
+#: src/core/file_types.c:391
 msgctxt "file kind"
 msgid "Spreadsheet"
 msgstr "Classeur"
 
-#: src/core/file_types.c:391
+#: src/core/file_types.c:392
 msgctxt "file kind"
 msgid "Presentation"
 msgstr "Présentation"
 
-#: src/core/file_types.c:393
+#: src/core/file_types.c:394
 msgctxt "file kind"
 msgid "Archive"
 msgstr "Archive"
 
-#: src/core/file_types.c:394
+#: src/core/file_types.c:395
 msgctxt "file kind"
 msgid "Font"
 msgstr "Police"
 
-#: src/core/file_types.c:396
+#: src/core/file_types.c:397
 msgctxt "file kind"
 msgid "Certificate"
 msgstr "Certificat"
 
-#: src/core/file_types.c:403
+#: src/core/file_types.c:404
 msgctxt "file kind"
 msgid "Diff"
 msgstr "Diff"
 
-#: src/core/file_types.c:404
+#: src/core/file_types.c:405
 msgctxt "file kind"
 msgid "Log"
 msgstr "Journal"
 
-#: src/core/file_types.c:405
+#: src/core/file_types.c:406
 msgctxt "file kind"
 msgid "Calendar"
 msgstr "Agenda"
 
-#: src/core/file_types.c:407
+#: src/core/file_types.c:408
 msgctxt "file kind"
 msgid "Desktop Entry"
 msgstr "Lanceur (.desktop)"
 
-#: src/core/file_types.c:408
+#: src/core/file_types.c:409
 msgctxt "file kind"
 msgid "Man Page"
 msgstr "Page de manuel"
 
-#: src/core/file_types.c:409
+#: src/core/file_types.c:410
 msgctxt "file kind"
 msgid "Rich Text"
 msgstr "Texte enrichi"
 
-#: src/core/file_types.c:411
+#: src/core/file_types.c:412
 msgctxt "file kind"
 msgid "Mail"
 msgstr "Courriel"
 
-#: src/core/file_types.c:412
+#: src/core/file_types.c:413
 msgctxt "file kind"
 msgid "Translations"
 msgstr "Traductions"
 
-#: src/core/file_types.c:413
+#: src/core/file_types.c:414
 msgctxt "file kind"
 msgid "Java Class"
 msgstr "Classe Java"
 
-#: src/core/file_types.c:416
+#: src/core/file_types.c:417
 msgctxt "file kind"
 msgid "Python Bytecode"
 msgstr "Bytecode Python"
 
-#: src/core/file_types.c:417
+#: src/core/file_types.c:418
 msgctxt "file kind"
 msgid "TeX Font Metric"
 msgstr "Métriques de police TeX"
 
-#: src/core/file_types.c:418
+#: src/core/file_types.c:419
 msgctxt "file kind"
 msgid "Packet Capture"
 msgstr "Capture réseau"
 
-#: src/core/file_types.c:932
+#: src/core/file_types.c:937
 msgid "Documents"
 msgstr "Documents"
 
-#: src/core/file_types.c:933
+#: src/core/file_types.c:938
 msgid "Images"
 msgstr "Images"
 
-#: src/core/file_types.c:934
+#: src/core/file_types.c:939
 msgid "Videos"
 msgstr "Vidéos"
 
-#: src/core/file_types.c:935
+#: src/core/file_types.c:940
 msgid "Audio"
 msgstr "Audio"
 
-#: src/core/file_types.c:936
+#: src/core/file_types.c:941
 msgid "Archives"
 msgstr "Archives"
 
-#: src/core/file_types.c:937
+#: src/core/file_types.c:942
 msgid "Text and code"
 msgstr "Texte et code"
 
-#: src/core/file_types.c:938
+#: src/core/file_types.c:943
 msgid "Programs"
 msgstr "Programmes"
 
-#: src/core/file_types.c:942
+#: src/core/file_types.c:947
 msgid "Other"
 msgstr "Autres"
 
@@ -4353,21 +4606,25 @@ msgstr "Autres"
 msgid "Copied “%s”"
 msgstr "« %s » copié"
 
-#: src/diskuse/disk_usage_charts.c:70 src/diskuse/disk_usage_stats.c:179
+#: src/diskuse/disk_usage_charts.c:30
+msgid "List These Files in Deep Search (Click / Enter)"
+msgstr "Lister ces fichiers dans la Recherche approfondie (clic / Entrée)"
+
+#: src/diskuse/disk_usage_charts.c:119 src/diskuse/disk_usage_stats.c:239
 #: src/search/deep_search_charts.c:228
 msgid "By Size"
 msgstr "Par taille"
 
-#: src/diskuse/disk_usage_charts.c:71 src/diskuse/disk_usage_stats.c:195
+#: src/diskuse/disk_usage_charts.c:120 src/diskuse/disk_usage_stats.c:261
 #: src/search/deep_search_charts.c:231
 msgid "By Last Change"
 msgstr "Par dernière modification"
 
-#: src/diskuse/disk_usage_charts.c:91
+#: src/diskuse/disk_usage_charts.c:144
 msgid "The charts come once the folder is read"
 msgstr "Les graphiques viennent une fois le dossier lu"
 
-#: src/diskuse/disk_usage_charts.c:91
+#: src/diskuse/disk_usage_charts.c:144
 msgid "(no file)"
 msgstr "(aucun fichier)"
 
@@ -4385,8 +4642,8 @@ msgstr "Ouvrir le dossier"
 msgid "Show in Explorer"
 msgstr "Montrer dans l’explorateur"
 
-#: src/diskuse/disk_usage_list.c:384 src/editor/editor_tab_menu.c:272
-#: src/explorer/files_menu.c:170 src/preview/preview_menu.c:115
+#: src/diskuse/disk_usage_list.c:384 src/editor/editor_tab_menu.c:337
+#: src/explorer/files_menu.c:181 src/preview/preview_menu.c:115
 #: src/search/deep_search_list.c:384
 msgid "Copy Path"
 msgstr "Copier le chemin"
@@ -4395,13 +4652,13 @@ msgstr "Copier le chemin"
 msgid "Exclude from the Calculation"
 msgstr "Exclure du calcul"
 
-#: src/diskuse/disk_usage_list.c:419 src/explorer/bookmark_dialog.c:211
+#: src/diskuse/disk_usage_list.c:419 src/explorer/bookmark_dialog.c:212
 #: src/explorer/file_actions.c:251 src/formats/pyc_info.c:578
 #: src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
-#: src/office/office97.c:73 src/preview/preview_formats.c:351
-#: src/preview/preview_formats.c:352 src/preview/preview_summary.c:258
+#: src/office/office97.c:73 src/preview/preview_formats.c:365
+#: src/preview/preview_formats.c:366 src/preview/preview_summary.c:258
 #: src/search/deep_search_bookmark.c:62 src/search/deep_search_list.c:409
-#: src/search/deep_search_tab.c:890 src/workspace/session_bookmark.c:26
+#: src/search/deep_search_tab.c:892 src/workspace/session_bookmark.c:26
 msgid "Name"
 msgstr "Nom"
 
@@ -4409,18 +4666,19 @@ msgstr "Nom"
 msgid "Share"
 msgstr "Part"
 
-#: src/diskuse/disk_usage_list.c:421 src/diskuse/disk_usage_stats.c:128
+#: src/diskuse/disk_usage_list.c:421 src/diskuse/disk_usage_stats.c:133
+#: src/formats/parquet_view.c:154 src/formats/parquet_view.c:192
 #: src/formats/torrent_info.c:371 src/mail/mail_store.c:107
-#: src/office/office97.c:73 src/preview/preview_formats.c:351
-#: src/preview/preview_formats.c:352 src/preview/preview_formats.c:919
+#: src/office/office97.c:73 src/preview/preview_formats.c:365
+#: src/preview/preview_formats.c:366 src/preview/preview_formats.c:920
 #: src/preview/preview_summary.c:280 src/search/deep_search_list.c:411
-#: src/search/deep_search_tab.c:932 src/widgets/histogram.c:95
+#: src/search/deep_search_tab.c:934 src/widgets/histogram.c:95
 msgid "Size"
 msgstr "Taille"
 
-#: src/diskuse/disk_usage_list.c:422 src/diskuse/disk_usage_stats.c:130
+#: src/diskuse/disk_usage_list.c:422 src/diskuse/disk_usage_stats.c:135
 #: src/formats/torrent_info.c:334 src/preview/preview_summary.c:274
-#: src/search/deep_search_tab.c:926 src/widgets/histogram.c:94
+#: src/search/deep_search_tab.c:928 src/widgets/histogram.c:94
 msgid "Files"
 msgstr "Fichiers"
 
@@ -4451,195 +4709,195 @@ msgstr "La carte arrive une fois le dossier lu"
 
 #: src/diskuse/disk_usage_map.c:174 src/diskuse/disk_usage_wheel.c:162
 #: src/formats/sqlite_view.c:158 src/jupyter/ipynb_fold.c:247
-#: src/office/spreadsheet.c:712 src/preview/preview_formats.c:259
+#: src/office/spreadsheet.c:712 src/preview/preview_formats.c:273
 #: src/preview/preview_summary.c:188 src/preview/preview_summary.c:414
 #: src/sysmon/sysmon_tab.c:298
 msgid "(empty)"
 msgstr "(vide)"
 
-#: src/diskuse/disk_usage_stats.c:126
+#: src/diskuse/disk_usage_stats.c:131
 msgid "Overview"
 msgstr "Vue d’ensemble"
 
-#: src/diskuse/disk_usage_stats.c:129
+#: src/diskuse/disk_usage_stats.c:134
 msgid "On disk"
 msgstr "Sur le disque"
 
-#: src/diskuse/disk_usage_stats.c:131 src/mail/mail_dir.c:205
-#: src/preview/preview_summary.c:276 src/search/deep_search_tab.c:926
+#: src/diskuse/disk_usage_stats.c:136 src/mail/mail_dir.c:205
+#: src/preview/preview_summary.c:276 src/search/deep_search_tab.c:928
 msgid "Folders"
 msgstr "Dossiers"
 
-#: src/diskuse/disk_usage_stats.c:132
+#: src/diskuse/disk_usage_stats.c:137
 msgid "Average file"
 msgstr "Fichier moyen"
 
-#: src/diskuse/disk_usage_stats.c:133
+#: src/diskuse/disk_usage_stats.c:138
 msgid "Empty files"
 msgstr "Fichiers vides"
 
-#: src/diskuse/disk_usage_stats.c:134
+#: src/diskuse/disk_usage_stats.c:139
 msgid "Empty folders"
 msgstr "Dossiers vides"
 
-#: src/diskuse/disk_usage_stats.c:135
+#: src/diskuse/disk_usage_stats.c:140
 msgid "Symbolic links"
 msgstr "Liens symboliques"
 
 #. TRANSLATORS: links to files already counted, left out of the sizes
-#: src/diskuse/disk_usage_stats.c:138
+#: src/diskuse/disk_usage_stats.c:143
 msgid "Hard links left out"
 msgstr "Liens physiques non comptés"
 
-#: src/diskuse/disk_usage_stats.c:140
+#: src/diskuse/disk_usage_stats.c:145
 msgid "Devices, pipes, sockets"
 msgstr "Périphériques, tubes, sockets"
 
-#: src/diskuse/disk_usage_stats.c:141
+#: src/diskuse/disk_usage_stats.c:146
 msgid "Other filesystems left out"
 msgstr "Autres systèmes de fichiers non lus"
 
 #. TRANSLATORS: files and folders excluded from the calculation on request
-#: src/diskuse/disk_usage_stats.c:143
+#: src/diskuse/disk_usage_stats.c:148
 msgid "Excluded"
 msgstr "Exclues"
 
-#: src/diskuse/disk_usage_stats.c:145
+#: src/diskuse/disk_usage_stats.c:150
 msgid "Oldest change"
 msgstr "Plus ancienne modification"
 
-#: src/diskuse/disk_usage_stats.c:146
+#: src/diskuse/disk_usage_stats.c:151
 msgid "Newest change"
 msgstr "Plus récente modification"
 
 #. TRANSLATORS: depth of the deepest folder, and its path
-#: src/diskuse/disk_usage_stats.c:150
+#: src/diskuse/disk_usage_stats.c:155
 msgid "Deepest folder"
 msgstr "Dossier le plus profond"
 
-#: src/diskuse/disk_usage_stats.c:151
+#: src/diskuse/disk_usage_stats.c:156
 #, c-format
 msgid "%1$u level: %2$s"
 msgid_plural "%1$u levels: %2$s"
 msgstr[0] "%1$u niveau : %2$s"
 msgstr[1] "%1$u niveaux : %2$s"
 
-#: src/diskuse/disk_usage_stats.c:169
+#: src/diskuse/disk_usage_stats.c:174
 msgid "By Kind"
 msgstr "Par type"
 
-#: src/diskuse/disk_usage_stats.c:201
+#: src/diskuse/disk_usage_stats.c:270
 msgid "By Extension"
 msgstr "Par extension"
 
-#: src/diskuse/disk_usage_stats.c:204 src/preview/preview_summary.c:92
+#: src/diskuse/disk_usage_stats.c:274 src/preview/preview_summary.c:92
 msgid "(none)"
 msgstr "(aucun)"
 
 #. TRANSLATORS: tooltip of a file of the largest files: its path
-#: src/diskuse/disk_usage_stats.c:235
+#: src/diskuse/disk_usage_stats.c:306
 #, c-format
 msgid "Show in Explorer: %s"
 msgstr "Montrer dans l’explorateur : %s"
 
-#: src/diskuse/disk_usage_stats.c:248
+#: src/diskuse/disk_usage_stats.c:319
 msgid "Largest Files"
 msgstr "Plus gros fichiers"
 
-#: src/diskuse/disk_usage_stats.c:277
+#: src/diskuse/disk_usage_stats.c:348
 msgid "Count Only the Repository Files (Tracked and Untracked)"
 msgstr "Compter seulement les fichiers du dépôt (suivis et non suivis)"
 
-#: src/diskuse/disk_usage_stats.c:278
+#: src/diskuse/disk_usage_stats.c:349
 msgid "Count Only the Ignored Files"
 msgstr "Compter seulement les fichiers ignorés"
 
-#: src/diskuse/disk_usage_stats.c:284 src/diskuse/disk_usage_stats.c:295
+#: src/diskuse/disk_usage_stats.c:355 src/diskuse/disk_usage_stats.c:366
 msgid "Git Repository"
 msgstr "Dépôt git"
 
 #. TRANSLATORS: the files counted in the Disk Usage tab
-#: src/diskuse/disk_usage_stats.c:286
+#: src/diskuse/disk_usage_stats.c:357
 msgid "Counted"
 msgstr "Comptés"
 
-#: src/diskuse/disk_usage_stats.c:287
+#: src/diskuse/disk_usage_stats.c:358
 msgid "The repository files (tracked and untracked)"
 msgstr "Les fichiers du dépôt (suivis et non suivis)"
 
-#: src/diskuse/disk_usage_stats.c:287
+#: src/diskuse/disk_usage_stats.c:358
 msgid "The ignored files"
 msgstr "Les fichiers ignorés"
 
-#: src/diskuse/disk_usage_stats.c:288
+#: src/diskuse/disk_usage_stats.c:359
 msgid "Count All Files"
 msgstr "Compter tous les fichiers"
 
-#: src/diskuse/disk_usage_stats.c:288
+#: src/diskuse/disk_usage_stats.c:359
 msgid "Count All Files Again"
 msgstr "Compter de nouveau tous les fichiers"
 
 #. TRANSLATORS: the top of the git work tree holding the folder analysed
-#: src/diskuse/disk_usage_stats.c:299
+#: src/diskuse/disk_usage_stats.c:370
 msgid "Repository"
 msgstr "Dépôt"
 
 #. TRANSLATORS: files of the git index
-#: src/diskuse/disk_usage_stats.c:302
+#: src/diskuse/disk_usage_stats.c:373
 msgid "Tracked"
 msgstr "Suivis"
 
-#: src/diskuse/disk_usage_stats.c:305
+#: src/diskuse/disk_usage_stats.c:376
 msgid "Untracked"
 msgstr "Non suivis"
 
 #. TRANSLATORS: files left out of git by .gitignore
-#: src/diskuse/disk_usage_stats.c:308
+#: src/diskuse/disk_usage_stats.c:379
 msgid "Ignored"
 msgstr "Ignorés"
 
 #. TRANSLATORS: the .git folder: the commits, the objects, the index
-#: src/diskuse/disk_usage_stats.c:310
+#: src/diskuse/disk_usage_stats.c:381
 msgid "History (.git)"
 msgstr "Historique (.git)"
 
-#: src/diskuse/disk_usage_stats.c:311
+#: src/diskuse/disk_usage_stats.c:382
 msgid "Submodules, nested repositories"
 msgstr "Sous-modules, dépôts imbriqués"
 
 #. TRANSLATORS: %s is a number of entries
-#: src/diskuse/disk_usage_stats.c:327
+#: src/diskuse/disk_usage_stats.c:398
 #, c-format
 msgid "Unreadable (%s entry)"
 msgid_plural "Unreadable (%s entries)"
 msgstr[0] "Illisible (%s élément)"
 msgstr[1] "Illisibles (%s éléments)"
 
-#: src/diskuse/disk_usage_stats.c:351
+#: src/diskuse/disk_usage_stats.c:423
 msgid "The statistics come once the folder is read"
 msgstr "Les statistiques arrivent une fois le dossier lu"
 
-#: src/diskuse/disk_usage_stats.c:373
+#: src/diskuse/disk_usage_stats.c:449
 msgid "Largest Ignored Entries"
 msgstr "Plus gros éléments ignorés"
 
-#: src/diskuse/disk_usage_stats.c:374
+#: src/diskuse/disk_usage_stats.c:450
 msgid "Largest Tracked Files"
 msgstr "Plus gros fichiers suivis"
 
-#: src/diskuse/disk_usage_tab.c:112 src/search/deep_search_tab.c:118
+#: src/diskuse/disk_usage_tab.c:114 src/search/deep_search_tab.c:119
 #, c-format
 msgid "%.1f s"
 msgstr "%.1f s"
 
-#: src/diskuse/disk_usage_tab.c:114 src/search/deep_search_tab.c:120
+#: src/diskuse/disk_usage_tab.c:116 src/search/deep_search_tab.c:121
 #, c-format
 msgid "%u min %02u s"
 msgstr "%u min %02u s"
 
 #. TRANSLATORS: %s is a number of folders
 #. TRANSLATORS: %s is a number of folders read
-#: src/diskuse/disk_usage_tab.c:122 src/search/deep_search_tab.c:140
+#: src/diskuse/disk_usage_tab.c:124 src/search/deep_search_tab.c:141
 #, c-format
 msgid "%s folder"
 msgid_plural "%s folders"
@@ -4648,83 +4906,83 @@ msgstr[1] "%s dossiers"
 
 #. TRANSLATORS: %s is a number of files and folders excluded from the calculation
 #. TRANSLATORS: %s is a number of entries excluded from the calculation
-#: src/diskuse/disk_usage_tab.c:147 src/diskuse/disk_usage_tab.c:234
+#: src/diskuse/disk_usage_tab.c:149 src/diskuse/disk_usage_tab.c:236
 #, c-format
 msgid "%s excluded"
 msgid_plural "%s excluded"
 msgstr[0] "%s exclue"
 msgstr[1] "%s exclues"
 
-#: src/diskuse/disk_usage_tab.c:149 src/diskuse/disk_usage_tab.c:640
+#: src/diskuse/disk_usage_tab.c:151 src/diskuse/disk_usage_tab.c:676
 msgid "Include the Excluded Entries Again"
 msgstr "Réintégrer les entrées exclues"
 
 #. TRANSLATORS: bytes read so far, of the bytes used on the filesystem
-#: src/diskuse/disk_usage_tab.c:172
+#: src/diskuse/disk_usage_tab.c:174
 #, c-format
 msgid "%1$s of %2$s used on this filesystem"
 msgstr "%1$s sur %2$s utilisés sur ce système de fichiers"
 
 #. TRANSLATORS: folders of the analysed folder read in full, of all of them
-#: src/diskuse/disk_usage_tab.c:180
+#: src/diskuse/disk_usage_tab.c:182
 #, c-format
 msgid "%1$u of %2$u folders"
 msgstr "%1$u dossiers sur %2$u"
 
 #. TRANSLATORS: counts and size, the room taken on disk, the time of the reading
-#: src/diskuse/disk_usage_tab.c:219
+#: src/diskuse/disk_usage_tab.c:221
 #, c-format
 msgid "%1$s (%2$s on disk) · read in %3$s"
 msgstr "%1$s (%2$s sur le disque) · lu en %3$s"
 
 #. TRANSLATORS: %s is a number of entries that could not be read
 #. TRANSLATORS: %s is a number of files or folders that could not be read
-#: src/diskuse/disk_usage_tab.c:227 src/search/deep_search_tab.c:153
+#: src/diskuse/disk_usage_tab.c:229 src/search/deep_search_tab.c:154
 #, c-format
 msgid "%s unreadable"
 msgid_plural "%s unreadable"
 msgstr[0] "%s illisible"
 msgstr[1] "%s illisibles"
 
-#: src/diskuse/disk_usage_tab.c:239
+#: src/diskuse/disk_usage_tab.c:241
 msgid "repository files only"
 msgstr "fichiers du dépôt seulement"
 
-#: src/diskuse/disk_usage_tab.c:239
+#: src/diskuse/disk_usage_tab.c:241
 msgid "ignored files only"
 msgstr "fichiers ignorés seulement"
 
-#: src/diskuse/disk_usage_tab.c:243 src/search/deep_search_tab.c:208
+#: src/diskuse/disk_usage_tab.c:245 src/search/deep_search_tab.c:209
 msgid "stopped before the end"
 msgstr "arrêté avant la fin"
 
-#: src/diskuse/disk_usage_tab.c:374
+#: src/diskuse/disk_usage_tab.c:376
 msgid "Reading…"
 msgstr "Lecture…"
 
-#: src/diskuse/disk_usage_tab.c:388
+#: src/diskuse/disk_usage_tab.c:390
 msgid "The folders open once the whole tree is read"
 msgstr "Les dossiers s’ouvrent une fois toute l’arborescence lue"
 
-#: src/diskuse/disk_usage_tab.c:630 src/diskuse/disk_usage_tab.c:699
-#: src/explorer/files_menu.c:190 src/explorer/files_menu.c:207
+#: src/diskuse/disk_usage_tab.c:666 src/diskuse/disk_usage_tab.c:735
+#: src/explorer/files_menu.c:201 src/explorer/files_menu.c:238
 #: src/preview/dir_preview.c:447
 msgid "Disk Usage"
 msgstr "Espace disque"
 
-#: src/diskuse/disk_usage_tab.c:634
+#: src/diskuse/disk_usage_tab.c:670
 msgid "Parent Folder (Backspace / Left)"
 msgstr "Dossier parent (Backspace / Left)"
 
-#: src/diskuse/disk_usage_tab.c:637
+#: src/diskuse/disk_usage_tab.c:673
 msgid "Read Again (F5)"
 msgstr "Relire (F5)"
 
-#: src/diskuse/disk_usage_tab.c:644
+#: src/diskuse/disk_usage_tab.c:680
 msgid "Stop Reading (Escape)"
 msgstr "Arrêter la lecture (Escape)"
 
-#: src/diskuse/disk_usage_tab.c:648
+#: src/diskuse/disk_usage_tab.c:684
 msgid "Close Disk Usage"
 msgstr "Fermer l’espace disque"
 
@@ -4745,10 +5003,6 @@ msgstr "Roue"
 msgid "Rings Around the Folder (v: Next View)"
 msgstr "Anneaux autour du dossier (v : vue suivante)"
 
-#: src/diskuse/disk_usage_charts.c
-msgid "List These Files in Deep Search (Click / Enter)"
-msgstr "Lister ces fichiers dans la Recherche approfondie (clic / Entrée)"
-
 #: src/diskuse/disk_usage_views.c:67
 msgid "Histograms"
 msgstr "Histogrammes"
@@ -4761,286 +5015,322 @@ msgstr "Fichiers par taille et par âge (v : vue suivante)"
 msgid "The wheel comes once the folder is read"
 msgstr "La roue vient une fois le dossier lu"
 
-#: src/diskuse/disk_usage_wheel.c:247 src/search/deep_search_tab.c:882
+#: src/diskuse/disk_usage_wheel.c:247 src/search/deep_search_tab.c:884
 msgid "Parent Folder"
 msgstr "Dossier parent"
 
-#: src/editor/editor.c:479 src/notes/notes_actions.c:121
+#: src/editor/editor.c:482 src/notes/notes_actions.c:121
 #: src/notes/notes_actions.c:149
 #, c-format
 msgid "Untitled-%d"
 msgstr "Sans-titre-%d"
 
-#: src/editor/editor.c:699
+#: src/editor/editor.c:703
 msgid "Unsaved Changes"
 msgstr "Modifications non enregistrées"
 
-#: src/editor/editor.c:701 src/jupyter/ipynb_save.c:185
+#: src/editor/editor.c:705 src/jupyter/ipynb_save.c:185
 msgid "Close _Without Saving"
 msgstr "Fermer _sans enregistrer"
 
-#: src/editor/editor.c:703
+#: src/editor/editor.c:707
 #, c-format
 msgid "%s has unsaved changes. Close anyway?"
 msgstr "%s contient des modifications non enregistrées. Fermer quand même ?"
 
-#: src/editor/editor.c:1097
+#: src/editor/editor.c:1110
 #, c-format
 msgid "Cannot save %s: %s"
 msgstr "Impossible d’enregistrer %s : %s"
 
-#: src/editor/editor_modes.c:290
+#: src/editor/editor_info.c:159
+msgid "Error: "
+msgstr "Erreur : "
+
+#: src/editor/editor_info.c:160
+msgid "Warning: "
+msgstr "Avertissement : "
+
+#: src/editor/editor_info.c:160
+msgid "Info: "
+msgstr "Info : "
+
+#: src/editor/editor_modes.c:297
 #, c-format
 msgid "Saved to %s"
 msgstr "Enregistré dans %s"
 
-#: src/editor/editor_modes.c:694
+#: src/editor/editor_modes.c:698
 msgid "Unix (LF)"
 msgstr "Unix (LF)"
 
-#: src/editor/editor_modes.c:694
+#: src/editor/editor_modes.c:698
 msgid "Windows (CRLF)"
 msgstr "Windows (CRLF)"
 
-#: src/editor/editor_modes.c:694
+#: src/editor/editor_modes.c:698
 msgid "Mac (CR)"
 msgstr "Mac (CR)"
 
 #. TRANSLATORS: Notepad status bar: line, column, zoom, language, line ending
-#: src/editor/editor_modes.c:723
+#: src/editor/editor_modes.c:727
 #, c-format
 msgid "Ln %1$d, Col %2$d   |   %3$d%%   |   %4$s   |   %5$s   |   UTF-8"
 msgstr "Li %1$d, Col %2$d   |   %3$d %%   |   %4$s   |   %5$s   |   UTF-8"
 
-#: src/editor/editor_modes.c:728 src/latex/latex_errors.c:274
-#: src/preview/preview_formats.c:499
-#, c-format
-msgid "%u error"
-msgid_plural "%u errors"
-msgstr[0] "%u erreur"
-msgstr[1] "%u erreurs"
-
-#: src/editor/editor_modes.c:729 src/latex/latex_errors.c:277
-#: src/preview/preview_formats.c:503
-#, c-format
-msgid "%u warning"
-msgid_plural "%u warnings"
-msgstr[0] "%u avertissement"
-msgstr[1] "%u avertissements"
-
 #. TRANSLATORS: after the language server name: "1 error, 2 warnings"
-#: src/editor/editor_modes.c:731
+#: src/editor/editor_modes.c:735
 #, c-format
 msgid ": %1$s, %2$s"
 msgstr " : %1$s, %2$s"
 
-#: src/editor/editor_notepad.c:45 src/search/search.c:247
-#: src/widgets/outline_pane.c:745
+#: src/editor/editor_modes.c:830 src/editor/editor_notepad.c:582
+msgid "Ready"
+msgstr "Prêt"
+
+#: src/editor/editor_notepad.c:53 src/search/search.c:247
+#: src/widgets/outline_pane.c:750
 #, c-format
 msgid "Cannot find \"%s\""
 msgstr "Impossible de trouver « %s »"
 
-#: src/editor/editor_notepad.c:221
+#: src/editor/editor_notepad.c:229
 msgid "Occurrence replaced"
 msgstr "Occurrence remplacée"
 
-#: src/editor/editor_notepad.c:250
+#: src/editor/editor_notepad.c:258
 #, c-format
 msgid "Replaced %d occurrence"
 msgid_plural "Replaced %d occurrences"
 msgstr[0] "%d occurrence remplacée"
 msgstr[1] "%d occurrences remplacées"
 
-#: src/editor/editor_notepad.c:374
+#: src/editor/editor_notepad.c:382
 msgid "Type a line number"
 msgstr "Tapez un numéro de ligne"
 
-#: src/editor/editor_notepad.c:379
+#: src/editor/editor_notepad.c:387
 #, c-format
 msgid "The file has %d line"
 msgid_plural "The file has %d lines"
 msgstr[0] "Le fichier a %d ligne"
 msgstr[1] "Le fichier a %d lignes"
 
-#: src/editor/editor_notepad.c:464 src/search/search.c:207
-#: src/search/search.c:624 src/widgets/outline_pane.c:744
+#: src/editor/editor_notepad.c:478 src/search/search.c:207
+#: src/search/search.c:624 src/widgets/outline_pane.c:749
 msgid "Find:"
 msgstr "Rechercher :"
 
-#: src/editor/editor_notepad.c:467 src/search/search.c:636
+#: src/editor/editor_notepad.c:481 src/search/search.c:636
 msgid "Find Next"
 msgstr "Suivant"
 
-#: src/editor/editor_notepad.c:467 src/search/search.c:636
+#: src/editor/editor_notepad.c:481 src/search/search.c:636
 msgid "Find Next (Enter / F3)"
 msgstr "Occurrence suivante (Enter / F3)"
 
-#: src/editor/editor_notepad.c:468 src/search/search.c:637
+#: src/editor/editor_notepad.c:482 src/search/search.c:637
 msgid "Find Prev"
 msgstr "Précédent"
 
-#: src/editor/editor_notepad.c:468 src/search/search.c:637
+#: src/editor/editor_notepad.c:482 src/search/search.c:637
 msgid "Find Previous (Shift+Enter / Shift+F3)"
 msgstr "Occurrence précédente (Shift+Enter / Shift+F3)"
 
-#: src/editor/editor_notepad.c:469 src/search/search.c:638
+#: src/editor/editor_notepad.c:483 src/search/search.c:638
 msgid "Close Find Bar (Esc)"
 msgstr "Fermer la barre de recherche (Esc)"
 
-#: src/editor/editor_notepad.c:486
+#: src/editor/editor_notepad.c:500
 msgid "Replace:"
 msgstr "Remplacer :"
 
-#: src/editor/editor_notepad.c:489
+#: src/editor/editor_notepad.c:503
 msgid "Replace"
 msgstr "Remplacer"
 
-#: src/editor/editor_notepad.c:489
+#: src/editor/editor_notepad.c:503
 msgid "Replace the match and find the next one (Enter)"
 msgstr "Remplacer l’occurrence et chercher la suivante (Enter)"
 
-#: src/editor/editor_notepad.c:490
+#: src/editor/editor_notepad.c:504
 msgid "Replace All"
 msgstr "Tout remplacer"
 
-#: src/editor/editor_notepad.c:490
+#: src/editor/editor_notepad.c:504
 msgid "Replace every match"
 msgstr "Remplacer toutes les occurrences"
 
-#: src/editor/editor_notepad.c:502
+#: src/editor/editor_notepad.c:516 src/preview/diff_tab.c:909
 msgid "Left"
 msgstr "Gauche"
 
-#: src/editor/editor_notepad.c:502
+#: src/editor/editor_notepad.c:516
 msgid "Align left (Ctrl+L)"
 msgstr "Aligner à gauche (Ctrl+L)"
 
-#: src/editor/editor_notepad.c:505
+#: src/editor/editor_notepad.c:519
 msgid "Center"
 msgstr "Centrer"
 
-#: src/editor/editor_notepad.c:505
+#: src/editor/editor_notepad.c:519
 msgid "Center (Ctrl+E)"
 msgstr "Centrer (Ctrl+E)"
 
-#: src/editor/editor_notepad.c:508
+#: src/editor/editor_notepad.c:522 src/preview/diff_tab.c:910
 msgid "Right"
 msgstr "Droite"
 
-#: src/editor/editor_notepad.c:508
+#: src/editor/editor_notepad.c:522
 msgid "Align right (Ctrl+R)"
 msgstr "Aligner à droite (Ctrl+R)"
 
-#: src/editor/editor_notepad.c:525
+#: src/editor/editor_notepad.c:539
 msgid "Go to line:"
 msgstr "Aller à la ligne :"
 
-#: src/editor/editor_notepad.c:529
+#: src/editor/editor_notepad.c:543
 msgid "Go To"
 msgstr "Aller"
 
-#: src/editor/editor_notepad.c:529
+#: src/editor/editor_notepad.c:543
 msgid "Go to the line (Enter)"
 msgstr "Aller à la ligne (Enter)"
 
-#: src/editor/editor_notepad.c:530
+#: src/editor/editor_notepad.c:544
 msgid "Close (Esc)"
 msgstr "Fermer (Esc)"
 
-#: src/editor/editor_notepad.c:545
+#: src/editor/editor_notepad.c:559
 msgid "Save As:"
 msgstr "Enregistrer sous :"
 
-#: src/editor/editor_notepad.c:548
+#: src/editor/editor_notepad.c:562
 msgid "Save"
 msgstr "Enregistrer"
 
-#: src/editor/editor_notepad.c:549
+#: src/editor/editor_notepad.c:563
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/editor/editor_notepad.c:568
-msgid "Ready"
-msgstr "Prêt"
+#: src/editor/editor_notepad.c:591
+msgid "Click to open Problems panel (Ctrl+Shift+M)"
+msgstr "Cliquer pour ouvrir l’onglet Problèmes (Ctrl+Shift+M)"
 
-#: src/editor/editor_tab_menu.c:173
+#: src/editor/editor_tab_menu.c:92
+#, c-format
+msgid "%s (Saved ↔ Buffer)"
+msgstr "%s (enregistré ↔ tampon)"
+
+#: src/editor/editor_tab_menu.c:93
+#, c-format
+msgid "%s (Saved)"
+msgstr "%s (enregistré)"
+
+#: src/editor/editor_tab_menu.c:94 src/preview/diff_tab.c:891
+#, c-format
+msgid "%s (Buffer)"
+msgstr "%s (tampon)"
+
+#: src/editor/editor_tab_menu.c:219
 msgctxt "editor tab"
 msgid "Move Right"
 msgstr "Déplacer à droite"
 
-#: src/editor/editor_tab_menu.c:174
+#: src/editor/editor_tab_menu.c:220
 msgctxt "editor tab"
 msgid "Move Left"
 msgstr "Déplacer à gauche"
 
-#: src/editor/editor_tab_menu.c:175
+#: src/editor/editor_tab_menu.c:221
 msgctxt "editor tab"
 msgid "Move Down"
 msgstr "Déplacer en bas"
 
-#: src/editor/editor_tab_menu.c:176
+#: src/editor/editor_tab_menu.c:222
 msgctxt "editor tab"
 msgid "Move Up"
 msgstr "Déplacer en haut"
 
-#: src/editor/editor_tab_menu.c:215
+#: src/editor/editor_tab_menu.c:261
 msgid "Tab Mode"
 msgstr "Mode de l’onglet"
 
-#: src/editor/editor_tab_menu.c:234
+#: src/editor/editor_tab_menu.c:280
 msgid "Line Numbers"
 msgstr "Numéros de ligne"
 
-#: src/editor/editor_tab_menu.c:236
+#: src/editor/editor_tab_menu.c:282
 msgid "Wrap Lines"
 msgstr "Renvoyer à la ligne"
 
-#: src/editor/editor_tab_menu.c:240 src/preview/preview_menu.c:123
-#: src/workspace/layout_store.c:93
+#: src/editor/editor_tab_menu.c:286 src/preview/preview_menu.c:123
+#: src/workspace/layout_store.c:96
 msgid "Tagbar"
 msgstr "Barre de symboles"
 
-#: src/editor/editor_tab_menu.c:244 src/preview/preview_menu.c:126
+#: src/editor/editor_tab_menu.c:290 src/preview/preview_menu.c:126
 msgid "Minimap"
 msgstr "Minicarte"
 
-#: src/editor/editor_tab_menu.c:248
+#: src/editor/editor_tab_menu.c:294
 msgid "Update Preview"
 msgstr "Mettre à jour l’aperçu"
 
-#: src/editor/editor_tab_menu.c:257
+#: src/editor/editor_tab_menu.c:303
 msgid "Split Right"
 msgstr "Diviser à droite"
 
-#: src/editor/editor_tab_menu.c:259
+#: src/editor/editor_tab_menu.c:305
 msgid "Split Down"
 msgstr "Diviser en bas"
 
-#: src/editor/editor_tab_menu.c:268 src/explorer/files_menu.c:166
+#: src/editor/editor_tab_menu.c:314 src/editor/editor_watch.c:762
+msgid "Reload from Disk"
+msgstr "Recharger depuis le disque"
+
+#: src/editor/editor_tab_menu.c:317
+msgid "Compare with Saved"
+msgstr "Comparer avec la version enregistrée"
+
+#: src/editor/editor_tab_menu.c:320 src/explorer/files_menu.c:225
+msgid "Compare with HEAD"
+msgstr "Comparer avec HEAD"
+
+#: src/editor/editor_tab_menu.c:322 src/explorer/files_menu.c:215
+msgid "Select for Compare"
+msgstr "Sélectionner pour comparer"
+
+#: src/editor/editor_tab_menu.c:327 src/explorer/files_menu.c:219
+#, c-format
+msgid "Compare with “%s”"
+msgstr "Comparer avec « %s »"
+
+#: src/editor/editor_tab_menu.c:333 src/explorer/files_menu.c:177
 #: src/preview/preview_menu.c:111
 msgid "Copy Name"
 msgstr "Copier le nom"
 
-#: src/editor/editor_tab_menu.c:270 src/explorer/files_menu.c:168
+#: src/editor/editor_tab_menu.c:335 src/explorer/files_menu.c:179
 #: src/preview/preview_menu.c:113
 msgid "Copy Git Relative Path"
 msgstr "Copier le chemin relatif git"
 
-#: src/editor/editor_tab_menu.c:280 src/editor/editor_tab_menu.c:451
+#: src/editor/editor_tab_menu.c:345 src/editor/editor_tab_menu.c:516
 msgid "Close Tab"
 msgstr "Fermer l’onglet"
 
-#: src/editor/editor_tagbar.c:167
+#: src/editor/editor_tagbar.c:248
 msgid "Reading the symbols…"
 msgstr "Lecture des symboles…"
 
-#: src/editor/editor_tagbar.c:227
+#: src/editor/editor_tagbar.c:316
 msgid "No tagbar for this file type (code and Markdown files)"
 msgstr ""
 "Pas de barre de symboles pour ce type de fichier (fichiers de code et "
 "Markdown)"
 
-#: src/editor/editor_view.c:407
+#: src/editor/editor_view.c:416
 msgid ""
 "Org-mode (Emacs keys) | Tab/S-Tab: fold | M-RET: heading | M-arrows: "
 "structure | S-arrows: TODO | C-c C-c"
@@ -5048,13 +5338,165 @@ msgstr ""
 "Org-mode (touches Emacs) | Tab/S-Tab : plier | M-RET : titre | M-flèches : "
 "structure | S-flèches : TODO | C-c C-c"
 
-#: src/editor/editor_view.c:411
+#: src/editor/editor_view.c:420
 msgid "Emacs mode"
 msgstr "Mode Emacs"
 
-#: src/editor/editor_view.c:413
+#: src/editor/editor_view.c:422
 msgid "Notepad mode"
 msgstr "Mode Notepad"
+
+#: src/editor/editor_watch.c:193
+#, c-format
+msgid "%s (Disk ↔ Buffer)"
+msgstr "%s (disque ↔ tampon)"
+
+#: src/editor/editor_watch.c:194
+#, c-format
+msgid "%s (On Disk)"
+msgstr "%s (sur le disque)"
+
+#: src/editor/editor_watch.c:195
+#, c-format
+msgid "%s (Current Buffer)"
+msgstr "%s (tampon courant)"
+
+#: src/editor/editor_watch.c:241
+msgid "Compare"
+msgstr "Comparer"
+
+#: src/editor/editor_watch.c:243
+msgid "Compare File on Disk with Current Buffer"
+msgstr "Comparer le fichier sur le disque avec le tampon courant"
+
+#: src/editor/editor_watch.c:247
+msgid "Reload"
+msgstr "Recharger"
+
+#: src/editor/editor_watch.c:249
+msgid "Reload File from Disk"
+msgstr "Recharger le fichier depuis le disque"
+
+#: src/editor/editor_watch.c:253 src/editor/editor_watch.c:288
+msgid "Keep Mine"
+msgstr "Garder ma version"
+
+#: src/editor/editor_watch.c:255
+msgid "Keep Current Buffer and Dismiss"
+msgstr "Garder le tampon courant et ignorer"
+
+#: src/editor/editor_watch.c:280
+msgid "This file was removed from disk."
+msgstr "Ce fichier a été supprimé du disque."
+
+#: src/editor/editor_watch.c:283
+msgid "Keep"
+msgstr "Garder"
+
+#: src/editor/editor_watch.c:285
+msgid "This file changed on disk."
+msgstr "Ce fichier a été modifié sur le disque."
+
+#: src/editor/editor_watch.c:423
+msgid "No file to reload"
+msgstr "Aucun fichier à recharger"
+
+#: src/editor/editor_watch.c:430
+#, c-format
+msgid "Cannot read %s: file does not exist"
+msgstr "Impossible de lire %s : le fichier n’existe pas"
+
+#: src/editor/editor_watch.c:436
+#, c-format
+msgid "%s is too large to reload"
+msgstr "%s est trop grand pour être rechargé"
+
+#: src/editor/editor_watch.c:445
+#, c-format
+msgid "Cannot read %s: %s"
+msgstr "Impossible de lire %s : %s"
+
+#: src/editor/editor_watch.c:455
+#, c-format
+msgid "%s is now a binary file: not reloaded"
+msgstr "%s est maintenant un fichier binaire : non rechargé"
+
+#: src/editor/editor_watch.c:557
+#, c-format
+msgid "\"%s\" reloaded (changed on disk)"
+msgstr "« %s » rechargé (modifié sur le disque)"
+
+#: src/editor/editor_watch.c:559
+#, c-format
+msgid "Reverted buffer '%s'"
+msgstr "Tampon « %s » rétabli"
+
+#: src/editor/editor_watch.c:561
+#, c-format
+msgid "Reloaded %s (changed on disk)"
+msgstr "%s rechargé (modifié sur le disque)"
+
+#: src/editor/editor_watch.c:578
+#, c-format
+msgid "W12: Warning: File \"%s\" no longer exists"
+msgstr "W12 : Attention : le fichier « %s » n’existe plus"
+
+#: src/editor/editor_watch.c:579
+#, c-format
+msgid ""
+"W11: Warning: File \"%s\" has changed since editing started (use :e! to "
+"reload)"
+msgstr ""
+"W11 : Attention : le fichier « %s » a changé depuis le début de l’édition "
+"(:e! pour recharger)"
+
+#: src/editor/editor_watch.c:585
+#, c-format
+msgid "%s no longer exists on disk"
+msgstr "%s n’existe plus sur le disque"
+
+#: src/editor/editor_watch.c:586
+#, c-format
+msgid "%s changed on disk; type M-x revert-buffer to reload"
+msgstr "%s a changé sur le disque ; tapez M-x revert-buffer pour recharger"
+
+#: src/editor/editor_watch.c:714
+msgid "File Removed on Disk"
+msgstr "Fichier supprimé du disque"
+
+#: src/editor/editor_watch.c:718
+#, c-format
+msgid "“%s” was removed from disk. Save the current buffer anyway?"
+msgstr ""
+"« %s » a été supprimé du disque. Enregistrer quand même le tampon courant ?"
+
+#: src/editor/editor_watch.c:720
+msgid "File Changed on Disk"
+msgstr "Fichier modifié sur le disque"
+
+#: src/editor/editor_watch.c:722 src/editor/editor_watch.c:764
+msgid "_Reload"
+msgstr "_Recharger"
+
+#: src/editor/editor_watch.c:723
+msgid "_Overwrite"
+msgstr "É_craser"
+
+#: src/editor/editor_watch.c:725
+#, c-format
+msgid ""
+"“%s” has changed on disk since it was opened. Overwrite it with your "
+"changes, or reload from disk?"
+msgstr ""
+"« %s » a changé sur le disque depuis son ouverture. L’écraser avec vos "
+"modifications, ou le recharger depuis le disque ?"
+
+#: src/editor/editor_watch.c:766
+#, c-format
+msgid "Discard unsaved changes in “%s” and reload from disk?"
+msgstr ""
+"Abandonner les modifications non enregistrées de « %s » et recharger depuis "
+"le disque ?"
 
 #: src/explorer/archive_tree.c:133 src/explorer/archive_tree.c:207
 msgid "cannot read the archive"
@@ -5062,7 +5504,7 @@ msgstr "impossible de lire l’archive"
 
 #: src/explorer/archive_tree.c:183 src/explorer/archive_tree.c:220
 #: src/explorer/bookmarks.c:320 src/explorer/file_list.c:355
-#: src/explorer/remote.c:96 src/notes/notes.c:163
+#: src/explorer/remote.c:97 src/notes/notes.c:163
 msgid "  (empty)"
 msgstr "  (vide)"
 
@@ -5093,44 +5535,44 @@ msgstr ""
 msgid "extraction failed"
 msgstr "échec de l’extraction"
 
-#: src/explorer/bookmark_dialog.c:19
+#: src/explorer/bookmark_dialog.c:20
 msgid "Saved workspace"
 msgstr "Espace de travail enregistré"
 
-#: src/explorer/bookmark_dialog.c:22 src/preview/preview_summary.c:321
+#: src/explorer/bookmark_dialog.c:23 src/preview/preview_summary.c:321
 msgid "Saved search"
 msgstr "Recherche enregistrée"
 
-#: src/explorer/bookmark_dialog.c:199
+#: src/explorer/bookmark_dialog.c:200
 msgid "_Remove Bookmark"
 msgstr "_Retirer le signet"
 
-#: src/explorer/bookmark_dialog.c:214 src/explorer/file_actions.c:253
+#: src/explorer/bookmark_dialog.c:215 src/explorer/file_actions.c:253
 msgid "Folder name"
 msgstr "Nom du dossier"
 
-#: src/explorer/bookmark_dialog.c:214
+#: src/explorer/bookmark_dialog.c:215
 msgid "Defaults to the location's name"
 msgstr "Par défaut, le nom de l’emplacement"
 
-#: src/explorer/bookmark_dialog.c:229 src/formats/card_view.c:589
+#: src/explorer/bookmark_dialog.c:230 src/formats/card_view.c:589
 msgid "Icon"
 msgstr "Icône"
 
-#: src/explorer/bookmark_dialog.c:233 src/preview/preview_summary.c:182
+#: src/explorer/bookmark_dialog.c:234 src/preview/preview_summary.c:182
 #: src/preview/preview_summary.c:407
 msgid "Location"
 msgstr "Emplacement"
 
-#: src/explorer/bookmark_dialog.c:237
+#: src/explorer/bookmark_dialog.c:238
 msgid "~/projects, /etc/hosts or https://…"
 msgstr "~/projets, /etc/hosts ou https://…"
 
-#: src/explorer/bookmark_dialog.c:250
+#: src/explorer/bookmark_dialog.c:252
 msgid "Current Directory"
 msgstr "Dossier courant"
 
-#: src/explorer/bookmark_dialog.c:260 src/explorer/file_actions.c:256
+#: src/explorer/bookmark_dialog.c:262 src/explorer/file_actions.c:256
 msgid "Parent folder"
 msgstr "Dossier parent"
 
@@ -5157,7 +5599,7 @@ msgid_plural "Delete the folder “%s” and the %u items it contains?"
 msgstr[0] "Supprimer le dossier « %s » et l’élément qu’il contient ?"
 msgstr[1] "Supprimer le dossier « %s » et les %u éléments qu’il contient ?"
 
-#: src/explorer/bookmarks.c:590 src/explorer/remote.c:561
+#: src/explorer/bookmarks.c:590 src/explorer/remote.c:562
 #, c-format
 msgid "Delete the empty folder “%s”?"
 msgstr "Supprimer le dossier vide « %s » ?"
@@ -5168,7 +5610,7 @@ msgid "Delete the bookmark “%s”?"
 msgstr "Supprimer le signet « %s » ?"
 
 #: src/explorer/bookmarks.c:594 src/explorer/bookmarks.c:1150
-#: src/explorer/file_actions.c:389 src/explorer/remote.c:996
+#: src/explorer/file_actions.c:389 src/explorer/remote.c:1023
 msgid "Delete Folder"
 msgstr "Supprimer le dossier"
 
@@ -5198,7 +5640,7 @@ msgstr ""
 "%s"
 
 #: src/explorer/bookmarks.c:956 src/explorer/file_actions.c:364
-#: src/explorer/file_actions.c:397 src/explorer/file_moves.c:131
+#: src/explorer/file_actions.c:397 src/explorer/file_moves.c:133
 #: src/media/image_decode.c:387 src/preview/pdf.c:432
 #: src/search/deep_search_bookmark.c:121 src/workspace/session_bookmark.c:79
 #: src/workspace/session_bookmark.c:99
@@ -5250,7 +5692,7 @@ msgstr "Renommer / déplacer…"
 msgid "Delete"
 msgstr "Supprimer"
 
-#: src/explorer/bookmarks.c:1152 src/explorer/files_menu.c:175
+#: src/explorer/bookmarks.c:1152 src/explorer/files_menu.c:186
 msgid "Open"
 msgstr "Ouvrir"
 
@@ -5272,7 +5714,7 @@ msgid "Add Bookmark…"
 msgstr "Ajouter un signet…"
 
 #: src/explorer/bookmarks.c:1162 src/explorer/bookmarks.c:1166
-#: src/explorer/files_menu.c:204 src/explorer/remote.c:1003
+#: src/explorer/files_menu.c:235 src/explorer/remote.c:1030
 msgid "New Folder…"
 msgstr "Nouveau dossier…"
 
@@ -5284,7 +5726,7 @@ msgstr "Enregistrer l’espace de travail comme signet…"
 msgid "Sort A–Z / Z–A"
 msgstr "Trier A–Z / Z–A"
 
-#: src/explorer/bookmarks.c:1171 src/explorer/remote.c:1006
+#: src/explorer/bookmarks.c:1171 src/explorer/remote.c:1033
 #: src/notes/notes.c:614
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
@@ -5317,10 +5759,6 @@ msgstr "Renommer le dossier"
 #: src/explorer/file_actions.c:345
 msgid "Rename File"
 msgstr "Renommer le fichier"
-
-#: src/explorer/file_actions.c:346
-msgid "_Rename"
-msgstr "_Renommer"
 
 #: src/explorer/file_actions.c:353 src/explorer/file_actions.c:356
 #: src/explorer/file_actions.c:365
@@ -5376,190 +5814,190 @@ msgstr "(dossier illisible)"
 msgid "  (cannot read directory)"
 msgstr "  (dossier illisible)"
 
-#: src/explorer/file_moves.c:91
+#: src/explorer/file_moves.c:93
 #, c-format
 msgid "Renamed “%1$s” to “%2$s”"
 msgstr "« %1$s » renommé en « %2$s »"
 
-#: src/explorer/file_moves.c:108
+#: src/explorer/file_moves.c:110
 #, c-format
 msgid "Moved “%s” to the trash"
 msgstr "« %s » mis à la corbeille"
 
-#: src/explorer/file_moves.c:121
+#: src/explorer/file_moves.c:123
 msgid "Nothing to undo"
 msgstr "Rien à annuler"
 
-#: src/explorer/file_moves.c:129
+#: src/explorer/file_moves.c:131
 #, c-format
 msgid "Restored “%s” from the trash"
 msgstr "« %s » restauré depuis la corbeille"
 
-#: src/explorer/file_moves.c:130
+#: src/explorer/file_moves.c:132
 #, c-format
 msgid "Renamed back to “%s”"
 msgstr "Renommé à nouveau en « %s »"
 
-#: src/explorer/file_moves.c:131
+#: src/explorer/file_moves.c:133
 #, c-format
 msgid "Cannot undo: %s"
 msgstr "Impossible d’annuler : %s"
 
-#: src/explorer/files_menu.c:51
+#: src/explorer/files_menu.c:55
 #, c-format
 msgid "Cannot open with the default application: %s"
 msgstr "Impossible d’ouvrir avec l’application par défaut : %s"
 
-#: src/explorer/files_menu.c:181
+#: src/explorer/files_menu.c:192
 msgid "Open in Side Panel"
 msgstr "Ouvrir dans le panneau latéral"
 
-#: src/explorer/files_menu.c:183
+#: src/explorer/files_menu.c:194
 msgid "Open With Default App"
 msgstr "Ouvrir avec l’application par défaut"
 
-#: src/explorer/files_menu.c:186
+#: src/explorer/files_menu.c:197
 msgid "Open in Browser Tab"
 msgstr "Ouvrir dans un onglet navigateur"
 
-#: src/explorer/files_menu.c:189 src/explorer/files_menu.c:206
+#: src/explorer/files_menu.c:200 src/explorer/files_menu.c:237
 msgid "Open Terminal Here"
 msgstr "Ouvrir un terminal ici"
 
-#: src/explorer/files_menu.c:191 src/explorer/files_menu.c:208
+#: src/explorer/files_menu.c:202 src/explorer/files_menu.c:239
 msgid "Search Here"
 msgstr "Rechercher ici"
 
-#: src/explorer/files_menu.c:194
+#: src/explorer/files_menu.c:205
 msgid "Rename…"
 msgstr "Renommer…"
 
-#: src/explorer/files_menu.c:195
+#: src/explorer/files_menu.c:206
 msgid "Move to Trash…"
 msgstr "Mettre à la corbeille…"
 
-#: src/explorer/files_menu.c:199 src/explorer/files_menu.c:209
+#: src/explorer/files_menu.c:230 src/explorer/files_menu.c:240
 msgid "Bookmark…"
 msgstr "Ajouter un signet…"
 
-#: src/explorer/files_menu.c:203
+#: src/explorer/files_menu.c:234
 msgid "New File…"
 msgstr "Nouveau fichier…"
 
-#: src/explorer/files_menu.c:252 src/jupyter/ipynb_bar.c:100
+#: src/explorer/files_menu.c:283 src/jupyter/ipynb_bar.c:100
 msgid "Undo"
 msgstr "Annuler"
 
-#: src/explorer/remote.c:50
+#: src/explorer/remote.c:51
 msgid "Connected"
 msgstr "Connecté"
 
-#: src/explorer/remote.c:73
+#: src/explorer/remote.c:74
 msgid "No remote machines yet — press a to add one"
 msgstr "Aucune machine distante — appuyez sur a pour en ajouter une"
 
-#: src/explorer/remote.c:285
+#: src/explorer/remote.c:286
 msgid "Remote machines (top level)"
 msgstr "Machines distantes (premier niveau)"
 
-#: src/explorer/remote.c:297
+#: src/explorer/remote.c:298
 msgid "Folder:"
 msgstr "Dossier :"
 
-#: src/explorer/remote.c:321
+#: src/explorer/remote.c:322
 msgid "Add Remote Machine (SSH)"
 msgstr "Ajouter une machine distante (SSH)"
 
-#: src/explorer/remote.c:323
+#: src/explorer/remote.c:324
 msgid "_Save & Connect"
 msgstr "Enregistrer et _connecter"
 
-#: src/explorer/remote.c:329 src/explorer/remote.c:398
+#: src/explorer/remote.c:330 src/explorer/remote.c:399
 msgid "Friendly Name:"
 msgstr "Nom affiché :"
 
-#: src/explorer/remote.c:329
+#: src/explorer/remote.c:330
 msgid "Dev Server"
 msgstr "Serveur de dev"
 
-#: src/explorer/remote.c:329
+#: src/explorer/remote.c:330
 msgid "e.g. AWS Production"
 msgstr "ex. Production AWS"
 
-#: src/explorer/remote.c:330 src/explorer/remote.c:399
+#: src/explorer/remote.c:331 src/explorer/remote.c:400
 msgid "Host / IP Address *:"
 msgstr "Hôte / adresse IP * :"
 
-#: src/explorer/remote.c:330
+#: src/explorer/remote.c:331
 msgid "e.g. 192.168.1.100 or dev.example.com"
 msgstr "ex. 192.168.1.100 ou dev.example.com"
 
-#: src/explorer/remote.c:331 src/explorer/remote.c:400
+#: src/explorer/remote.c:332 src/explorer/remote.c:401
 msgid "User:"
 msgstr "Utilisateur :"
 
-#: src/explorer/remote.c:331
+#: src/explorer/remote.c:332
 msgid "e.g. ubuntu, root, dev"
 msgstr "ex. ubuntu, root, dev"
 
-#: src/explorer/remote.c:332 src/explorer/remote.c:401
+#: src/explorer/remote.c:333 src/explorer/remote.c:402
 msgid "Port:"
 msgstr "Port :"
 
-#: src/explorer/remote.c:332
+#: src/explorer/remote.c:333
 msgid "default: 22"
 msgstr "par défaut : 22"
 
-#: src/explorer/remote.c:333 src/explorer/remote.c:402
+#: src/explorer/remote.c:334 src/explorer/remote.c:403
 msgid "Remote Directory:"
 msgstr "Dossier distant :"
 
-#: src/explorer/remote.c:333
+#: src/explorer/remote.c:334
 msgid "default: ~ or /var/www"
 msgstr "par défaut : ~ ou /var/www"
 
-#: src/explorer/remote.c:334 src/explorer/remote.c:403
+#: src/explorer/remote.c:335 src/explorer/remote.c:404
 msgid "Identity Key Path (optional):"
 msgstr "Chemin de la clé d’identité (facultatif) :"
 
-#: src/explorer/remote.c:334
+#: src/explorer/remote.c:335
 msgid "e.g. ~/.ssh/id_ed25519"
 msgstr "ex. ~/.ssh/id_ed25519"
 
-#: src/explorer/remote.c:388
+#: src/explorer/remote.c:389
 msgid "Edit Remote Machine"
 msgstr "Modifier la machine distante"
 
-#: src/explorer/remote.c:453
+#: src/explorer/remote.c:454
 #, c-format
 msgid "Are you sure you want to remove remote machine '%s' (%s)?"
 msgstr "Voulez-vous vraiment retirer la machine distante « %s » (%s) ?"
 
-#: src/explorer/remote.c:455
+#: src/explorer/remote.c:456
 msgid "Remove Remote Machine"
 msgstr "Retirer la machine distante"
 
-#: src/explorer/remote.c:491
+#: src/explorer/remote.c:492
 msgid "Name:"
 msgstr "Nom :"
 
-#: src/explorer/remote.c:491
+#: src/explorer/remote.c:492
 msgid "e.g. Production"
 msgstr "ex. Production"
 
-#: src/explorer/remote.c:494
+#: src/explorer/remote.c:495
 msgid "Icon:"
 msgstr "Icône :"
 
-#: src/explorer/remote.c:525
+#: src/explorer/remote.c:526
 msgid "New Remote Folder"
 msgstr "Nouveau dossier distant"
 
-#: src/explorer/remote.c:540
+#: src/explorer/remote.c:541
 msgid "Edit Remote Folder"
 msgstr "Modifier le dossier distant"
 
-#: src/explorer/remote.c:558
+#: src/explorer/remote.c:559
 #, c-format
 msgid "Delete the folder “%s”? Its %u machine moves to the top level."
 msgid_plural "Delete the folder “%s”? Its %u machines move to the top level."
@@ -5567,15 +6005,15 @@ msgstr[0] "Supprimer le dossier « %s » ? Sa machine remonte au premier niveau
 msgstr[1] ""
 "Supprimer le dossier « %s » ? Ses %u machines remontent au premier niveau."
 
-#: src/explorer/remote.c:562
+#: src/explorer/remote.c:563
 msgid "Delete Remote Folder"
 msgstr "Supprimer le dossier distant"
 
-#: src/explorer/remote.c:596
+#: src/explorer/remote.c:610
 msgid "sshfs Required"
 msgstr "sshfs requis"
 
-#: src/explorer/remote.c:600
+#: src/explorer/remote.c:614
 msgid ""
 "To browse and edit remote files, 'sshfs' is required.\n"
 "\n"
@@ -5596,11 +6034,21 @@ msgstr ""
 "Vous pouvez toujours ouvrir une session de terminal SSH avec le bouton "
 "Terminal."
 
-#: src/explorer/remote.c:678
+#: src/explorer/remote.c:631 src/explorer/remote.c:708
 msgid "Connection Failed"
 msgstr "Échec de la connexion"
 
-#: src/explorer/remote.c:682
+#: src/explorer/remote.c:632
+msgid ""
+"Could not create a private folder to mount the machine in. Check that "
+"$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other "
+"users."
+msgstr ""
+"Impossible de créer un dossier privé où monter la machine. Vérifiez que "
+"$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et n’est pas "
+"accessible aux autres utilisateurs."
+
+#: src/explorer/remote.c:712
 #, c-format
 msgid ""
 "Could not connect to '%s' (%s):\n"
@@ -5611,47 +6059,47 @@ msgstr ""
 "\n"
 "%s"
 
-#: src/explorer/remote.c:684
+#: src/explorer/remote.c:714
 msgid "sshfs process exited with an error."
 msgstr "le processus sshfs s’est terminé avec une erreur."
 
-#: src/explorer/remote.c:980
+#: src/explorer/remote.c:1007
 msgid "Connect (Browse Files)"
 msgstr "Connecter (parcourir les fichiers)"
 
-#: src/explorer/remote.c:982
+#: src/explorer/remote.c:1009
 msgid "Open in Explorer"
 msgstr "Ouvrir dans l’explorateur"
 
-#: src/explorer/remote.c:983
+#: src/explorer/remote.c:1010
 msgid "Disconnect"
 msgstr "Déconnecter"
 
-#: src/explorer/remote.c:985
+#: src/explorer/remote.c:1012
 msgid "Open SSH Terminal"
 msgstr "Ouvrir un terminal SSH"
 
-#: src/explorer/remote.c:986
+#: src/explorer/remote.c:1013
 msgid "Edit Machine…"
 msgstr "Modifier la machine…"
 
-#: src/explorer/remote.c:987
+#: src/explorer/remote.c:1014
 msgid "Delete Machine"
 msgstr "Supprimer la machine"
 
-#: src/explorer/remote.c:994
+#: src/explorer/remote.c:1021
 msgid "Expand / Collapse"
 msgstr "Déplier / replier"
 
-#: src/explorer/remote.c:995
+#: src/explorer/remote.c:1022
 msgid "Edit Folder…"
 msgstr "Modifier le dossier…"
 
-#: src/explorer/remote.c:1002
+#: src/explorer/remote.c:1029
 msgid "Add Machine Here…"
 msgstr "Ajouter une machine ici…"
 
-#: src/explorer/remote.c:1002
+#: src/explorer/remote.c:1029
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 
@@ -5960,9 +6408,9 @@ msgstr[1] ""
 "%u autres contacts non affichés."
 
 #: src/formats/card_view.c:588 src/formats/elf_info.c:640
-#: src/formats/elf_info.c:643 src/formats/sqlite_view.c:222
-#: src/preview/preview_summary.c:274 src/preview/preview_summary.c:276
-#: src/search/deep_search_tab.c:925
+#: src/formats/elf_info.c:643 src/formats/parquet_view.c:153
+#: src/formats/sqlite_view.c:222 src/preview/preview_summary.c:274
+#: src/preview/preview_summary.c:276 src/search/deep_search_tab.c:927
 msgid "Type"
 msgstr "Type"
 
@@ -6107,7 +6555,7 @@ msgstr[1] "valide, expire dans %d jours"
 
 #: src/formats/cert_view.c:602 src/formats/cert_view.c:665
 #: src/mail/mail_dir.c:212 src/mail/mail_view.c:80 src/office/ole_props.c:224
-#: src/preview/preview_formats.c:919
+#: src/preview/preview_formats.c:920
 msgid "Subject"
 msgstr "Objet"
 
@@ -6137,7 +6585,7 @@ msgstr "Signature"
 msgid "CA"
 msgstr "AC"
 
-#: src/formats/cert_view.c:622 src/preview/preview_formats.c:888
+#: src/formats/cert_view.c:622 src/preview/preview_formats.c:889
 msgid "yes"
 msgstr "oui"
 
@@ -6158,7 +6606,7 @@ msgid "Serial"
 msgstr "N° de série"
 
 #: src/formats/cert_view.c:628 src/formats/pyc_info.c:538
-#: src/preview/preview_formats.c:604
+#: src/preview/preview_formats.c:605
 msgid "Version"
 msgstr "Version"
 
@@ -6698,6 +7146,192 @@ msgstr "(sortie HTML)"
 msgid "not a Jupyter notebook (no cells)"
 msgstr "pas un notebook Jupyter (aucune cellule)"
 
+#: src/formats/parquet_meta.c:493 src/formats/parquet_view.c:267
+#: src/formats/parquet_view.c:273
+msgid "invalid Parquet footer"
+msgstr "pied de fichier Parquet non valide"
+
+#: src/formats/parquet_pages.c:29
+msgid "corrupt page"
+msgstr "page corrompue"
+
+#. TRANSLATORS: %s is a compression codec, e.g. "BROTLI"
+#: src/formats/parquet_pages.c:210
+#, c-format
+msgid "%s compression is not supported"
+msgstr "la compression %s n’est pas prise en charge"
+
+#: src/formats/parquet_pages.c:215
+#, c-format
+msgid "corrupt %s data"
+msgstr "données %s corrompues"
+
+#. TRANSLATORS: %s is a Parquet encoding, e.g. "BIT_PACKED"
+#: src/formats/parquet_pages.c:509 src/formats/parquet_pages.c:894
+#: src/formats/parquet_pages.c:934
+#, c-format
+msgid "%s encoding is not supported"
+msgstr "l’encodage %s n’est pas pris en charge"
+
+#: src/formats/parquet_pages.c:948
+msgid "the column is in another file"
+msgstr "la colonne est dans un autre fichier"
+
+#: src/formats/parquet_view.c:76 src/preview/preview_formats.c:129
+#, c-format
+msgid "%s row"
+msgid_plural "%s rows"
+msgstr[0] "%s ligne"
+msgstr[1] "%s lignes"
+
+#: src/formats/parquet_view.c:77 src/preview/preview_formats.c:130
+#, c-format
+msgid "%s column"
+msgid_plural "%s columns"
+msgstr[0] "%s colonne"
+msgstr[1] "%s colonnes"
+
+#: src/formats/parquet_view.c:78
+#, c-format
+msgid "%s row group"
+msgid_plural "%s row groups"
+msgstr[0] "%s groupe de lignes"
+msgstr[1] "%s groupes de lignes"
+
+#. TRANSLATORS: "1,000 rows × 9 columns · 2 row groups · SNAPPY"
+#: src/formats/parquet_view.c:81
+#, c-format
+msgid ""
+"%1$s × %2$s · %3$s · %4$s\n"
+"\n"
+msgstr ""
+"%1$s × %2$s · %3$s · %4$s\n"
+"\n"
+
+#: src/formats/parquet_view.c:82
+#, c-format
+msgid ""
+"%1$s × %2$s · %3$s\n"
+"\n"
+msgstr ""
+"%1$s × %2$s · %3$s\n"
+"\n"
+
+#. TRANSLATORS: "Column city: SNAPPY compression is not supported."
+#: src/formats/parquet_view.c:102
+#, c-format
+msgid "Column %1$s: %2$s."
+msgstr "Colonne %1$s : %2$s."
+
+#: src/formats/parquet_view.c:124
+#, c-format
+msgid "First %1$s of %2$s rows."
+msgstr "%1$s premières lignes sur %2$s."
+
+#: src/formats/parquet_view.c:131
+#, c-format
+msgid "First %1$s of %2$s columns."
+msgstr "%1$s premières colonnes sur %2$s."
+
+#: src/formats/parquet_view.c:143
+msgctxt "parquet column"
+msgid "required"
+msgstr "obligatoire"
+
+#: src/formats/parquet_view.c:144
+msgctxt "parquet column"
+msgid "optional"
+msgstr "facultative"
+
+#: src/formats/parquet_view.c:145
+msgctxt "parquet column"
+msgid "repeated"
+msgstr "répétée"
+
+#: src/formats/parquet_view.c:151
+msgid "Schema"
+msgstr "Schéma"
+
+#: src/formats/parquet_view.c:153
+msgid "Column"
+msgstr "Colonne"
+
+#: src/formats/parquet_view.c:153
+msgid "Repetition"
+msgstr "Répétition"
+
+#: src/formats/parquet_view.c:153
+msgid "Encodings"
+msgstr "Encodages"
+
+#: src/formats/parquet_view.c:153 src/preview/preview_formats.c:320
+#: src/preview/preview_formats.c:343
+msgid "Compression"
+msgstr "Compression"
+
+#: src/formats/parquet_view.c:190
+msgid "Row groups"
+msgstr "Groupes de lignes"
+
+#: src/formats/parquet_view.c:192 src/formats/sqlite_view.c:222
+msgid "Rows"
+msgstr "Lignes"
+
+#: src/formats/parquet_view.c:192
+msgid "Compressed"
+msgstr "Compressé"
+
+#: src/formats/parquet_view.c:209
+#, c-format
+msgid "First %1$u of %2$s row groups."
+msgstr "%1$u premiers groupes de lignes sur %2$s."
+
+#: src/formats/parquet_view.c:217
+msgid "File"
+msgstr "Fichier"
+
+#: src/formats/parquet_view.c:219 src/mail/mail_store.c:63
+msgid "Format version"
+msgstr "Version du format"
+
+#: src/formats/parquet_view.c:221 src/formats/torrent_info.c:357
+msgid "Created by"
+msgstr "Créé par"
+
+#: src/formats/parquet_view.c:223
+msgid "Footer"
+msgstr "Pied de fichier"
+
+#: src/formats/parquet_view.c:226
+msgid "Metadata"
+msgstr "Métadonnées"
+
+#: src/formats/parquet_view.c:228
+msgid "Key"
+msgstr "Clé"
+
+#: src/formats/parquet_view.c:228
+msgid "Value"
+msgstr "Valeur"
+
+#: src/formats/parquet_view.c:237
+#, c-format
+msgid "Arrow schema (%s)"
+msgstr "Schéma Arrow (%s)"
+
+#: src/formats/parquet_view.c:256
+msgid "not a Parquet file"
+msgstr "pas un fichier Parquet"
+
+#: src/formats/parquet_view.c:260 src/mail/mail_store.c:77
+msgid "Encryption"
+msgstr "Chiffrement"
+
+#: src/formats/parquet_view.c:260
+msgid "Encrypted footer: the schema and the data cannot be read."
+msgstr ""
+"Pied de fichier chiffré : le schéma et les données ne peuvent pas être lus."
+
 #: src/formats/pcap_info.c:117
 msgid "Echo (ping) request"
 msgstr "Demande d’écho (ping)"
@@ -6811,10 +7445,6 @@ msgstr "Proto"
 msgid "Len"
 msgstr "Long."
 
-#: src/formats/pcap_info.c:378
-msgid "Info"
-msgstr "Info"
-
 #: src/formats/pcap_info.c:409
 #, c-format
 msgid ""
@@ -6912,10 +7542,6 @@ msgstr ""
 "Pas encore de tables."
 
 #: src/formats/sqlite_view.c:222
-msgid "Rows"
-msgstr "Lignes"
-
-#: src/formats/sqlite_view.c:222
 msgid "Columns"
 msgstr "Colonnes"
 
@@ -6960,7 +7586,7 @@ msgstr "données trop courtes"
 msgid "Family"
 msgstr "Famille"
 
-#: src/formats/tfm_info.c:213 src/preview/preview_formats.c:603
+#: src/formats/tfm_info.c:213 src/preview/preview_formats.c:604
 msgid "Full name"
 msgstr "Nom complet"
 
@@ -7127,10 +7753,6 @@ msgstr "Taille des morceaux"
 #: src/formats/torrent_info.c:350 src/office/ole_props.c:230
 msgid "Created"
 msgstr "Créé"
-
-#: src/formats/torrent_info.c:357
-msgid "Created by"
-msgstr "Créé par"
 
 #: src/formats/torrent_info.c:364
 msgid "Primary tracker"
@@ -7455,7 +8077,7 @@ msgctxt "game genre"
 msgid "Fighting"
 msgstr "Combat"
 
-#: src/games/games.c:177 src/games/games.c:539
+#: src/games/games.c:177 src/games/games.c:542
 msgid "Chess"
 msgstr "Échecs"
 
@@ -7481,7 +8103,7 @@ msgstr "Cartes"
 msgid "Klondike Solitaire"
 msgstr "Solitaire Klondike"
 
-#: src/games/games.c:194 src/games/games.c:548
+#: src/games/games.c:194 src/games/games.c:551
 msgid "Memory Match"
 msgstr "Memory"
 
@@ -7499,56 +8121,76 @@ msgstr ""
 "Jeu : %s\n"
 "Appuyez sur Enter pour jouer !\n"
 
-#: src/games/games.c:523
+#: src/games/games.c:526
 msgid "Game"
 msgstr "Jeu"
 
-#: src/games/games.c:545
+#: src/games/games.c:548
 msgid "Solitaire"
 msgstr "Solitaire"
 
-#: src/games/games.c:568
-msgid "Close Game (Ctrl+W)"
-msgstr "Fermer le jeu (Ctrl+W)"
-
-#: src/git/git_tab.c:138
+#: src/git/git_tab.c:156
 #, c-format
 msgid "… %u more line not shown"
 msgid_plural "… %u more lines not shown"
 msgstr[0] "… %u ligne de plus non affichée"
 msgstr[1] "… %u lignes de plus non affichées"
 
-#: src/git/git_tab.c:160
+#: src/git/git_tab.c:178
 msgid "(No diff available or git error)"
 msgstr "(Aucun diff disponible ou erreur git)"
 
-#: src/git/git_tab.c:333
+#: src/git/git_tab.c:278
+msgid "Detached HEAD"
+msgstr "HEAD détachée"
+
+#: src/git/git_tab.c:279
+#, c-format
+msgid "Current branch: %s"
+msgstr "Branche courante : %s"
+
+#: src/git/git_tab.c:281
+#, c-format
+msgid "Branch: %s"
+msgstr "Branche : %s"
+
+#: src/git/git_tab.c:283
+#, c-format
+msgid "Tag: %s"
+msgstr "Étiquette : %s"
+
+#: src/git/git_tab.c:285
+#, c-format
+msgid "Remote branch: %s"
+msgstr "Branche distante : %s"
+
+#: src/git/git_tab.c:440
 msgid "No commits in this repository."
 msgstr "Aucun commit dans ce dépôt."
 
-#: src/git/git_tab.c:473
-msgid "Commit"
-msgstr "Commit"
-
-#: src/git/git_tab.c:474
+#: src/git/git_tab.c:593
 msgid "Message"
 msgstr "Message"
 
-#: src/git/git_tab.c:475 src/office/ole_props.c:225
+#: src/git/git_tab.c:630
+msgid "Commit"
+msgstr "Commit"
+
+#: src/git/git_tab.c:632 src/office/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git/git_tab.c:476 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
+#: src/git/git_tab.c:633 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
 #: src/mail/mail_view.c:34 src/mail/mail_view.c:180
-#: src/preview/preview_formats.c:919
+#: src/preview/preview_formats.c:920
 msgid "Date"
 msgstr "Date"
 
-#: src/git/git_tab.c:493
+#: src/git/git_tab.c:655
 msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
-#: src/git/git_tab.c:539
+#: src/git/git_tab.c:701
 msgid "Git Commits"
 msgstr "Commits Git"
 
@@ -7907,7 +8549,7 @@ msgid "Not saved: %s"
 msgstr "Non enregistré : %s"
 
 #: src/jupyter/ipynb_save.c:49 src/office/ole_props.c:233
-#: src/preview/preview_formats.c:351 src/preview/preview_formats.c:352
+#: src/preview/preview_formats.c:365 src/preview/preview_formats.c:366
 msgid "Modified"
 msgstr "Modifié"
 
@@ -7915,7 +8557,7 @@ msgstr "Modifié"
 msgid "Replace File"
 msgstr "Remplacer le fichier"
 
-#: src/jupyter/ipynb_save.c:101 src/workspace/layouts.c:340
+#: src/jupyter/ipynb_save.c:101 src/workspace/layouts.c:413
 msgid "_Replace"
 msgstr "_Remplacer"
 
@@ -8097,29 +8739,35 @@ msgstr "%s : la compilation a échoué (onglet LaTeX)"
 msgid "%s compiled"
 msgstr "%s compilé"
 
-#: src/latex/latex_build.c:418 src/latex/latex_errors.c:260
+#: src/latex/latex_build.c:418 src/latex/latex_errors.c:306
 #, c-format
 msgid "Compiling %s…"
 msgstr "Compilation de %s…"
 
-#: src/latex/latex_errors.c:212
+#: src/latex/latex_errors.c:258
 msgid "Close LaTeX"
 msgstr "Fermer LaTeX"
 
-#: src/latex/latex_errors.c:232
+#: src/latex/latex_errors.c:278
 msgid "LaTeX"
 msgstr "LaTeX"
 
-#: src/latex/latex_errors.c:281
+#: src/latex/latex_errors.c:327
 #, c-format
 msgid "%u bad box"
 msgid_plural "%u bad boxes"
 msgstr[0] "%u boîte mal remplie"
 msgstr[1] "%u boîtes mal remplies"
 
-#: src/latex/latex_errors.c:283
+#: src/latex/latex_errors.c:329
 msgid "no errors"
 msgstr "aucune erreur"
+
+#: src/latex/latex_errors.c:449
+msgid "No compilation yet — save a .tex file to compile it"
+msgstr ""
+"Aucune compilation pour l’instant — enregistrez un fichier .tex pour le "
+"compiler"
 
 #: src/mail/mail_dir.c:198
 #, c-format
@@ -8145,7 +8793,7 @@ msgstr ""
 "(vide)"
 
 #: src/mail/mail_dir.c:212 src/mail/mail_view.c:29 src/mail/mail_view.c:180
-#: src/preview/preview_formats.c:919
+#: src/preview/preview_formats.c:920
 msgid "From"
 msgstr "De"
 
@@ -8166,7 +8814,7 @@ msgid ", flagged"
 msgstr ", marqué"
 
 #: src/mail/mail_dir.c:220 src/mail/mail_view.c:167 src/mail/mail_view.c:220
-#: src/preview/preview_formats.c:888
+#: src/preview/preview_formats.c:889
 msgid "(no subject)"
 msgstr "(sans objet)"
 
@@ -8225,14 +8873,6 @@ msgstr " (Unicode : Outlook 2003 et plus récent)"
 #: src/mail/mail_store.c:61
 msgid " (ANSI: Outlook 97-2002, 2 GB at most)"
 msgstr " (ANSI : Outlook 97-2002, 2 Go au plus)"
-
-#: src/mail/mail_store.c:63
-msgid "Format version"
-msgstr "Version du format"
-
-#: src/mail/mail_store.c:77
-msgid "Encryption"
-msgstr "Chiffrement"
 
 #: src/mail/mail_store.c:77
 msgid "none"
@@ -8307,7 +8947,7 @@ msgid "Attachment"
 msgstr "Pièce jointe"
 
 #: src/mail/mail_view.c:65 src/mail/mail_view.c:199
-#: src/preview/preview_formats.c:919
+#: src/preview/preview_formats.c:920
 msgid "Attachments"
 msgstr "Pièces jointes"
 
@@ -8319,7 +8959,7 @@ msgstr "Message transféré"
 msgid "Encrypted message: the body needs the recipient's key."
 msgstr "Message chiffré : le corps demande la clé du destinataire."
 
-#: src/main.c:181
+#: src/main.c:187
 #, c-format
 msgid ""
 "Usage: %s [options] [<file>|<folder>]\n"
@@ -8363,22 +9003,22 @@ msgstr ""
 "  -f, --fullscreen                 démarre en plein écran\n"
 "  -s, --size LARGEURxHAUTEUR       taille de la fenêtre (ex. 1920x1080)\n"
 
-#: src/main.c:236
+#: src/main.c:242
 #, c-format
 msgid "%s: option '%s' requires an argument\n"
 msgstr "%s : l’option « %s » attend un argument\n"
 
-#: src/main.c:292
+#: src/main.c:298
 #, c-format
 msgid "%s: only one file or folder can be given\n"
 msgstr "%s : un seul fichier ou dossier peut être donné\n"
 
-#: src/main.c:311
+#: src/main.c:317
 #, c-format
 msgid "%s: unknown editor '%s' (expected emacs, vim or notepad)\n"
 msgstr "%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
 
-#: src/main.c:317
+#: src/main.c:323
 #, c-format
 msgid ""
 "[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"
@@ -8386,23 +9026,23 @@ msgstr ""
 "[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size "
 "1920x1080) ]\n"
 
-#: src/main.c:321
+#: src/main.c:327
 #, c-format
 msgid "%s: unknown option '%s'\n"
 msgstr "%s : option inconnue « %s »\n"
 
-#: src/main.c:328
+#: src/main.c:334
 #, c-format
 msgid "%s: option '-n' needs a note name\n"
 msgstr "%s : l’option « -n » attend un nom de note\n"
 
-#: src/main.c:390
+#: src/main.c:396
 #, c-format
 msgid "[ '%s' is not a file or a directory: showing %s instead ]\n"
 msgstr ""
 "[ « %s » n’est ni un fichier ni un dossier : affichage de %s à la place ]\n"
 
-#: src/main.c:508
+#: src/main.c:514
 msgid ""
 "Terminal panel disabled:\n"
 "install libvte-2.91-gtk4-dev then rebuild (make)."
@@ -8410,15 +9050,15 @@ msgstr ""
 "Panneau Terminal désactivé :\n"
 "installez libvte-2.91-gtk4-dev puis recompilez (make)."
 
-#: src/main.c:564
+#: src/main.c:576
 msgid "Workspace Layouts (Alt+L)"
 msgstr "Dispositions de l’espace de travail (Alt+L)"
 
-#: src/main.c:568
+#: src/main.c:580
 msgid "Preferences (Ctrl+,)"
 msgstr "Préférences (Ctrl+,)"
 
-#: src/main.c:767
+#: src/main.c:780
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
@@ -9009,7 +9649,7 @@ msgid "not an EPUB (no package document)"
 msgstr "pas un EPUB (pas de document de paquet)"
 
 #: src/office/epub.c:370 src/office/ole_props.c:246
-#: src/preview/preview_formats.c:320 src/preview/preview_summary.c:391
+#: src/preview/preview_formats.c:334 src/preview/preview_summary.c:391
 msgid "Contents"
 msgstr "Contenu"
 
@@ -9098,14 +9738,14 @@ msgstr "Le texte ne peut pas être lu : %s."
 msgid "The cells cannot be read: %s."
 msgstr "Les cellules ne peuvent pas être lues : %s."
 
-#: src/office/office97.c:164 src/preview/preview_formats.c:716
+#: src/office/office97.c:164 src/preview/preview_formats.c:717
 #, c-format
 msgid "%1$s · %2$u sheet · %3$s"
 msgid_plural "%1$s · %2$u sheets · %3$s"
 msgstr[0] "%1$s · %2$u feuille · %3$s"
 msgstr[1] "%1$s · %2$u feuilles · %3$s"
 
-#: src/office/office97.c:176 src/preview/preview_formats.c:726
+#: src/office/office97.c:176 src/preview/preview_formats.c:727
 msgid "Sheets"
 msgstr "Feuilles"
 
@@ -9363,12 +10003,98 @@ msgstr ""
 "Les onglets navigateur demandent WebKitGTK 6.0 (installez libwebkitgtk-6.0-"
 "dev et recompilez)"
 
+#: src/preview/diff_tab.c:97
+#, c-format
+msgid "Selected “%s” for compare"
+msgstr "« %s » sélectionné pour la comparaison"
+
+#: src/preview/diff_tab.c:310
+msgid "Files are identical"
+msgstr "Les fichiers sont identiques"
+
+#: src/preview/diff_tab.c:318
+msgid "hunk"
+msgstr "bloc"
+
+#: src/preview/diff_tab.c:318
+msgid "hunks"
+msgstr "blocs"
+
+#: src/preview/diff_tab.c:319
+msgid " (truncated)"
+msgstr " (tronqué)"
+
+#: src/preview/diff_tab.c:369 src/preview/diff_tab.c:383
+#, c-format
+msgid "Cannot read %s"
+msgstr "Impossible de lire %s"
+
+#: src/preview/diff_tab.c:375
+#, c-format
+msgid "%s is too large to compare"
+msgstr "%s est trop grand pour être comparé"
+
+#: src/preview/diff_tab.c:391
+#, c-format
+msgid "%s is a binary file: cannot compare as text"
+msgstr "%s est un fichier binaire : comparaison impossible en texte"
+
+#: src/preview/diff_tab.c:473 src/preview/diff_tab.c:723
+msgid "Comparing…"
+msgstr "Comparaison…"
+
+#: src/preview/diff_tab.c:735
+msgid "Previous Hunk (Alt+Up / [c)"
+msgstr "Bloc précédent (Alt+Up / [c)"
+
+#: src/preview/diff_tab.c:736
+msgid "Next Hunk (Alt+Down / ]c)"
+msgstr "Bloc suivant (Alt+Down / ]c)"
+
+#: src/preview/diff_tab.c:747
+msgid "Split"
+msgstr "Côte à côte"
+
+#: src/preview/diff_tab.c:748
+msgid "Unified"
+msgstr "Unifié"
+
+#: src/preview/diff_tab.c:759
+msgid "Swap Left and Right Sides"
+msgstr "Échanger les côtés gauche et droit"
+
+#: src/preview/diff_tab.c:764
+msgid "Refresh Comparison (F5)"
+msgstr "Actualiser la comparaison (F5)"
+
+#: src/preview/diff_tab.c:769
+msgid "Edit File at Current Line (Enter)"
+msgstr "Éditer le fichier à la ligne courante (Enter)"
+
+#: src/preview/diff_tab.c:888 src/preview/diff_tab.c:889
+#, c-format
+msgid "%s (HEAD)"
+msgstr "%s (HEAD)"
+
+#: src/preview/diff_tab.c:892
+#, c-format
+msgid "%s (Working Tree)"
+msgstr "%s (copie de travail)"
+
+#: src/preview/diff_tab.c:908
+msgid "Diff"
+msgstr "Diff"
+
+#: src/preview/diff_tab_render.c:246
+msgid "Files are identical."
+msgstr "Les fichiers sont identiques."
+
 #: src/preview/dir_preview.c:211
 #, c-format
 msgid "%1$u+ entries (only the first %2$u are read)"
 msgstr "%1$u+ entrées (seules les %2$u premières sont lues)"
 
-#: src/preview/dir_preview.c:220 src/preview/preview_formats.c:315
+#: src/preview/dir_preview.c:220 src/preview/preview_formats.c:329
 #, c-format
 msgid "%u folder"
 msgid_plural "%u folders"
@@ -9433,7 +10159,7 @@ msgstr[1] "%u renommés"
 msgid "  … and %1$u more (showing %2$u)\n"
 msgstr "  … et %1$u de plus (%2$u affichées)\n"
 
-#: src/preview/dir_preview.c:445 src/search/deep_search_tab.c:1005
+#: src/preview/dir_preview.c:445 src/search/deep_search_tab.c:1007
 msgctxt "action"
 msgid "Search"
 msgstr "Rechercher"
@@ -9599,40 +10325,26 @@ msgstr ""
 msgid "Rendering %s…"
 msgstr "Rendu de %s…"
 
-#: src/preview/preview_formats.c:74
+#: src/preview/preview_formats.c:75
 #, c-format
 msgid "Only the first %1$s of %2$s were read."
 msgstr "Seuls les premiers %1$s sur %2$s ont été lus."
 
-#: src/preview/preview_formats.c:105
+#: src/preview/preview_formats.c:119
 msgid "no rows"
 msgstr "aucune ligne"
 
-#: src/preview/preview_formats.c:115
-#, c-format
-msgid "%s row"
-msgid_plural "%s rows"
-msgstr[0] "%s ligne"
-msgstr[1] "%s lignes"
-
-#: src/preview/preview_formats.c:116
-#, c-format
-msgid "%s column"
-msgid_plural "%s columns"
-msgstr[0] "%s colonne"
-msgstr[1] "%s colonnes"
-
-#: src/preview/preview_formats.c:120
+#: src/preview/preview_formats.c:134
 #, c-format
 msgid "%1$s × %2$s · %3$s-separated (start of the file)\n"
 msgstr "%1$s × %2$s · séparateur %3$s (début du fichier)\n"
 
-#: src/preview/preview_formats.c:121
+#: src/preview/preview_formats.c:135
 #, c-format
 msgid "%1$s × %2$s · %3$s-separated\n"
 msgstr "%1$s × %2$s · séparateur %3$s\n"
 
-#: src/preview/preview_formats.c:143
+#: src/preview/preview_formats.c:157
 #, c-format
 msgid ""
 "\n"
@@ -9641,64 +10353,60 @@ msgstr ""
 "\n"
 "Affichage des %s premières lignes."
 
-#: src/preview/preview_formats.c:149
+#: src/preview/preview_formats.c:163
 msgid "Showing the first 100 columns."
 msgstr "Affichage des 100 premières colonnes."
 
-#: src/preview/preview_formats.c:203
+#: src/preview/preview_formats.c:217
 msgid "no file changes found"
 msgstr "aucune modification de fichier trouvée"
 
-#: src/preview/preview_formats.c:225
+#: src/preview/preview_formats.c:239
 #, c-format
 msgid "%.0f %% saved"
 msgstr "%.0f %% gagnés"
 
-#: src/preview/preview_formats.c:234
+#: src/preview/preview_formats.c:248
 msgid "Content"
 msgstr "Contenu"
 
-#: src/preview/preview_formats.c:295
+#: src/preview/preview_formats.c:309
 msgid "Listing the content of this format is not supported yet."
 msgstr "Lister le contenu de ce format n’est pas encore pris en charge."
 
-#: src/preview/preview_formats.c:300
+#: src/preview/preview_formats.c:314
 msgid "Original name"
 msgstr "Nom d’origine"
 
-#: src/preview/preview_formats.c:303
+#: src/preview/preview_formats.c:317
 msgid "Original size"
 msgstr "Taille d’origine"
 
-#: src/preview/preview_formats.c:306 src/preview/preview_formats.c:329
-msgid "Compression"
-msgstr "Compression"
-
 #. TRANSLATORS: "12 files, 3 folders"
-#: src/preview/preview_formats.c:317
+#: src/preview/preview_formats.c:331
 #, c-format
 msgid "at least %1$s, %2$s"
 msgstr "au moins %1$s, %2$s"
 
-#: src/preview/preview_formats.c:317
+#: src/preview/preview_formats.c:331
 #, c-format
 msgid "%1$s, %2$s"
 msgstr "%1$s, %2$s"
 
-#: src/preview/preview_formats.c:324
+#: src/preview/preview_formats.c:338
 msgid "Unpacked"
 msgstr "Décompressé"
 
-#: src/preview/preview_formats.c:351
+#: src/preview/preview_formats.c:365
 msgid "Packed"
 msgstr "Compressé"
 
-#: src/preview/preview_formats.c:362
+#: src/preview/preview_formats.c:376
 #, c-format
 msgid "%s (encrypted)"
 msgstr "%s (chiffré)"
 
-#: src/preview/preview_formats.c:379
+#: src/preview/preview_formats.c:393
 #, c-format
 msgid ""
 "\n"
@@ -9707,7 +10415,7 @@ msgstr ""
 "\n"
 "Affichage des %s premières entrées (l’archive n’a pas été lue jusqu’au bout)."
 
-#: src/preview/preview_formats.c:380
+#: src/preview/preview_formats.c:394
 #, c-format
 msgid ""
 "\n"
@@ -9716,248 +10424,97 @@ msgstr ""
 "\n"
 "Affichage des %s premières entrées."
 
-#: src/preview/preview_formats.c:428
+#: src/preview/preview_formats.c:433
 msgid "nothing to show"
 msgstr "rien à afficher"
 
-#: src/preview/preview_formats.c:493
+#: src/preview/preview_formats.c:498
 #, c-format
 msgid "last %s line"
 msgid_plural "last %s lines"
 msgstr[0] "dernière ligne (%s)"
 msgstr[1] "%s dernières lignes"
 
-#: src/preview/preview_formats.c:494
+#: src/preview/preview_formats.c:499
 #, c-format
 msgid "%s line"
 msgid_plural "%s lines"
 msgstr[0] "%s ligne"
 msgstr[1] "%s lignes"
 
-#: src/preview/preview_formats.c:511
+#: src/preview/preview_formats.c:516
 #, c-format
 msgid "Showing the end of the file: the last %1$s of %2$s."
 msgstr "Affichage de la fin du fichier : les derniers %1$s sur %2$s."
 
-#: src/preview/preview_formats.c:537
+#: src/preview/preview_formats.c:542
 msgid "catalog too large"
 msgstr "catalogue trop grand"
 
-#: src/preview/preview_formats.c:551
+#: src/preview/preview_formats.c:556
 #, c-format
 msgid "gettext translations (.po) · %s"
 msgstr "traductions gettext (.po) · %s"
 
-#: src/preview/preview_formats.c:552
+#: src/preview/preview_formats.c:557
 #, c-format
 msgid "gettext compiled translations (.mo) · %s"
 msgstr "traductions gettext compilées (.mo) · %s"
 
-#: src/formats/parquet_meta.c:493 src/formats/parquet_view.c:267
-#: src/formats/parquet_view.c:273
-msgid "invalid Parquet footer"
-msgstr "pied de fichier Parquet non valide"
-
-#: src/formats/parquet_pages.c:29
-msgid "corrupt page"
-msgstr "page corrompue"
-
-#. TRANSLATORS: %s is a compression codec, e.g. "BROTLI"
-#: src/formats/parquet_pages.c:210
-#, c-format
-msgid "%s compression is not supported"
-msgstr "la compression %s n’est pas prise en charge"
-
-#: src/formats/parquet_pages.c:215
-#, c-format
-msgid "corrupt %s data"
-msgstr "données %s corrompues"
-
-#. TRANSLATORS: %s is a Parquet encoding, e.g. "BIT_PACKED"
-#: src/formats/parquet_pages.c:509 src/formats/parquet_pages.c:894
-#: src/formats/parquet_pages.c:934
-#, c-format
-msgid "%s encoding is not supported"
-msgstr "l’encodage %s n’est pas pris en charge"
-
-#: src/formats/parquet_pages.c:948
-msgid "the column is in another file"
-msgstr "la colonne est dans un autre fichier"
-
-#: src/formats/parquet_view.c:78
-#, c-format
-msgid "%s row group"
-msgid_plural "%s row groups"
-msgstr[0] "%s groupe de lignes"
-msgstr[1] "%s groupes de lignes"
-
-#. TRANSLATORS: "1,000 rows × 9 columns · 2 row groups · SNAPPY"
-#: src/formats/parquet_view.c:81
-#, c-format
-msgid ""
-"%1$s × %2$s · %3$s · %4$s\n"
-"\n"
-msgstr ""
-"%1$s × %2$s · %3$s · %4$s\n"
-"\n"
-
-#: src/formats/parquet_view.c:82
-#, c-format
-msgid ""
-"%1$s × %2$s · %3$s\n"
-"\n"
-msgstr ""
-"%1$s × %2$s · %3$s\n"
-"\n"
-
-#. TRANSLATORS: "Column city: SNAPPY compression is not supported."
-#: src/formats/parquet_view.c:102
-#, c-format
-msgid "Column %1$s: %2$s."
-msgstr "Colonne %1$s : %2$s."
-
-#: src/formats/parquet_view.c:124
-#, c-format
-msgid "First %1$s of %2$s rows."
-msgstr "%1$s premières lignes sur %2$s."
-
-#: src/formats/parquet_view.c:131
-#, c-format
-msgid "First %1$s of %2$s columns."
-msgstr "%1$s premières colonnes sur %2$s."
-
-#: src/formats/parquet_view.c:143
-msgctxt "parquet column"
-msgid "required"
-msgstr "obligatoire"
-
-#: src/formats/parquet_view.c:144
-msgctxt "parquet column"
-msgid "optional"
-msgstr "facultative"
-
-#: src/formats/parquet_view.c:145
-msgctxt "parquet column"
-msgid "repeated"
-msgstr "répétée"
-
-#: src/formats/parquet_view.c:151
-msgid "Schema"
-msgstr "Schéma"
-
-#: src/formats/parquet_view.c:153
-msgid "Column"
-msgstr "Colonne"
-
-#: src/formats/parquet_view.c:153
-msgid "Repetition"
-msgstr "Répétition"
-
-#: src/formats/parquet_view.c:153
-msgid "Encodings"
-msgstr "Encodages"
-
-#: src/formats/parquet_view.c:190
-msgid "Row groups"
-msgstr "Groupes de lignes"
-
-#: src/formats/parquet_view.c:192
-msgid "Compressed"
-msgstr "Compressé"
-
-#: src/formats/parquet_view.c:209
-#, c-format
-msgid "First %1$u of %2$s row groups."
-msgstr "%1$u premiers groupes de lignes sur %2$s."
-
-#: src/formats/parquet_view.c:217
-msgid "File"
-msgstr "Fichier"
-
-#: src/formats/parquet_view.c:223
-msgid "Footer"
-msgstr "Pied de fichier"
-
-#: src/formats/parquet_view.c:226
-msgid "Metadata"
-msgstr "Métadonnées"
-
-#: src/formats/parquet_view.c:228
-msgid "Key"
-msgstr "Clé"
-
-#: src/formats/parquet_view.c:228
-msgid "Value"
-msgstr "Valeur"
-
-#: src/formats/parquet_view.c:237
-#, c-format
-msgid "Arrow schema (%s)"
-msgstr "Schéma Arrow (%s)"
-
-#: src/formats/parquet_view.c:256
-msgid "not a Parquet file"
-msgstr "pas un fichier Parquet"
-
-#: src/formats/parquet_view.c:260
-msgid "Encrypted footer: the schema and the data cannot be read."
-msgstr ""
-"Pied de fichier chiffré : le schéma et les données ne peuvent pas être lus."
-
-#: src/preview/preview_formats.c:581
+#: src/preview/preview_formats.c:573
 msgid "SQLite database"
 msgstr "Base de données SQLite"
 
-#: src/preview/preview_formats.c:588
+#: src/preview/preview_formats.c:580
 msgid "Apache Parquet"
 msgstr "Apache Parquet"
 
 #. TRANSLATORS: a pangram of your language for the font sample
-#: src/preview/preview_formats.c:585
+#: src/preview/preview_formats.c:586
 msgid "The quick brown fox jumps over the lazy dog"
 msgstr "Portez ce vieux whisky au juge blond qui fume"
 
 #. TRANSLATORS: "%1$s font" names the format, e.g. "TrueType font"
-#: src/preview/preview_formats.c:598
+#: src/preview/preview_formats.c:599
 #, c-format
 msgid "%1$s font · %2$s · %3$s"
 msgstr "Police %1$s · %2$s · %3$s"
 
-#: src/preview/preview_formats.c:599
+#: src/preview/preview_formats.c:600
 #, c-format
 msgid "%1$s font · %2$s"
 msgstr "Police %1$s · %2$s"
 
-#: src/preview/preview_formats.c:605
+#: src/preview/preview_formats.c:606
 msgid "Designer"
 msgstr "Créateur"
 
-#: src/preview/preview_formats.c:606
+#: src/preview/preview_formats.c:607
 msgid "Foundry"
 msgstr "Fonderie"
 
-#: src/preview/preview_formats.c:609
+#: src/preview/preview_formats.c:610
 msgid "Glyphs"
 msgstr "Glyphes"
 
-#: src/preview/preview_formats.c:613
+#: src/preview/preview_formats.c:614
 #, c-format
 msgid "%u (the first one is shown)"
 msgstr "%u (la première est affichée)"
 
-#: src/preview/preview_formats.c:614
+#: src/preview/preview_formats.c:615
 msgid "Fonts"
 msgstr "Polices"
 
-#: src/preview/preview_formats.c:617
+#: src/preview/preview_formats.c:618
 msgid "Copyright"
 msgstr "Copyright"
 
-#: src/preview/preview_formats.c:618
+#: src/preview/preview_formats.c:619
 msgid "License URL"
 msgstr "URL de la licence"
 
-#: src/preview/preview_formats.c:621
+#: src/preview/preview_formats.c:622
 msgid ""
 "\n"
 "No sample: the font names cannot be read (WOFF2 tables are compressed)."
@@ -9966,54 +10523,54 @@ msgstr ""
 "Pas d’échantillon : les noms de la police sont illisibles (les tables WOFF2 "
 "sont compressées)."
 
-#: src/preview/preview_formats.c:635
+#: src/preview/preview_formats.c:636
 msgid "Sample"
 msgstr "Échantillon"
 
-#: src/preview/preview_formats.c:656
+#: src/preview/preview_formats.c:657
 msgid "License"
 msgstr "Licence"
 
-#: src/preview/preview_formats.c:749
+#: src/preview/preview_formats.c:750
 #, c-format
 msgid "Jupyter notebook · %1$u cell (%2$u code)"
 msgid_plural "Jupyter notebook · %1$u cells (%2$u code)"
 msgstr[0] "Notebook Jupyter · %1$u cellule (%2$u de code)"
 msgstr[1] "Notebook Jupyter · %1$u cellules (%2$u de code)"
 
-#: src/preview/preview_formats.c:795
+#: src/preview/preview_formats.c:796
 msgid "only gzip-compressed pages can be read"
 msgstr "seules les pages compressées par gzip sont lisibles"
 
-#: src/preview/preview_formats.c:811
+#: src/preview/preview_formats.c:812
 msgid "not a manual page"
 msgstr "pas une page de manuel"
 
-#: src/preview/preview_formats.c:825
+#: src/preview/preview_formats.c:826
 msgid "not a valid ELF file"
 msgstr "pas un fichier ELF valide"
 
 #. TRANSLATORS: %3$s is "+" when the mailbox was not read to the end
-#: src/preview/preview_formats.c:904
+#: src/preview/preview_formats.c:905
 #, c-format
 msgid "Message %1$u of %2$u%3$s · %4$s · PgUp / PgDn"
 msgstr "Message %1$u sur %2$u%3$s · %4$s · PgUp / PgDn"
 
-#: src/preview/preview_formats.c:913
+#: src/preview/preview_formats.c:914
 #, c-format
 msgid "Mailbox · %1$u message · %2$s"
 msgid_plural "Mailbox · %1$u messages · %2$s"
 msgstr[0] "Boîte aux lettres · %1$u message · %2$s"
 msgstr[1] "Boîte aux lettres · %1$u messages · %2$s"
 
-#: src/preview/preview_formats.c:914
+#: src/preview/preview_formats.c:915
 #, c-format
 msgid "Mailbox · %1$s · the first %2$u and last %3$u messages shown"
 msgstr ""
 "Boîte aux lettres · %1$s · les %2$u premiers et %3$u derniers messages "
 "affichés"
 
-#: src/preview/preview_formats.c:932
+#: src/preview/preview_formats.c:933
 msgid ""
 "\n"
 "PgDn opens the messages one by one, PgUp comes back."
@@ -10021,72 +10578,72 @@ msgstr ""
 "\n"
 "PgDn ouvre les messages un par un, PgUp revient."
 
-#: src/preview/preview_formats.c:943
+#: src/preview/preview_formats.c:944
 msgid "no file"
 msgstr "aucun fichier"
 
-#: src/preview/preview_formats.c:966
+#: src/preview/preview_formats.c:967
 #, c-format
 msgid "Thunderbird index of %s"
 msgstr "Index Thunderbird de %s"
 
-#: src/preview/preview_formats.c:979
+#: src/preview/preview_formats.c:980
 msgid "Mail message"
 msgstr "Message électronique"
 
-#: src/preview/preview_formats.c:1023
+#: src/preview/preview_formats.c:1024
 msgid "file too large"
 msgstr "fichier trop grand"
 
-#: src/preview/preview_formats.c:1043
+#: src/preview/preview_formats.c:1035
 msgid "Java class file"
 msgstr "Fichier de classe Java"
 
-#: src/preview/preview_formats.c:1046
+#: src/preview/preview_formats.c:1038
 msgid "WebAssembly binary"
 msgstr "Binaire WebAssembly"
 
-#: src/preview/preview_formats.c:1049
+#: src/preview/preview_formats.c:1041
 msgid "BitTorrent metainfo"
 msgstr "Métadonnées BitTorrent"
 
-#: src/preview/preview_formats.c:1052
+#: src/preview/preview_formats.c:1044
 msgid "Python bytecode"
 msgstr "Bytecode Python"
 
-#: src/preview/preview_formats.c:1055
+#: src/preview/preview_formats.c:1047
 msgid "TeX font metric"
 msgstr "Métriques de police TeX"
 
-#: src/preview/preview_formats.c:1058
+#: src/preview/preview_formats.c:1050
 msgid "Packet capture"
 msgstr "Capture réseau"
 
-#: src/preview/preview_formats.c:1110
+#: src/preview/preview_formats.c:1103
 msgid "no preview for this format yet"
 msgstr "pas encore d’aperçu pour ce format"
 
-#: src/preview/preview_formats.c:1179
+#: src/preview/preview_formats.c:1172
 msgid "[ Binary file ]"
 msgstr "[ Fichier binaire ]"
 
 #. TRANSLATORS: %s is a file kind, e.g. "Archive"
-#: src/preview/preview_formats.c:1182
+#: src/preview/preview_formats.c:1175
 #, c-format
 msgid "[ %s file ]"
 msgstr "[ Fichier : %s ]"
 
-#: src/preview/preview_formats.c:1186
+#: src/preview/preview_formats.c:1179
 #, c-format
 msgid "Cannot show the file: %s.\n"
 msgstr "Impossible d’afficher le fichier : %s.\n"
 
-#: src/preview/preview_formats.c:1187
+#: src/preview/preview_formats.c:1180
 #, c-format
 msgid "Cannot show the content: %s.\n"
 msgstr "Impossible d’afficher le contenu : %s.\n"
 
-#: src/preview/preview_formats.c:1192
+#: src/preview/preview_formats.c:1185
 #, c-format
 msgid "Showing the first %s.\n"
 msgstr "Affichage des premiers %s.\n"
@@ -10317,11 +10874,11 @@ msgstr "Dossier courant"
 msgid "Category"
 msgstr "Catégorie"
 
-#: src/preview/preview_summary.c:263 src/search/deep_search_tab.c:894
+#: src/preview/preview_summary.c:263 src/search/deep_search_tab.c:896
 msgid "Extensions"
 msgstr "Extensions"
 
-#: src/preview/preview_summary.c:266 src/search/deep_search_tab.c:913
+#: src/preview/preview_summary.c:266 src/search/deep_search_tab.c:915
 msgid "Contains"
 msgstr "Contient"
 
@@ -10329,19 +10886,19 @@ msgstr "Contient"
 msgid "Options"
 msgstr "Options"
 
-#: src/preview/preview_summary.c:285 src/search/deep_search_tab.c:940
+#: src/preview/preview_summary.c:285 src/search/deep_search_tab.c:942
 msgid "Last change"
 msgstr "Dernière modification"
 
-#: src/preview/preview_summary.c:289 src/search/deep_search_tab.c:949
+#: src/preview/preview_summary.c:289 src/search/deep_search_tab.c:951
 msgid "Exclude"
 msgstr "Exclure"
 
-#: src/preview/preview_summary.c:292 src/search/deep_search_tab.c:952
+#: src/preview/preview_summary.c:292 src/search/deep_search_tab.c:954
 msgid "Depth"
 msgstr "Profondeur"
 
-#: src/preview/preview_summary.c:295 src/search/deep_search_tab.c:957
+#: src/preview/preview_summary.c:295 src/search/deep_search_tab.c:959
 msgid "Hidden entries"
 msgstr "Entrées cachées"
 
@@ -10349,7 +10906,7 @@ msgstr "Entrées cachées"
 msgid "Yes"
 msgstr "Oui"
 
-#: src/preview/preview_summary.c:298 src/search/deep_search_tab.c:960
+#: src/preview/preview_summary.c:298 src/search/deep_search_tab.c:962
 msgid "This filesystem only"
 msgstr "Ce système de fichiers seulement"
 
@@ -10502,7 +11059,7 @@ msgstr ""
 "Gros fichier : %3$u octets affichés, la suite se charge en faisant défiler.\n"
 "\n"
 
-#: src/preview/viewer.c:1093
+#: src/preview/viewer.c:1099
 #, c-format
 msgid ""
 "%s\n"
@@ -10518,6 +11075,8 @@ msgstr ""
 #: src/preview/web_engine.c:69
 msgid "Browser tabs could not load WebKitGTK 6.0 (see the terminal output)"
 msgstr ""
+"Les onglets de navigateur n’ont pas pu charger WebKitGTK 6.0 (voir la sortie "
+"du terminal)"
 
 #: src/preview/web_engine_webkit.c:126
 msgid "Choosing a file to upload is not supported in browser tabs"
@@ -10546,7 +11105,7 @@ msgid "The first date is not before the second"
 msgstr "La première date n’est pas avant la seconde"
 
 #. TRANSLATORS: %s is the error of the regular expression
-#: src/search/deep_query.c:165 src/search/deep_search_tab.c:337
+#: src/search/deep_query.c:165 src/search/deep_search_tab.c:338
 #, c-format
 msgid "Invalid regular expression: %s"
 msgstr "Expression régulière invalide : %s"
@@ -10642,13 +11201,13 @@ msgstr "Occurrences"
 msgid "First Match"
 msgstr "Première occurrence"
 
-#: src/search/deep_search_store.c:218 src/search/deep_search_tab.c:993
-#: src/search/deep_search_tab.c:1061
+#: src/search/deep_search_store.c:218 src/search/deep_search_tab.c:995
+#: src/search/deep_search_tab.c:1064
 msgid "Deep Search"
 msgstr "Recherche approfondie"
 
 #. TRANSLATORS: %s is a number of entries found
-#: src/search/deep_search_tab.c:136
+#: src/search/deep_search_tab.c:137
 #, c-format
 msgid "%s found"
 msgid_plural "%s found"
@@ -10656,7 +11215,7 @@ msgstr[0] "%s trouvé"
 msgstr[1] "%s trouvés"
 
 #. TRANSLATORS: %s is a number of files and folders tested
-#: src/search/deep_search_tab.c:138
+#: src/search/deep_search_tab.c:139
 #, c-format
 msgid "%s entry"
 msgid_plural "%s entries"
@@ -10664,19 +11223,19 @@ msgstr[0] "%s entrée"
 msgstr[1] "%s entrées"
 
 #. TRANSLATORS: entries found · entries tested in folders read
-#: src/search/deep_search_tab.c:143
+#: src/search/deep_search_tab.c:144
 #, c-format
 msgid "%1$s · %2$s in %3$s"
 msgstr "%1$s · %2$s dans %3$s"
 
 #. TRANSLATORS: %s is a size, as "120 MB"
-#: src/search/deep_search_tab.c:148
+#: src/search/deep_search_tab.c:149
 #, c-format
 msgid "%s read"
 msgstr "%s lus"
 
 #. TRANSLATORS: %s is a number of files
-#: src/search/deep_search_tab.c:159
+#: src/search/deep_search_tab.c:160
 #, c-format
 msgid "%s binary file skipped"
 msgid_plural "%s binary files skipped"
@@ -10684,7 +11243,7 @@ msgstr[0] "%s fichier binaire ignoré"
 msgstr[1] "%s fichiers binaires ignorés"
 
 #. TRANSLATORS: %s is a number of results, those of the bars chosen in the charts
-#: src/search/deep_search_tab.c:183
+#: src/search/deep_search_tab.c:184
 #, c-format
 msgid "%s listed"
 msgid_plural "%s listed"
@@ -10692,23 +11251,23 @@ msgstr[0] "%s listé"
 msgstr[1] "%s listés"
 
 #. TRANSLATORS: %u is the most results kept
-#: src/search/deep_search_tab.c:212 src/search/project_search.c:113
+#: src/search/deep_search_tab.c:213 src/search/project_search.c:134
 #, c-format
 msgid "stopped at %u results"
 msgstr "arrêt à %u résultats"
 
-#: src/search/deep_search_tab.c:214
+#: src/search/deep_search_tab.c:215
 msgid "The folder cannot be read"
 msgstr "Le dossier ne peut pas être lu"
 
 #. TRANSLATORS: %s is the size typed
-#: src/search/deep_search_tab.c:289
+#: src/search/deep_search_tab.c:290
 #, c-format
 msgid "Not a size: %s (sizes look like 42, 500k, 10M, 2G)"
 msgstr "Taille invalide : %s (les tailles s’écrivent 42, 500k, 10M, 2G)"
 
 #. TRANSLATORS: %s is the date typed; keep today, yesterday and the units in English, they are what is read
-#: src/search/deep_search_tab.c:296
+#: src/search/deep_search_tab.c:297
 #, c-format
 msgid ""
 "Not a date: %s (dates look like 2026-11-01, today, yesterday, 7d, 3h, 2w, "
@@ -10717,34 +11276,30 @@ msgstr ""
 "Date invalide : %s (les dates s’écrivent 2026-11-01, today, yesterday, 7d, "
 "3h, 2w, 6m, 1y)"
 
-#: src/search/deep_search_tab.c:329
+#: src/search/deep_search_tab.c:330
 msgid "The depth is a number of levels: 1 for the folder's own entries"
 msgstr ""
 "La profondeur est un nombre de niveaux : 1 pour les seules entrées du dossier"
 
-#: src/search/deep_search_tab.c:369
+#: src/search/deep_search_tab.c:370
 msgid "Type the folder to search"
 msgstr "Saisissez le dossier où chercher"
 
 #. TRANSLATORS: %s is a folder path
-#: src/search/deep_search_tab.c:374
+#: src/search/deep_search_tab.c:375
 #, c-format
 msgid "No such folder: %s"
 msgstr "Dossier introuvable : %s"
 
-#: src/search/deep_search_tab.c:402
-msgid "Searching…"
-msgstr "Recherche en cours…"
-
-#: src/search/deep_search_tab.c:462
+#: src/search/deep_search_tab.c:463
 msgid "Fill in the criteria, then press Enter"
 msgstr "Remplissez les critères, puis appuyez sur Enter"
 
-#: src/search/deep_search_tab.c:785 src/workspace/workspace_menu.c:81
+#: src/search/deep_search_tab.c:786 src/workspace/workspace_menu.c:81
 msgid "Save as Bookmark…"
 msgstr "Enregistrer comme signet…"
 
-#: src/search/deep_search_tab.c:869
+#: src/search/deep_search_tab.c:870
 msgid ""
 "Patterns separated by commas: node_modules (a name at any depth), src/build "
 "(from the folder searched), build/ (folders only); the folders left out are "
@@ -10754,23 +11309,23 @@ msgstr ""
 "src/build (depuis le dossier de la recherche), build/ (dossiers seulement) ; "
 "les dossiers écartés ne sont pas parcourus"
 
-#: src/search/deep_search_tab.c:880
+#: src/search/deep_search_tab.c:881
 msgid "Folder to search"
 msgstr "Dossier où chercher"
 
-#: src/search/deep_search_tab.c:880
+#: src/search/deep_search_tab.c:881
 msgid "The folder searched, with everything below it"
 msgstr "Le dossier de la recherche, avec tout ce qu’il contient"
 
-#: src/search/deep_search_tab.c:885
+#: src/search/deep_search_tab.c:887
 msgid "Use the Explorer's Folder"
 msgstr "Utiliser le dossier de l’explorateur"
 
-#: src/search/deep_search_tab.c:891
+#: src/search/deep_search_tab.c:893
 msgid "Part of the name, or *.jpg"
 msgstr "Partie du nom, ou *.jpg"
 
-#: src/search/deep_search_tab.c:892
+#: src/search/deep_search_tab.c:894
 msgid ""
 "A part of the name, any case; with * or ? a pattern of the whole name "
 "(IMG_????.jpg)"
@@ -10778,83 +11333,83 @@ msgstr ""
 "Une partie du nom, sans tenir compte de la casse ; avec * ou ? un motif du "
 "nom entier (IMG_????.jpg)"
 
-#: src/search/deep_search_tab.c:895
+#: src/search/deep_search_tab.c:897
 msgid "c, h, md"
 msgstr "c, h, md"
 
-#: src/search/deep_search_tab.c:895
+#: src/search/deep_search_tab.c:897
 msgid "Extensions separated by commas, any case"
 msgstr "Extensions séparées par des virgules, sans tenir compte de la casse"
 
 #. TRANSLATORS: between the extensions and the category of file
-#: src/search/deep_search_tab.c:903
+#: src/search/deep_search_tab.c:905
 msgid "or"
 msgstr "ou"
 
-#: src/search/deep_search_tab.c:905
+#: src/search/deep_search_tab.c:907
 msgid "Any category"
 msgstr "Toute catégorie"
 
-#: src/search/deep_search_tab.c:909
+#: src/search/deep_search_tab.c:911
 msgid "A category of files, from their extension, instead of extensions"
 msgstr ""
 "Une catégorie de fichiers, d’après leur extension, au lieu des extensions"
 
-#: src/search/deep_search_tab.c:914
+#: src/search/deep_search_tab.c:916
 msgid "Text in the file"
 msgstr "Texte dans le fichier"
 
-#: src/search/deep_search_tab.c:914
+#: src/search/deep_search_tab.c:916
 msgid "A text the file holds (files only; binary files are skipped)"
 msgstr ""
 "Un texte que contient le fichier (fichiers seulement ; les fichiers binaires "
 "sont ignorés)"
 
-#: src/search/deep_search_tab.c:919 src/search/project_search.c:394
+#: src/search/deep_search_tab.c:921 src/search/project_search.c:442
 msgid "Match Case (Alt+M)"
 msgstr "Respecter la casse (Alt+M)"
 
-#: src/search/deep_search_tab.c:920 src/search/project_search.c:395
+#: src/search/deep_search_tab.c:922 src/search/project_search.c:443
 msgid "Whole Word (Alt+W)"
 msgstr "Mot entier (Alt+W)"
 
-#: src/search/deep_search_tab.c:921 src/search/project_search.c:396
+#: src/search/deep_search_tab.c:923 src/search/project_search.c:444
 msgid "Regular Expression, PCRE Syntax (Alt+R)"
 msgstr "Expression régulière, syntaxe PCRE (Alt+R)"
 
-#: src/search/deep_search_tab.c:923 src/search/project_search.c:399
+#: src/search/deep_search_tab.c:925 src/search/project_search.c:447
 msgid ""
 "Letters in Order, Not Next to Each Other: edvim Finds editor_vim (Alt+L)"
 msgstr ""
 "Lettres dans l’ordre, pas forcément voisines : edvim trouve editor_vim "
 "(Alt+L)"
 
-#: src/search/deep_search_tab.c:926
+#: src/search/deep_search_tab.c:928
 msgid "Files and folders"
 msgstr "Fichiers et dossiers"
 
-#: src/search/deep_search_tab.c:928
+#: src/search/deep_search_tab.c:930
 msgid "The kind of entries found (links count as files)"
 msgstr "Le genre des entrées trouvées (les liens comptent comme des fichiers)"
 
-#: src/search/deep_search_tab.c:931
+#: src/search/deep_search_tab.c:933
 msgid ""
 "In bytes, or with k, M, G (powers of 1024); both ends included; files only"
 msgstr ""
 "En octets, ou avec k, M, G (puissances de 1024) ; bornes comprises ; "
 "fichiers seulement"
 
-#: src/search/deep_search_tab.c:933 src/search/deep_search_tab.c:936
-#: src/search/deep_search_tab.c:941 src/search/deep_search_tab.c:945
-#: src/search/deep_search_tab.c:953
+#: src/search/deep_search_tab.c:935 src/search/deep_search_tab.c:938
+#: src/search/deep_search_tab.c:943 src/search/deep_search_tab.c:947
+#: src/search/deep_search_tab.c:955
 msgid "any"
 msgstr "libre"
 
-#: src/search/deep_search_tab.c:935 src/search/deep_search_tab.c:944
+#: src/search/deep_search_tab.c:937 src/search/deep_search_tab.c:946
 msgid "to"
 msgstr "à"
 
-#: src/search/deep_search_tab.c:938
+#: src/search/deep_search_tab.c:940
 msgid ""
 "A day (2026-11-01, 2026-11-01 14:30, today, yesterday) or a time ago (30min, "
 "3h, 7d, 2w, 6m, 1y); a day given as the second date is included"
@@ -10863,71 +11418,71 @@ msgstr ""
 "écoulée (30min, 3h, 7d, 2w, 6m, 1y) ; un jour donné comme seconde date est "
 "compris"
 
-#: src/search/deep_search_tab.c:950
+#: src/search/deep_search_tab.c:952
 msgid "node_modules, .git, build/"
 msgstr "node_modules, .git, build/"
 
-#: src/search/deep_search_tab.c:953
+#: src/search/deep_search_tab.c:955
 msgid "Levels below the folder: 1 for its own entries only"
 msgstr "Niveaux sous le dossier : 1 pour ses seules entrées"
 
-#: src/search/deep_search_tab.c:958
+#: src/search/deep_search_tab.c:960
 msgid "Also the names starting with a dot"
 msgstr "Aussi les noms qui commencent par un point"
 
-#: src/search/deep_search_tab.c:961
+#: src/search/deep_search_tab.c:963
 msgid "Do not enter the other filesystems mounted below the folder"
 msgstr ""
 "Ne pas entrer dans les autres systèmes de fichiers montés sous le dossier"
 
-#: src/search/deep_search_tab.c:1000
+#: src/search/deep_search_tab.c:1002
 msgid "Reset the Criteria and the Results"
 msgstr "Réinitialiser les critères et les résultats"
 
-#: src/search/deep_search_tab.c:1001
+#: src/search/deep_search_tab.c:1003
 msgid "Reset"
 msgstr "Réinitialiser"
 
-#: src/search/deep_search_tab.c:1004
+#: src/search/deep_search_tab.c:1006
 msgid "Search (Enter / F5)"
 msgstr "Rechercher (Enter / F5)"
 
-#: src/search/deep_search_tab.c:1008
+#: src/search/deep_search_tab.c:1010
 msgid "Stop the Search (Escape)"
 msgstr "Arrêter la recherche (Escape)"
 
-#: src/search/deep_search_tab.c:1012
+#: src/search/deep_search_tab.c:1014
 msgid "Save Search as Bookmark…"
 msgstr "Enregistrer la recherche comme signet…"
 
-#: src/search/deep_search_tab.c:1015
+#: src/search/deep_search_tab.c:1017
 msgid "Show the Preview on the Right"
 msgstr "Afficher l’aperçu à droite"
 
-#: src/search/deep_search_tab.c:1018
+#: src/search/deep_search_tab.c:1020
 msgid "Close Deep Search"
 msgstr "Fermer la recherche approfondie"
 
-#: src/search/project_search.c:109
+#: src/search/project_search.c:130
 #, c-format
 msgid "only the first %u files listed"
 msgstr "seuls les %u premiers fichiers listés"
 
-#: src/search/project_search.c:116
+#: src/search/project_search.c:137
 #, c-format
 msgid "stopped after %1$u MB read, %2$u file searched"
 msgid_plural "stopped after %1$u MB read, %2$u files searched"
 msgstr[0] "arrêt après %1$u Mo lus, %2$u fichier parcouru"
 msgstr[1] "arrêt après %1$u Mo lus, %2$u fichiers parcourus"
 
-#: src/search/project_search.c:123
+#: src/search/project_search.c:144
 #, c-format
 msgid "%1$u file over %2$u MB skipped"
 msgid_plural "%1$u files over %2$u MB skipped"
 msgstr[0] "%1$u fichier de plus de %2$u Mo ignoré"
 msgstr[1] "%1$u fichiers de plus de %2$u Mo ignorés"
 
-#: src/search/project_search.c:130
+#: src/search/project_search.c:151
 #, c-format
 msgid "expression too complex in %u file, matches may be missing"
 msgid_plural "expression too complex in %u files, matches may be missing"
@@ -10936,16 +11491,16 @@ msgstr[0] ""
 msgstr[1] ""
 "expression trop complexe dans %u fichiers, des résultats peuvent manquer"
 
-#: src/search/project_search.c:155
+#: src/search/project_search.c:176
 #, c-format
 msgid "not in %s"
 msgstr "hors de %s"
 
-#: src/search/project_search.c:157
+#: src/search/project_search.c:178
 msgid "ignored files too"
 msgstr "fichiers ignorés aussi"
 
-#: src/search/project_search.c:357
+#: src/search/project_search.c:404
 msgid ""
 "Patterns separated by commas: *.c (a name at any depth), src/ui (from the "
 "project root), build/ (folders only)"
@@ -10953,43 +11508,43 @@ msgstr ""
 "Motifs séparés par des virgules : *.c (un nom à toute profondeur), src/ui "
 "(depuis la racine du projet), build/ (dossiers seulement)"
 
-#: src/search/project_search.c:369
-msgid "Search in Files"
-msgstr "Rechercher dans les fichiers"
-
-#: src/search/project_search.c:392
+#: src/search/project_search.c:416
 msgid "Search in Notes"
 msgstr "Rechercher dans les notes"
 
-#: src/search/project_search.c:370
+#: src/search/project_search.c:416
+msgid "Search in Files"
+msgstr "Rechercher dans les fichiers"
+
+#: src/search/project_search.c:418
 msgid "_Search"
 msgstr "_Rechercher"
 
-#: src/search/project_search.c:386
+#: src/search/project_search.c:434
 msgid "Text to find"
 msgstr "Texte à rechercher"
 
-#: src/search/project_search.c:416
+#: src/search/project_search.c:464
 msgid "Files to i_nclude"
 msgstr "Fichiers à i_nclure"
 
-#: src/search/project_search.c:416
+#: src/search/project_search.c:464
 msgid "*.c, src/ (empty: every file)"
 msgstr "*.c, src/ (vide : tous les fichiers)"
 
-#: src/search/project_search.c:418
+#: src/search/project_search.c:466
 msgid "Files to e_xclude"
 msgstr "Fichiers à e_xclure"
 
-#: src/search/project_search.c:418
+#: src/search/project_search.c:466
 msgid "tests/, *.min.js"
 msgstr "tests/, *.min.js"
 
-#: src/search/project_search.c:421
+#: src/search/project_search.c:469
 msgid "Include _ignored files"
 msgstr "Inclure les fichiers _ignorés"
 
-#: src/search/project_search.c:422
+#: src/search/project_search.c:470
 msgid ""
 "Also the files git ignores (.gitignore); outside git, hidden and build "
 "folders"
@@ -10997,15 +11552,15 @@ msgstr ""
 "Aussi les fichiers ignorés par git (.gitignore) ; hors git, les dossiers "
 "cachés et de compilation"
 
-#: src/search/project_search.c:426
-#, c-format
-msgid "In the files of %s"
-msgstr "Dans les fichiers de %s"
-
-#: src/search/project_search.c:453
+#: src/search/project_search.c:476
 #, c-format
 msgid "In the notes (%s)"
 msgstr "Dans les notes (%s)"
+
+#: src/search/project_search.c:476
+#, c-format
+msgid "In the files of %s"
+msgstr "Dans les fichiers de %s"
 
 #: src/search/quick_open.c:66
 msgid "Listing the project files…"
@@ -11299,46 +11854,46 @@ msgstr "Impossible d’ouvrir un pseudo-terminal : %s"
 msgid "Cannot start %1$s: %2$s"
 msgstr "Impossible de lancer %1$s : %2$s"
 
-#: src/widgets/outline_pane.c:242
+#: src/widgets/outline_pane.c:246
 msgid "Collapse All (c)"
 msgstr "Tout replier (c)"
 
-#: src/widgets/outline_pane.c:242
+#: src/widgets/outline_pane.c:246
 msgid "Expand All (c)"
 msgstr "Tout déplier (c)"
 
-#: src/widgets/outline_pane.c:328
+#: src/widgets/outline_pane.c:332
 msgid "Headings"
 msgstr "Titres"
 
-#: src/widgets/outline_pane.c:332
+#: src/widgets/outline_pane.c:336
 msgid "No headings in this file"
 msgstr "Aucun titre dans ce fichier"
 
-#: src/widgets/outline_pane.c:332
+#: src/widgets/outline_pane.c:336
 msgid "No symbols in this file"
 msgstr "Aucun symbole dans ce fichier"
 
-#: src/widgets/outline_pane.c:486
+#: src/widgets/outline_pane.c:490
 msgid "Sort By Line (s)"
 msgstr "Trier par ligne (s)"
 
-#: src/widgets/outline_pane.c:486
+#: src/widgets/outline_pane.c:490
 msgid "Group By Kind (s)"
 msgstr "Grouper par type (s)"
 
-#: src/widgets/outline_pane.c:951
+#: src/widgets/outline_pane.c:956
 msgid "Hide Tagbar (q)"
 msgstr "Masquer la barre de symboles (q)"
 
-#: src/workspace/layout_store.c:57
+#: src/workspace/layout_store.c:60
 #, c-format
 msgid "%u pane"
 msgid_plural "%u panes"
 msgstr[0] "%u volet"
 msgstr[1] "%u volets"
 
-#: src/workspace/layout_store.c:58
+#: src/workspace/layout_store.c:61
 #, c-format
 msgid "%u terminal"
 msgid_plural "%u terminals"
@@ -11346,59 +11901,59 @@ msgstr[0] "%u terminal"
 msgstr[1] "%u terminaux"
 
 #. TRANSLATORS: e.g. "Editor Panel (2 panes, 1 terminal)"
-#: src/workspace/layout_store.c:62
+#: src/workspace/layout_store.c:65
 #, c-format
 msgid "Editor Panel (%1$s, %2$s)"
 msgstr "Panneau d’édition (%1$s, %2$s)"
 
-#: src/workspace/layout_store.c:64
+#: src/workspace/layout_store.c:67
 #, c-format
 msgid "Editor Panel (%s)"
 msgstr "Panneau d’édition (%s)"
 
-#: src/workspace/layout_store.c:66
+#: src/workspace/layout_store.c:69
 msgid "Editor Panel"
 msgstr "Panneau d’édition"
 
-#: src/workspace/layout_store.c:79
+#: src/workspace/layout_store.c:82
 #, c-format
 msgid "Terminal (%u terminal, below)"
 msgid_plural "Terminal (%u terminals, below)"
 msgstr[0] "Terminal (%u terminal, en dessous)"
 msgstr[1] "Terminal (%u terminaux, en dessous)"
 
-#: src/workspace/layout_store.c:80
+#: src/workspace/layout_store.c:83
 #, c-format
 msgid "Terminal (%u terminal, beside)"
 msgid_plural "Terminal (%u terminals, beside)"
 msgstr[0] "Terminal (%u terminal, à côté)"
 msgstr[1] "Terminal (%u terminaux, à côté)"
 
-#: src/workspace/layout_store.c:83
+#: src/workspace/layout_store.c:86
 msgid "Terminal (below)"
 msgstr "Terminal (en dessous)"
 
-#: src/workspace/layout_store.c:83
+#: src/workspace/layout_store.c:86
 msgid "Terminal (beside)"
 msgstr "Terminal (à côté)"
 
-#: src/workspace/layout_store.c:88
+#: src/workspace/layout_store.c:91
 msgid "No panels"
 msgstr "Aucun panneau"
 
-#: src/workspace/layout_store.c:91
+#: src/workspace/layout_store.c:94
 msgid "Tagbar (editor)"
 msgstr "Barre de symboles (édition)"
 
-#: src/workspace/layout_store.c:92
+#: src/workspace/layout_store.c:95
 msgid "Tagbar (preview)"
 msgstr "Barre de symboles (aperçu)"
 
-#: src/workspace/layout_store.c:209
+#: src/workspace/layout_store.c:216
 msgid "Focus"
 msgstr "Focus"
 
-#: src/workspace/layout_store.c:303
+#: src/workspace/layout_store.c:310
 msgid "Auto"
 msgstr "Auto"
 
@@ -11414,7 +11969,7 @@ msgstr "_Modifier les dispositions…"
 msgid "Save, Delete or Reset Layouts"
 msgstr "Enregistrer, supprimer ou réinitialiser les dispositions"
 
-#: src/workspace/layouts.c:275
+#: src/workspace/layouts.c:348
 #, c-format
 msgid ""
 "Could not save %1$s:\n"
@@ -11423,39 +11978,39 @@ msgstr ""
 "Impossible d’enregistrer %1$s :\n"
 "%2$s"
 
-#: src/workspace/layouts.c:276
+#: src/workspace/layouts.c:349
 msgid "Layouts Not Saved"
 msgstr "Dispositions non enregistrées"
 
-#: src/workspace/layouts.c:287
+#: src/workspace/layouts.c:360
 msgctxt "layout name"
 msgid "Default"
 msgstr "Par défaut"
 
-#: src/workspace/layouts.c:298
+#: src/workspace/layouts.c:371
 msgid "Save Layout"
 msgstr "Enregistrer la disposition"
 
 #. TRANSLATORS: %s is the name of the default layout ("Default")
-#: src/workspace/layouts.c:306
+#: src/workspace/layouts.c:379
 #, c-format
 msgid "Save the panels of this workspace as (“%s” for new workspaces):"
 msgstr ""
 "Enregistrer les panneaux de cet espace de travail sous (« %s » pour les "
 "nouveaux espaces de travail) :"
 
-#: src/workspace/layouts.c:330
+#: src/workspace/layouts.c:403
 msgid "Make the panels of this workspace the default layout of new workspaces?"
 msgstr ""
 "Faire des panneaux de cet espace de travail la disposition par défaut des "
 "nouveaux espaces de travail ?"
 
-#: src/workspace/layouts.c:332
+#: src/workspace/layouts.c:405
 #, c-format
 msgid "A layout named “%s” already exists. Replace it?"
 msgstr "Une disposition nommée « %s » existe déjà. La remplacer ?"
 
-#: src/workspace/layouts.c:334
+#: src/workspace/layouts.c:407
 #, c-format
 msgid ""
 "Replace the built-in layout “%s” with the panels of this workspace? Deleting "
@@ -11464,41 +12019,41 @@ msgstr ""
 "Remplacer la disposition intégrée « %s » par les panneaux de cet espace de "
 "travail ? Supprimer la vôtre la fait revenir."
 
-#: src/workspace/layouts.c:339
+#: src/workspace/layouts.c:412
 msgid "Replace Default Layout"
 msgstr "Remplacer la disposition par défaut"
 
-#: src/workspace/layouts.c:339
+#: src/workspace/layouts.c:412
 msgid "Replace Layout"
 msgstr "Remplacer la disposition"
 
 #. TRANSLATORS: %s is the name of a layout that comes with the application
-#: src/workspace/layouts.c:408
+#: src/workspace/layouts.c:481
 #, c-format
 msgid "%s (built-in)"
 msgstr "%s (intégrée)"
 
-#: src/workspace/layouts.c:412
+#: src/workspace/layouts.c:485
 msgid "Default — new workspaces"
 msgstr "Par défaut — nouveaux espaces de travail"
 
-#: src/workspace/layouts.c:413
+#: src/workspace/layouts.c:486
 msgid "Default — new workspaces (built-in)"
 msgstr "Par défaut — nouveaux espaces de travail (intégrée)"
 
-#: src/workspace/layouts.c:476
+#: src/workspace/layouts.c:549
 msgid "_Reset Default"
 msgstr "_Réinitialiser"
 
-#: src/workspace/layouts.c:497
+#: src/workspace/layouts.c:570
 msgid "Workspace Layouts"
 msgstr "Dispositions des espaces de travail"
 
-#: src/workspace/layouts.c:499
+#: src/workspace/layouts.c:572
 msgid "_Save Current…"
 msgstr "_Enregistrer l’actuelle…"
 
-#: src/workspace/layouts.c:515
+#: src/workspace/layouts.c:588
 msgid ""
 "Select a layout, then Apply it to this workspace (or double-click it). Save "
 "Current… replaces the selected layout or adds a new one; the default layout "
@@ -11511,16 +12066,16 @@ msgstr ""
 "des nouveaux espaces de travail. Enregistrer sous le nom d’une disposition "
 "intégrée la remplace."
 
-#: src/workspace/layouts.c:553
+#: src/workspace/layouts.c:626
 #, c-format
 msgid "Layout %u"
 msgstr "Disposition %u"
 
-#: src/workspace/layouts.c:560
+#: src/workspace/layouts.c:633
 msgid "Reset Default Layout"
 msgstr "Réinitialiser la disposition par défaut"
 
-#: src/workspace/layouts.c:561
+#: src/workspace/layouts.c:634
 msgid ""
 "Reset the default layout of new workspaces to the built-in one (explorer and "
 "preview, no terminal)?"
@@ -11528,12 +12083,12 @@ msgstr ""
 "Rétablir la disposition intégrée pour les nouveaux espaces de travail "
 "(explorateur et aperçu, sans terminal) ?"
 
-#: src/workspace/layouts.c:570
+#: src/workspace/layouts.c:643
 #, c-format
 msgid "Delete the layout “%s”?"
 msgstr "Supprimer la disposition « %s » ?"
 
-#: src/workspace/layouts.c:571
+#: src/workspace/layouts.c:644
 msgid "Delete Layout"
 msgstr "Supprimer la disposition"
 
@@ -11602,6 +12157,15 @@ msgstr "Ouvrir l’espace de travail"
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
 
+#~ msgid ""
+#~ "Execute command (e.g. set-justification-center, goto-line, save-buffer)"
+#~ msgstr ""
+#~ "Exécuter une commande (ex. set-justification-center, goto-line, save-"
+#~ "buffer)"
+
+#~ msgid "Close Game (Ctrl+W)"
+#~ msgstr "Fermer le jeu (Ctrl+W)"
+
 #~ msgid "Could not create media stream for file (press 'm' for details)"
 #~ msgstr "Impossible de créer le flux média du fichier (m pour les détails)"
 
@@ -11648,76 +12212,3 @@ msgstr "Fermer l’espace de travail"
 
 #~ msgid "Hidden: Off"
 #~ msgstr "Cachés : non"
-
-msgid ""
-"Could not create a private folder to mount the machine in. Check that "
-"$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other "
-"users."
-msgstr ""
-"Impossible de créer un dossier privé où monter la machine. Vérifiez que "
-"$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et n’est pas "
-"accessible aux autres utilisateurs."
-
-#: src/code/code_problems.c
-msgid "Problems"
-msgstr "Problèmes"
-
-msgid "Errors"
-msgstr "Erreurs"
-
-msgid "Warnings"
-msgstr "Avertissements"
-
-msgid "Filter…"
-msgstr "Filtrer…"
-
-msgid "Close Problems"
-msgstr "Fermer l’onglet Problèmes"
-
-msgid "No problems detected in this workspace's files"
-msgstr "Aucun problème détecté dans les fichiers de cet espace de travail"
-
-#, c-format
-msgid "%u info"
-msgid_plural "%u infos"
-msgstr[0] "%u info"
-msgstr[1] "%u infos"
-
-msgid "error"
-msgstr "erreur"
-
-msgid "warning"
-msgstr "avertissement"
-
-msgid "info"
-msgstr "info"
-
-msgid "hint"
-msgstr "suggestion"
-
-msgid "No diagnostics in this file"
-msgstr "Aucun diagnostic dans ce fichier"
-
-#: src/chrome/help.c
-msgid "References, Search, Problems and LaTeX tabs"
-msgstr "Onglets Références, Recherche, Problèmes et LaTeX"
-
-msgid "Close the tab (also its cross or a middle click)"
-msgstr "Fermer l’onglet (aussi sa croix ou un clic milieu)"
-
-msgctxt "key"
-msgid "Drag / right-click tab"
-msgstr "Glisser / clic droit sur l’onglet"
-
-msgid "Move the tab to another pane, as an editor tab"
-msgstr "Déplacer l’onglet dans un autre volet, comme un onglet d’édition"
-
-#: src/code/code_refs.c src/latex/latex_errors.c
-msgid "No search yet — press Ctrl+Shift+F to search in files"
-msgstr "Aucune recherche pour l’instant — appuyez sur Ctrl+Shift+F pour chercher dans les fichiers"
-
-msgid "No references yet — press Shift+F12 on a name in an editor tab"
-msgstr "Aucune référence pour l’instant — appuyez sur Shift+F12 sur un nom dans un onglet d’édition"
-
-msgid "No compilation yet — save a .tex file to compile it"
-msgstr "Aucune compilation pour l’instant — enregistrez un fichier .tex pour le compiler"
