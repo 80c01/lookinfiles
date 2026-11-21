@@ -58,6 +58,12 @@ void ipynb_kernel_interrupt(IpynbKernel* kernel);
 /* Restart the kernel: the cells waiting are done() "aborted" */
 void ipynb_kernel_restart(IpynbKernel* kernel);
 
+/* The line for a remote POSIX shell (ssh) running the bridge script with
+ * python3, else python: the arguments that follow on the ssh command line go
+ * to the script (--list). Without Python it prints an "error" event of code
+ * "no-python" and exits. Caller frees. */
+gchar* ipynb_kernel_remote_command(const gchar* script);
+
 /* --- The installed kernels --- */
 
 typedef struct {

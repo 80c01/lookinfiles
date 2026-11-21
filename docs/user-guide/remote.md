@@ -39,6 +39,9 @@ While you browse a connected machine, the breadcrumbs start with a server icon a
 the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.
 
+Jupyter notebooks of the machine run their kernel on the machine itself
+(see [The editor](editor.md)), through the connection opened for the files.
+
 Paths on the machine are written as on the machine, `name:path`: the
 **New File** and **New Folder** dialogs show `server:~/projects` (not the
 local mount point), and so do the notebook **Save** dialog, the Emacs

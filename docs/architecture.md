@@ -176,7 +176,10 @@ Layers, from bottom to top
   queue, events as `IpynbKernelCallbacks` (state, started, failed, cell
   input / output / clear / done, input requests); the end of the bridge's
   stdin stops the kernel. `ipynb_kernel_list()` runs the bridge once with
-  `--list` for the installed kernelspecs (`IpynbKernelSpec`). Tested with
+  `--list` for the installed kernelspecs (`IpynbKernelSpec`);
+  `ipynb_kernel_remote_command()` is the line that runs the bridge on a
+  remote machine over ssh (python3 or python found there, else a
+  `no-python` error event). Tested with
   `tests/fixtures/fake_ipynb_bridge.py`.
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
@@ -997,7 +1000,8 @@ Layers, from bottom to top
   before a close and `ipynb_tab_confirm_quit()` from `ui_confirm_quit()`).
   `ipynb_run.c` runs the cells (it shares `ipynb_tab_private.h` with
   `ipynb_tab.c` and `ipynb_save.c`): an `ipynb_kernel` started at the first run, the bridge
-  script from the GResource, outputs added to the `IpynbDoc` by cell key
+  script from the GResource (run over ssh, through the master connection, for
+  a notebook of a mounted remote machine: `remote_path_locate()`), outputs added to the `IpynbDoc` by cell key
   and drawn once per main loop turn (`ipynb_tab_refresh_cell()`: the other
   cells and the source are left alone), the input row, interrupt, restart,
   the kernel menu (labelled with the notebook's kernel;

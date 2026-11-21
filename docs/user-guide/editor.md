@@ -69,7 +69,11 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   below. The cells run in the notebook's Jupyter kernel, started at the first
   run in the notebook's folder and stopped with the tab: Python 3 with
   `jupyter_client` and the kernel (`ipykernel` for Python) must be
-  installed. The kernel's button in the bar shows the notebook's kernel,
+  installed. A notebook of a connected remote machine runs on that machine
+  (over SSH, in its folder there; the status bar says `on <machine>`): Python
+  and Jupyter must then be installed there, in the `PATH` of a
+  non-interactive SSH command, and the menu lists that machine's kernels.
+  The kernel's button in the bar shows the notebook's kernel,
   the status bar under the cells its state; its menu lists
   the installed kernels: choosing one stops the kernel running, records it
   in the notebook and starts it. **Run All**, the stop and restart buttons

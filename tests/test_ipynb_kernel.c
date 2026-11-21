@@ -224,10 +224,32 @@ static void test_list(void) {
     g_string_free(l.log, TRUE);
 }
 
+/* The remote line run by a local sh: the script gets the arguments that
+ * follow; without Python, a no-python error event */
+static void test_remote_command(void) {
+    gchar* line = ipynb_kernel_remote_command("import sys\nprint('it''s', sys.argv[1:])\n");
+    gchar* cmd = g_strconcat(line, " --list", NULL);
+    const gchar* argv[] = { "/bin/sh", "-c", cmd, NULL };
+    gchar* out = NULL;
+    gint status = -1;
+    g_assert_true(g_spawn_sync(NULL, (gchar**)argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &out, NULL, &status, NULL));
+    g_assert_cmpint(status, ==, 0);
+    g_assert_cmpstr(out, ==, "its ['--list']\n");
+    g_free(out);
+
+    const gchar* env[] = { "PATH=/nonexistent", NULL };
+    g_assert_true(g_spawn_sync(NULL, (gchar**)argv, (gchar**)env, 0, NULL, NULL, &out, NULL, &status, NULL));
+    g_assert_nonnull(strstr(out, "\"code\": \"no-python\""));
+    g_free(out);
+    g_free(cmd);
+    g_free(line);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ipynb_kernel/execute", test_execute);
     g_test_add_func("/ipynb_kernel/failures", test_failures);
     g_test_add_func("/ipynb_kernel/list", test_list);
+    g_test_add_func("/ipynb_kernel/remote_command", test_remote_command);
     return g_test_run();
 }

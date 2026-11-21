@@ -12986,6 +12986,21 @@ msgstr "_Oui"
 msgid "Connecting to %s…"
 msgstr "Connexion à %s…"
 
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "%1$s on %2$s"
+msgstr "%1$s sur %2$s"
+
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "Running cells needs Python 3 on %s"
+msgstr "Exécuter les cellules demande Python 3 sur %s"
+
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "Running cells needs Jupyter on %s: pip install jupyter_client ipykernel"
+msgstr "Exécuter les cellules demande Jupyter sur %s : pip install jupyter_client ipykernel"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

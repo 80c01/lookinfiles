@@ -407,3 +407,13 @@ void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKern
     g_subprocess_communicate_utf8_async(proc, NULL, cancel, on_listed, call);
     g_object_unref(proc);
 }
+
+gchar* ipynb_kernel_remote_command(const gchar* script) {
+    gchar* quoted = g_shell_quote(script != NULL ? script : "");
+    gchar* line = g_strconcat(
+        "p=$(command -v python3 || command -v python) || "
+        "{ echo '{\"ev\": \"error\", \"code\": \"no-python\", \"message\": \"python3 not found\"}'; exit 127; }; "
+        "exec \"$p\" -c ", quoted, NULL);
+    g_free(quoted);
+    return line;
+}

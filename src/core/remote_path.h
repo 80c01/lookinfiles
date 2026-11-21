@@ -8,6 +8,7 @@
  * The map functions are pure (unit-tested); the others look at the connected
  * machines of app. */
 #include "core/app_types.h"
+#include "core/ssh_session.h"
 
 /* "<name>:<root><rest>" for a path at or under mount (rest: what follows the
  * mount point), NULL for a path outside it. root is the remote folder that is
@@ -28,5 +29,12 @@ gchar* remote_path_display(AppData* app, const gchar* path);
  * machine (as remote_path_map_from_display()); FALSE when text names no
  * connected machine (a local path then). */
 gboolean remote_path_parse(AppData* app, const gchar* text, gchar** out_local);
+
+/* Where path is when it is under the mount of a connected machine: the ssh
+ * target (strings owned by the machine: use them before the next disconnect),
+ * the path on the machine ("~/x" or "/srv/x") and the machine's name (both
+ * may be NULL; caller frees). FALSE for a local path. */
+gboolean remote_path_locate(AppData* app, const gchar* path, SshTarget* target, gchar** remote,
+                            gchar** machine);
 
 #endif /* REMOTE_PATH_H */

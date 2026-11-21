@@ -2,6 +2,8 @@
  * ipynb_tab_private.h) */
 #include "jupyter/ipynb_tab_private.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
+#include "core/ssh_session.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_kernel.h"
 #include "core/run_time.h"
@@ -97,7 +99,13 @@ static void update_kernel_label(IpynbTab* t) {
                       : state == IPYNB_KERNEL_DEAD     ? _("Kernel died")
                       : ipynb_doc_kernel(t->doc) != NULL ? _("Kernel not started")
                                                          : _("No kernel");
-    gtk_label_set_text(GTK_LABEL(t->kernel_state), text);
+    if (t->kernel_host != NULL && state != IPYNB_KERNEL_OFF) {
+        gchar* where = g_strdup_printf(_("%1$s on %2$s"), text, t->kernel_host);
+        gtk_label_set_text(GTK_LABEL(t->kernel_state), where);
+        g_free(where);
+    } else {
+        gtk_label_set_text(GTK_LABEL(t->kernel_state), text);
+    }
     gboolean on = state != IPYNB_KERNEL_OFF;
     gtk_widget_set_sensitive(t->interrupt_button, on && state != IPYNB_KERNEL_DEAD);
     gtk_widget_set_sensitive(t->restart_button, on);
@@ -155,11 +163,21 @@ static void on_started(const gchar* kernelspec, const gchar* language_info, cons
     }
 }
 
+/* Jupyter missing: where to install it */
+static gchar* no_jupyter_text(IpynbTab* t) {
+    return t->kernel_host != NULL
+               ? g_strdup_printf(_("Running cells needs Jupyter on %s: pip install jupyter_client ipykernel"),
+                                 t->kernel_host)
+               : g_strdup(_("Running cells needs Jupyter: pip install jupyter_client ipykernel"));
+}
+
 static void on_failed(const gchar* code, const gchar* message, gpointer data) {
     IpynbTab* t = data;
     gchar* text;
     if (g_strcmp0(code, "no-jupyter") == 0) {
-        text = g_strdup(_("Running cells needs Jupyter: pip install jupyter_client ipykernel"));
+        text = no_jupyter_text(t);
+    } else if (g_strcmp0(code, "no-python") == 0) {
+        text = g_strdup_printf(_("Running cells needs Python 3 on %s"), t->kernel_host != NULL ? t->kernel_host : "");
     } else if (g_strcmp0(code, "no-kernel") == 0) {
         text = g_strdup_printf(_("Kernel not installed: %s"), message);
     } else if (g_strcmp0(code, "exited") == 0) {
@@ -240,24 +258,55 @@ static const IpynbKernelCallbacks CALLBACKS = { on_state, on_started, on_failed,
 
 /* --- Starting the kernel --- */
 
-/* python3 -c <the bridge script>, or NULL with error set */
-static gchar** bridge_argv(GError** error) {
+/* The bridge on the machine of a notebook in a mounted remote folder: ssh
+ * running python3 -c <script> there, *cwd the notebook's folder on the
+ * machine and t->kernel_host its name. NULL for a local notebook. */
+static gchar** remote_bridge_argv(IpynbTab* t, GBytes* script, gchar** cwd) {
+    SshTarget target;
+    gchar* remote = NULL;
+    gchar* machine = NULL;
+    if (!remote_path_locate(t->app, t->dir, &target, &remote, &machine)) return NULL;
+    /* Through the master connection of the machine: pipes only, no tty */
+    GPtrArray* args = ssh_session_argv(&target, 0);
+    gchar* text = g_strndup(g_bytes_get_data(script, NULL), g_bytes_get_size(script));
+    g_ptr_array_add(args, ipynb_kernel_remote_command(text));
+    g_free(text);
+    g_ptr_array_add(args, NULL);
+    g_free(t->kernel_host);
+    t->kernel_host = machine;
+    if (cwd != NULL) {
+        *cwd = remote;
+    } else {
+        g_free(remote);
+    }
+    return (gchar**)g_ptr_array_free(args, FALSE);
+}
+
+/* python3 -c <the bridge script> here, or ssh running it on the remote
+ * machine of the notebook (*cwd then set to its folder there); NULL with
+ * error set */
+static gchar** bridge_argv(IpynbTab* t, gchar** cwd, GError** error) {
+    if (cwd != NULL) *cwd = NULL;
+    GBytes* bridge = g_resources_lookup_data(BRIDGE_RESOURCE, G_RESOURCE_LOOKUP_FLAGS_NONE, error);
+    if (bridge == NULL) return NULL;
+    gchar** remote = remote_bridge_argv(t, bridge, cwd);
+    if (remote != NULL) {
+        g_bytes_unref(bridge);
+        return remote;
+    }
+    g_clear_pointer(&t->kernel_host, g_free);
     gchar* python = g_find_program_in_path("python3");
     if (python == NULL) python = g_find_program_in_path("python");
     if (python == NULL) {
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT, "%s", _("Running cells needs Python 3"));
-        return NULL;
-    }
-    GBytes* script = g_resources_lookup_data(BRIDGE_RESOURCE, G_RESOURCE_LOOKUP_FLAGS_NONE, error);
-    if (script == NULL) {
-        g_free(python);
+        g_bytes_unref(bridge);
         return NULL;
     }
     gchar** argv = g_new0(gchar*, 4);
     argv[0] = python;
     argv[1] = g_strdup("-c");
-    argv[2] = g_strndup(g_bytes_get_data(script, NULL), g_bytes_get_size(script));
-    g_bytes_unref(script);
+    argv[2] = g_strndup(g_bytes_get_data(bridge, NULL), g_bytes_get_size(bridge));
+    g_bytes_unref(bridge);
     return argv;
 }
 
@@ -266,16 +315,17 @@ static gboolean ensure_kernel(IpynbTab* t) {
     if (t->kernel != NULL && ipynb_kernel_get_state(t->kernel) != IPYNB_KERNEL_OFF) return TRUE;
     g_clear_pointer(&t->kernel, ipynb_kernel_free);
     GError* error = NULL;
-    gchar** argv = bridge_argv(&error);
+    gchar* cwd = NULL;
+    gchar** argv = bridge_argv(t, &cwd, &error);
     if (argv != NULL) {
         t->kernel = ipynb_kernel_new(&CALLBACKS, t);
-        gchar* cwd = g_strdup(t->dir);
+        if (cwd == NULL) cwd = g_strdup(t->dir);
         if (!ipynb_kernel_start(t->kernel, (const gchar* const*)argv, ipynb_doc_kernel_name(t->doc), cwd, &error)) {
             g_clear_pointer(&t->kernel, ipynb_kernel_free);
         }
-        g_free(cwd);
         g_strfreev(argv);
     }
+    g_free(cwd);
     if (t->kernel == NULL) {
         ipynb_tab_set_status(t, error != NULL ? error->message : _("No kernel"), TRUE);
         g_clear_error(&error);
@@ -328,8 +378,10 @@ static void on_kernels_listed(GPtrArray* specs, const gchar* code, const gchar* 
     IpynbTab* t = data;
     g_clear_object(&t->list_cancel);
     if (specs == NULL) {
-        gchar* text = g_strcmp0(code, "no-jupyter") == 0
-                          ? g_strdup(_("Running cells needs Jupyter: pip install jupyter_client ipykernel"))
+        gchar* text = g_strcmp0(code, "no-jupyter") == 0 ? no_jupyter_text(t)
+                      : g_strcmp0(code, "no-python") == 0
+                          ? g_strdup_printf(_("Running cells needs Python 3 on %s"),
+                                            t->kernel_host != NULL ? t->kernel_host : "")
                           : g_strdup_printf(_("Kernel error: %s"), message);
         menu_message(t, text);
         g_free(text);
@@ -365,7 +417,7 @@ static void on_kernel_menu_show(GtkWidget* popover, gpointer data) {
     IpynbTab* t = data;
     if (t->list_cancel != NULL) return; /* listing */
     GError* error = NULL;
-    gchar** argv = bridge_argv(&error);
+    gchar** argv = bridge_argv(t, NULL, &error);
     if (argv == NULL) {
         menu_message(t, error->message);
         g_error_free(error);

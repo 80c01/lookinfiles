@@ -85,6 +85,18 @@ static void test_connected_machines(void) {
     g_assert_null(local);
     g_assert_false(remote_path_parse(app, "/tmp", &local));
 
+    SshTarget t = { NULL, NULL, 0, NULL };
+    gchar* remote = NULL;
+    gchar* machine = NULL;
+    g_assert_true(remote_path_locate(app, MOUNT "/nb/a.ipynb", &t, &remote, &machine));
+    g_assert_cmpstr(t.host, ==, "srv.example");
+    g_assert_cmpstr(remote, ==, "/data/nb/a.ipynb");
+    g_assert_cmpstr(machine, ==, "srv.example");
+    g_free(remote);
+    g_free(machine);
+    g_assert_false(remote_path_locate(app, "/mnt/off/a", &t, &remote, &machine)); /* not connected */
+    g_assert_null(remote);
+
     on->is_connected = FALSE; /* remote_free() would unmount it */
     remote_free(app);
     g_free(app);

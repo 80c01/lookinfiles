@@ -178,7 +178,8 @@ class Bridge:
         try:
             self.km = self.manager_class(kernel_name=name) if name else self.manager_class()
             emit("status", state="starting")
-            self.km.start_kernel(cwd=cwd or None)
+            # "~/..." for a notebook in the home directory of a remote machine
+            self.km.start_kernel(cwd=os.path.expanduser(cwd) if cwd else None)
         except Exception as e:  # NoSuchKernel, a kernel that cannot start
             code = "no-kernel" if type(e).__name__ == "NoSuchKernel" else "start"
             self.km = None

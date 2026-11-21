@@ -103,6 +103,26 @@ gchar* remote_path_display(AppData* app, const gchar* path) {
     return g_strdup(path);
 }
 
+gboolean remote_path_locate(AppData* app, const gchar* path, SshTarget* target, gchar** remote,
+                            gchar** machine) {
+    if (remote != NULL) *remote = NULL;
+    if (machine != NULL) *machine = NULL;
+    if (path == NULL) return FALSE;
+    for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
+        RemoteMachine* rm = l->data;
+        if (!rm->is_connected || rm->mount_point == NULL || rm->host == NULL) continue;
+        const gchar* label = machine_label(rm);
+        gchar* shown = remote_path_map_to_display(path, rm->mount_point, label, rm->remote_path);
+        if (shown == NULL) continue;
+        if (target != NULL) *target = remote_machine_target(rm);
+        if (remote != NULL) *remote = g_strdup(shown + strlen(label) + 1); /* after "<name>:" */
+        if (machine != NULL) *machine = g_strdup(label);
+        g_free(shown);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 gboolean remote_path_parse(AppData* app, const gchar* text, gchar** out_local) {
     if (out_local != NULL) *out_local = NULL;
     for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {

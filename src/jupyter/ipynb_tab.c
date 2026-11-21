@@ -909,6 +909,7 @@ static void tab_free(gpointer data) {
     g_free(t->path);
     g_free(t->name);
     g_free(t->dir);
+    g_free(t->kernel_host);
     g_free(t);
 }
 

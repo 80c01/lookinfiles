@@ -59,6 +59,7 @@ typedef struct {
 
     /* Running cells (ipynb_run.c) */
     IpynbKernel* kernel;     /* NULL until a cell runs */
+    gchar* kernel_host;      /* the remote machine it runs on (over ssh), NULL: here */
     GtkWidget* kernel_button; /* the notebook's kernel; its menu chooses the kernel */
     GtkWidget* kernel_state;  /* the kernel's state (status bar) */
     GtkWidget* kernel_menu;   /* the box of that menu */

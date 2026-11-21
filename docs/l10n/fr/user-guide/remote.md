@@ -42,6 +42,10 @@ par une icône de serveur et le nom de la machine, et le bouton **Terminal**
 de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell
 local.
 
+Les notebooks Jupyter de la machine exécutent leur noyau sur la machine
+elle-même (voir [L’éditeur](editor.md)), par la connexion ouverte pour les
+fichiers.
+
 Les chemins de la machine s’écrivent comme sur la machine, `nom:chemin` :
 les dialogues **Nouveau fichier** et **Nouveau dossier** affichent
 `serveur:~/projets` (et non le point de montage local), de même que le
