@@ -47,12 +47,15 @@ The **Git Commits** tab, next to the **Preview** tab, appears when the
 current folder is in a repository. It lists the history, newest first, with
 the commit, message (preceded by coloured badges for `HEAD`, local and remote
 branches, and tags), author and date of each commit. Select one to see its
-full diff below.
+full diff below. The newest 100 commits are read first; scrolling to the
+end of the list (or moving the selection to its last commit) reads the next
+100.
 
 The field above the list filters the history: only the commits whose
 message, author (name or email) or hash hold every word typed (any case)
 stay, searched through the whole history, not just the commits shown. Beside
-it, how many commits are listed (the last 100, or the first 100 that match).
+it, how many commits are listed (the next ones that match are read in the
+same way).
 `Ctrl+F`, `/` in Vim mode or `C-s` in Emacs mode go to it from the list;
 `Enter` or `Down` go back to the list, `Esc` empties it.
 

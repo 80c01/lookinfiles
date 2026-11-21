@@ -11,8 +11,11 @@
 #include <string.h>
 
 #define GIT_ROW_MAX_REFS 6
-/* Commits listed (the newest, or the newest that match the filter) */
-#define GIT_LOG_MAX 100
+/* Commits read at a time (the newest, or the newest that match the filter);
+ * reaching the end of the list reads as many more */
+#define GIT_LOG_PAGE 100
+/* Rows from the end of the list that read the next page when scrolled to */
+#define GIT_MORE_MARGIN_ROWS 10
 /* Data of a commit cell: its GtkListItem */
 #define GIT_ITEM_KEY "lookin-git-item"
 
@@ -33,6 +36,10 @@ struct GitTab {
     GCancellable* cancellable;  /* log and show tasks of current_root */
     GCancellable* show_cancellable; /* diff of the selected commit being read */
     gboolean log_stale;         /* current_root's history is read when the tab is shown */
+    gboolean reading;           /* a read of the whole list is running */
+    gboolean reading_more;      /* a read of the next page is running */
+    gboolean more;              /* the history goes on after the last commit listed */
+    guint wanted;               /* commits the next whole read lists (pages loaded) */
 };
 
 /* One row of the commit list (item of GitTab.store) */
@@ -83,7 +90,10 @@ typedef struct {
     AppData* app;
     gchar* git_root;
     gchar** words;       /* filter, NULL: every commit */
-    gboolean more;       /* more commits than GIT_LOG_MAX would be listed */
+    guint skip;          /* commits before the first one read (a next page) */
+    guint max;           /* commits read */
+    gboolean append;     /* a next page: added to the list, not replacing it */
+    gboolean more;       /* the history goes on after the commits read */
     GPtrArray* commits;  /* array of GitCommitInfo* */
     GHashTable* refs_map; /* sha -> GPtrArray* of GitRefInfo* */
 } GitLogTaskData;
@@ -109,7 +119,7 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
 
     if (g_task_return_error_if_cancelled(task)) return;
 
-    GPtrArray* commits = git_read_log(td->git_root, GIT_LOG_MAX, td->words, cancellable, &td->more);
+    GPtrArray* commits = git_read_log(td->git_root, td->skip, td->max, td->words, cancellable, &td->more);
     GHashTable* refs_map = NULL;
     if (!g_cancellable_is_cancelled(cancellable) && commits != NULL && commits->len > 0) {
         refs_map = git_read_refs(td->git_root);
@@ -351,6 +361,8 @@ static void populate_refs_box(GtkWidget* box, GPtrArray* refs, guint max_badges)
     }
 }
 
+static void read_more(AppData* app);
+
 /* Cancel the diff being read for the selected commit, if any */
 static void cancel_show(GitTab* g) {
     if (g->show_cancellable != NULL) {
@@ -377,6 +389,10 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
 
     g_free(g->selected_hash);
     g->selected_hash = g_strdup(hash);
+    /* The keyboard reached the last commit listed: the next page */
+    if (gtk_single_selection_get_selected(selection) + 1 >= g_list_model_get_n_items(G_LIST_MODEL(g->store))) {
+        read_more(app);
+    }
 
     populate_refs_box(g->header_refs_box, item->refs, 0);
     gchar* header_text = g_strdup_printf("[%s] %s  •  %s  (%s)",
@@ -401,8 +417,8 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
     g_object_unref(task);
 }
 
-/* Beside the filter: how many commits are listed (n, more when the list
- * stops at GIT_LOG_MAX) */
+/* Beside the filter: how many commits are listed (n, more when the history
+ * goes on after them) */
 static void show_count(GitTab* g, guint n, gboolean more) {
     gchar* text;
     if (g->words != NULL) {
@@ -422,6 +438,42 @@ static void show_count(GitTab* g, guint n, gboolean more) {
     g_free(text);
 }
 
+/* Add the commits read by td to the end of the list (the store takes them
+ * and their ref arrays over) */
+static void store_commits(GitTab* g, GitLogTaskData* td) {
+    if (td->commits == NULL) return;
+    g_ptr_array_set_free_func(td->commits, NULL);
+    GPtrArray* items = g_ptr_array_new_with_free_func(g_object_unref);
+    for (guint i = 0; i < td->commits->len; i++) {
+        GitCommitInfo* ci = g_ptr_array_index(td->commits, i);
+        GPtrArray* refs = NULL;
+        if (td->refs_map != NULL && ci->hash != NULL) {
+            gpointer orig_key = NULL;
+            gpointer val = NULL;
+            if (g_hash_table_steal_extended(td->refs_map, ci->hash, &orig_key, &val)) {
+                g_free(orig_key);
+                refs = (GPtrArray*)val;
+            }
+        }
+        g_ptr_array_add(items, git_commit_new(ci, refs));
+    }
+    g_ptr_array_set_size(td->commits, 0);
+    /* One items-changed for the whole page */
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(g->store));
+    g_list_store_splice(g->store, n, 0, items->pdata, items->len);
+    g_ptr_array_unref(items);
+}
+
+/* A next page was read: added after the commits listed */
+static void append_page(GitTab* g, GitLogTaskData* td) {
+    g->reading_more = FALSE;
+    g->more = td->more;
+    store_commits(g, td);
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(g->store));
+    g->wanted = MAX(n, GIT_LOG_PAGE);
+    show_count(g, n, g->more);
+}
+
 static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
     (void)source_object;
     (void)user_data;
@@ -432,6 +484,12 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 
     AppData* app = td->app;
     GitTab* g = app->git;
+    if (td->append) {
+        append_page(g, td);
+        return;
+    }
+    g->reading = FALSE;
+    g->more = td->more;
 
     GtkSingleSelection* sel = g->selection;
     g_signal_handlers_block_by_func(sel, (gpointer)on_git_selection_changed, app);
@@ -444,26 +502,7 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
     }
 
     g_list_store_remove_all(g->store);
-    if (td->commits != NULL) {
-        /* The store takes the commits (and their ref arrays) over */
-        g_ptr_array_set_free_func(td->commits, NULL);
-        for (guint i = 0; i < td->commits->len; i++) {
-            GitCommitInfo* ci = g_ptr_array_index(td->commits, i);
-            GPtrArray* refs = NULL;
-            if (td->refs_map != NULL && ci->hash != NULL) {
-                gpointer orig_key = NULL;
-                gpointer val = NULL;
-                if (g_hash_table_steal_extended(td->refs_map, ci->hash, &orig_key, &val)) {
-                    g_free(orig_key);
-                    refs = (GPtrArray*)val;
-                }
-            }
-            GitCommit* item = git_commit_new(ci, refs);
-            g_list_store_append(g->store, item);
-            g_object_unref(item);
-        }
-        g_ptr_array_set_size(td->commits, 0);
-    }
+    store_commits(g, td);
     gtk_single_selection_set_selected(sel, GTK_INVALID_LIST_POSITION);
 
     g_signal_handlers_unblock_by_func(sel, (gpointer)on_git_selection_changed, app);
@@ -492,17 +531,11 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 
 /* Re-read the history of the current repository even if the root is unchanged
  * (called when .git changed: commit, checkout, reset, pull...) */
-void git_tab_reload(AppData* app) {
-    if (app == NULL || app->git == NULL) {
-        return;
-    }
-    g_clear_pointer(&app->git->current_root, g_free);
-    git_tab_update(app, app->base_dir);
-}
-
 static void start_log_read(AppData* app);
 
-void git_tab_update(AppData* app, const gchar* dir) {
+/* Show the history of the repository holding dir; reload: read it again even
+ * when the repository is the same, with as many commits as are listed */
+static void update_root(AppData* app, const gchar* dir, gboolean reload) {
     GitTab* g = app != NULL ? app->git : NULL;
     if (g == NULL) return;
 
@@ -524,11 +557,12 @@ void git_tab_update(AppData* app, const gchar* dir) {
 
     if (g_strcmp0(g->current_root, root) == 0) {
         g_free(root);
-        return;
+        if (!reload) return;
+    } else {
+        g_free(g->current_root);
+        g->current_root = root;
+        g->wanted = GIT_LOG_PAGE; /* another repository: its first page */
     }
-
-    g_free(g->current_root);
-    g->current_root = root;
 
     cancel_show(g);
     if (g->cancellable != NULL) {
@@ -543,7 +577,17 @@ void git_tab_update(AppData* app, const gchar* dir) {
     }
 }
 
-/* Read the history of g->current_root on a worker thread */
+void git_tab_reload(AppData* app) {
+    if (app == NULL) return;
+    update_root(app, app->base_dir, TRUE);
+}
+
+void git_tab_update(AppData* app, const gchar* dir) {
+    update_root(app, dir, FALSE);
+}
+
+/* Read the history of g->current_root on a worker thread: its first
+ * g->wanted commits, replacing the list */
 static void start_log_read(AppData* app) {
     GitTab* g = app->git;
     cancel_show(g);
@@ -557,6 +601,9 @@ static void start_log_read(AppData* app) {
     td->app = app;
     td->git_root = g_strdup(g->current_root);
     td->words = g_strdupv(g->words);
+    td->max = MAX(g->wanted, GIT_LOG_PAGE);
+    g->reading = TRUE;
+    g->reading_more = FALSE; /* its read was cancelled with the cancellable */
     /* Filtered, the walk may go through the whole history */
     gtk_label_set_text(GTK_LABEL(g->count_label), _("Reading the history…"));
 
@@ -564,6 +611,45 @@ static void start_log_read(AppData* app) {
     g_task_set_task_data(task, td, git_log_task_data_free);
     g_task_run_in_thread(task, git_log_thread_func);
     g_object_unref(task);
+}
+
+/* The end of the list is near: read the next page of the history, unless
+ * it is all listed or a read is running */
+static void read_more(AppData* app) {
+    GitTab* g = app->git;
+    if (g == NULL || !g->more || g->reading || g->reading_more || g->current_root == NULL ||
+        g->cancellable == NULL) {
+        return;
+    }
+    g->reading_more = TRUE;
+    GitLogTaskData* td = g_new0(GitLogTaskData, 1);
+    td->app = app;
+    td->git_root = g_strdup(g->current_root);
+    td->words = g_strdupv(g->words);
+    td->skip = g_list_model_get_n_items(G_LIST_MODEL(g->store));
+    td->max = GIT_LOG_PAGE;
+    td->append = TRUE;
+    gtk_label_set_text(GTK_LABEL(g->count_label), _("Reading more commits…"));
+
+    /* Cancelled with the whole list (another repository, filter or reload) */
+    GTask* task = g_task_new(NULL, g->cancellable, on_git_log_ready, NULL);
+    g_task_set_task_data(task, td, git_log_task_data_free);
+    g_task_run_in_thread(task, git_log_thread_func);
+    g_object_unref(task);
+}
+
+/* The list scrolled near its end: the next page */
+static void on_list_scrolled(GtkAdjustment* adj, gpointer data) {
+    AppData* app = data;
+    GitTab* g = app->git;
+    if (g == NULL || !g->more) return;
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(g->store));
+    gdouble upper = gtk_adjustment_get_upper(adj);
+    if (n == 0 || upper <= 0.0) return;
+    gdouble margin = upper / n * GIT_MORE_MARGIN_ROWS;
+    if (gtk_adjustment_get_value(adj) + gtk_adjustment_get_page_size(adj) >= upper - margin) {
+        read_more(app);
+    }
 }
 
 /* What the menu of a commit copies */
@@ -808,6 +894,7 @@ static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
     g_strfreev(g->words);
     g->words = words;
     if (same || g->current_root == NULL) return;
+    g->wanted = GIT_LOG_PAGE;
     g->log_stale = !gtk_widget_get_mapped(g->page);
     if (!g->log_stale) start_log_read(app);
 }
@@ -827,6 +914,7 @@ void git_tab_init(AppData* app) {
     if (app == NULL || app->notebook == NULL) return;
 
     GitTab* g = g_new0(GitTab, 1);
+    g->wanted = GIT_LOG_PAGE;
     app->git = g;
 
     /* Commit list: newest first, one GitCommit per row */
@@ -857,6 +945,8 @@ void git_tab_init(AppData* app) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(tree_scroll), tree_view);
     gtk_widget_set_size_request(tree_scroll, -1, 120);
+    g_signal_connect(gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(tree_scroll)), "value-changed",
+                     G_CALLBACK(on_list_scrolled), app);
 
     /* Above the list: how many commits, and the filter */
     GtkWidget* list_head = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

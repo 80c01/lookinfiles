@@ -76,13 +76,15 @@ void git_commit_info_free(gpointer info);
  * NULL when text holds none (every commit). g_strfreev() */
 gchar** git_log_words(const gchar* text);
 
-/* The last max commits reachable from HEAD of the repository at root, newest
- * first, keeping only those whose message, author (name or email) or full hash
+/* max commits reachable from HEAD of the repository at root, newest first,
+ * after the skip newest ones (to read the history page by page), keeping
+ * only those whose message, author (name or email) or full hash
  * hold every word of words (git_log_words(); NULL keeps all), however far back
- * in the history: array of GitCommitInfo*, empty without commits, NULL when
+ * in the history (skip counts kept commits only): array of GitCommitInfo*,
+ * empty without commits, NULL when
  * root is not a repository or cancellable was cancelled. *more (may be NULL)
  * is set when more commits would have been kept. Worker thread. */
-GPtrArray* git_read_log(const gchar* root, guint max, gchar** words, GCancellable* cancellable,
+GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words, GCancellable* cancellable,
                         gboolean* more);
 
 /* Header, message, diffstat and patch of commit hash (against its first

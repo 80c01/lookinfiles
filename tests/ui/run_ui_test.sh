@@ -548,6 +548,15 @@ key Escape;             shot git_filter_closed
 key ctrl+c;             shot git_copy_hash         # notice with the full hash
 xdotool mousemove 600 140 click 3; sleep 0.3; shot git_commit_menu
 key Escape;             shot git_commit_menu_closed
+# A longer history: the first page lists 100 commits, End reads the rest
+( cd "$FIX/work" && i=0 && while [ $i -lt 150 ]; do
+      d=$(printf '2000-01-03T%02d:%02d:00Z' $((i / 60)) $((i % 60)))
+      GIT_AUTHOR_DATE=$d GIT_COMMITTER_DATE=$d \
+          git -c user.email=ui@test -c user.name=ui commit -q --allow-empty -m "filler $i"
+      i=$((i + 1))
+  done )
+sleep 3;                shot git_first_page
+key End;                shot git_next_page         # 152 commits listed, the 100th selected
 # Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
 # bar takes the tab (the emptied split closes)
 xdotool mousemove 347 50 click 1;   shot tab_docked   # plan.org to the editor panel

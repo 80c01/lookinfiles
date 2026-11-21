@@ -765,7 +765,7 @@ static gboolean commit_matches(git_commit* c, const gchar* hash, gchar** words) 
 /* Commits looked at between two checks of the cancellable */
 #define LOG_CANCEL_STEP 256
 
-GPtrArray* git_read_log(const gchar* root, guint max, gchar** words, GCancellable* cancellable,
+GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words, GCancellable* cancellable,
                         gboolean* more) {
     if (more != NULL) *more = FALSE;
     git_repository* repo = open_work_tree(root);
@@ -791,6 +791,11 @@ GPtrArray* git_read_log(const gchar* root, guint max, gchar** words, GCancellabl
                 }
                 const gchar* hash = git_oid_tostr_s(&oid);
                 if (!commit_matches(c, hash, words)) {
+                    git_commit_free(c);
+                    continue;
+                }
+                if (skip > 0) { /* on an earlier page */
+                    skip--;
                     git_commit_free(c);
                     continue;
                 }

@@ -1170,7 +1170,9 @@ Layers, from bottom to top
   hidden, a new repository or a change in `.git` only marks it stale. Its
   filter field gives words to `git_read_log()`, which walks the whole history
   on a worker thread (cancelled by a newer read); the diff of the selected
-  commit has its own cancellable, cancelled when the selection moves.
+  commit has its own cancellable, cancelled when the selection moves. The
+  history is read 100 commits at a time (`skip` of `git_read_log()`): the end
+  of the list reads the next page, a reload reads as many as are listed.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
   `org_fold` keeps the folding of the Org preview (headings folded by hand,
   the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with
