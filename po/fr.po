@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 10:54+0000\n"
+"POT-Creation-Date: 2026-11-21 11:31+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1148,7 +1148,9 @@ msgstr "Onglet Git"
 msgid ""
 "Next view: Changes (uncommitted files and their patch), History (the "
 "commits), Statistics"
-msgstr "Vue suivante : Modifications (les fichiers non commités et leur patch), Historique (les commits), Statistiques"
+msgstr ""
+"Vue suivante : Modifications (les fichiers non commités et leur patch), "
+"Historique (les commits), Statistiques"
 
 #: src/chrome/help.c:141
 msgid "Changes: preview the selected file"
@@ -8349,87 +8351,55 @@ msgstr "Jeu"
 msgid "Solitaire"
 msgstr "Solitaire"
 
-#: src/git/git_changes.c:163
+#: src/git/git_changes.c:177
 msgid "The changes of this file cannot be read."
 msgstr "Les modifications de ce fichier ne peuvent pas être lues."
 
-#: src/git/git_changes.c:165
+#: src/git/git_changes.c:179
 msgid "No change left in this file."
 msgstr "Plus aucune modification dans ce fichier."
 
 #. TRANSLATORS: above the patch of a renamed file: old name, new name, group
 #. * ("Staged")
-#: src/git/git_changes.c:177
+#: src/git/git_changes.c:191
 #, c-format
 msgid "%s → %s  •  %s"
 msgstr "%s → %s  •  %s"
 
 #. TRANSLATORS: above the patch of a file: its path, its group ("Staged")
-#: src/git/git_changes.c:179
+#: src/git/git_changes.c:193
 #, c-format
 msgid "%s  •  %s"
 msgstr "%s  •  %s"
 
-#: src/git/git_changes.c:192
+#: src/git/git_changes.c:270
 #, c-format
-msgid "%s: %u file"
-msgid_plural "%s: %u files"
-msgstr[0] "%s : %u fichier"
-msgstr[1] "%s : %u fichiers"
+msgid "Only the first %u files are listed."
+msgstr "Seuls les %u premiers fichiers sont listés."
 
-#: src/git/git_changes.c:219
-#, c-format
-msgid "%u staged"
-msgid_plural "%u staged"
-msgstr[0] "%u indexé"
-msgstr[1] "%u indexés"
-
-#: src/git/git_changes.c:224
-#, c-format
-msgid "%u changed"
-msgid_plural "%u changed"
-msgstr[0] "%u modifié"
-msgstr[1] "%u modifiés"
-
-#: src/git/git_changes.c:229 src/preview/dir_preview.c:250
-#, c-format
-msgid "%u untracked"
-msgid_plural "%u untracked"
-msgstr[0] "%u non suivi"
-msgstr[1] "%u non suivis"
-
-#: src/git/git_changes.c:234
-#, c-format
-msgid "(the first %u files)"
-msgstr "(les %u premiers fichiers)"
-
-#: src/git/git_changes.c:236
-msgid "Nothing to commit: the work tree is clean"
-msgstr "Rien à commiter : l’arbre de travail est propre"
-
-#: src/git/git_changes.c:291
+#: src/git/git_changes.c:271
 msgid "The changes of this work tree cannot be read."
 msgstr "Les modifications de cet arbre de travail ne peuvent pas être lues."
 
-#: src/git/git_changes.c:303
-msgid "No uncommitted changes."
-msgstr "Aucune modification non commitée."
+#: src/git/git_changes.c:272
+msgid "Nothing to commit: the work tree is clean"
+msgstr "Rien à commiter : l’arbre de travail est propre"
 
-#: src/git/git_changes.c:315
+#: src/git/git_changes.c:294
 msgid "Reading the changes…"
 msgstr "Lecture des modifications…"
 
 #. TRANSLATORS: after the name of a renamed file in the Changes view
-#: src/git/git_changes.c:441
+#: src/git/git_changes.c:409
 #, c-format
 msgid "renamed from %s"
 msgstr "renommé depuis %s"
 
-#: src/git/git_changes.c:447
+#: src/git/git_changes.c:415
 msgid "binary"
 msgstr "binaire"
 
-#: src/git/git_changes.c:492
+#: src/git/git_changes.c:489
 msgid "Enter: preview the file"
 msgstr "Entrée : afficher le fichier dans l’aperçu"
 
@@ -8590,7 +8560,7 @@ msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
 #. TRANSLATORS: tooltip of a day of the activity chart: commits, date
-#: src/git/git_stats_charts.c:170
+#: src/git/git_stats_charts.c:172
 #, c-format
 msgid "%u commit on %s"
 msgid_plural "%u commits on %s"
@@ -8598,7 +8568,7 @@ msgstr[0] "%u commit le %s"
 msgstr[1] "%u commits le %s"
 
 #. TRANSLATORS: tooltip of the punch card: commits, day of the week, hours
-#: src/git/git_stats_charts.c:220
+#: src/git/git_stats_charts.c:222
 #, c-format
 msgid "%u commit on %s, %02d:00–%02d:00"
 msgid_plural "%u commits on %s, %02d:00–%02d:00"
@@ -8606,7 +8576,7 @@ msgstr[0] "%u commit le %s, %02d:00–%02d:00"
 msgstr[1] "%u commits le %s, %02d:00–%02d:00"
 
 #. TRANSLATORS: tooltip of a bar of commits: commits, month ("2026-11") or year
-#: src/git/git_stats_charts.c:249 src/git/git_stats_charts.c:255
+#: src/git/git_stats_charts.c:251 src/git/git_stats_charts.c:257
 #, c-format
 msgid "%u commit in %s"
 msgid_plural "%u commits in %s"
@@ -10628,6 +10598,13 @@ msgid "%u added"
 msgid_plural "%u added"
 msgstr[0] "%u ajouté"
 msgstr[1] "%u ajoutés"
+
+#: src/preview/dir_preview.c:250
+#, c-format
+msgid "%u untracked"
+msgid_plural "%u untracked"
+msgstr[0] "%u non suivi"
+msgstr[1] "%u non suivis"
 
 #: src/preview/dir_preview.c:251
 #, c-format
@@ -12733,6 +12710,31 @@ msgstr "Ouvrir l’espace de travail"
 #: src/workspace/workspace_menu.c:86
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
+
+#, c-format
+#~ msgid "%s: %u file"
+#~ msgid_plural "%s: %u files"
+#~ msgstr[0] "%s : %u fichier"
+#~ msgstr[1] "%s : %u fichiers"
+
+#, c-format
+#~ msgid "%u staged"
+#~ msgid_plural "%u staged"
+#~ msgstr[0] "%u indexé"
+#~ msgstr[1] "%u indexés"
+
+#, c-format
+#~ msgid "%u changed"
+#~ msgid_plural "%u changed"
+#~ msgstr[0] "%u modifié"
+#~ msgstr[1] "%u modifiés"
+
+#, c-format
+#~ msgid "(the first %u files)"
+#~ msgstr "(les %u premiers fichiers)"
+
+#~ msgid "No uncommitted changes."
+#~ msgstr "Aucune modification non commitée."
 
 #~ msgid "Git Commits tab"
 #~ msgstr "Onglet Commits Git"

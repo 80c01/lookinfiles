@@ -1186,7 +1186,8 @@ Layers, from bottom to top
   repository), the repository root handed to its views, and the linked
   toggle buttons over the `GtkStack` of the views (`v`: the next one).
   `git_changes` is its Changes view (`GitChanges`, freed with its widget):
-  the files of `git_read_changes()` under a header per group, read again
+  the files of `git_read_changes()` in a section per group (a `GtkSortListModel`
+  section sorter, a header factory: headers are never selected), read again
   each time the view comes on screen (`map`) and on each `git_tab_update()`
   while shown; the patch of the selected file has its own cancellable;
   `Enter` previews the file through `APP_EVENT_PREVIEW_PATH`. `git_history`
