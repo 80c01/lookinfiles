@@ -57,7 +57,7 @@ Layers, from bottom to top
   -o`): keep-alive, `accept-new` host keys and, except on Windows, a master
   connection per machine (`ssh_master_start()`, socket
   `app_runtime_dir()/ssh/<pid>-<hash>`) that later ssh runs reuse without a
-  new login; `ssh_exec_async()` runs a remote command. Programs started there
+  new login (sshfs, remote commands; never a terminal); `ssh_exec_async()` runs a remote command. Programs started there
   get `ssh_session_set_env()` variables, no controlling terminal, and die
   with the application on Linux (unit-tested with a fake ssh).
 - `ssh_askpass` — ssh password and passphrase prompts: ssh runs this program
@@ -1469,7 +1469,9 @@ Layers, from bottom to top
   `TERM_TABS_GROUP`) split by `GtkPaned`s; tabs are dragged between them or
   to a pane edge through `tab_drop` (`Ctrl+T` new tab, `Ctrl+Shift+T` new
   pane below, `terminal_open()` with a working directory); ssh into the
-  active remote machine (`ssh_session_argv()`, through its master connection); the shell is `$SHELL` (on Windows PowerShell 7,
+  active remote machine (`ssh_session_argv()` with `SSH_ARGV_NO_MUX`: never
+  through the master connection, which writes to tty clients with blocking
+  writes and would stall the sshfs mount behind an unread terminal); the shell is `$SHELL` (on Windows PowerShell 7,
   Windows PowerShell, then `%COMSPEC%`); `Ctrl+Shift+C` / `Ctrl+Shift+V`
   copy the selection / paste. Terminal tabs also go into the editor and preview
   notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`

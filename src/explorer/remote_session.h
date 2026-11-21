@@ -2,9 +2,9 @@
 #define REMOTE_SESSION_H
 
 /* The connection to a remote machine: one master SSH connection per machine
- * (ssh_session.h), so the sshfs mount, the terminals and the remote commands
- * authenticate once; the password and passphrase prompts of ssh shown as
- * dialogs (ssh_askpass.h). */
+ * (ssh_session.h), so the sshfs mount and the remote commands authenticate
+ * once (the terminals have connections of their own); the password and
+ * passphrase prompts of ssh shown as dialogs (ssh_askpass.h). */
 #include "core/app_types.h"
 #include "explorer/remote_store.h"
 

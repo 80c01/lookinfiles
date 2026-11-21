@@ -46,9 +46,10 @@ local mount point), and so do the notebook **Save** dialog, the Emacs
 or `server:docs` from the **Remote Directory**); paths outside the remote
 directory are refused.
 
-You log in once per machine: the connection opened for the files is shared
-by the SSH terminals of the machine (OpenSSH multiplexing; not on Windows),
-and closed when you disconnect or quit.
+The connection opened for the files is kept while you browse (OpenSSH
+multiplexing; not on Windows) and closed when you disconnect or quit. SSH
+terminals open connections of their own: one that asks for a password asks
+in the terminal.
 
 Machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (usually `/run/user/1000/…`; without `$XDG_RUNTIME_DIR`,

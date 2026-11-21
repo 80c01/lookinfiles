@@ -6,8 +6,10 @@
  * known_hosts work as in a shell. Every ssh run builds its command line with
  * ssh_session_argv(); where OpenSSH can multiplex (not on Windows) a master
  * connection (ssh_master_start()) is opened once per machine and every
- * later ssh (sshfs, terminal, remote commands) goes through it without
- * authenticating again. Programs started here get the variables set with
+ * later ssh (sshfs, remote commands) goes through it without authenticating
+ * again. Never an interactive terminal (SSH_ARGV_NO_MUX with SSH_ARGV_TTY):
+ * the master writes to the tty of its clients with blocking writes, so one
+ * terminal not read in time stalls every session of the master. Programs started here get the variables set with
  * ssh_session_set_env() (the password prompt, ssh_askpass.h), have no
  * controlling terminal, and die with the application (Linux). GIO only, no
  * widgets; unit-tested with a fake ssh program. */
@@ -22,7 +24,7 @@ typedef struct {
 } SshTarget;
 
 typedef enum {
-    SSH_ARGV_TTY = 1 << 0,    /* -t: an interactive terminal */
+    SSH_ARGV_TTY = 1 << 0,    /* -t: an interactive terminal (with SSH_ARGV_NO_MUX) */
     SSH_ARGV_MASTER = 1 << 1, /* -M -N: the master connection itself */
     SSH_ARGV_NO_MUX = 1 << 2, /* never through the master connection */
 } SshArgvFlags;

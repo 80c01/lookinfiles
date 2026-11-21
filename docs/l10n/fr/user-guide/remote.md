@@ -50,10 +50,10 @@ infobulles des onglets. Tapez les chemins de la même façon (`serveur:~/a`,
 ou `serveur:docs` depuis le **Dossier distant**) ; un chemin hors du
 dossier distant est refusé.
 
-Vous ne vous connectez qu’une fois par machine : la connexion ouverte pour
-les fichiers sert aussi aux terminaux SSH de la machine (multiplexage
-OpenSSH ; pas sous Windows), et se ferme quand vous vous déconnectez ou
-quittez.
+La connexion ouverte pour les fichiers est gardée tant que vous parcourez
+la machine (multiplexage OpenSSH ; pas sous Windows) et se ferme quand vous
+vous déconnectez ou quittez. Les terminaux SSH ouvrent leur propre
+connexion : s’il faut un mot de passe, il est demandé dans le terminal.
 
 Les machines sont montées sous `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (en général `/run/user/1000/…` ; sans `$XDG_RUNTIME_DIR`,
