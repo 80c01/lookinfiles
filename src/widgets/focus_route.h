@@ -86,7 +86,9 @@ void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* 
  * GtkColumnView or GtkListView over a GtkSingleSelection) focuses entry (an
  * editable: its filter field); NULL: no field. In entry, Enter or Down go
  * back to the list (on its first row when none is selected), Escape (Emacs:
- * also C-g) empties it, then goes back to the list. */
+ * also C-g) empties it, then goes back to the list. When the list comes on
+ * screen with the focus in its empty field (put there by GtkNotebook), the
+ * focus goes to the list. */
 void focus_route_list_search(AppData* app, GtkWidget* list, GtkWidget* entry);
 
 #endif /* FOCUS_ROUTE_H */

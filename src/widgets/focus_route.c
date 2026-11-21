@@ -125,6 +125,31 @@ static GtkWidget* find_marked(GtkWidget* w) {
     return NULL;
 }
 
+/* Focus a GtkColumnView or GtkListView, on its selected row. The page's
+ * first focusable widget may be a filter field above the list. */
+static gboolean focus_list(GtkWidget* list) {
+    GtkSelectionModel* sel = GTK_IS_COLUMN_VIEW(list) ? gtk_column_view_get_model(GTK_COLUMN_VIEW(list))
+                                                      : gtk_list_view_get_model(GTK_LIST_VIEW(list));
+    guint pos = GTK_IS_SINGLE_SELECTION(sel) ? gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(sel))
+                                             : GTK_INVALID_LIST_POSITION;
+    /* The list's focus row (scroll_to does not take the keyboard focus from
+     * another widget: grab_focus() then does, on that row) */
+    if (pos != GTK_INVALID_LIST_POSITION && pos < g_list_model_get_n_items(G_LIST_MODEL(sel))) {
+        if (GTK_IS_COLUMN_VIEW(list)) {
+            gtk_column_view_scroll_to(GTK_COLUMN_VIEW(list), pos, NULL, GTK_LIST_SCROLL_FOCUS, NULL);
+        } else {
+            gtk_list_view_scroll_to(GTK_LIST_VIEW(list), pos, GTK_LIST_SCROLL_FOCUS, NULL);
+        }
+    }
+    GtkRoot* root = gtk_widget_get_root(list);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (focus == NULL || (focus != list && !gtk_widget_is_ancestor(focus, list))) {
+        gtk_widget_grab_focus(list);
+        focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    }
+    return focus != NULL && (focus == list || gtk_widget_is_ancestor(focus, list));
+}
+
 void focus_route_focus_page(AppData* app, GtkWidget* page) {
     if (app == NULL || page == NULL) return;
     EditorTab* tab = focus_route_page_tab(app, page);
@@ -136,9 +161,12 @@ void focus_route_focus_page(AppData* app, GtkWidget* page) {
     } else {
         target = find_marked(page);
     }
-    if (target == NULL || !gtk_widget_grab_focus(target)) {
-        gtk_widget_child_focus(page, GTK_DIR_TAB_FORWARD);
+    if (target != NULL && (GTK_IS_COLUMN_VIEW(target) || GTK_IS_LIST_VIEW(target))) {
+        if (focus_list(target)) return;
+    } else if (target != NULL && gtk_widget_grab_focus(target)) {
+        return;
     }
+    gtk_widget_child_focus(page, GTK_DIR_TAB_FORWARD);
 }
 
 gboolean focus_route_step_tab(AppData* app, GtkNotebook* nb, gint step, gboolean focus) {
@@ -593,6 +621,28 @@ static gboolean on_list_filter_key(GtkEventControllerKey* ctrl, guint keyval, gu
     return FALSE;
 }
 
+/* The list came on screen (its page shown): GtkNotebook gave the focus to
+ * the first focusable widget of the page, the filter field above the list;
+ * an empty field gives it to the list, where the keys of the mode work */
+static gboolean list_mapped_idle(gpointer data) {
+    GtkWidget* list = data;
+    GtkWidget* entry = g_object_get_data(G_OBJECT(list), LIST_SEARCH_KEY);
+    GtkRoot* root = gtk_widget_get_root(list);
+    GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+    if (entry != NULL && focus != NULL && gtk_widget_get_mapped(list) &&
+        (focus == entry || gtk_widget_is_ancestor(focus, entry))) {
+        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(entry));
+        if (text == NULL || text[0] == '\0') focus_list(list);
+    }
+    g_object_unref(list);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_list_mapped(GtkWidget* list, gpointer data) {
+    (void)data;
+    g_idle_add(list_mapped_idle, g_object_ref(list));
+}
+
 void focus_route_list_search(AppData* app, GtkWidget* list, GtkWidget* entry) {
     if (list == NULL) return;
     if (entry == NULL) {
@@ -600,6 +650,7 @@ void focus_route_list_search(AppData* app, GtkWidget* list, GtkWidget* entry) {
         return;
     }
     g_object_set_data_full(G_OBJECT(list), LIST_SEARCH_KEY, g_object_ref(entry), g_object_unref);
+    g_signal_connect(list, "map", G_CALLBACK(on_list_mapped), NULL);
     ListFilter* lf = g_new0(ListFilter, 1);
     lf->app = app;
     lf->list = list;
