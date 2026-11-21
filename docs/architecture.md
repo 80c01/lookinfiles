@@ -189,6 +189,11 @@ Layers, from bottom to top
 - `git_log` — the history through libgit2, worker thread only:
   `git_read_log()` walks it from `HEAD` page by page, filtered by words
   (`git_log_words()`) and by a path. Tested in `test_git_utils`.
+- `git_repo_info` — the setup of a repository through libgit2 (worker
+  thread): the effective identity and its level, the remotes, the local
+  branches with their upstream (gone, ahead, behind), every config entry
+  with its level and whether a closer level overrides it; secrets masked
+  (`git_mask_url()`, `git_config_key_secret()`). Unit-tested.
 - `git_stats` — commits counted per day, per day of the week and hour (in
   the author's time zone), per month and per author (`git_stats_add()`),
   and `git_stats_read()`, which walks the history from `HEAD` (worker
@@ -1212,6 +1217,12 @@ Layers, from bottom to top
   `git_stats_charts` (GtkDrawingAreas in the palette colours: the last 53
   weeks a square per day, the punch card, the commits per month or year;
   they borrow the view's `GitStats`) and the authors in a `GtkGrid`.
+  `git_repo_view` is the Repository view: `git_repo_info_read()` in a worker
+  each time the view comes on screen (the global config is not watched),
+  the sections in `GtkGrid`s of selectable labels, a filter over the
+  configuration, and buttons that open `.git/config` and the global config
+  in an editor tab through `APP_EVENT_EDIT_PATH` (`git/` does not depend on
+  `editor/`).
   `git_diff_text` lays out a patch in a `GtkTextBuffer` in the diff colours
   and cuts a huge one (`git_diff_text_cut()`).
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
@@ -1244,6 +1255,9 @@ Layers, from bottom to top
   the button next to the split button of the preview notebook, and
   `editor_swap_preview_side()` gives the direction of `Ctrl+Alt+arrows` that
   docks a tab back into the preview notebook.
+- `editor_request` — `editor_edit_requested()`, the `APP_EVENT_EDIT_PATH`
+  handler: a file opened in an editor tab for a module that may not depend
+  on the editor (the Repository view of the Git tab).
 - `editor_session` — the editor tabs of a workspace for the session:
   `editor_session_capture()` describes the preview notebook and the
   dedicated panel (notebooks, splits, sizes, current pages, view last
@@ -1633,6 +1647,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_PREVIEW_STALE`        | previewed file changed                       | `viewer_reload_preview()`      |
 | `APP_EVENT_PREVIEW_LOCATION`     | path of the value at the preview cursor changed | `status_bar_show_location()` |
 | `APP_EVENT_PREVIEW_PATH`         | Deep Search: preview `app->preview_request_path` at `app->preview_request_line` | `preview_show_requested()` |
+| `APP_EVENT_EDIT_PATH`            | Git tab, Repository view: open `app->edit_request_path` in an editor tab | `editor_edit_requested()` |
 | `APP_EVENT_GIT_STATUS_CHANGED`   | `.git` changed                               | `refresh_git_status_in_place()`, `refresh_diff_gutters()`, `editor_modes_refresh_git()` |
 | `APP_EVENT_SAVE_WORKSPACE_BOOKMARK` / `APP_EVENT_OPEN_WORKSPACE_BOOKMARK` | bookmarks view: save the workspace / open a saved one | `session_bookmark_save()` / `session_bookmark_open()` |
 | `APP_EVENT_SAVE_SEARCH_BOOKMARK` / `APP_EVENT_OPEN_SEARCH_BOOKMARK` | Deep Search / bookmarks view: save criteria as a bookmark / run a saved search | `deep_search_bookmark_save()` / `deep_search_bookmark_open()` |

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 11:31+0000\n"
+"POT-Creation-Date: 2026-11-21 11:50+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1147,10 +1147,11 @@ msgstr "Onglet Git"
 #: src/chrome/help.c:140
 msgid ""
 "Next view: Changes (uncommitted files and their patch), History (the "
-"commits), Statistics"
+"commits), Statistics, Repository (identity, remotes, branches, configuration)"
 msgstr ""
 "Vue suivante : Modifications (les fichiers non commités et leur patch), "
-"Historique (les commits), Statistiques"
+"Historique (les commits), Statistiques, Dépôt (identité, remotes, branches, "
+"configuration)"
 
 #: src/chrome/help.c:141
 msgid "Changes: preview the selected file"
@@ -3729,7 +3730,7 @@ msgstr "Principal"
 msgid "Show / Hide Main Panel (Preview and Editor Tabs)"
 msgstr "Afficher / masquer le panneau principal (aperçu et onglets d’édition)"
 
-#: src/chrome/topbar.c:698 src/chrome/topbar.c:777 src/main.c:458
+#: src/chrome/topbar.c:698 src/chrome/topbar.c:777 src/main.c:459
 #: src/workspace/layout_store.c:53
 msgid "Preview"
 msgstr "Aperçu"
@@ -4873,10 +4874,11 @@ msgstr "Exclure du calcul"
 #: src/diskuse/disk_usage_list.c:419 src/explorer/bookmark_dialog.c:212
 #: src/explorer/file_actions.c:251 src/formats/pyc_info.c:578
 #: src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
-#: src/office/office97.c:73 src/preview/preview_formats.c:365
-#: src/preview/preview_formats.c:366 src/preview/preview_summary.c:258
-#: src/search/deep_search_bookmark.c:62 src/search/deep_search_list.c:409
-#: src/search/deep_search_tab.c:892 src/workspace/session_bookmark.c:26
+#: src/git/git_repo_view.c:95 src/office/office97.c:73
+#: src/preview/preview_formats.c:365 src/preview/preview_formats.c:366
+#: src/preview/preview_summary.c:258 src/search/deep_search_bookmark.c:62
+#: src/search/deep_search_list.c:409 src/search/deep_search_tab.c:892
+#: src/workspace/session_bookmark.c:26
 msgid "Name"
 msgstr "Nom"
 
@@ -5056,7 +5058,7 @@ msgid "Count All Files Again"
 msgstr "Compter de nouveau tous les fichiers"
 
 #. TRANSLATORS: the top of the git work tree holding the folder analysed
-#: src/diskuse/disk_usage_stats.c:370
+#: src/diskuse/disk_usage_stats.c:370 src/git/git_tab.c:136
 msgid "Repository"
 msgstr "Dépôt"
 
@@ -5434,6 +5436,11 @@ msgstr "Annuler"
 #: src/editor/editor_notepad.c:591
 msgid "Click to open Problems panel (Ctrl+Shift+M)"
 msgstr "Cliquer pour ouvrir l’onglet Problèmes (Ctrl+Shift+M)"
+
+#: src/editor/editor_request.c:13
+#, c-format
+msgid "Cannot edit “%s”"
+msgstr "Impossible de modifier « %s »"
 
 #: src/editor/editor_tab_menu.c:92
 #, c-format
@@ -8351,55 +8358,55 @@ msgstr "Jeu"
 msgid "Solitaire"
 msgstr "Solitaire"
 
-#: src/git/git_changes.c:177
+#: src/git/git_changes.c:189
 msgid "The changes of this file cannot be read."
 msgstr "Les modifications de ce fichier ne peuvent pas être lues."
 
-#: src/git/git_changes.c:179
+#: src/git/git_changes.c:191
 msgid "No change left in this file."
 msgstr "Plus aucune modification dans ce fichier."
 
 #. TRANSLATORS: above the patch of a renamed file: old name, new name, group
 #. * ("Staged")
-#: src/git/git_changes.c:191
+#: src/git/git_changes.c:203
 #, c-format
 msgid "%s → %s  •  %s"
 msgstr "%s → %s  •  %s"
 
 #. TRANSLATORS: above the patch of a file: its path, its group ("Staged")
-#: src/git/git_changes.c:193
+#: src/git/git_changes.c:205
 #, c-format
 msgid "%s  •  %s"
 msgstr "%s  •  %s"
 
-#: src/git/git_changes.c:270
+#: src/git/git_changes.c:282
 #, c-format
 msgid "Only the first %u files are listed."
 msgstr "Seuls les %u premiers fichiers sont listés."
 
-#: src/git/git_changes.c:271
+#: src/git/git_changes.c:283
 msgid "The changes of this work tree cannot be read."
 msgstr "Les modifications de cet arbre de travail ne peuvent pas être lues."
 
-#: src/git/git_changes.c:272
+#: src/git/git_changes.c:284
 msgid "Nothing to commit: the work tree is clean"
 msgstr "Rien à commiter : l’arbre de travail est propre"
 
-#: src/git/git_changes.c:294
+#: src/git/git_changes.c:347
 msgid "Reading the changes…"
 msgstr "Lecture des modifications…"
 
 #. TRANSLATORS: after the name of a renamed file in the Changes view
-#: src/git/git_changes.c:409
+#: src/git/git_changes.c:462
 #, c-format
 msgid "renamed from %s"
 msgstr "renommé depuis %s"
 
-#: src/git/git_changes.c:415
+#: src/git/git_changes.c:468
 msgid "binary"
 msgstr "binaire"
 
-#: src/git/git_changes.c:489
+#: src/git/git_changes.c:542
 msgid "Enter: preview the file"
 msgstr "Entrée : afficher le fichier dans l’aperçu"
 
@@ -8559,6 +8566,163 @@ msgstr ""
 msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
+#. TRANSLATORS: where a Git setting comes from
+#: src/git/git_repo_info.c:14
+msgctxt "git config level"
+msgid "System"
+msgstr "Système"
+
+#: src/git/git_repo_info.c:15
+msgctxt "git config level"
+msgid "Global"
+msgstr "Global"
+
+#: src/git/git_repo_info.c:16
+msgctxt "git config level"
+msgid "Repository"
+msgstr "Dépôt"
+
+#: src/git/git_repo_info.c:17
+msgctxt "git config level"
+msgid "Worktree"
+msgstr "Arbre de travail"
+
+#: src/git/git_repo_info.c:18
+msgctxt "git config level"
+msgid "Other"
+msgstr "Autre"
+
+#. TRANSLATORS: an identity setting of Git (user.name, user.email) missing
+#: src/git/git_repo_view.c:82
+msgid "Not set"
+msgstr "Non défini"
+
+#: src/git/git_repo_view.c:96
+msgid "Email"
+msgstr "E-mail"
+
+#: src/git/git_repo_view.c:98
+msgid "Signing"
+msgstr "Signature"
+
+#: src/git/git_repo_view.c:99
+#, c-format
+msgid "Commits are signed with %s"
+msgstr "Les commits sont signés avec %s"
+
+#: src/git/git_repo_view.c:100
+msgid "Commits are signed"
+msgstr "Les commits sont signés"
+
+#: src/git/git_repo_view.c:111
+msgid "No remote: this repository is not pushed anywhere."
+msgstr "Aucun remote : ce dépôt n’est poussé nulle part."
+
+#. TRANSLATORS: the URL this remote fetches from
+#: src/git/git_repo_view.c:121
+msgid "fetch"
+msgstr "récupération"
+
+#. TRANSLATORS: the URL this remote pushes to, when it differs
+#: src/git/git_repo_view.c:125
+msgid "push"
+msgstr "envoi"
+
+#: src/git/git_repo_view.c:136
+msgid "No branch yet: nothing is committed."
+msgstr "Pas encore de branche : rien n’est commité."
+
+#: src/git/git_repo_view.c:143
+msgid "Checked out"
+msgstr "Extraite"
+
+#: src/git/git_repo_view.c:145
+msgid "no upstream"
+msgstr "pas d’amont"
+
+#: src/git/git_repo_view.c:150
+msgid "upstream gone"
+msgstr "amont disparu"
+
+#: src/git/git_repo_view.c:152
+msgid "up to date"
+msgstr "à jour"
+
+#: src/git/git_repo_view.c:160
+#, c-format
+msgid "%u commit to push"
+msgid_plural "%u commits to push"
+msgstr[0] "%u commit à pousser"
+msgstr[1] "%u commits à pousser"
+
+#: src/git/git_repo_view.c:170
+#, c-format
+msgid "%u commit to pull"
+msgid_plural "%u commits to pull"
+msgstr[0] "%u commit à tirer"
+msgstr[1] "%u commits à tirer"
+
+#: src/git/git_repo_view.c:209
+msgid "Not in effect: set again at a closer level"
+msgstr "Ne s’applique pas : redéfini à un niveau plus proche"
+
+#: src/git/git_repo_view.c:216
+msgid "No setting matches the filter."
+msgstr "Aucun réglage ne correspond au filtre."
+
+#: src/git/git_repo_view.c:216
+msgid "No setting."
+msgstr "Aucun réglage."
+
+#: src/git/git_repo_view.c:294
+msgid "This repository cannot be read."
+msgstr "Ce dépôt ne peut pas être lu."
+
+#: src/git/git_repo_view.c:314
+msgid "Reading the repository…"
+msgstr "Lecture du dépôt…"
+
+#. TRANSLATORS: the name and email commits are made with
+#: src/git/git_repo_view.c:382
+msgid "Identity"
+msgstr "Identité"
+
+#: src/git/git_repo_view.c:383
+msgid "Remotes"
+msgstr "Remotes"
+
+#: src/git/git_repo_view.c:384
+msgid "Branches"
+msgstr "Branches"
+
+#: src/git/git_repo_view.c:385
+msgid "Configuration"
+msgstr "Configuration"
+
+#: src/git/git_repo_view.c:390
+msgid "Filter the settings"
+msgstr "Filtrer les réglages"
+
+#: src/git/git_repo_view.c:391
+msgid "Only the settings whose name or value hold every word"
+msgstr "Seuls les réglages dont le nom ou la valeur contiennent chaque mot"
+
+#: src/git/git_repo_view.c:395
+msgid "Open .git/config in an Editor Tab"
+msgstr "Ouvrir .git/config dans un onglet d’édition"
+
+#: src/git/git_repo_view.c:396
+msgid "Edit .git/config"
+msgstr "Modifier .git/config"
+
+#: src/git/git_repo_view.c:399
+msgid "Open the Global Config File in an Editor Tab"
+msgstr "Ouvrir le fichier de config globale dans un onglet d’édition"
+
+#: src/git/git_repo_view.c:400
+msgid "Edit Global Config"
+msgstr "Modifier la config globale"
+
 #. TRANSLATORS: tooltip of a day of the activity chart: commits, date
 #: src/git/git_stats_charts.c:172
 #, c-format
@@ -8619,43 +8783,47 @@ msgstr "Par mois"
 msgid "Authors"
 msgstr "Auteurs"
 
-#: src/git/git_tab.c:66
+#: src/git/git_tab.c:69
 #, c-format
 msgid "Changes (%u)"
 msgstr "Modifications (%u)"
 
 #. TRANSLATORS: the views of the Git tab; v shows the next one
-#: src/git/git_tab.c:66 src/git/git_tab.c:126 src/git/git_worktree.c:18
+#: src/git/git_tab.c:69 src/git/git_tab.c:130 src/git/git_worktree.c:18
 msgid "Changes"
 msgstr "Modifications"
 
-#: src/git/git_tab.c:127
+#: src/git/git_tab.c:131
 msgid "Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)"
 msgstr ""
 "Modifications non commitées : indexées, non indexées, non suivies (v : vue "
 "suivante)"
 
-#: src/git/git_tab.c:128
+#: src/git/git_tab.c:132
 msgid "History"
 msgstr "Historique"
 
-#: src/git/git_tab.c:129
+#: src/git/git_tab.c:133
 msgid "The Commits, Newest First (v: Next View)"
 msgstr "Les commits, du plus récent au plus ancien (v : vue suivante)"
 
-#: src/git/git_tab.c:130
+#: src/git/git_tab.c:134
 msgid "Statistics"
 msgstr "Statistiques"
 
-#: src/git/git_tab.c:131
+#: src/git/git_tab.c:135
 msgid "Commits by Day, Hour, Month and Author (v: Next View)"
 msgstr "Commits par jour, heure, mois et auteur (v : vue suivante)"
 
-#: src/git/git_tab.c:150
+#: src/git/git_tab.c:137
+msgid "Identity, Remotes, Branches and Configuration (v: Next View)"
+msgstr "Identité, remotes, branches et configuration (v : vue suivante)"
+
+#: src/git/git_tab.c:157
 msgid "Git"
 msgstr "Git"
 
-#: src/git/git_tab.c:176
+#: src/git/git_tab.c:183
 msgid "Not in the repository of the current folder"
 msgstr "Hors du dépôt du dossier courant"
 
@@ -9425,7 +9593,7 @@ msgstr "Message transféré"
 msgid "Encrypted message: the body needs the recipient's key."
 msgstr "Message chiffré : le corps demande la clé du destinataire."
 
-#: src/main.c:187
+#: src/main.c:188
 #, c-format
 msgid ""
 "Usage: %s [options] [<file>|<folder>]\n"
@@ -9469,22 +9637,22 @@ msgstr ""
 "  -f, --fullscreen                 démarre en plein écran\n"
 "  -s, --size LARGEURxHAUTEUR       taille de la fenêtre (ex. 1920x1080)\n"
 
-#: src/main.c:242
+#: src/main.c:243
 #, c-format
 msgid "%s: option '%s' requires an argument\n"
 msgstr "%s : l’option « %s » attend un argument\n"
 
-#: src/main.c:298
+#: src/main.c:299
 #, c-format
 msgid "%s: only one file or folder can be given\n"
 msgstr "%s : un seul fichier ou dossier peut être donné\n"
 
-#: src/main.c:317
+#: src/main.c:318
 #, c-format
 msgid "%s: unknown editor '%s' (expected emacs, vim or notepad)\n"
 msgstr "%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
 
-#: src/main.c:323
+#: src/main.c:324
 #, c-format
 msgid ""
 "[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"
@@ -9492,23 +9660,23 @@ msgstr ""
 "[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size "
 "1920x1080) ]\n"
 
-#: src/main.c:327
+#: src/main.c:328
 #, c-format
 msgid "%s: unknown option '%s'\n"
 msgstr "%s : option inconnue « %s »\n"
 
-#: src/main.c:334
+#: src/main.c:335
 #, c-format
 msgid "%s: option '-n' needs a note name\n"
 msgstr "%s : l’option « -n » attend un nom de note\n"
 
-#: src/main.c:396
+#: src/main.c:397
 #, c-format
 msgid "[ '%s' is not a file or a directory: showing %s instead ]\n"
 msgstr ""
 "[ « %s » n’est ni un fichier ni un dossier : affichage de %s à la place ]\n"
 
-#: src/main.c:514
+#: src/main.c:515
 msgid ""
 "Terminal panel disabled:\n"
 "install libvte-2.91-gtk4-dev then rebuild (make)."
@@ -9516,15 +9684,15 @@ msgstr ""
 "Panneau Terminal désactivé :\n"
 "installez libvte-2.91-gtk4-dev puis recompilez (make)."
 
-#: src/main.c:576
+#: src/main.c:578
 msgid "Workspace Layouts (Alt+L)"
 msgstr "Dispositions de l’espace de travail (Alt+L)"
 
-#: src/main.c:580
+#: src/main.c:582
 msgid "Preferences (Ctrl+,)"
 msgstr "Préférences (Ctrl+,)"
 
-#: src/main.c:780
+#: src/main.c:782
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"

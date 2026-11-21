@@ -47,8 +47,8 @@ minicarte les montre le long de son bord gauche.
 
 L’onglet **Git**, à côté de l’onglet **Aperçu**, apparaît quand le dossier
 courant est dans un dépôt. Les boutons en haut (ou `v`) passent d’une de ses
-trois vues à l’autre : **Modifications**, **Historique** et
-**Statistiques**. Il s’ouvre sur **Historique**.
+quatre vues à l’autre : **Modifications**, **Historique**, **Statistiques**
+et **Dépôt**. Il s’ouvre sur **Historique**.
 
 ### Modifications
 
@@ -117,6 +117,31 @@ puis :
 Chaque carré, cercle et barre donne son nombre dans son infobulle. Tout
 l’historique est compté quand la vue est affichée, et de nouveau après un
 commit.
+
+### Dépôt
+
+La configuration du dépôt :
+
+- **Identité** : le nom et l’e-mail avec lesquels vos commits sont faits,
+  et d’où vient chacun (**Système**, **Global** : votre `~/.gitconfig`,
+  **Dépôt** : son `.git/config`) ; **Non défini** s’il manque ; si les
+  commits sont signés, et avec quelle clé.
+- **Remotes** : chaque remote et son URL (l’URL de push aussi quand elle
+  diffère).
+- **Branches** : chaque branche locale (celle extraite en gras), sa branche
+  amont et combien de commits sont à pousser (`↑`) ou à tirer (`↓`), **à
+  jour**, **pas d’amont**, ou **amont disparu** quand sa branche distante a
+  été supprimée.
+- **Configuration** : chaque réglage avec son niveau ; un réglage redéfini
+  à un niveau plus proche est barré (il ne s’applique pas). Le champ
+  au-dessus filtre les réglages (nom ou valeur).
+
+Les mots de passe et les jetons ne sont jamais affichés : dans les URL
+(`https://moi:•••@hôte/...`) et dans les réglages qui en contiennent
+(jetons, mots de passe, en-têtes HTTP supplémentaires). La vue ne fait que
+montrer la configuration ; **Modifier .git/config** et **Modifier la
+config globale** ouvrent ces fichiers dans un onglet d’édition. Elle est
+relue chaque fois qu’elle est affichée.
 
 ## Fichiers diff et patch
 

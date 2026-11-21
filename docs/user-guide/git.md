@@ -45,8 +45,8 @@ left edge.
 
 The **Git** tab, next to the **Preview** tab, appears when the current folder
 is in a repository. The buttons at its top (or `v`) switch between its
-three views: **Changes**, **History** and **Statistics**. It opens on
-**History**.
+four views: **Changes**, **History**, **Statistics** and **Repository**. It
+opens on **History**.
 
 ### Changes
 
@@ -111,6 +111,29 @@ then:
 
 Each square, circle and bar gives its count in its tooltip. The whole
 history is counted when the view is shown, and again after a commit.
+
+### Repository
+
+How the repository is set up:
+
+- **Identity**: the name and email your commits are made with, and where
+  each comes from (**System**, **Global**: your `~/.gitconfig`,
+  **Repository**: its `.git/config`); **Not set** when missing; whether
+  commits are signed, and with which key.
+- **Remotes**: each remote and its URL (the push URL too when it differs).
+- **Branches**: each local branch (the checked-out one in bold), its
+  upstream and how many commits are to push (`↑`) or to pull (`↓`), **up to
+  date**, **no upstream**, or **upstream gone** when its remote branch was
+  deleted.
+- **Configuration**: every setting with its level; a setting set again at
+  a closer level is struck through (not in effect). The field above it
+  filters the settings (name or value).
+
+Passwords and tokens are never shown: in URLs (`https://me:•••@host/...`)
+and in settings that hold them (tokens, passwords, extra HTTP headers).
+The view only shows the setup; **Edit .git/config** and **Edit Global
+Config** open those files in an editor tab. It is read again each time it
+is shown.
 
 ## Diff and patch files
 

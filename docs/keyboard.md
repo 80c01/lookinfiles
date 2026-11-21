@@ -255,7 +255,7 @@ the current folder; the navigation keys of the global mode move in the lists)
 
 | Key | Action |
 |---|---|
-| `v` (not in the filter field) | Next view: **Changes** (the uncommitted files: staged, not staged, untracked, and the patch of the selected one), **History** (the commits), **Statistics** (commits by day, hour, month and author) |
+| `v` (not in the filter field) | Next view: **Changes** (the uncommitted files: staged, not staged, untracked, and the patch of the selected one), **History** (the commits), **Statistics** (commits by day, hour, month and author), **Repository** (identity, remotes, branches, configuration) |
 | `Enter` / double click on a file of **Changes** | Preview it (the Preview tab comes in front) |
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the commits: only those whose message, author (name or email) or hash hold every word typed (any case), searched through the whole history (100 at a time, like the list: the end of the list reads the next ones; beside the field, how many are listed); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
 | `Ctrl+C` (Notepad), `y` (Vim), `M-w` (Emacs) | Copy the full hash of the selected commit |

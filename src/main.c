@@ -54,6 +54,7 @@
 #include "preview/preview_folding.h"
 #include "preview/preview_location.h"
 #include "preview/preview_show.h"
+#include "editor/editor_request.h"
 #include "preview/preview_sync.h"
 #include "terminal/terminal.h"
 #include "widgets/diff_gutter.h"
@@ -528,6 +529,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, update_status_bar);
     app_events_subscribe(app, APP_EVENT_PREVIEW_LOCATION, status_bar_show_location);
     app_events_subscribe(app, APP_EVENT_PREVIEW_PATH, preview_show_requested);
+    app_events_subscribe(app, APP_EVENT_EDIT_PATH, editor_edit_requested);
     app_events_subscribe(app, APP_EVENT_STATUS_CHANGED, editor_modes_refresh_bars);
     app_events_subscribe(app, APP_EVENT_DIAGNOSTICS_CHANGED, code_problems_refresh);
     app_events_subscribe(app, APP_EVENT_CHROME_CHANGED, code_problems_folder_changed);

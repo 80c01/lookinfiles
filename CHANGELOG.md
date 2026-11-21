@@ -15,6 +15,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A **Statistics** view in the Git tab: the commits of the last twelve
   months a square per day, by day of the week and hour (in each author's
   time zone), by month, and by author.
+- A **Repository** view in the Git tab: the identity commits are made with
+  and where it comes from, the remotes, the branches with their upstream
+  and the commits to push or pull, and the whole configuration with the
+  level of each setting (passwords and tokens masked); buttons open
+  `.git/config` and the global config in an editor tab.
 - **Git History** in the right-click menu of a file or folder lists only the
   commits that changed it, in the History view of the Git tab.
 - Apache Parquet files (`.parquet`) are previewed: the first 100 rows as a

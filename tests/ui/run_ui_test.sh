@@ -562,6 +562,7 @@ key Escape;             shot git_commit_menu_closed
 sleep 3;                shot git_first_page
 key End;                shot git_next_page         # 152 commits listed, the 100th selected
 key v; sleep 1;         shot git_statistics_view   # v again: commits by day, hour, month, author
+key v; sleep 1;         shot git_repository_view   # identity, remotes, branches, configuration
 key v v;                shot git_history_again     # Changes, then History
 # Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
 # bar takes the tab (the emptied split closes)

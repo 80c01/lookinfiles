@@ -29,6 +29,7 @@
  *   APP_EVENT_ADD_BOOKMARK    -> bookmarks_add_requested()    (bookmarks.c)
  *   APP_EVENT_PREVIEW_LOCATION -> status_bar_show_location()  (status_bar.c)
  *   APP_EVENT_PREVIEW_PATH    -> preview_show_requested()     (preview_show.c)
+ *   APP_EVENT_EDIT_PATH       -> editor_edit_requested()      (editor_request.c)
  *   APP_EVENT_QUIT            -> ui_quit()                    (ui.c)
  */
 #include "core/app_types.h"
@@ -80,6 +81,10 @@ typedef enum {
      * (taken by the handler) at app->preview_request_line, the Preview tab
      * in front of its notebook */
     APP_EVENT_PREVIEW_PATH,
+    /* A file asked to be opened in an editor tab by a module that does not
+     * depend on the editor (the Repository view of the Git tab):
+     * app->edit_request_path (taken by the handler) */
+    APP_EVENT_EDIT_PATH,
     /* Ctrl+Q pressed where the window does not see it (a popover): quit,
      * after confirming unsaved changes */
     APP_EVENT_QUIT,

@@ -196,6 +196,7 @@ typedef struct AppData {
     gchar* bookmark_add_name;   /* its proposed name, or NULL */
     gchar* preview_request_path; /* file or folder to preview on APP_EVENT_PREVIEW_PATH (taken by the handler) */
     gint preview_request_line;   /* its line to open on (0-based), or -1 */
+    gchar* edit_request_path;    /* file to open in an editor tab on APP_EVENT_EDIT_PATH (taken by the handler) */
     struct NotesManager* notes_mgr; /* notes and notebooks (notes.c) */
     struct AppEvents* events; /* subscriptions and app_notice() message (app_events.c) */
     gint sort_mode;       /* SORT_NAME / DATE / SIZE / EXT */
