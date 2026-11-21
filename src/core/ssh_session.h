@@ -34,13 +34,23 @@ void ssh_session_set_program(const gchar* program);
 /* A variable set for every program started here (value NULL: none) */
 void ssh_session_set_env(const gchar* name, const gchar* value);
 
+/* Called by ssh_session_argv() when a command line goes through the master
+ * connection of target (multiplexing on) but that master is not open: the
+ * application opens it (that command, in BatchMode, asks nothing and fails
+ * if it cannot log in on its own) */
+typedef void (*SshMasterMissingFunc)(const SshTarget* target, gpointer data);
+void ssh_session_on_master_missing(SshMasterMissingFunc func, gpointer data);
+
 /* "user@host", or "host" without user. Caller frees. */
 gchar* ssh_session_destination(const SshTarget* target);
 /* The ssh_config options of every connection ("Name=value": keep-alive,
  * host keys, multiplexing), for `ssh -o` or `sshfs -o`. Caller unrefs. */
 GPtrArray* ssh_session_options(const SshTarget* target, SshArgvFlags flags);
 /* ssh [-p port] [-i key] -o ... [-t | -M -N] destination: append the remote
- * command (or nothing), then NULL. Caller unrefs. */
+ * command (or nothing), then NULL. Through the master connection (no
+ * SSH_ARGV_MASTER nor SSH_ARGV_NO_MUX, multiplexing on), ssh never asks
+ * anything (BatchMode): a background command must not prompt every second.
+ * Caller unrefs. */
 GPtrArray* ssh_session_argv(const SshTarget* target, SshArgvFlags flags);
 /* A launcher with the variables of ssh_session_set_env(), no controlling
  * terminal and death with the application, for any program that runs ssh
@@ -78,7 +88,9 @@ typedef void (*SshExecFunc)(gint status, const gchar* out, const gchar* err, con
                             gpointer data);
 /* Run command (a line for the remote shell, see ssh_session_quote()) on
  * target, with input (may be NULL) on its standard input; done() is called
- * in the main loop. Never blocks. */
+ * in the main loop. Never blocks. With multiplexing, only through an open
+ * master: else it fails at once (G_IO_ERROR_NOT_CONNECTED) and the master
+ * is asked for (ssh_session_on_master_missing()). */
 void ssh_exec_async(const SshTarget* target, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data);
 /* arg quoted for a POSIX remote shell. Caller frees. */

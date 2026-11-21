@@ -647,6 +647,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
 
     /* If already mounted and connected, simply switch to files view */
     if (rm->is_connected && rm->mount_point != NULL) {
+        remote_session_open_master(rm); /* for its kernels and System Monitor: mounted earlier, maybe without */
         g_free(app->current_remote_id);
         app->current_remote_id = g_strdup(rm->id);
         if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {

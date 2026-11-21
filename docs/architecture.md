@@ -59,7 +59,11 @@ Layers, from bottom to top
   `app_runtime_dir()/ssh/<pid>-<hash>`) that later ssh runs reuse without a
   new login (remote commands and kernels; never a terminal nor sshfs: a
   stalled master must not freeze the interface, which reads the mount
-  synchronously); `ssh_exec_async()` runs a remote command. Programs started there
+  synchronously). Those commands run in `BatchMode` (never a prompt); without
+  an open master `ssh_exec_async()` fails at once rather than log in every
+  second, and `ssh_session_on_master_missing()` lets `remote_session` open it
+  in the background, once (not again after a refusal until the next
+  connect); `ssh_exec_async()` runs a remote command. Programs started there
   get `ssh_session_set_env()` variables, no controlling terminal, and die
   with the application on Linux (unit-tested with a fake ssh).
 - `ssh_askpass` — ssh password and passphrase prompts: ssh runs this program

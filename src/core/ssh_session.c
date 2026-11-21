@@ -1,6 +1,7 @@
 /* SSH sessions through the OpenSSH client (see ssh_session.h). */
 #include "core/ssh_session.h"
 #include "core/app_paths.h"
+#include "core/i18n.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -22,6 +23,13 @@
 
 static gchar* program;   /* NULL: SSH_DEFAULT_PROGRAM */
 static GHashTable* envs; /* name -> value, set in every program started */
+static SshMasterMissingFunc missing_func;
+static gpointer missing_data;
+
+void ssh_session_on_master_missing(SshMasterMissingFunc func, gpointer data) {
+    missing_func = func;
+    missing_data = data;
+}
 
 void ssh_session_set_program(const gchar* prog) {
     g_free(program);
@@ -144,6 +152,7 @@ GPtrArray* ssh_session_options(const SshTarget* t, SshArgvFlags flags) {
             g_ptr_array_add(opts, g_strdup("ControlPersist=no"));
         } else {
             g_ptr_array_add(opts, g_strdup("ControlMaster=no")); /* the master, or a connection of its own */
+            g_ptr_array_add(opts, g_strdup("BatchMode=yes"));    /* never a prompt: the master logs in */
         }
         g_free(sock);
     }
@@ -151,6 +160,11 @@ GPtrArray* ssh_session_options(const SshTarget* t, SshArgvFlags flags) {
 }
 
 GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
+    if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX)) && missing_func != NULL) {
+        gchar* sock = ssh_session_control_path(t);
+        if (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS)) missing_func(t, missing_data);
+        g_free(sock);
+    }
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(argv, g_strdup(program != NULL ? program : SSH_DEFAULT_PROGRAM));
     GPtrArray* opts = ssh_session_options(t, flags);
@@ -429,11 +443,21 @@ static void on_exec_done(GObject* source, GAsyncResult* res, gpointer data) {
 
 void ssh_exec_async(const SshTarget* t, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data) {
-    GPtrArray* argv = ssh_session_argv(t, 0);
+    GPtrArray* argv = ssh_session_argv(t, 0); /* asks for the master when it is not open */
     g_ptr_array_add(argv, g_strdup(command != NULL ? command : "true"));
     GError* error = NULL;
-    GSubprocess* p = spawn(argv, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
-                                     G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+    GSubprocess* p = NULL;
+    gchar* sock = ssh_session_control_path(t);
+    if (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS)) {
+        /* Not a connection of its own: one failed login a second (a command
+         * read every second) would get the address banned (fail2ban) */
+        g_set_error_literal(&error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED,
+                            _("the SSH connection to the machine is not open"));
+    } else {
+        p = spawn(argv, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                            G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
+    }
+    g_free(sock);
     g_ptr_array_unref(argv);
     ExecRun* run = g_new0(ExecRun, 1);
     run->done = done;

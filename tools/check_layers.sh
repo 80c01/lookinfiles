@@ -60,7 +60,7 @@ done
 RULES="
 app_paths:
 remote_mounts:app_paths
-ssh_session:app_paths
+ssh_session:app_paths,i18n
 ssh_askpass:ssh_session
 i18n:
 file_types:text_encoding,i18n

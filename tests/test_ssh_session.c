@@ -64,6 +64,7 @@ static void test_argv(void) {
     g_assert_true(has_arg(argv, "StrictHostKeyChecking=accept-new"));
     g_assert_true(has_prefix_arg(argv, "ControlPath="));
     g_assert_true(has_arg(argv, "ControlMaster=no"));
+    g_assert_true(has_arg(argv, "BatchMode=yes"));
     g_assert_false(has_arg(argv, "-t"));
     g_ptr_array_unref(argv);
 
@@ -75,6 +76,7 @@ static void test_argv(void) {
     g_ptr_array_unref(argv);
 
     argv = ssh_session_argv(&t, SSH_ARGV_MASTER);
+    g_assert_false(has_arg(argv, "BatchMode=yes")); /* the master may ask */
     g_assert_true(has_arg(argv, "-M"));
     g_assert_true(has_arg(argv, "-N"));
     g_assert_true(has_arg(argv, "ControlMaster=yes"));
@@ -83,6 +85,38 @@ static void test_argv(void) {
     gchar* q = ssh_session_quote("it's");
     g_assert_cmpstr(q, ==, "'it'\\''s'");
     g_free(q);
+}
+
+static guint missing_calls;
+static gchar* missing_host;
+
+static void on_missing(const SshTarget* t, gpointer data) {
+    (void)data;
+    missing_calls++;
+    g_free(missing_host);
+    missing_host = g_strdup(t->host);
+}
+
+/* A command through a master that is not open asks the application for it;
+ * the master itself, sshfs and terminals (NO_MUX) do not */
+static void test_master_missing(void) {
+    ssh_session_on_master_missing(on_missing, NULL);
+    SshTarget t = { "lonely", NULL, 0, NULL };
+    missing_calls = 0;
+    g_ptr_array_unref(ssh_session_argv(&t, 0));
+    g_assert_cmpuint(missing_calls, ==, 1);
+    g_assert_cmpstr(missing_host, ==, "lonely");
+    g_ptr_array_unref(ssh_session_argv(&t, SSH_ARGV_MASTER));
+    g_ptr_array_unref(ssh_session_argv(&t, SSH_ARGV_NO_MUX | SSH_ARGV_TTY));
+    g_assert_cmpuint(missing_calls, ==, 1);
+    gchar* sock = ssh_session_control_path(&t);
+    g_assert_true(g_file_set_contents(sock, "", 0, NULL)); /* open now */
+    g_ptr_array_unref(ssh_session_argv(&t, 0));
+    g_assert_cmpuint(missing_calls, ==, 1);
+    g_remove(sock);
+    g_free(sock);
+    ssh_session_on_master_missing(NULL, NULL);
+    g_clear_pointer(&missing_host, g_free);
 }
 
 static void test_control_path(void) {
@@ -142,6 +176,17 @@ static void test_exec(void) {
     ssh_session_set_env("FOO", "bar");
     SshTarget t = { "srv", "me", 0, NULL };
     Result r = { g_main_loop_new(NULL, FALSE), 0, NULL, NULL, FALSE, NULL, 0 };
+    /* No master open: fails at once, ssh not run */
+    ssh_exec_async(&t, "true", NULL, NULL, on_exec, &r);
+    g_main_loop_run(r.loop);
+    g_assert_cmpint(r.status, ==, -1);
+    g_assert_cmpstr(r.out, ==, "");
+    g_clear_pointer(&r.out, g_free);
+    g_clear_pointer(&r.err, g_free);
+
+    gchar* sock = ssh_session_control_path(&t); /* the master is open */
+    g_assert_true(g_file_set_contents(sock, "", 0, NULL));
+    gchar* bad_sock = NULL;
     ssh_exec_async(&t, "cat /proc/stat", "input", NULL, on_exec, &r);
     g_main_loop_run(r.loop);
     g_assert_cmpint(r.status, ==, 0);
@@ -151,12 +196,18 @@ static void test_exec(void) {
     ssh_session_set_env("FOO", NULL);
 
     SshTarget bad = { "fail", NULL, 0, NULL };
+    bad_sock = ssh_session_control_path(&bad);
+    g_assert_true(g_file_set_contents(bad_sock, "", 0, NULL));
     ssh_exec_async(&bad, "true", NULL, NULL, on_exec, &r);
     g_main_loop_run(r.loop);
     g_assert_cmpint(r.status, ==, 255);
     g_assert_nonnull(strstr(r.err, "Permission denied"));
     g_free(r.out);
     g_free(r.err);
+    g_remove(sock);
+    g_remove(bad_sock);
+    g_free(sock);
+    g_free(bad_sock);
     g_main_loop_unref(r.loop);
 }
 
@@ -238,6 +289,7 @@ int main(int argc, char** argv) {
     ssh_session_set_program(fake);
     g_test_add_func("/ssh_session/argv", test_argv);
     g_test_add_func("/ssh_session/control_path", test_control_path);
+    g_test_add_func("/ssh_session/master_missing", test_master_missing);
     g_test_add_func("/ssh_session/exec", test_exec);
     g_test_add_func("/ssh_session/master", test_master);
     gint rc = g_test_run();

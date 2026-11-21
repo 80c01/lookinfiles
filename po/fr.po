@@ -13015,6 +13015,15 @@ msgstr "Impossible de lire les statistiques de %s : %s"
 msgid "Reading the statistics of %s…"
 msgstr "Lecture des statistiques de %s…"
 
+#: src/core/ssh_session.c
+msgid "the SSH connection to the machine is not open"
+msgstr "la connexion SSH à la machine n’est pas ouverte"
+
+#: src/explorer/remote_session.c
+#, c-format
+msgid "Cannot open the SSH connection to %s: %s"
+msgstr "Impossible d’ouvrir la connexion SSH à %s : %s"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

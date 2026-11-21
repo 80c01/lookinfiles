@@ -22,6 +22,9 @@ void remote_session_shutdown(void);
  * with *error_text (what ssh or sshfs said; caller frees) or, when rm is
  * already being connected, NULL. */
 gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* mount_dir, gchar** error_text);
+/* Open the master connection of rm in the background unless it is open (a
+ * machine found already mounted: the commands run on it need one) */
+void remote_session_open_master(RemoteMachine* rm);
 /* Close the master connection of rm (after unmounting) */
 void remote_session_close(RemoteMachine* rm);
 

@@ -9,7 +9,19 @@
 
 #include <string.h>
 
-static GHashTable* masters;    /* machine id -> SshMaster*, stopped when removed */
+/* The master connection of a machine */
+typedef struct {
+    gchar* id;
+    gchar* label;       /* the machine's name, for the messages */
+    SshMaster* master;  /* NULL when none */
+    gboolean starting;
+    gboolean failed;    /* refused or failed: opened again only by the next connect */
+    gchar* error;       /* why it failed */
+    GPtrArray* waiters; /* GMainLoop* of remote_session_mount() calls waiting for it */
+} MasterEntry;
+
+static AppData* session_app;
+static GHashTable* masters;    /* machine id -> MasterEntry* */
 static GHashTable* connecting; /* ids of the machines being connected */
 /* The secret typed for the master connection while connecting, given once
  * more to sshfs asking the same question (its connection is its own) */
@@ -118,8 +130,12 @@ static gchar* program_path(const gchar* argv0) {
     return exe;
 }
 
+static void on_master_missing(const SshTarget* target, gpointer data);
+
 void remote_session_init(AppData* app, const gchar* argv0) {
+    session_app = app;
     ssh_session_cleanup_stale();
+    ssh_session_on_master_missing(on_master_missing, app);
     gchar* exe = program_path(argv0);
     GError* error = NULL;
     if (exe == NULL || !ssh_askpass_serve(exe, on_ask, app, &error)) {
@@ -131,6 +147,7 @@ void remote_session_init(AppData* app, const gchar* argv0) {
 }
 
 void remote_session_shutdown(void) {
+    ssh_session_on_master_missing(NULL, NULL);
     g_clear_pointer(&masters, g_hash_table_destroy);
     g_clear_pointer(&connecting, g_hash_table_destroy);
     forget_secret();
@@ -147,12 +164,85 @@ typedef struct {
     gchar* text;
 } Wait;
 
+static void wake_waiters(MasterEntry* e) {
+    for (guint i = 0; i < e->waiters->len; i++) g_main_loop_quit(e->waiters->pdata[i]);
+    g_ptr_array_set_size(e->waiters, 0);
+}
+
+static void entry_free(gpointer data) {
+    MasterEntry* e = data;
+    if (e->master != NULL) ssh_master_stop(e->master); /* no ready() after this */
+    wake_waiters(e);
+    g_ptr_array_unref(e->waiters);
+    g_free(e->error);
+    g_free(e->label);
+    g_free(e->id);
+    g_free(e);
+}
+
 static void on_master_ready(SshMaster* m, gboolean ok, const gchar* text, gpointer data) {
-    (void)m;
-    Wait* w = data;
-    w->ok = ok;
-    w->text = g_strdup(text);
-    g_main_loop_quit(w->loop);
+    MasterEntry* e = data;
+    e->starting = FALSE;
+    if (!ok) {
+        e->failed = TRUE; /* not opened again in the background: that would ask again and again */
+        g_free(e->error);
+        e->error = g_strdup(text != NULL ? text : "");
+        e->master = NULL;
+        ssh_master_stop(m);
+        if (e->waiters->len == 0 && session_app != NULL) { /* opened in the background */
+            gchar* msg = g_strdup_printf(_("Cannot open the SSH connection to %s: %s"), e->label, e->error);
+            app_notice(session_app, msg, FALSE);
+            g_free(msg);
+        }
+    }
+    wake_waiters(e);
+}
+
+static const gchar* machine_name(const RemoteMachine* rm) {
+    return (rm->name != NULL && rm->name[0] != '\0') ? rm->name : rm->host;
+}
+
+/* The master connection of rm, being opened unless it is open (or, when not
+ * explicit, unless its last opening failed) */
+static MasterEntry* open_master(RemoteMachine* rm, gboolean explicit) {
+    if (masters == NULL) masters = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, entry_free);
+    MasterEntry* e = g_hash_table_lookup(masters, rm->id);
+    if (e == NULL) {
+        e = g_new0(MasterEntry, 1);
+        e->id = g_strdup(rm->id);
+        e->waiters = g_ptr_array_new();
+        g_hash_table_insert(masters, e->id, e);
+    }
+    g_free(e->label);
+    e->label = g_strdup(machine_name(rm));
+    if (e->starting || ssh_master_is_up(e->master) || (e->failed && !explicit)) return e;
+    if (e->master != NULL) ssh_master_stop(e->master); /* it dropped */
+    e->failed = FALSE;
+    g_clear_pointer(&e->error, g_free);
+    e->starting = TRUE;
+    SshTarget t = remote_machine_target(rm);
+    e->master = ssh_master_start(&t, on_master_ready, e); /* ready() comes from the main loop */
+    return e;
+}
+
+/* A background command (kernel, System Monitor) found no master: open it
+ * once for the connected machine it is for */
+static void on_master_missing(const SshTarget* t, gpointer data) {
+    AppData* app = data;
+    for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
+        RemoteMachine* rm = l->data;
+        SshTarget mt = remote_machine_target(rm);
+        if (!rm->is_connected || g_strcmp0(mt.host, t->host) != 0 || mt.port != t->port ||
+            g_strcmp0(mt.user != NULL ? mt.user : "", t->user != NULL ? t->user : "") != 0) {
+            continue;
+        }
+        open_master(rm, FALSE);
+        return;
+    }
+}
+
+void remote_session_open_master(RemoteMachine* rm) {
+    if (rm != NULL && rm->id != NULL) open_master(rm, TRUE);
 }
 
 static void on_sshfs_done(GObject* source, GAsyncResult* res, gpointer data) {
@@ -230,24 +320,16 @@ gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* moun
     app_notice(app, notice, FALSE);
     g_free(notice);
 
-    if (masters == NULL) masters = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)ssh_master_stop);
-    gboolean ok = TRUE;
-    SshMaster* m = g_hash_table_lookup(masters, id);
-    if (m == NULL || !ssh_master_is_up(m)) {
-        g_hash_table_remove(masters, id); /* dropped: open it again */
-        Wait w = { g_main_loop_new(NULL, FALSE), FALSE, NULL };
-        m = ssh_master_start(&t, on_master_ready, &w);
-        g_main_loop_run(w.loop);
-        g_main_loop_unref(w.loop);
-        ok = w.ok;
-        if (ok) {
-            g_hash_table_insert(masters, g_strdup(id), m);
-            g_free(w.text);
-        } else {
-            ssh_master_stop(m);
-            *error_text = w.text;
-        }
+    MasterEntry* e = open_master(rm, TRUE);
+    if (e->starting) {
+        GMainLoop* loop = g_main_loop_new(NULL, FALSE);
+        g_ptr_array_add(e->waiters, loop);
+        g_main_loop_run(loop);
+        g_main_loop_unref(loop);
     }
+    e = masters != NULL ? g_hash_table_lookup(masters, id) : NULL; /* gone if the application quit */
+    gboolean ok = e != NULL && ssh_master_is_up(e->master);
+    if (!ok) *error_text = g_strdup(e != NULL && e->error != NULL ? e->error : "");
     rm = ok ? remote_find_by_id(app, id) : NULL; /* deleted while waiting? */
     if (rm != NULL) {
         t = remote_machine_target(rm);
