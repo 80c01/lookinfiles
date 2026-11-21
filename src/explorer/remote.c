@@ -1,5 +1,6 @@
 #include "explorer/remote.h"
 #include "explorer/remote_mounts.h"
+#include "explorer/remote_session.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
 #include "widgets/dialog.h"
@@ -660,71 +661,35 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         return TRUE;
     }
 
-    /* Build SSHFS argument list */
-    GPtrArray* args = g_ptr_array_new_with_free_func(g_free);
-    g_ptr_array_add(args, g_strdup("sshfs"));
-
-    GString* target = g_string_new("");
-    if (rm->user != NULL && rm->user[0] != '\0') {
-        g_string_append_printf(target, "%s@", rm->user);
-    }
-    g_string_append(target, rm->host);
-    g_string_append(target, ":");
-    if (rm->remote_path != NULL && rm->remote_path[0] != '\0' && g_strcmp0(rm->remote_path, "~") != 0) {
-        g_string_append(target, rm->remote_path);
-    }
-    g_ptr_array_add(args, g_string_free(target, FALSE));
-    g_ptr_array_add(args, g_strdup(mount_dir));
-
-    if (rm->port > 0 && rm->port != 22) {
-        g_ptr_array_add(args, g_strdup("-p"));
-        g_ptr_array_add(args, g_strdup_printf("%d", rm->port));
-    }
-
-    g_ptr_array_add(args, g_strdup("-o"));
-    g_ptr_array_add(args, g_strdup("reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,follow_symlinks,idmap=user,StrictHostKeyChecking=accept-new"));
-
-    if (rm->identity_file != NULL && rm->identity_file[0] != '\0') {
-        g_ptr_array_add(args, g_strdup("-o"));
-        g_ptr_array_add(args, g_strdup_printf("IdentityFile=%s", rm->identity_file));
-    }
-
-    g_ptr_array_add(args, NULL);
-
-    gchar* stderr_buf = NULL;
-    gint exit_status = 0;
-    GError* err = NULL;
-
-    gboolean ok = g_spawn_sync(NULL, (gchar**)args->pdata, NULL,
-                               G_SPAWN_SEARCH_PATH, NULL, NULL,
-                               NULL, &stderr_buf, &exit_status, &err);
-    g_ptr_array_free(args, TRUE);
-
-    if (err != NULL) {
-        g_error_free(err);
-    }
-
-    if (!ok || exit_status != 0) {
-        GtkWidget* dlg = app_dialog_new(_("Connection Failed"), app->window,
-                                        _("_Close"), APP_RESPONSE_OK,
-                                        NULL);
-        GtkWidget* box = remote_dialog_body(dlg);
-        gchar* err_msg = g_strdup_printf(_("Could not connect to '%s' (%s):\n\n%s"),
-                                         rm->name ? rm->name : rm->host, rm->host,
-                                         (stderr_buf && stderr_buf[0]) ? stderr_buf : _("sshfs process exited with an error."));
-        GtkWidget* lbl = gtk_label_new(err_msg);
-        gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
-        gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
-        gtk_box_append(GTK_BOX(box), lbl);
-        g_free(err_msg);
-        g_free(stderr_buf);
-        RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
-        remote_run_modal(dlg, &d, NULL);
-        app_dialog_destroy(APP_DIALOG(dlg));
+    /* Master SSH connection (password asked if needed), then sshfs through it */
+    gchar* id = g_strdup(rm->id);
+    gchar* error_text = NULL;
+    gboolean mounted = remote_session_mount(app, rm, mount_dir, &error_text);
+    rm = remote_find_by_id(app, id); /* the interface ran meanwhile: rm may be gone */
+    g_free(id);
+    if (!mounted || rm == NULL) {
+        if (mounted) {
+            remote_mounts_unmount(mount_dir);
+        } else if (error_text != NULL && rm != NULL) {
+            GtkWidget* dlg = app_dialog_new(_("Connection Failed"), app->window,
+                                            _("_Close"), APP_RESPONSE_OK,
+                                            NULL);
+            GtkWidget* box = remote_dialog_body(dlg);
+            gchar* err_msg = g_strdup_printf(_("Could not connect to '%s' (%s):\n\n%s"),
+                                             rm->name ? rm->name : rm->host, rm->host, error_text);
+            GtkWidget* lbl = gtk_label_new(err_msg);
+            gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
+            gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
+            gtk_box_append(GTK_BOX(box), lbl);
+            g_free(err_msg);
+            RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
+            remote_run_modal(dlg, &d, NULL);
+            app_dialog_destroy(APP_DIALOG(dlg));
+        }
+        g_free(error_text);
         g_free(mount_dir);
         return FALSE;
     }
-    g_free(stderr_buf);
 
     remote_mounts_claim(mount_dir);
     rm->is_connected = TRUE;
@@ -754,6 +719,7 @@ gboolean remote_disconnect_machine(AppData* app, RemoteMachine* rm) {
     if (rm->mount_point != NULL) {
         remote_mounts_unmount(rm->mount_point);
     }
+    remote_session_close(rm);
     rm->is_connected = FALSE;
 
     if (app != NULL && g_strcmp0(app->current_remote_id, rm->id) == 0) {

@@ -44,6 +44,8 @@
 #include "notes/notes.h"
 #include "explorer/remote.h"
 #include "explorer/remote_mounts.h"
+#include "explorer/remote_session.h"
+#include "core/ssh_askpass.h"
 #include "games/games.h"
 #include "explorer/files_menu.h"
 #include "workspace/session.h"
@@ -275,6 +277,10 @@ static void tune_malloc(void) {
 }
 
 int main(int argc, char** argv) {
+    /* Started by ssh to ask for a password: ask the running instance, no window */
+    if (ssh_askpass_is_helper(argc, argv)) {
+        return ssh_askpass_helper_main(argc, argv);
+    }
     profile_init(); /* LOOKIN_PROFILE: the origin of the start-up timings */
     tune_malloc();
     i18n_init(argc > 0 ? argv[0] : NULL); /* before any message is printed */
@@ -593,6 +599,7 @@ int main(int argc, char** argv) {
     notes_attach_context_menu(app);
     remote_mounts_cleanup_stale(); /* mounts a crashed session left */
     remote_init(app);
+    remote_session_init(app, argc > 0 ? argv[0] : NULL); /* ssh password prompts */
     remote_attach_context_menu(app);
     games_init(app);
     files_menu_attach(app);
@@ -813,6 +820,7 @@ int main(int argc, char** argv) {
     bookmarks_free(app);
     notes_free(app);
     remote_free(app);
+    remote_session_shutdown(); /* after the unmounts: sshfs went through the masters */
     org_fold_free(app);
     preview_folding_free(app);
     preview_location_free(app);

@@ -1,0 +1,238 @@
+/* The connection to remote machines: master SSH connections, ssh prompts
+ * as dialogs, sshfs mounts through the master (see remote_session.h). */
+#include "explorer/remote_session.h"
+#include "core/app_events.h"
+#include "core/i18n.h"
+#include "core/ssh_askpass.h"
+#include "core/ssh_session.h"
+#include "widgets/dialog.h"
+
+#include <string.h>
+
+static GHashTable* masters;    /* machine id -> SshMaster*, stopped when removed */
+static GHashTable* connecting; /* ids of the machines being connected */
+
+/* ------------------------------------------------------------------------- */
+/* ssh prompts                                                               */
+/* ------------------------------------------------------------------------- */
+
+typedef struct {
+    SshAskpassRequest* request;
+    SshAskpassKind kind;
+    GtkWidget* entry; /* the secret typed, NULL for a question */
+} Prompt;
+
+static void on_prompt_response(AppDialog* dlg, gint response, gpointer data) {
+    Prompt* p = data;
+    if (p->kind == SSH_ASKPASS_CONFIRM) {
+        ssh_askpass_reply(p->request, response == APP_RESPONSE_YES ? "yes" : NULL);
+    } else {
+        ssh_askpass_reply(p->request, response == APP_RESPONSE_OK
+                                          ? gtk_editable_get_text(GTK_EDITABLE(p->entry)) : NULL);
+        gtk_editable_set_text(GTK_EDITABLE(p->entry), ""); /* the secret is not kept */
+    }
+    g_free(p);
+    app_dialog_destroy(dlg);
+}
+
+/* A prompt of ssh (in English, as ssh writes it): a dialog over the window */
+static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar* prompt, gpointer data) {
+    AppData* app = data;
+    gchar* text = g_utf8_make_valid(prompt != NULL ? prompt : "", -1);
+    g_strstrip(text);
+    if (kind == SSH_ASKPASS_NOTICE) {
+        app_notice(app, text, FALSE);
+        g_free(text);
+        return;
+    }
+    if (app == NULL || app->window == NULL) {
+        ssh_askpass_reply(request, NULL);
+        g_free(text);
+        return;
+    }
+    gboolean question = kind == SSH_ASKPASS_CONFIRM;
+    GtkWidget* dlg = question
+                         ? app_dialog_new(_("SSH Confirmation"), app->window, _("_No"), APP_RESPONSE_NO,
+                                          _("_Yes"), APP_RESPONSE_YES, NULL)
+                         : app_dialog_new(_("SSH Authentication"), app->window, _("_Cancel"),
+                                          APP_RESPONSE_CANCEL, _("_OK"), APP_RESPONSE_OK, NULL);
+    app_dialog_set_default_response(APP_DIALOG(dlg), question ? APP_RESPONSE_YES : APP_RESPONSE_OK);
+    app_dialog_set_width(APP_DIALOG(dlg), 440);
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+    gtk_widget_set_margin_top(box, 14);
+    gtk_widget_set_margin_bottom(box, 14);
+    gtk_widget_set_margin_start(box, 16);
+    gtk_widget_set_margin_end(box, 16);
+    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
+    GtkWidget* label = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_label_set_selectable(GTK_LABEL(label), TRUE); /* a host key fingerprint can be copied */
+    gtk_box_append(GTK_BOX(box), label);
+
+    Prompt* p = g_new0(Prompt, 1);
+    p->request = request;
+    p->kind = kind;
+    if (!question) {
+        p->entry = gtk_password_entry_new();
+        gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(p->entry), TRUE);
+        g_object_set(p->entry, "activates-default", TRUE, NULL);
+        gtk_box_append(GTK_BOX(box), p->entry);
+    }
+    g_signal_connect(dlg, "response", G_CALLBACK(on_prompt_response), p);
+    app_dialog_present(APP_DIALOG(dlg));
+    if (p->entry != NULL) gtk_widget_grab_focus(p->entry);
+    g_free(text);
+}
+
+/* This program's path for SSH_ASKPASS, NULL when unknown. Caller frees. */
+static gchar* program_path(const gchar* argv0) {
+    gchar* exe = g_file_read_link("/proc/self/exe", NULL);
+    if (exe == NULL && argv0 != NULL) {
+        exe = g_path_is_absolute(argv0) ? g_strdup(argv0) : g_find_program_in_path(argv0);
+    }
+    return exe;
+}
+
+void remote_session_init(AppData* app, const gchar* argv0) {
+    ssh_session_cleanup_stale();
+    gchar* exe = program_path(argv0);
+    GError* error = NULL;
+    if (exe == NULL || !ssh_askpass_serve(exe, on_ask, app, &error)) {
+        /* ssh can still use keys and the agent; a password just cannot be asked */
+        g_debug("ssh prompts not available: %s", error != NULL ? error->message : "program path unknown");
+        g_clear_error(&error);
+    }
+    g_free(exe);
+}
+
+void remote_session_shutdown(void) {
+    g_clear_pointer(&masters, g_hash_table_destroy);
+    g_clear_pointer(&connecting, g_hash_table_destroy);
+    ssh_askpass_stop();
+}
+
+/* ------------------------------------------------------------------------- */
+/* Connecting and mounting                                                   */
+/* ------------------------------------------------------------------------- */
+
+typedef struct {
+    GMainLoop* loop;
+    gboolean ok;
+    gchar* text;
+} Wait;
+
+static void on_master_ready(SshMaster* m, gboolean ok, const gchar* text, gpointer data) {
+    (void)m;
+    Wait* w = data;
+    w->ok = ok;
+    w->text = g_strdup(text);
+    g_main_loop_quit(w->loop);
+}
+
+static void on_sshfs_done(GObject* source, GAsyncResult* res, gpointer data) {
+    Wait* w = data;
+    GBytes* err = NULL;
+    GError* error = NULL;
+    g_subprocess_communicate_finish(G_SUBPROCESS(source), res, NULL, &err, &error);
+    GSubprocess* p = G_SUBPROCESS(source);
+    w->ok = error == NULL && g_subprocess_get_if_exited(p) && g_subprocess_get_exit_status(p) == 0;
+    gsize n = 0;
+    const gchar* bytes = err != NULL ? g_bytes_get_data(err, &n) : NULL;
+    if (!w->ok) {
+        w->text = n > 0 ? g_utf8_make_valid(bytes, (gssize)n)
+                        : g_strdup(error != NULL ? error->message : _("sshfs process exited with an error."));
+        g_strstrip(w->text);
+    }
+    if (err != NULL) g_bytes_unref(err);
+    g_clear_error(&error);
+    g_main_loop_quit(w->loop);
+}
+
+/* sshfs user@host:dir mount_dir, its ssh through the master connection */
+static gboolean run_sshfs(const RemoteMachine* rm, const SshTarget* t, const gchar* mount_dir, gchar** error_text) {
+    GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
+    g_ptr_array_add(argv, g_strdup("sshfs"));
+    gchar* dest = ssh_session_destination(t);
+    gboolean home = rm->remote_path == NULL || rm->remote_path[0] == '\0' || g_strcmp0(rm->remote_path, "~") == 0;
+    g_ptr_array_add(argv, g_strconcat(dest, ":", home ? "" : rm->remote_path, NULL));
+    g_free(dest);
+    g_ptr_array_add(argv, g_strdup(mount_dir));
+    g_ptr_array_add(argv, g_strdup("-o"));
+    g_ptr_array_add(argv, g_strdup("reconnect,follow_symlinks,idmap=user"));
+    GPtrArray* opts = ssh_session_options(t, 0); /* passed on to its ssh */
+    for (guint i = 0; i < opts->len; i++) {
+        g_ptr_array_add(argv, g_strdup("-o"));
+        g_ptr_array_add(argv, g_strdup(opts->pdata[i]));
+    }
+    g_ptr_array_unref(opts);
+    g_ptr_array_add(argv, NULL);
+
+    GSubprocessLauncher* l = ssh_session_launcher(G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_SILENCE |
+                                                  G_SUBPROCESS_FLAGS_STDERR_PIPE);
+    GError* error = NULL;
+    GSubprocess* p = g_subprocess_launcher_spawnv(l, (const gchar* const*)argv->pdata, &error);
+    g_object_unref(l);
+    g_ptr_array_unref(argv);
+    if (p == NULL) {
+        *error_text = g_strdup(error->message);
+        g_error_free(error);
+        return FALSE;
+    }
+    Wait w = { g_main_loop_new(NULL, FALSE), FALSE, NULL };
+    GBytes* none = g_bytes_new(NULL, 0);
+    g_subprocess_communicate_async(p, none, NULL, on_sshfs_done, &w);
+    g_bytes_unref(none);
+    g_main_loop_run(w.loop); /* sshfs returns once mounted (it goes on in the background) */
+    g_main_loop_unref(w.loop);
+    g_object_unref(p);
+    *error_text = w.text;
+    return w.ok;
+}
+
+gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* mount_dir, gchar** error_text) {
+    *error_text = NULL;
+    if (rm == NULL || rm->id == NULL) return FALSE;
+    if (connecting == NULL) connecting = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    if (g_hash_table_contains(connecting, rm->id)) return FALSE; /* Enter pressed again meanwhile */
+    gchar* id = g_strdup(rm->id); /* rm may be edited while waiting */
+    g_hash_table_add(connecting, g_strdup(id));
+    SshTarget t = remote_machine_target(rm);
+    gchar* notice = g_strdup_printf(_("Connecting to %s…"), (rm->name != NULL && rm->name[0] != '\0') ? rm->name : rm->host);
+    app_notice(app, notice, FALSE);
+    g_free(notice);
+
+    if (masters == NULL) masters = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)ssh_master_stop);
+    gboolean ok = TRUE;
+    SshMaster* m = g_hash_table_lookup(masters, id);
+    if (m == NULL || !ssh_master_is_up(m)) {
+        g_hash_table_remove(masters, id); /* dropped: open it again */
+        Wait w = { g_main_loop_new(NULL, FALSE), FALSE, NULL };
+        m = ssh_master_start(&t, on_master_ready, &w);
+        g_main_loop_run(w.loop);
+        g_main_loop_unref(w.loop);
+        ok = w.ok;
+        if (ok) {
+            g_hash_table_insert(masters, g_strdup(id), m);
+            g_free(w.text);
+        } else {
+            ssh_master_stop(m);
+            *error_text = w.text;
+        }
+    }
+    rm = ok ? remote_find_by_id(app, id) : NULL; /* deleted while waiting? */
+    if (rm != NULL) {
+        t = remote_machine_target(rm);
+        ok = run_sshfs(rm, &t, mount_dir, error_text);
+    } else {
+        ok = FALSE;
+    }
+    app_notice(app, NULL, FALSE);
+    g_hash_table_remove(connecting, id);
+    g_free(id);
+    return ok;
+}
+
+void remote_session_close(RemoteMachine* rm) {
+    if (masters != NULL && rm != NULL && rm->id != NULL) g_hash_table_remove(masters, rm->id);
+}

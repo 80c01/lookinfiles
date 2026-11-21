@@ -9,8 +9,9 @@ to go back to the files) or the server button at the top of the explorer.
 
 - `sshfs` installed (`sudo apt install sshfs`; Fedora `fuse-sshfs`). Without
   it, connecting explains how to install it.
-- An SSH access that works without typing a password (an SSH key, with
-  `ssh-agent` if the key has a passphrase).
+- The OpenSSH client (`ssh`). A password or a key passphrase, when ssh needs
+  one, is asked in a dialog of LookinFiles; an SSH key with `ssh-agent`
+  spares you the question.
 
 ## The list of machines
 
@@ -44,6 +45,10 @@ local mount point), and so do the notebook **Save** dialog, the Emacs
 `C-x C-w` prompt and the tab tooltips. Type paths the same way (`server:~/a`,
 or `server:docs` from the **Remote Directory**); paths outside the remote
 directory are refused.
+
+You log in once per machine: the connection opened for the files is shared
+by the SSH terminals of the machine (OpenSSH multiplexing; not on Windows),
+and closed when you disconnect or quit.
 
 Machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (usually `/run/user/1000/…`; without `$XDG_RUNTIME_DIR`,

@@ -5,6 +5,7 @@
  * to remote_store.c, read with remote_machine_list() / remote_folder_list()), persistence in <config>/remotes.xml, discovery from
  * ~/.ssh/config. */
 #include "core/app_types.h"
+#include "core/ssh_session.h"
 
 /* Remote SSH Machine definition */
 typedef struct {
@@ -61,6 +62,8 @@ void remote_folder_remove(AppData* app, RemoteFolder* folder);
 guint remote_folder_count(AppData* app, const RemoteFolder* folder);
 /* Put a machine in a folder (NULL: top level) */
 void remote_machine_set_folder(RemoteMachine* rm, const RemoteFolder* folder);
+/* Where ssh connects for rm (strings owned by rm) */
+SshTarget remote_machine_target(const RemoteMachine* rm);
 /* Machine of the current workspace connection (app->current_remote_id), NULL if local */
 RemoteMachine* remote_get_active_machine(AppData* app);
 

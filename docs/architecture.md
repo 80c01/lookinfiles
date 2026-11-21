@@ -52,6 +52,18 @@ Layers, from bottom to top
   would recurse into a forgotten mount), owner files, `/proc/self/mounts`
   parsing, unmount, and the startup cleanup of the mounts a crashed session left
   (`remote_mounts_cleanup_stale()`, called by `main.c`).
+- `ssh_session` — every ssh run goes through the OpenSSH client with the
+  command line of `ssh_session_argv()` (`ssh_session_options()` for `sshfs
+  -o`): keep-alive, `accept-new` host keys and, except on Windows, a master
+  connection per machine (`ssh_master_start()`, socket
+  `app_runtime_dir()/ssh/<pid>-<hash>`) that later ssh runs reuse without a
+  new login; `ssh_exec_async()` runs a remote command. Programs started there
+  get `ssh_session_set_env()` variables, no controlling terminal, and die
+  with the application on Linux (unit-tested with a fake ssh).
+- `ssh_askpass` — ssh password and passphrase prompts: ssh runs this program
+  again as `SSH_ASKPASS` (`ssh_askpass_is_helper()`, first test of `main()`),
+  which hands the prompt to the instance over loopback TCP with a random
+  token (`ssh_askpass_serve()`), works on Windows too (unit-tested).
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -900,7 +912,8 @@ Layers, from bottom to top
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
-  `remote_store`). The notes view is `notes.c` (rows, selection, keys, menu),
+  `remote_store`; the connection, password dialogs and sshfs mount in
+  `remote_session`, through `ssh_session`). The notes view is `notes.c` (rows, selection, keys, menu),
   `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`;
   `notes_new_canvas()` makes and opens a Canvas note without a dialog (the
   **+** button of `new_tab_menu`). `notes_search` is the `SearchArea` of
@@ -1456,7 +1469,7 @@ Layers, from bottom to top
   `TERM_TABS_GROUP`) split by `GtkPaned`s; tabs are dragged between them or
   to a pane edge through `tab_drop` (`Ctrl+T` new tab, `Ctrl+Shift+T` new
   pane below, `terminal_open()` with a working directory); ssh into the
-  active remote machine; the shell is `$SHELL` (on Windows PowerShell 7,
+  active remote machine (`ssh_session_argv()`, through its master connection); the shell is `$SHELL` (on Windows PowerShell 7,
   Windows PowerShell, then `%COMSPEC%`); `Ctrl+Shift+C` / `Ctrl+Shift+V`
   copy the selection / paste. Terminal tabs also go into the editor and preview
   notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`

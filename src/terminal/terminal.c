@@ -2,6 +2,7 @@
 #include "widgets/panels.h"
 #include "core/app_events.h"
 #include "explorer/remote_store.h"
+#include "core/ssh_session.h"
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "widgets/tab_drop.h"
@@ -137,25 +138,9 @@ static gchar* user_shell(void) {
 static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
     RemoteMachine* rm = remote_get_active_machine(app);
     if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
-        GPtrArray* args = g_ptr_array_new_with_free_func(g_free);
-        g_ptr_array_add(args, g_strdup("ssh"));
-        g_ptr_array_add(args, g_strdup("-t"));
-        if (rm->port > 0 && rm->port != 22) {
-            g_ptr_array_add(args, g_strdup("-p"));
-            g_ptr_array_add(args, g_strdup_printf("%d", rm->port));
-        }
-        if (rm->identity_file != NULL && rm->identity_file[0] != '\0') {
-            g_ptr_array_add(args, g_strdup("-i"));
-            g_ptr_array_add(args, g_strdup(rm->identity_file));
-        }
-
-        gchar* target = NULL;
-        if (rm->user != NULL && rm->user[0] != '\0') {
-            target = g_strdup_printf("%s@%s", rm->user, rm->host);
-        } else {
-            target = g_strdup(rm->host);
-        }
-        g_ptr_array_add(args, target);
+        /* Through the machine's master connection when it is open: no new login */
+        SshTarget t = remote_machine_target(rm);
+        GPtrArray* args = ssh_session_argv(&t, SSH_ARGV_TTY);
 
         if (rm->remote_path != NULL && rm->remote_path[0] != '\0' &&
             g_strcmp0(rm->remote_path, "~") != 0 && g_strcmp0(rm->remote_path, "") != 0) {

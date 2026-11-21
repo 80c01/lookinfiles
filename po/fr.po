@@ -12965,6 +12965,27 @@ msgstr "Fermer l’espace de travail"
 msgid "Only the folder opened on the remote machine can be used."
 msgstr "Seul le dossier ouvert sur la machine distante peut être utilisé."
 
+#: src/explorer/remote_session.c
+msgid "SSH Confirmation"
+msgstr "Confirmation SSH"
+
+#: src/explorer/remote_session.c
+msgid "SSH Authentication"
+msgstr "Authentification SSH"
+
+#: src/explorer/remote_session.c
+msgid "_No"
+msgstr "_Non"
+
+#: src/explorer/remote_session.c
+msgid "_Yes"
+msgstr "_Oui"
+
+#: src/explorer/remote_session.c
+#, c-format
+msgid "Connecting to %s…"
+msgstr "Connexion à %s…"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

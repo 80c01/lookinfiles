@@ -156,6 +156,11 @@ void remote_machine_set_folder(RemoteMachine* rm, const RemoteFolder* folder) {
     rm->folder_id = (folder != NULL) ? g_strdup(folder->id) : NULL;
 }
 
+SshTarget remote_machine_target(const RemoteMachine* rm) {
+    SshTarget t = { rm->host, rm->user, rm->port, rm->identity_file };
+    return t;
+}
+
 RemoteMachine* remote_get_active_machine(AppData* app) {
     if (app == NULL || app->current_remote_id == NULL) {
         return NULL;

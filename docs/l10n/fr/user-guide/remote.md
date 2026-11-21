@@ -10,8 +10,9 @@ en haut de l’explorateur.
 
 - `sshfs` installé (`sudo apt install sshfs` ; Fedora `fuse-sshfs`). Sans
   lui, la connexion explique comment l’installer.
-- Un accès SSH qui marche sans taper de mot de passe (une clé SSH, avec
-  `ssh-agent` si la clé a une phrase de passe).
+- Le client OpenSSH (`ssh`). Un mot de passe ou la phrase de passe d’une
+  clé, quand ssh en a besoin, est demandé dans un dialogue de LookinFiles ;
+  une clé SSH avec `ssh-agent` évite la question.
 
 ## La liste des machines
 
@@ -48,6 +49,11 @@ dialogue **Enregistrer** des notebooks, l’invite `C-x C-w` d’Emacs et les
 infobulles des onglets. Tapez les chemins de la même façon (`serveur:~/a`,
 ou `serveur:docs` depuis le **Dossier distant**) ; un chemin hors du
 dossier distant est refusé.
+
+Vous ne vous connectez qu’une fois par machine : la connexion ouverte pour
+les fichiers sert aussi aux terminaux SSH de la machine (multiplexage
+OpenSSH ; pas sous Windows), et se ferme quand vous vous déconnectez ou
+quittez.
 
 Les machines sont montées sous `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (en général `/run/user/1000/…` ; sans `$XDG_RUNTIME_DIR`,

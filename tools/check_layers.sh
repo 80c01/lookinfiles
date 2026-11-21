@@ -60,6 +60,8 @@ done
 RULES="
 app_paths:
 remote_mounts:app_paths
+ssh_session:app_paths
+ssh_askpass:ssh_session
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
@@ -286,7 +288,7 @@ frame_watch:profile
 tab_drop:pane_geometry
 after_frame:
 explorer_tree:explorer_row,icons
-remote_store:app_types,app_paths,notebook_icons,remote_mounts
+remote_store:app_types,app_paths,notebook_icons,remote_mounts,ssh_session
 remote_path:app_types,remote_store
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,deep_search_store,file_types,i18n
 fs_watch:app_types,app_events,git_utils,git_tab,preview_state
