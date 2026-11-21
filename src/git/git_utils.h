@@ -65,6 +65,7 @@ typedef struct {
     gchar* hash;       /* full SHA */
     gchar* short_hash; /* shortest unique abbreviation, like git's %h */
     gchar* subject;    /* first paragraph of the message on one line */
+    gchar* message;    /* whole message, without its trailing line breaks */
     gchar* author;
     gchar* date; /* committer date relative to now, like git's %cr */
 } GitCommitInfo;

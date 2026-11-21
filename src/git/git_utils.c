@@ -646,6 +646,7 @@ void git_commit_info_free(gpointer data) {
     g_free(c->hash);
     g_free(c->short_hash);
     g_free(c->subject);
+    g_free(c->message);
     g_free(c->author);
     g_free(c->date);
     g_free(c);
@@ -804,6 +805,9 @@ GPtrArray* git_read_log(const gchar* root, guint max, gchar** words, GCancellabl
                 ci->hash = g_strdup(hash);
                 ci->short_hash = short_id((const git_object*)c);
                 ci->subject = g_utf8_make_valid(summary != NULL ? summary : "", -1);
+                const gchar* message = git_commit_message(c);
+                ci->message = g_utf8_make_valid(message != NULL ? message : "", -1);
+                g_strchomp(ci->message);
                 ci->author = g_utf8_make_valid(author != NULL && author->name != NULL ? author->name : "", -1);
                 ci->date = git_relative_date(now - (gint64)git_commit_time(c));
                 g_ptr_array_add(commits, ci);

@@ -1,4 +1,5 @@
 #include "git/git_tab.h"
+#include "core/app_events.h"
 #include "core/i18n.h"
 #include "theme/text_tags.h"
 #include "theme/icons.h"
@@ -12,6 +13,8 @@
 #define GIT_ROW_MAX_REFS 6
 /* Commits listed (the newest, or the newest that match the filter) */
 #define GIT_LOG_MAX 100
+/* Data of a commit cell: its GtkListItem */
+#define GIT_ITEM_KEY "lookin-git-item"
 
 /* Git commits tab state (app->git), created by git_tab_init() */
 typedef struct GitTab GitTab;
@@ -563,12 +566,156 @@ static void start_log_read(AppData* app) {
     g_object_unref(task);
 }
 
+/* What the menu of a commit copies */
+typedef enum {
+    GIT_COPY_HASH,
+    GIT_COPY_SHORT_HASH,
+    GIT_COPY_MESSAGE
+} GitCopyKind;
+
+/* Copy a field of commit to the clipboard, with a notice */
+static void copy_commit(AppData* app, GitCommit* commit, GitCopyKind kind) {
+    if (commit == NULL || commit->info == NULL) return;
+    GitCommitInfo* ci = commit->info;
+    const gchar* text = kind == GIT_COPY_HASH         ? ci->hash
+                        : kind == GIT_COPY_SHORT_HASH ? ci->short_hash
+                                                      : ci->message;
+    if (text == NULL || text[0] == '\0') return;
+    gdk_clipboard_set_text(gtk_widget_get_clipboard(GTK_WIDGET(app->window)), text);
+    gchar* msg = kind == GIT_COPY_MESSAGE
+                     /* TRANSLATORS: %s is a short commit hash */
+                     ? g_strdup_printf(_("Copied the message of %s"), ci->short_hash != NULL ? ci->short_hash : "")
+                     : g_strdup_printf(_("Copied “%s”"), text);
+    app_notice(app, msg, FALSE);
+    g_free(msg);
+}
+
+/* The key that copies the hash in the current mode (shown in the menu) */
+static const gchar* copy_hash_key(AppData* app) {
+    switch (app_nav_style(app)) {
+    case NAV_STYLE_VIM: return "y";
+    case NAV_STYLE_EMACS: return "M-w";
+    default: return "Ctrl+C";
+    }
+}
+
+/* The selected commit (borrowed), or NULL */
+static GitCommit* selected_commit(GitTab* g) {
+    return g != NULL ? gtk_single_selection_get_selected_item(g->selection) : NULL;
+}
+
+/* Ctrl+C (Notepad), y (Vim), M-w (Emacs) in the list: copy the hash of the
+ * selected commit. After the navigation keys (focus_route_attach_list()),
+ * which let these through. */
+static gboolean on_list_copy_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
+                                 GdkModifierType state, gpointer data) {
+    (void)ctrl;
+    (void)keycode;
+    AppData* app = data;
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    guint key = gdk_keyval_to_lower(keyval);
+    gboolean copy = FALSE;
+    switch (app_nav_style(app)) {
+    case NAV_STYLE_VIM: copy = mods == 0 && keyval == GDK_KEY_y; break;
+    case NAV_STYLE_EMACS: copy = mods == GDK_ALT_MASK && key == GDK_KEY_w; break;
+    default: copy = mods == GDK_CONTROL_MASK && key == GDK_KEY_c; break;
+    }
+    if (!copy) return FALSE;
+    copy_commit(app, selected_commit(app->git), GIT_COPY_HASH);
+    return TRUE;
+}
+
+static void on_copy_item(GtkButton* button, gpointer data) {
+    GtkWidget* popover = data;
+    AppData* app = g_object_get_data(G_OBJECT(popover), "app");
+    GitCommit* commit = g_object_get_data(G_OBJECT(popover), GIT_ITEM_KEY);
+    GitCopyKind kind = (GitCopyKind)GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "copy-kind"));
+    copy_commit(app, commit, kind);
+    gtk_popover_popdown(GTK_POPOVER(popover));
+}
+
+static void menu_item(GtkWidget* box, GtkWidget* popover, const gchar* text, const gchar* hint, GitCopyKind kind) {
+    GtkWidget* btn = gtk_button_new();
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 24);
+    GtkWidget* label = gtk_label_new(text);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_box_append(GTK_BOX(row), label);
+    if (hint != NULL) {
+        GtkWidget* key = gtk_label_new(hint);
+        gtk_widget_add_css_class(key, "dim-label");
+        gtk_box_append(GTK_BOX(row), key);
+    }
+    gtk_button_set_child(GTK_BUTTON(btn), row);
+    g_object_set_data(G_OBJECT(btn), "copy-kind", GINT_TO_POINTER(kind));
+    g_signal_connect(btn, "clicked", G_CALLBACK(on_copy_item), popover);
+    gtk_box_append(GTK_BOX(box), btn);
+}
+
+static gboolean unparent_idle(gpointer data) {
+    gtk_widget_unparent(GTK_WIDGET(data));
+    g_object_unref(data);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_popover_closed(GtkPopover* popover, gpointer data) {
+    (void)data;
+    g_idle_add(unparent_idle, g_object_ref(popover));
+}
+
+/* A right click on a commit: select it, then its menu */
+static void on_cell_menu(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)n_press;
+    AppData* app = data;
+    GitTab* g = app->git;
+    GtkWidget* cell = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+    GtkListItem* item = g_object_get_data(G_OBJECT(cell), GIT_ITEM_KEY);
+    GitCommit* commit = item != NULL ? gtk_list_item_get_item(item) : NULL;
+    GtkWidget* view = gtk_widget_get_ancestor(cell, GTK_TYPE_COLUMN_VIEW);
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    if (g == NULL || commit == NULL || view == NULL) return;
+    gtk_single_selection_set_selected(g->selection, gtk_list_item_get_position(item));
+    gtk_widget_grab_focus(view);
+
+    graphene_point_t at;
+    if (!gtk_widget_compute_point(cell, view, &GRAPHENE_POINT_INIT((float)x, (float)y), &at)) {
+        at = GRAPHENE_POINT_INIT(0.0f, 0.0f);
+    }
+    GtkWidget* popover = gtk_popover_new();
+    gtk_widget_set_parent(popover, view);
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+    gtk_popover_set_position(GTK_POPOVER(popover), GTK_POS_BOTTOM);
+    GdkRectangle rect = {(gint)at.x, (gint)at.y, 1, 1};
+    gtk_popover_set_pointing_to(GTK_POPOVER(popover), &rect);
+    gtk_widget_set_halign(popover, GTK_ALIGN_START);
+    g_object_set_data(G_OBJECT(popover), "app", app);
+    g_object_set_data_full(G_OBJECT(popover), GIT_ITEM_KEY, g_object_ref(commit), g_object_unref);
+
+    GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    menu_item(box, popover, _("Copy Hash"), copy_hash_key(app), GIT_COPY_HASH);
+    menu_item(box, popover, _("Copy Short Hash"), NULL, GIT_COPY_SHORT_HASH);
+    menu_item(box, popover, _("Copy Message"), NULL, GIT_COPY_MESSAGE);
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+    g_signal_connect(popover, "closed", G_CALLBACK(on_popover_closed), NULL);
+    gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+/* Right click on the cell of a commit (child of item): its menu */
+static void attach_cell_menu(AppData* app, GtkWidget* child, GtkListItem* item) {
+    g_object_set_data(G_OBJECT(child), GIT_ITEM_KEY, item);
+    GtkGesture* menu = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(menu), GDK_BUTTON_SECONDARY);
+    g_signal_connect(menu, "pressed", G_CALLBACK(on_cell_menu), app);
+    gtk_widget_add_controller(child, GTK_EVENT_CONTROLLER(menu));
+}
+
 /* Column cells: a label showing one GitCommitInfo string field */
 static void on_git_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
-    (void)factory;
     GtkWidget* label = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_add_css_class(label, (const gchar*)data);
+    attach_cell_menu(g_object_get_data(G_OBJECT(factory), "app"), label, item);
     gtk_list_item_set_child(item, label);
 }
 
@@ -581,9 +728,10 @@ static void on_git_cell_bind(GtkSignalListItemFactory* factory, GtkListItem* ite
     gtk_label_set_text(GTK_LABEL(gtk_list_item_get_child(item)), text != NULL ? text : "");
 }
 
-static void git_add_column(GtkWidget* view, const gchar* title, gsize field_offset,
+static void git_add_column(AppData* app, GtkWidget* view, const gchar* title, gsize field_offset,
                            const gchar* css_class, gboolean expand) {
     GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
+    g_object_set_data(G_OBJECT(factory), "app", app);
     g_object_set_data(G_OBJECT(factory), "field-offset", GSIZE_TO_POINTER(field_offset));
     g_signal_connect(factory, "setup", G_CALLBACK(on_git_cell_setup), (gpointer)css_class);
     g_signal_connect(factory, "bind", G_CALLBACK(on_git_cell_bind), NULL);
@@ -597,7 +745,6 @@ static void git_add_column(GtkWidget* view, const gchar* title, gsize field_offs
 /* Message column: branch/tag pills followed by the commit subject */
 static void on_msg_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
     (void)factory;
-    (void)data;
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     GtkWidget* refs = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
     gtk_widget_set_valign(refs, GTK_ALIGN_CENTER);
@@ -611,6 +758,7 @@ static void on_msg_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* it
     gtk_widget_add_css_class(subject, "git-subject");
     gtk_box_append(GTK_BOX(box), subject);
 
+    attach_cell_menu(data, box, item);
     gtk_list_item_set_child(item, box);
 }
 
@@ -635,9 +783,9 @@ static void on_msg_cell_unbind(GtkSignalListItemFactory* factory, GtkListItem* i
     }
 }
 
-static void git_add_message_column(GtkWidget* view) {
+static void git_add_message_column(AppData* app, GtkWidget* view) {
     GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
-    g_signal_connect(factory, "setup", G_CALLBACK(on_msg_cell_setup), NULL);
+    g_signal_connect(factory, "setup", G_CALLBACK(on_msg_cell_setup), app);
     g_signal_connect(factory, "bind", G_CALLBACK(on_msg_cell_bind), NULL);
     g_signal_connect(factory, "unbind", G_CALLBACK(on_msg_cell_unbind), NULL);
     GtkColumnViewColumn* column = gtk_column_view_column_new(_("Message"), factory);
@@ -691,13 +839,16 @@ void git_tab_init(AppData* app) {
 
     GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(g->selection));
     focus_route_attach_list(app, tree_view, g->selection);
+    GtkEventController* copy_keys = gtk_event_controller_key_new();
+    g_signal_connect(copy_keys, "key-pressed", G_CALLBACK(on_list_copy_key), app);
+    gtk_widget_add_controller(tree_view, copy_keys);
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_widget_add_css_class(tree_view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
-    git_add_column(tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
-    git_add_message_column(tree_view);
-    git_add_column(tree_view, _("Author"), G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
-    git_add_column(tree_view, _("Date"), G_STRUCT_OFFSET(GitCommitInfo, date), "cell-muted", FALSE);
+    git_add_column(app, tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
+    git_add_message_column(app, tree_view);
+    git_add_column(app, tree_view, _("Author"), G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
+    git_add_column(app, tree_view, _("Date"), G_STRUCT_OFFSET(GitCommitInfo, date), "cell-muted", FALSE);
 
     GtkWidget* tree_scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(tree_scroll, TRUE);

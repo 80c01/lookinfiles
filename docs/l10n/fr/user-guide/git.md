@@ -59,6 +59,10 @@ de commits listés (les 100 derniers, ou les 100 premiers qui correspondent).
 `Ctrl+F`, `/` en mode Vim ou `C-s` en mode Emacs y mènent depuis la liste ;
 `Entrée` ou `Bas` ramènent à la liste, `Échap` le vide.
 
+Un clic droit sur un commit copie son hash, son hash court ou son message
+complet. `Ctrl+C` (`y` en mode Vim, `M-w` en mode Emacs) copie le hash du
+commit sélectionné.
+
 Les touches de navigation du mode global se déplacent dans la liste
 (`j` / `k` en Vim, les flèches dans tous les modes).
 

@@ -256,6 +256,8 @@ the navigation keys of the global mode move in the list)
 | Key | Action |
 |---|---|
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the commits: only those whose message, author (name or email) or hash hold every word typed (any case), searched through the whole history (the first 100 that match; beside the field, how many are listed); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
+| `Ctrl+C` (Notepad), `y` (Vim), `M-w` (Emacs) | Copy the full hash of the selected commit |
+| Right click on a commit | Copy its hash, its short hash or its whole message |
 
 **Disk Usage tab** (the room a folder and everything below it take, read in
 the background; opened by `Shift+S` or the context menu of the explorer; the

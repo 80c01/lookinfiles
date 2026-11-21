@@ -545,6 +545,9 @@ sleep 0.5;              shot git_filter_typed
 key Return;             shot git_filter_back_to_list
 key ctrl+f Escape;      shot git_filter_emptied
 key Escape;             shot git_filter_closed
+key ctrl+c;             shot git_copy_hash         # notice with the full hash
+xdotool mousemove 600 140 click 3; sleep 0.3; shot git_commit_menu
+key Escape;             shot git_commit_menu_closed
 # Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
 # bar takes the tab (the emptied split closes)
 xdotool mousemove 347 50 click 1;   shot tab_docked   # plan.org to the editor panel

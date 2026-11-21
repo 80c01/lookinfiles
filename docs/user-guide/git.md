@@ -56,6 +56,10 @@ it, how many commits are listed (the last 100, or the first 100 that match).
 `Ctrl+F`, `/` in Vim mode or `C-s` in Emacs mode go to it from the list;
 `Enter` or `Down` go back to the list, `Esc` empties it.
 
+A right click on a commit copies its hash, its short hash or its whole
+message. `Ctrl+C` (`y` in Vim mode, `M-w` in Emacs mode) copies the hash of
+the selected commit.
+
 The navigation keys of the global mode move in the list (`j` / `k` in Vim,
 the arrows in every mode).
 

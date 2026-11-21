@@ -371,6 +371,7 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     g_assert_true(g_str_has_prefix(newest->hash, newest->short_hash));
     GitCommitInfo* oldest = log->pdata[1];
     g_assert_cmpstr(oldest->subject, ==, "First commit");
+    g_assert_cmpstr(oldest->message, ==, "First commit\n\nBody"); /* whole, no trailing line break */
     g_assert_cmpstr(oldest->date, ==, "3 days ago");
     g_ptr_array_unref(log);
 
