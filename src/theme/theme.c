@@ -1090,6 +1090,11 @@ void apply_panel_borders(void) {
         "#git-tree > listview > row:selected label.git-hash {\n"
         "  color: @fg_bright;\n"
         "}\n"
+        /* The Graph column (the first): its lines reach the next rows */
+        "#git-tree > listview > row > cell:first-child {\n"
+        "  padding-top: 0;\n"
+        "  padding-bottom: 0;\n"
+        "}\n"
         "#git-header-bar {\n"
         "  background-color: @bg_bar;\n"
         "  border-top: 1px solid @border;\n"

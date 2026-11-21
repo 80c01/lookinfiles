@@ -8554,6 +8554,10 @@ msgstr "Message"
 msgid "Commit"
 msgstr "Commit"
 
+#. TRANSLATORS: the column of the History view drawing the branches and merges
+msgid "Graph"
+msgstr "Graphe"
+
 #: src/git/git_history.c:871 src/office/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"

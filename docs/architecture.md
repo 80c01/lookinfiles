@@ -1212,6 +1212,11 @@ Layers, from bottom to top
   commit has its own cancellable, cancelled when the selection moves. The
   history is read 100 commits at a time (`skip` of `git_read_log()`): the end
   of the list reads the next page, a reload reads as many as are listed.
+  Without a filter, its first column draws the graph: `git_graph_add()` in
+  the UI thread as each page is stored (the lanes go on from page to page,
+  a whole read starts them again), each row drawn by a `git_graph_cell` (a
+  `GtkDrawingArea` in the palette colours; the column's width follows the
+  widest row, up to `GIT_GRAPH_CELL_MAX_LANES` lanes).
   `git_history_set_path()` keeps only the commits that changed a path
   (`git_read_log()` of `git_log`, which compares the path's tree entry with
   each parent's, like `git log -- path`), shown beside the filter with a

@@ -74,10 +74,15 @@ que la vue est affichée et quand le dossier change.
 
 ### Historique
 
-L’historique, du plus récent au plus ancien, avec le commit, le message
-(précédé de badges colorés pour `HEAD`, les branches locales et distantes,
-et les tags), l’auteur et la date de chaque commit (relative, complète dans
-son infobulle). Sélectionnez-en un pour voir son diff complet en dessous,
+L’historique, du plus récent au plus ancien, avec le graphe, le commit, le
+message (précédé de badges colorés pour `HEAD`, les branches locales et
+distantes, et les tags), l’auteur et la date de chaque commit (relative,
+complète dans son infobulle). Le graphe dessine chaque commit par un point
+sur la ligne de sa branche, chaque commit au-dessus de ses parents, avec une
+couleur par ligne : un merge envoie une ligne vers la branche qu’il a
+intégrée, et les lignes se rejoignent là où les branches sont parties. Il
+est masqué tant qu’un filtre est actif, car les commits écartés couperaient
+ses lignes. Sélectionnez-en un pour voir son diff complet en dessous,
 sous une ligne donnant son hash, son sujet, son auteur et sa date. Les 100
 commits les plus récents sont lus d’abord ; faire défiler jusqu’au bas de la
 liste (ou y amener la sélection) lit les 100 suivants.

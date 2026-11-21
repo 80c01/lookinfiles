@@ -5,6 +5,8 @@
 #include "theme/icons.h"
 #include "theme/text_style.h"
 #include "git/git_diff_text.h"
+#include "git/git_graph.h"
+#include "git/git_graph_cell.h"
 #include "git/git_refs.h"
 #include "git/git_log.h"
 #include "git/git_utils.h"
@@ -44,6 +46,9 @@ struct GitHistory {
     gboolean reading_more;      /* a read of the next page is running */
     gboolean more;              /* the history goes on after the last commit listed */
     guint wanted;               /* commits the next whole read lists (pages loaded) */
+    GitGraph* graph;            /* lanes after the commits listed, NULL: no graph (a filter) */
+    guint graph_lanes;          /* widest row of the graph */
+    GtkColumnViewColumn* graph_column; /* the Graph column, shown without a filter */
 };
 
 /* One row of the commit list (item of GitHistory.store) */
@@ -54,6 +59,7 @@ struct _GitCommit {
     GObject parent_instance;
     GitCommitInfo* info; /* owned */
     GPtrArray* refs;     /* owned array of GitRefInfo*, or NULL */
+    GitGraphRow* graph;  /* owned row of the graph, or NULL (a filter) */
 };
 
 G_DEFINE_FINAL_TYPE(GitCommit, git_commit, G_TYPE_OBJECT)
@@ -62,6 +68,7 @@ static void git_commit_finalize(GObject* object) {
     GitCommit* self = GIT_COMMIT(object);
     git_commit_info_free(self->info);
     g_clear_pointer(&self->refs, g_ptr_array_unref);
+    g_free(self->graph);
     G_OBJECT_CLASS(git_commit_parent_class)->finalize(object);
 }
 
@@ -385,9 +392,15 @@ static void store_commits(GitHistory* h, GitLogTaskData* td) {
                 refs = (GPtrArray*)val;
             }
         }
-        g_ptr_array_add(items, git_commit_new(ci, refs));
+        GitCommit* commit = git_commit_new(ci, refs);
+        if (h->graph != NULL) {
+            commit->graph = git_graph_add(h->graph, ci->hash, (const gchar* const*)ci->parents);
+            h->graph_lanes = MAX(h->graph_lanes, commit->graph->width);
+        }
+        g_ptr_array_add(items, commit);
     }
     g_ptr_array_set_size(td->commits, 0);
+    gtk_column_view_column_set_fixed_width(h->graph_column, git_graph_cell_column_width(h->graph_lanes));
     /* One items-changed for the whole page */
     guint n = g_list_model_get_n_items(G_LIST_MODEL(h->store));
     g_list_store_splice(h->store, n, 0, items->pdata, items->len);
@@ -429,6 +442,12 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
     }
 
     g_list_store_remove_all(h->store);
+    /* The graph of the whole history only: a filter leaves out commits */
+    g_clear_pointer(&h->graph, git_graph_free);
+    h->graph_lanes = 0;
+    gboolean graph = td->words == NULL && td->path == NULL;
+    if (graph) h->graph = git_graph_new();
+    gtk_column_view_column_set_visible(h->graph_column, graph);
     store_commits(h, td);
     gtk_single_selection_set_selected(sel, GTK_INVALID_LIST_POSITION);
 
@@ -714,6 +733,32 @@ static void on_git_cell_bind(GtkSignalListItemFactory* factory, GtkListItem* ite
     }
 }
 
+/* Graph column: the lanes and the dot of the commit */
+static void on_graph_cell_setup(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)factory;
+    GtkWidget* cell = git_graph_cell_new();
+    attach_cell_menu(data, cell, item);
+    gtk_list_item_set_child(item, cell);
+}
+
+static void on_graph_cell_bind(GtkSignalListItemFactory* factory, GtkListItem* item, gpointer data) {
+    (void)factory;
+    (void)data;
+    GitCommit* commit = gtk_list_item_get_item(item);
+    git_graph_cell_set_row(gtk_list_item_get_child(item), commit != NULL ? commit->graph : NULL);
+}
+
+static void git_add_graph_column(GitHistory* h, GtkWidget* view) {
+    GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
+    g_signal_connect(factory, "setup", G_CALLBACK(on_graph_cell_setup), h);
+    g_signal_connect(factory, "bind", G_CALLBACK(on_graph_cell_bind), NULL);
+    /* TRANSLATORS: the column of the History view drawing the branches and merges */
+    h->graph_column = gtk_column_view_column_new(_("Graph"), factory);
+    gtk_column_view_column_set_fixed_width(h->graph_column, git_graph_cell_column_width(1));
+    gtk_column_view_append_column(GTK_COLUMN_VIEW(view), h->graph_column);
+    g_object_unref(h->graph_column); /* the view keeps it */
+}
+
 static void git_add_column(GitHistory* h, GtkWidget* view, const gchar* title, gsize field_offset,
                            const gchar* css_class, gboolean expand) {
     GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
@@ -838,6 +883,7 @@ static void git_history_free(gpointer data) {
     cancel_reads(h);
     g_clear_object(&h->store);
     g_clear_object(&h->detail_buf);
+    git_graph_free(h->graph);
     g_free(h->current_root);
     g_free(h->selected_hash);
     g_strfreev(h->words);
@@ -866,6 +912,7 @@ GitHistory* git_history_new(AppData* app) {
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_widget_add_css_class(tree_view, "data-table");
     gtk_column_view_set_show_column_separators(GTK_COLUMN_VIEW(tree_view), FALSE);
+    git_add_graph_column(h, tree_view);
     git_add_column(h, tree_view, _("Commit"), G_STRUCT_OFFSET(GitCommitInfo, short_hash), "git-hash", FALSE);
     git_add_message_column(h, tree_view);
     git_add_column(h, tree_view, _("Author"), G_STRUCT_OFFSET(GitCommitInfo, author), "git-author", FALSE);
