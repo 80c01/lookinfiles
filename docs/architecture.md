@@ -776,6 +776,10 @@ Layers, from bottom to top
   of `app->sidebar_view` outside the workspace switch).
 - `remote_store` — `RemoteMachine` list and `RemoteFolder`s, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
+- `remote_path` — paths of a connected machine written as the user knows
+  them, `<machine>:<remote path>`, instead of the local mount point: shown
+  by `remote_path_display()`, read back by `remote_path_parse()`
+  (unit-tested).
 - `preview_summary` — summaries shown in the preview for rows without
   file content (remote machine, notebook, bookmark folder, trash, Canvas
   note) as typed lines (title, fields, headings, items, keys), and their

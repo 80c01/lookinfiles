@@ -2,6 +2,7 @@
  * rename (F2 / r / e) and move to trash (d / Delete), with their dialogs. */
 #include "explorer/file_actions.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "explorer/file_moves.h"
@@ -167,6 +168,7 @@ typedef struct {
     gint response;
     GtkWidget* name_entry;
     GtkWidget* dir_entry;
+    AppData* app;
     const gchar* base_dir;
     gchar* name;   /* trimmed name on OK */
     gchar* dir;    /* canonical parent folder on OK */
@@ -182,7 +184,11 @@ static void on_create_response(AppDialog* dlg, gint response_id, gpointer user_d
     CreateRun* run = (CreateRun*)user_data;
     if (response_id == APP_RESPONSE_OK) {
         gchar* name = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(run->name_entry))));
-        gchar* dir = parse_dir(gtk_editable_get_text(GTK_EDITABLE(run->dir_entry)), run->base_dir);
+        const gchar* dir_text = gtk_editable_get_text(GTK_EDITABLE(run->dir_entry));
+        gchar* dir = NULL;
+        if (!remote_path_parse(run->app, dir_text, &dir)) { /* "server:~/x": the mounted machine's folder */
+            dir = parse_dir(dir_text, run->base_dir);
+        }
         if (!is_valid_name(name)) {
             mark_invalid(run->name_entry);
         } else if (dir == NULL || !g_file_test(dir, G_FILE_TEST_IS_DIR)) {
@@ -246,7 +252,7 @@ static gboolean run_create_dialog(AppData* app, gboolean is_folder, const gchar*
     gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(dlg))), box);
 
     CreateRun run = { g_main_loop_new(NULL, FALSE), APP_RESPONSE_CANCEL, NULL, NULL,
-                      app->base_dir, NULL, NULL };
+                      app, app->base_dir, NULL, NULL };
 
     gtk_box_append(GTK_BOX(box), field_label(_("Name")));
     run.name_entry = field_entry(is_folder ? "folder" : "",
@@ -254,7 +260,9 @@ static gboolean run_create_dialog(AppData* app, gboolean is_folder, const gchar*
     gtk_box_append(GTK_BOX(box), run.name_entry);
 
     gtk_box_append(GTK_BOX(box), field_label(_("Parent folder")));
-    gchar* shown = display_dir(init_dir);
+    gchar* remote = remote_path_display(app, init_dir);
+    gchar* shown = g_strcmp0(remote, init_dir) != 0 ? g_strdup(remote) : display_dir(init_dir);
+    g_free(remote);
     run.dir_entry = field_entry(shown, _("~/projects or /tmp"), &run);
     g_free(shown);
     gtk_box_append(GTK_BOX(box), run.dir_entry);

@@ -38,6 +38,13 @@ While you browse a connected machine, the breadcrumbs start with a server icon a
 the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.
 
+Paths on the machine are written as on the machine, `name:path`: the
+**New File** and **New Folder** dialogs show `server:~/projects` (not the
+local mount point), and so do the notebook **Save** dialog, the Emacs
+`C-x C-w` prompt and the tab tooltips. Type paths the same way (`server:~/a`,
+or `server:docs` from the **Remote Directory**); paths outside the remote
+directory are refused.
+
 Machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (usually `/run/user/1000/…`; without `$XDG_RUNTIME_DIR`,
 `/tmp/lookinfiles-<uid>/remotes/`), a private folder that cache cleaners and

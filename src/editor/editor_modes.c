@@ -1,5 +1,6 @@
 #include "editor/editor_modes.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "core/app_events.h"
 #include "theme/text_style.h"
 #include "widgets/diff_gutter.h"
@@ -238,7 +239,12 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
     }
 
     gchar* full_path = NULL;
-    if (g_path_is_absolute(new_path)) {
+    if (remote_path_parse(app, new_path, &full_path)) {
+        if (full_path == NULL) { /* "server:/etc/x" outside the mounted folder */
+            editor_mode_message(tab, _("Only the folder opened on the remote machine can be used."));
+            return FALSE;
+        }
+    } else if (g_path_is_absolute(new_path)) {
         full_path = g_strdup(new_path);
     } else {
         const gchar* base_dir = (tab->path != NULL && tab->path[0] != '\0')
@@ -253,7 +259,9 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
     GError* err = NULL;
 
     if (!file_save_text(full_path, text, -1, &err)) {
-        gchar* msg = g_strdup_printf("Cannot save to %s: %s", full_path, err ? err->message : "error");
+        gchar* shown = remote_path_display(app, full_path);
+        gchar* msg = g_strdup_printf("Cannot save to %s: %s", shown, err ? err->message : "error");
+        g_free(shown);
         if (err) g_error_free(err);
         if (tab->mode == EDITOR_MODE_EMACS) emacs_echo(tab, msg);
         else if (tab->mode == EDITOR_MODE_VIM) vim_echo(tab, msg);
@@ -286,7 +294,9 @@ gboolean editor_save_tab_as(AppData* app, EditorTab* tab, const gchar* new_path)
 
     editor_modes_update_status(tab);
     if (tab->mode == EDITOR_MODE_EMACS || tab->mode == EDITOR_MODE_ORGMODE) {
-        gchar* msg = g_strdup_printf("Wrote %s", tab->path);
+        gchar* shown = remote_path_display(app, tab->path);
+        gchar* msg = g_strdup_printf("Wrote %s", shown);
+        g_free(shown);
         emacs_echo(tab, msg);
         g_free(msg);
     } else if (tab->mode == EDITOR_MODE_VIM) {

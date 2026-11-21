@@ -1,6 +1,7 @@
 /* Jupyter notebook tabs of the editor area (see ipynb_tab.h) */
 #include "jupyter/ipynb_tab.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "editor/editor.h"
 #include "jupyter/ipynb_doc.h"
 #include "jupyter/ipynb_outline.h"
@@ -923,7 +924,9 @@ static GtkWidget* tab_label_new(IpynbTab* t) {
     /* As wide as the name (up to IPYNB_TAB_MAX_CHARS) even when tabs are crowded */
     gtk_label_set_width_chars(GTK_LABEL(text), (gint)MIN(g_utf8_strlen(t->name, -1), IPYNB_TAB_MAX_CHARS));
     gtk_box_append(GTK_BOX(box), text);
-    gtk_widget_set_tooltip_text(box, t->path);
+    gchar* shown = t->path != NULL ? remote_path_display(t->app, t->path) : NULL;
+    gtk_widget_set_tooltip_text(box, shown);
+    g_free(shown);
 
     GtkGesture* mclick = gtk_gesture_click_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);

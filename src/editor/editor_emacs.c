@@ -14,6 +14,7 @@
 #include "editor/editor_tagbar.h"
 #include "editor/editor_watch.h"
 #include "core/app_events.h"
+#include "core/remote_path.h"
 #include "explorer/nav_keys.h"
 #include "search/quick_open.h"
 #include "games/editor_dunnet.h"
@@ -348,6 +349,14 @@ static void emacs_open_minibuffer(EditorTab* tab, EmacsMiniMode mode,
     gtk_widget_grab_focus(st->emacs_mb_entry);
 }
 
+/* C-x C-w: the file name asked, the buffer's file as the user knows it
+ * ("server:~/a.txt" on a mounted machine) */
+static void emacs_ask_write_file(EditorTab* tab) {
+    gchar* shown = tab->path != NULL ? remote_path_display(tab->app, tab->path) : g_strdup("");
+    emacs_open_minibuffer(tab, EMACS_MINI_WRITE_FILE, "Write file: ", shown);
+    g_free(shown);
+}
+
 void emacs_prompt(EditorTab* tab, const gchar* prompt, const gchar* initial,
                   EmacsPromptFunc cb, gchar* data) {
     EditorModeState* st = tab->mode_state;
@@ -530,7 +539,7 @@ static void on_emacs_mb_entry_activate(GtkEntry* entry, gpointer user_data) {
                     editor_watch_check_tab(tab->app, tab, FALSE);
                 }
             } else if (strstr(cmd, "write-file")) {
-                emacs_open_minibuffer(tab, EMACS_MINI_WRITE_FILE, "Write file: ", tab->path ? tab->path : "");
+                emacs_ask_write_file(tab);
             } else if (strstr(cmd, "set-justification-center")) {
                 editor_mode_align_text(tab, GTK_JUSTIFY_CENTER, 80);
                 emacs_echo(tab, "Center justified");
@@ -998,7 +1007,7 @@ gboolean emacs_handle_key(EditorTab* tab, EditorModeState* st,
             return TRUE;
         } /* C-x C-s without a file: asks for one, as C-x C-w */
         if (ctrl && (keyval == GDK_KEY_w || keyval == GDK_KEY_W || keyval == GDK_KEY_s || keyval == GDK_KEY_S)) {
-            emacs_open_minibuffer(tab, EMACS_MINI_WRITE_FILE, "Write file: ", tab->path ? tab->path : "");
+            emacs_ask_write_file(tab);
             return TRUE;
         }
         if (keyval == GDK_KEY_u || keyval == GDK_KEY_U) {

@@ -4,6 +4,7 @@
 #include "jupyter/ipynb_tab_private.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "editor/editor.h"
 #include "editor/file_save.h"
 #include "widgets/dialog.h"
@@ -74,17 +75,28 @@ static GtkWidget* dialog_body(GtkWidget* dlg) {
 }
 
 /* The file typed for the notebook: ~ and a relative name from its
- * directory, .ipynb added when missing; NULL when empty */
-static gchar* typed_path(IpynbTab* t, const gchar* text) {
+ * directory, "<machine>:<path>" on a connected machine, .ipynb added when
+ * missing; NULL when empty or (*outside TRUE) out of a machine's mounted folder */
+static gchar* typed_path(IpynbTab* t, const gchar* text, gboolean* outside) {
+    *outside = FALSE;
     gchar* name = g_strstrip(g_strdup(text));
     if (name[0] == '\0') {
         g_free(name);
         return NULL;
     }
-    gchar* full = name[0] == '~' && (name[1] == '\0' || name[1] == '/') ? g_build_filename(g_get_home_dir(), name + 1, NULL)
-                  : g_path_is_absolute(name)                          ? g_strdup(name)
-                                                                      : g_build_filename(t->dir, name, NULL);
-    g_free(name);
+    gchar* full = NULL;
+    if (remote_path_parse(t->app, name, &full)) {
+        g_free(name);
+        if (full == NULL) {
+            *outside = TRUE;
+            return NULL;
+        }
+    } else {
+        full = name[0] == '~' && (name[1] == '\0' || name[1] == '/') ? g_build_filename(g_get_home_dir(), name + 1, NULL)
+               : g_path_is_absolute(name)                          ? g_strdup(name)
+                                                                   : g_build_filename(t->dir, name, NULL);
+        g_free(name);
+    }
     gchar* lower = g_ascii_strdown(full, -1);
     if (!g_str_has_suffix(lower, ".ipynb")) {
         gchar* with_ext = g_strconcat(full, ".ipynb", NULL);
@@ -99,7 +111,9 @@ static gchar* typed_path(IpynbTab* t, const gchar* text) {
 static gboolean confirm_replace(IpynbTab* t, const gchar* path) {
     GtkWidget* dlg = app_dialog_new(_("Replace File"), t->app->window, _("_Cancel"), APP_RESPONSE_CANCEL,
                                     _("_Replace"), APP_RESPONSE_OK, NULL);
-    gchar* message = g_strdup_printf(_("%s already exists. Replace it?"), path);
+    gchar* shown = remote_path_display(t->app, path);
+    gchar* message = g_strdup_printf(_("%s already exists. Replace it?"), shown);
+    g_free(shown);
     dialog_label(dialog_body(dlg), message);
     g_free(message);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
@@ -119,13 +133,17 @@ static void set_path(IpynbTab* t, const gchar* path) {
     t->dir = g_path_get_dirname(path);
     gtk_label_set_text(GTK_LABEL(t->label_text), t->name);
     gtk_label_set_width_chars(GTK_LABEL(t->label_text), (gint)MIN(g_utf8_strlen(t->name, -1), IPYNB_TAB_MAX_CHARS));
-    gtk_widget_set_tooltip_text(t->tab_label, t->path);
+    gchar* shown = remote_path_display(t->app, t->path);
+    gtk_widget_set_tooltip_text(t->tab_label, shown);
+    g_free(shown);
     editor_page_set_file(t->root, t->path);
 }
 
 gboolean ipynb_save_as(IpynbTab* t) {
     if (t == NULL || t->closed) return FALSE;
-    gchar* text = g_build_filename(t->dir, t->name, NULL);
+    gchar* local = g_build_filename(t->dir, t->name, NULL);
+    gchar* text = remote_path_display(t->app, local);
+    g_free(local);
     gchar* problem = NULL;
     gboolean saved = FALSE;
     for (;;) {
@@ -147,14 +165,18 @@ gboolean ipynb_save_as(IpynbTab* t) {
         g_clear_pointer(&problem, g_free);
         if (response != APP_RESPONSE_OK || t->closed) break;
 
-        gchar* path = typed_path(t, text);
+        gboolean outside = FALSE;
+        gchar* path = typed_path(t, text, &outside);
+        gchar* shown = path != NULL ? remote_path_display(t->app, path) : NULL;
         IpynbTab* open = path != NULL ? ipynb_tab_find(t->app, path) : NULL;
-        if (path == NULL) {
+        if (outside) {
+            problem = g_strdup(_("Only the folder opened on the remote machine can be used."));
+        } else if (path == NULL) {
             problem = g_strdup(_("Type a file name."));
         } else if (open != NULL && open != t) {
-            problem = g_strdup_printf(_("%s is open in another tab."), path);
+            problem = g_strdup_printf(_("%s is open in another tab."), shown);
         } else if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
-            problem = g_strdup_printf(_("%s is a folder."), path);
+            problem = g_strdup_printf(_("%s is a folder."), shown);
         } else if (!g_file_test(path, G_FILE_TEST_EXISTS) || confirm_replace(t, path)) {
             gchar* json = ipynb_doc_to_json(t->doc);
             GError* error = NULL;
@@ -170,6 +192,7 @@ gboolean ipynb_save_as(IpynbTab* t) {
             }
             g_free(json);
         }
+        g_free(shown);
         g_free(path);
         if (saved) break;
         if (problem == NULL) continue; /* not replaced: asked again */

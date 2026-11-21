@@ -41,6 +41,14 @@ par une icône de serveur et le nom de la machine, et le bouton **Terminal**
 de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell
 local.
 
+Les chemins de la machine s’écrivent comme sur la machine, `nom:chemin` :
+les dialogues **Nouveau fichier** et **Nouveau dossier** affichent
+`serveur:~/projets` (et non le point de montage local), de même que le
+dialogue **Enregistrer** des notebooks, l’invite `C-x C-w` d’Emacs et les
+infobulles des onglets. Tapez les chemins de la même façon (`serveur:~/a`,
+ou `serveur:docs` depuis le **Dossier distant**) ; un chemin hors du
+dossier distant est refusé.
+
 Les machines sont montées sous `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (en général `/run/user/1000/…` ; sans `$XDG_RUNTIME_DIR`,
 `/tmp/lookinfiles-<uid>/remotes/`), un dossier privé que les nettoyeurs de

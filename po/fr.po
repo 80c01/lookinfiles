@@ -12961,6 +12961,10 @@ msgstr "Ouvrir l’espace de travail"
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
 
+#: src/editor/editor_modes.c:244 src/jupyter/ipynb_save.c:162
+msgid "Only the folder opened on the remote machine can be used."
+msgstr "Seul le dossier ouvert sur la machine distante peut être utilisé."
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 
