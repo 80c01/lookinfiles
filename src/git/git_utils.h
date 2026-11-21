@@ -1,7 +1,7 @@
 #ifndef GIT_UTILS_H
 #define GIT_UTILS_H
 
-#include <glib.h>
+#include <gio/gio.h>
 
 /* Repository root containing start_dir (or a parent), NULL if not in a repository
  * or if start_dir is inside a .git directory. Caller frees. */
@@ -71,10 +71,18 @@ typedef struct {
 
 void git_commit_info_free(gpointer info);
 
+/* The words of a history filter as typed (separated by spaces), casefolded;
+ * NULL when text holds none (every commit). g_strfreev() */
+gchar** git_log_words(const gchar* text);
+
 /* The last max commits reachable from HEAD of the repository at root, newest
- * first: array of GitCommitInfo*, empty without commits, NULL when root is not
- * a repository. Worker thread. */
-GPtrArray* git_read_log(const gchar* root, guint max);
+ * first, keeping only those whose message, author (name or email) or full hash
+ * hold every word of words (git_log_words(); NULL keeps all), however far back
+ * in the history: array of GitCommitInfo*, empty without commits, NULL when
+ * root is not a repository or cancellable was cancelled. *more (may be NULL)
+ * is set when more commits would have been kept. Worker thread. */
+GPtrArray* git_read_log(const gchar* root, guint max, gchar** words, GCancellable* cancellable,
+                        gboolean* more);
 
 /* Header, message, diffstat and patch of commit hash (against its first
  * parent), laid out like `git show --stat --patch`. NULL when the commit is

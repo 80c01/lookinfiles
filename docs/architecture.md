@@ -1167,7 +1167,10 @@ Layers, from bottom to top
   open `deep_search_tab` and `disk_usage_tab` on the folder.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `git_tab` reads the history only when its tab is on screen (`map`); while
-  hidden, a new repository or a change in `.git` only marks it stale.
+  hidden, a new repository or a change in `.git` only marks it stale. Its
+  filter field gives words to `git_read_log()`, which walks the whole history
+  on a worker thread (cancelled by a newer read); the diff of the selected
+  commit has its own cancellable, cancelled when the selection moves.
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
   `org_fold` keeps the folding of the Org preview (headings folded by hand,
   the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with

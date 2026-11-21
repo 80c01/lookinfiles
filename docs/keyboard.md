@@ -250,6 +250,13 @@ mode move in the process list)
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the processes: only those whose name, user or PID hold every word typed (any case) and that meet every condition: `cpu>10` (also `cpu>10%`), `mem>100M` (`K`, `M`, `G`, `T`; no unit: MB), `threads>=50`, with `>`, `>=`, `<`, `<=` (a process stays shown for three readings once its values no longer match, and as long as it is selected; the title gives how many match); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the System Monitor tab (also its cross) |
 
+**Git Commits tab** (the history of the repository of the current folder;
+the navigation keys of the global mode move in the list)
+
+| Key | Action |
+|---|---|
+| `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the commits: only those whose message, author (name or email) or hash hold every word typed (any case), searched through the whole history (the first 100 that match; beside the field, how many are listed); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
+
 **Disk Usage tab** (the room a folder and everything below it take, read in
 the background; opened by `Shift+S` or the context menu of the explorer; the
 navigation keys of the global mode move in the list)

@@ -10,6 +10,8 @@
 #include <string.h>
 
 #define GIT_ROW_MAX_REFS 6
+/* Commits listed (the newest, or the newest that match the filter) */
+#define GIT_LOG_MAX 100
 
 /* Git commits tab state (app->git), created by git_tab_init() */
 typedef struct GitTab GitTab;
@@ -17,6 +19,10 @@ struct GitTab {
     GtkWidget* page;            /* notebook page of the tab */
     GListStore* store;          /* commit list (GitCommit items) */
     GtkSingleSelection* selection; /* selection over store */
+    GtkWidget* view;            /* GtkColumnView of the commits */
+    GtkWidget* filter;          /* search entry above the list */
+    GtkWidget* count_label;     /* how many commits are listed, beside the filter */
+    gchar** words;              /* filter words (git_log_words()), NULL: every commit */
     GtkWidget* header_refs_box; /* branch/tag pills of the selected commit */
     GtkWidget* header_label;    /* summary of the selected commit */
     GtkTextBuffer* detail_buf;  /* diff of the selected commit */
@@ -74,6 +80,8 @@ static GitCommitInfo* git_commit_at(GitTab* g, guint i) {
 typedef struct {
     AppData* app;
     gchar* git_root;
+    gchar** words;       /* filter, NULL: every commit */
+    gboolean more;       /* more commits than GIT_LOG_MAX would be listed */
     GPtrArray* commits;  /* array of GitCommitInfo* */
     GHashTable* refs_map; /* sha -> GPtrArray* of GitRefInfo* */
 } GitLogTaskData;
@@ -82,6 +90,7 @@ static void git_log_task_data_free(gpointer data) {
     GitLogTaskData* td = (GitLogTaskData*)data;
     if (td == NULL) return;
     g_free(td->git_root);
+    g_strfreev(td->words);
     if (td->commits != NULL) {
         g_ptr_array_unref(td->commits);
     }
@@ -98,7 +107,7 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
 
     if (g_task_return_error_if_cancelled(task)) return;
 
-    GPtrArray* commits = git_read_log(td->git_root, 100);
+    GPtrArray* commits = git_read_log(td->git_root, GIT_LOG_MAX, td->words, cancellable, &td->more);
     GHashTable* refs_map = NULL;
     if (!g_cancellable_is_cancelled(cancellable) && commits != NULL && commits->len > 0) {
         refs_map = git_read_refs(td->git_root);
@@ -390,11 +399,33 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
     g_object_unref(task);
 }
 
+/* Beside the filter: how many commits are listed (n, more when the list
+ * stops at GIT_LOG_MAX) */
+static void show_count(GitTab* g, guint n, gboolean more) {
+    gchar* text;
+    if (g->words != NULL) {
+        if (n == 0) {
+            text = g_strdup(_("No commit matches"));
+        } else if (more) {
+            text = g_strdup_printf(_("The first %u matching commits"), n);
+        } else {
+            text = g_strdup_printf(ngettext("%u matching commit", "%u matching commits", n), n);
+        }
+    } else if (more) {
+        text = g_strdup_printf(_("The last %u commits"), n);
+    } else {
+        text = g_strdup_printf(ngettext("%u commit", "%u commits", n), n);
+    }
+    gtk_label_set_text(GTK_LABEL(g->count_label), text);
+    g_free(text);
+}
+
 static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer user_data) {
     (void)source_object;
     (void)user_data;
     GTask* task = G_TASK(res);
     GitLogTaskData* td = (GitLogTaskData*)g_task_get_task_data(task);
+    if (!g_task_propagate_boolean(task, NULL)) return; /* cancelled: a newer read follows */
     if (td == NULL || td->app == NULL || td->app->git == NULL) return;
 
     AppData* app = td->app;
@@ -437,6 +468,7 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 
     /* Select the newest commit, or keep an older commit the user selected */
     guint n = g_list_model_get_n_items(G_LIST_MODEL(g->store));
+    show_count(g, n, td->more);
     if (n > 0) {
         guint target = 0;
         if (!follow_head && g->selected_hash != NULL) {
@@ -450,7 +482,8 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         gtk_single_selection_set_selected(sel, target); /* shows its diff */
     } else {
         populate_refs_box(g->header_refs_box, NULL, 0);
-        gtk_label_set_text(GTK_LABEL(g->header_label), _("No commits in this repository."));
+        gtk_label_set_text(GTK_LABEL(g->header_label),
+                           g->words != NULL ? _("No commit matches the filter.") : _("No commits in this repository."));
         gtk_text_buffer_set_text(g->detail_buf, "", -1);
     }
 }
@@ -521,6 +554,9 @@ static void start_log_read(AppData* app) {
     GitLogTaskData* td = g_new0(GitLogTaskData, 1);
     td->app = app;
     td->git_root = g_strdup(g->current_root);
+    td->words = g_strdupv(g->words);
+    /* Filtered, the walk may go through the whole history */
+    gtk_label_set_text(GTK_LABEL(g->count_label), _("Reading the history…"));
 
     GTask* task = g_task_new(NULL, g->cancellable, on_git_log_ready, NULL);
     g_task_set_task_data(task, td, git_log_task_data_free);
@@ -612,6 +648,63 @@ static void git_add_message_column(GtkWidget* view) {
     g_object_unref(column);
 }
 
+/* The filter changed: read the history again with it (the whole history
+ * when needed, on a worker thread) */
+static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
+    AppData* app = data;
+    GitTab* g = app->git;
+    if (g == NULL) return;
+    gchar** words = git_log_words(gtk_editable_get_text(GTK_EDITABLE(entry)));
+    gboolean same = (words == NULL && g->words == NULL) ||
+                    (words != NULL && g->words != NULL && g_strv_equal((const gchar* const*)words,
+                                                                       (const gchar* const*)g->words));
+    g_strfreev(g->words);
+    g->words = words;
+    if (same || g->current_root == NULL) return;
+    g->log_stale = !gtk_widget_get_mapped(g->page);
+    if (!g->log_stale) start_log_read(app);
+}
+
+/* From the filter field back to the list, on its first row when none is
+ * selected */
+static void focus_commits(GitTab* g) {
+    if (g_list_model_get_n_items(G_LIST_MODEL(g->selection)) > 0 &&
+        gtk_single_selection_get_selected(g->selection) == GTK_INVALID_LIST_POSITION) {
+        gtk_single_selection_set_selected(g->selection, 0);
+    }
+    gtk_widget_grab_focus(g->view);
+}
+
+/* In the filter field: Enter or Down go to the list (the filter stays),
+ * Escape (Emacs: also C-g) empties the field, then goes to the list */
+static gboolean on_filter_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                              gpointer data) {
+    (void)ctrl;
+    (void)keycode;
+    AppData* app = data;
+    GitTab* g = app->git;
+    if (g == NULL) return FALSE;
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    gboolean cancel = (mods == 0 && keyval == GDK_KEY_Escape) ||
+                      (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_g &&
+                       app_nav_style(app) == NAV_STYLE_EMACS);
+    if (cancel) {
+        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(g->filter));
+        if (text != NULL && text[0] != '\0') {
+            gtk_editable_set_text(GTK_EDITABLE(g->filter), "");
+        } else {
+            focus_commits(g);
+        }
+        return TRUE;
+    }
+    if (mods == 0 && (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter ||
+                      keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down)) {
+        focus_commits(g);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 /* The tab comes on screen: read the history it waits for */
 static void on_page_map(GtkWidget* page, gpointer data) {
     (void)page;
@@ -638,6 +731,7 @@ void git_tab_init(AppData* app) {
                      G_CALLBACK(on_git_selection_changed), app);
 
     GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(g->selection));
+    g->view = tree_view;
     focus_route_attach_list(app, tree_view, g->selection);
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_widget_add_css_class(tree_view, "data-table");
@@ -654,6 +748,36 @@ void git_tab_init(AppData* app) {
                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(tree_scroll), tree_view);
     gtk_widget_set_size_request(tree_scroll, -1, 120);
+
+    /* Above the list: how many commits, and the filter */
+    GtkWidget* list_head = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    g->count_label = gtk_label_new(NULL);
+    gtk_label_set_xalign(GTK_LABEL(g->count_label), 0.0f);
+    gtk_label_set_ellipsize(GTK_LABEL(g->count_label), PANGO_ELLIPSIZE_END);
+    gtk_widget_set_hexpand(g->count_label, TRUE);
+    gtk_widget_set_margin_start(g->count_label, 12);
+    gtk_widget_add_css_class(g->count_label, "cell-muted");
+    gtk_box_append(GTK_BOX(list_head), g->count_label);
+    g->filter = gtk_search_entry_new();
+    gtk_search_entry_set_search_delay(GTK_SEARCH_ENTRY(g->filter), 250);
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(g->filter), _("Filter the commits"));
+    gtk_widget_set_tooltip_text(g->filter,
+                                _("Only the commits whose message, author or hash hold every word, in the whole history"));
+    gtk_editable_set_width_chars(GTK_EDITABLE(g->filter), 24);
+    gtk_widget_set_margin_top(g->filter, 4);
+    gtk_widget_set_margin_end(g->filter, 12);
+    gtk_widget_set_margin_bottom(g->filter, 4);
+    g_signal_connect(g->filter, "search-changed", G_CALLBACK(on_filter_changed), app);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_filter_key), app);
+    gtk_widget_add_controller(g->filter, keys);
+    focus_route_list_search(tree_view, g->filter);
+    gtk_box_append(GTK_BOX(list_head), g->filter);
+
+    GtkWidget* list_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_append(GTK_BOX(list_box), list_head);
+    gtk_box_append(GTK_BOX(list_box), tree_scroll);
 
     /* Bottom: Commit header & diff viewer */
     GtkWidget* detail_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -697,7 +821,7 @@ void git_tab_init(AppData* app) {
     paned_use_thin_handle(paned);
     gtk_widget_set_hexpand(paned, TRUE);
     gtk_widget_set_vexpand(paned, TRUE);
-    gtk_paned_set_start_child(GTK_PANED(paned), tree_scroll);
+    gtk_paned_set_start_child(GTK_PANED(paned), list_box);
     gtk_paned_set_resize_start_child(GTK_PANED(paned), TRUE);
     gtk_paned_set_shrink_start_child(GTK_PANED(paned), FALSE);
     gtk_paned_set_end_child(GTK_PANED(paned), detail_box);
@@ -737,5 +861,6 @@ void git_tab_cleanup(AppData* app) {
     g_clear_object(&g->detail_buf);
     g_free(g->current_root);
     g_free(g->selected_hash);
+    g_strfreev(g->words);
     g_clear_pointer(&app->git, g_free);
 }

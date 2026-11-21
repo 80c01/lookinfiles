@@ -726,7 +726,47 @@ static gchar* short_id(const git_object* obj) {
     return id;
 }
 
-GPtrArray* git_read_log(const gchar* root, guint max) {
+gchar** git_log_words(const gchar* text) {
+    gchar* folded = g_utf8_casefold(text != NULL ? text : "", -1);
+    gchar** parts = g_strsplit_set(folded, " \t", -1);
+    g_free(folded);
+    GPtrArray* kept = g_ptr_array_new();
+    for (gchar** w = parts; *w != NULL; w++) {
+        if ((*w)[0] != '\0') g_ptr_array_add(kept, g_strdup(*w));
+    }
+    g_strfreev(parts);
+    if (kept->len == 0) {
+        g_ptr_array_free(kept, TRUE);
+        return NULL;
+    }
+    g_ptr_array_add(kept, NULL);
+    return (gchar**)g_ptr_array_free(kept, FALSE);
+}
+
+/* Every word is in the message, the author's name or email, or the hash */
+static gboolean commit_matches(git_commit* c, const gchar* hash, gchar** words) {
+    if (words == NULL) return TRUE;
+    const git_signature* author = git_commit_author(c);
+    const gchar* message = git_commit_message(c);
+    gchar* text = g_strdup_printf("%s\n%s <%s>\n%s", message != NULL ? message : "",
+                                  author != NULL && author->name != NULL ? author->name : "",
+                                  author != NULL && author->email != NULL ? author->email : "", hash);
+    gchar* valid = g_utf8_make_valid(text, -1);
+    gchar* folded = g_utf8_casefold(valid, -1);
+    gboolean all = TRUE;
+    for (gchar** w = words; *w != NULL && all; w++) all = strstr(folded, *w) != NULL;
+    g_free(folded);
+    g_free(valid);
+    g_free(text);
+    return all;
+}
+
+/* Commits looked at between two checks of the cancellable */
+#define LOG_CANCEL_STEP 256
+
+GPtrArray* git_read_log(const gchar* root, guint max, gchar** words, GCancellable* cancellable,
+                        gboolean* more) {
+    if (more != NULL) *more = FALSE;
     git_repository* repo = open_work_tree(root);
     if (repo == NULL) {
         return NULL;
@@ -737,16 +777,31 @@ GPtrArray* git_read_log(const gchar* root, guint max) {
         git_revwalk_sorting(walk, GIT_SORT_TIME);
         gint64 now = g_get_real_time() / G_USEC_PER_SEC;
         git_oid oid;
+        guint seen = 0;
         if (git_revwalk_push_head(walk) == 0) { /* fails without commits */
-            while (commits->len < max && git_revwalk_next(&oid, walk) == 0) {
+            while (git_revwalk_next(&oid, walk) == 0) {
+                if (++seen % LOG_CANCEL_STEP == 0 && g_cancellable_is_cancelled(cancellable)) {
+                    g_clear_pointer(&commits, g_ptr_array_unref);
+                    break;
+                }
                 git_commit* c = NULL;
                 if (git_commit_lookup(&c, repo, &oid) != 0) {
                     continue;
                 }
+                const gchar* hash = git_oid_tostr_s(&oid);
+                if (!commit_matches(c, hash, words)) {
+                    git_commit_free(c);
+                    continue;
+                }
+                if (commits->len == max) { /* one more is kept: there are more */
+                    if (more != NULL) *more = TRUE;
+                    git_commit_free(c);
+                    break;
+                }
                 const gchar* summary = git_commit_summary(c);
                 const git_signature* author = git_commit_author(c);
                 GitCommitInfo* ci = g_new0(GitCommitInfo, 1);
-                ci->hash = g_strdup(git_oid_tostr_s(&oid));
+                ci->hash = g_strdup(hash);
                 ci->short_hash = short_id((const git_object*)c);
                 ci->subject = g_utf8_make_valid(summary != NULL ? summary : "", -1);
                 ci->author = g_utf8_make_valid(author != NULL && author->name != NULL ? author->name : "", -1);

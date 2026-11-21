@@ -349,7 +349,7 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     gchar* repo_dir = make_path(fx, "repo", NULL);
     git_repository* repo = repo_init(repo_dir);
 
-    GPtrArray* log = git_read_log(repo_dir, 10);
+    GPtrArray* log = git_read_log(repo_dir, 10, NULL, NULL, NULL);
     g_assert_nonnull(log);
     g_assert_cmpuint(log->len, ==, 0); /* no commit yet */
     g_ptr_array_unref(log);
@@ -361,7 +361,7 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     repo_add(repo, "a.txt");
     repo_commit(repo, "Second\ncommit", 120);
 
-    log = git_read_log(repo_dir, 10);
+    log = git_read_log(repo_dir, 10, NULL, NULL, NULL);
     g_assert_cmpuint(log->len, ==, 2);
     GitCommitInfo* newest = log->pdata[0];
     g_assert_cmpstr(newest->subject, ==, "Second commit"); /* first paragraph on one line */
@@ -374,13 +374,91 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     g_assert_cmpstr(oldest->date, ==, "3 days ago");
     g_ptr_array_unref(log);
 
-    log = git_read_log(repo_dir, 1);
+    log = git_read_log(repo_dir, 1, NULL, NULL, NULL);
     g_assert_cmpuint(log->len, ==, 1);
     g_ptr_array_unref(log);
 
     gchar* plain = make_path(fx, "plain", NULL);
-    g_assert_null(git_read_log(plain, 10));
+    g_assert_null(git_read_log(plain, 10, NULL, NULL, NULL));
     g_free(plain);
+    git_repository_free(repo);
+    g_free(repo_dir);
+}
+
+static void test_log_words(void) {
+    g_assert_null(git_log_words(NULL));
+    g_assert_null(git_log_words("  \t "));
+    gchar** w = git_log_words("  Fix\tÉTÉ  bug ");
+    g_assert_cmpuint(g_strv_length(w), ==, 3);
+    g_assert_cmpstr(w[0], ==, "fix");
+    g_assert_cmpstr(w[1], ==, "été");
+    g_assert_cmpstr(w[2], ==, "bug");
+    g_strfreev(w);
+}
+
+/* Kept commits of log, newest first, as "subject|subject" */
+static gchar* log_subjects(GPtrArray* log) {
+    GString* s = g_string_new(NULL);
+    for (guint i = 0; i < log->len; i++) {
+        if (i > 0) g_string_append_c(s, '|');
+        g_string_append(s, ((GitCommitInfo*)log->pdata[i])->subject);
+    }
+    return g_string_free(s, FALSE);
+}
+
+static void test_read_log_filtered(Fixture* fx, gconstpointer data) {
+    (void)data;
+    gchar* repo_dir = make_path(fx, "repo", NULL);
+    git_repository* repo = repo_init(repo_dir);
+    const gchar* messages[] = {"Add the parser", "Fix a crash\n\nIn the Parser body", "Speed up the lexer",
+                               "Fix the lexer"};
+    for (guint i = 0; i < G_N_ELEMENTS(messages); i++) {
+        gchar* content = g_strdup_printf("%u\n", i);
+        g_free(make_path(fx, "repo/a.txt", content));
+        g_free(content);
+        repo_add(repo, "a.txt");
+        repo_commit(repo, messages[i], (gint64)(10 - i) * 60);
+    }
+
+    gboolean more = TRUE;
+    gchar** words = git_log_words("PARSER");
+    GPtrArray* log = git_read_log(repo_dir, 10, words, NULL, &more);
+    gchar* got = log_subjects(log);
+    g_assert_cmpstr(got, ==, "Fix a crash|Add the parser"); /* the body counts, any case */
+    g_assert_false(more);
+    g_free(got);
+    g_ptr_array_unref(log);
+    g_strfreev(words);
+
+    words = git_log_words("fix lexer");
+    log = git_read_log(repo_dir, 10, words, NULL, NULL);
+    got = log_subjects(log);
+    g_assert_cmpstr(got, ==, "Fix the lexer"); /* every word */
+    g_free(got);
+    g_ptr_array_unref(log);
+    g_strfreev(words);
+
+    words = git_log_words("ada@example");
+    log = git_read_log(repo_dir, 2, words, NULL, &more);
+    g_assert_cmpuint(log->len, ==, 2); /* the author's email, limited to max */
+    g_assert_true(more);
+    gchar** by_hash = git_log_words(((GitCommitInfo*)log->pdata[1])->short_hash);
+    g_ptr_array_unref(log);
+    g_strfreev(words);
+    log = git_read_log(repo_dir, 10, by_hash, NULL, NULL);
+    got = log_subjects(log);
+    g_assert_cmpstr(got, ==, "Speed up the lexer"); /* the hash */
+    g_free(got);
+    g_ptr_array_unref(log);
+    g_strfreev(by_hash);
+
+    words = git_log_words("nothing-like-this");
+    log = git_read_log(repo_dir, 10, words, NULL, &more);
+    g_assert_cmpuint(log->len, ==, 0);
+    g_assert_false(more);
+    g_ptr_array_unref(log);
+    g_strfreev(words);
+
     git_repository_free(repo);
     g_free(repo_dir);
 }
@@ -396,7 +474,7 @@ static void test_show_commit(Fixture* fx, gconstpointer data) {
     repo_add(repo, "a.txt");
     repo_commit(repo, "Change a\n\nWhy it changed.", 0);
 
-    GPtrArray* log = git_read_log(repo_dir, 1);
+    GPtrArray* log = git_read_log(repo_dir, 1, NULL, NULL, NULL);
     const gchar* hash = ((GitCommitInfo*)log->pdata[0])->hash;
     gchar* text = git_show_commit(repo_dir, hash);
     g_assert_nonnull(text);
@@ -604,6 +682,8 @@ int main(int argc, char** argv) {
     g_test_add("/git_utils/scan_statuses", Fixture, NULL, fixture_setup, test_scan_statuses, fixture_teardown);
     g_test_add("/git_utils/read_head_blob", Fixture, NULL, fixture_setup, test_read_head_blob, fixture_teardown);
     g_test_add("/git_utils/read_log", Fixture, NULL, fixture_setup, test_read_log, fixture_teardown);
+    g_test_add_func("/git_utils/log_words", test_log_words);
+    g_test_add("/git_utils/read_log_filtered", Fixture, NULL, fixture_setup, test_read_log_filtered, fixture_teardown);
     g_test_add("/git_utils/show_commit", Fixture, NULL, fixture_setup, test_show_commit, fixture_teardown);
     g_test_add("/git_utils/list_files", Fixture, NULL, fixture_setup, test_list_files, fixture_teardown);
     g_test_add_func("/git_utils/relative_date", test_relative_date);

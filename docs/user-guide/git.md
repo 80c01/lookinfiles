@@ -49,6 +49,13 @@ the commit, message (preceded by coloured badges for `HEAD`, local and remote
 branches, and tags), author and date of each commit. Select one to see its
 full diff below.
 
+The field above the list filters the history: only the commits whose
+message, author (name or email) or hash hold every word typed (any case)
+stay, searched through the whole history, not just the commits shown. Beside
+it, how many commits are listed (the last 100, or the first 100 that match).
+`Ctrl+F`, `/` in Vim mode or `C-s` in Emacs mode go to it from the list;
+`Enter` or `Down` go back to the list, `Esc` empties it.
+
 The navigation keys of the global mode move in the list (`j` / `k` in Vim,
 the arrows in every mode).
 
