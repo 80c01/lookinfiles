@@ -534,6 +534,13 @@ xdotool mousemove 508 50 click 1     # Git tab, on its History view
 sleep 1;                shot git_history_view
 xdotool mousemove 390 84 click 1     # Changes button
 sleep 1;                shot git_changes_view      # external.txt untracked, its patch below
+xdotool mousemove 600 112 click 1    # the first group's row: folded
+sleep 0.3;              shot git_changes_group_folded
+xdotool mousemove 600 112 click 1    # and unfolded
+sleep 0.3;              shot git_changes_group_unfolded
+xdotool mousemove 600 131 click 1    # its first file; Left: its group, Left: folded
+key Left Left;          shot git_changes_folded_by_key
+key Right;              shot git_changes_unfolded_by_key
 xdotool mousemove 484 84 click 1     # History button again
 # Commit made outside the app: the Git tab must list it (fixed date: stable shot)
 ( cd "$FIX/work" && git add external.txt &&

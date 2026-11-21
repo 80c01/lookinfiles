@@ -56,7 +56,10 @@ What is not committed yet, in three groups:
 - **Changes**: what changed in the files since then, not staged;
 - **Untracked**: the new files git does not follow yet.
 
-A file staged and then changed again is in both of the first two groups.
+Each group is a row with an arrow: a click on it, `Enter` or `Left` /
+`Right` fold and unfold it (`Left` on a file goes to its group); each group
+stays as you left it when the list is read again. A file staged and then
+changed again is in both of the first two groups.
 Each file shows its status letter (the badges of the explorer), its folder
 and the lines it adds and removes (`+12 −3`). Select a file to see its patch
 below: what the commit will add for a staged file, what changed since it was

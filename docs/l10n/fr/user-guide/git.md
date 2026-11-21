@@ -58,8 +58,11 @@ Ce qui n’est pas encore commité, en trois groupes :
 - **Modifications** : ce qui a changé dans les fichiers depuis, non indexé ;
 - **Non suivi** : les nouveaux fichiers que git ne suit pas encore.
 
-Un fichier indexé puis modifié de nouveau est dans les deux premiers
-groupes. Chaque fichier montre sa lettre d’état (les badges de
+Chaque groupe est une ligne avec une flèche : un clic dessus, `Entrée` ou
+`Gauche` / `Droite` le replient et le déplient (`Gauche` sur un fichier
+mène à son groupe) ; chaque groupe reste comme vous l’avez laissé quand la
+liste est relue. Un fichier indexé puis modifié de nouveau est dans les
+deux premiers groupes. Chaque fichier montre sa lettre d’état (les badges de
 l’explorateur), son dossier et les lignes qu’il ajoute et retire
 (`+12 −3`). Sélectionnez un fichier pour voir son patch en dessous : ce que
 le commit ajoutera pour un fichier indexé, ce qui a changé depuis l’index

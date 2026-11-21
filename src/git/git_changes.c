@@ -17,8 +17,10 @@
 struct GitChanges {
     AppData* app;
     GtkWidget* widget;          /* the view (owns this struct) */
-    GListStore* store;          /* GitChangeItem rows, by group (a section each, with its header) */
-    GtkSingleSelection* selection;
+    GListStore* groups;         /* GitChangeItem of each group holding files, their files below */
+    GtkTreeListModel* tree;     /* the groups and, unfolded, their files */
+    GtkSingleSelection* selection; /* over tree (GtkTreeListRow items) */
+    gboolean unfolded[GIT_CHANGE_GROUPS]; /* each group's state, kept across reads */
     GtkWidget* summary_label;   /* above the list when it has something to say: reading, clean,
                                  * unreadable, cut */
     GtkWidget* header_label;    /* the file whose patch is shown */
@@ -34,14 +36,16 @@ struct GitChanges {
     gpointer counted_data;
 };
 
-/* One row of the list: a changed file */
+/* One row of the list: a group (change NULL, its files in children) or a
+ * changed file */
 #define GIT_TYPE_CHANGE_ITEM (git_change_item_get_type())
 G_DECLARE_FINAL_TYPE(GitChangeItem, git_change_item, GIT, CHANGE_ITEM, GObject)
 
 struct _GitChangeItem {
     GObject parent_instance;
-    GitChange* change;    /* owned */
+    GitChange* change;    /* owned, NULL for a group */
     GitChangeGroup group;
+    GListStore* children; /* a group: its files (GitChangeItem), owned */
 };
 
 G_DEFINE_FINAL_TYPE(GitChangeItem, git_change_item, G_TYPE_OBJECT)
@@ -49,6 +53,7 @@ G_DEFINE_FINAL_TYPE(GitChangeItem, git_change_item, G_TYPE_OBJECT)
 static void git_change_item_finalize(GObject* object) {
     GitChangeItem* self = GIT_CHANGE_ITEM(object);
     git_change_free(self->change);
+    g_clear_object(&self->children);
     G_OBJECT_CLASS(git_change_item_parent_class)->finalize(object);
 }
 
@@ -67,12 +72,28 @@ static GitChangeItem* item_new(GitChange* change) {
     return self;
 }
 
-/* The sections of the list: one per group (the store is in group order) */
-static int compare_groups(gconstpointer a, gconstpointer b, gpointer data) {
+static GitChangeItem* group_new(GitChangeGroup group) {
+    GitChangeItem* self = g_object_new(GIT_TYPE_CHANGE_ITEM, NULL);
+    self->group = group;
+    self->children = g_list_store_new(GIT_TYPE_CHANGE_ITEM);
+    return self;
+}
+
+/* GtkTreeListModel: the files of a group, none below a file */
+static GListModel* children_of(gpointer item, gpointer data) {
     (void)data;
-    GitChangeGroup ga = ((const GitChangeItem*)a)->group;
-    GitChangeGroup gb = ((const GitChangeItem*)b)->group;
-    return ga < gb ? -1 : ga > gb ? 1 : 0;
+    GitChangeItem* it = item;
+    return it->children != NULL ? G_LIST_MODEL(g_object_ref(it->children)) : NULL;
+}
+
+/* The row at position (new reference), NULL out of range */
+static GtkTreeListRow* row_at(GitChanges* c, guint position) {
+    return g_list_model_get_item(G_LIST_MODEL(c->selection), position);
+}
+
+/* The item of row (new reference) */
+static GitChangeItem* item_of(GtkTreeListRow* row) {
+    return row != NULL ? gtk_tree_list_row_get_item(row) : NULL;
 }
 
 static void ensure_css(void) {
@@ -87,10 +108,9 @@ static void ensure_css(void) {
                   "#git-changes label.git-st-conflict { color: @git_conflict; }"
                   "#git-changes label.git-dir { color: @fg_subtle; }"
                   "#git-changes label.git-group { color: @fg_strong; font-weight: 600; }"
-                  "#git-changes > header { padding: 4px 10px 1px 10px; }"
                   "#git-changes label.git-added { color: @git_added; font-feature-settings: \"tnum\"; }"
                   "#git-changes label.git-removed { color: @git_deleted; font-feature-settings: \"tnum\"; }"
-                  "#git-changes > row { padding: 1px 10px; }"
+                  "#git-changes > row { padding: 1px 10px 1px 4px; }"
                   /* The look of the History list (columnview.data-table, theme.c) */
                   "#git-changes { background-color: @bg_view; color: @fg; }"
                   "#git-changes > row:hover { background-color: @bg_hover; }"
@@ -210,9 +230,19 @@ static void show_file_header(GitChanges* c, const GitChange* ch) {
 static void on_selection_changed(GtkSingleSelection* sel, GParamSpec* pspec, gpointer data) {
     (void)pspec;
     GitChanges* c = data;
-    GitChangeItem* item = gtk_single_selection_get_selected_item(sel);
+    GitChangeItem* item = item_of(gtk_single_selection_get_selected_item(sel));
     cancel_patch(c);
-    if (item == NULL || c->root == NULL) return;
+    if (item == NULL || c->root == NULL) {
+        g_clear_object(&item);
+        return;
+    }
+    if (item->change == NULL) {
+        /* A group: its title, and what Enter does on it */
+        gtk_label_set_text(GTK_LABEL(c->header_label), git_change_group_title(item->group));
+        gtk_text_buffer_set_text(c->detail_buf, _("Enter or a click folds or unfolds the group."), -1);
+        g_object_unref(item);
+        return;
+    }
     g_free(c->selected_path);
     c->selected_path = g_strdup(item->change->path);
     c->selected_group = item->group;
@@ -227,28 +257,45 @@ static void on_selection_changed(GtkSingleSelection* sel, GParamSpec* pspec, gpo
     g_task_set_task_data(task, td, patch_task_free);
     g_task_run_in_thread(task, patch_thread);
     g_object_unref(task);
+    g_object_unref(item);
 }
 
-/* Above the list, only when the list does not say it (its section headers
- * count the files): nothing to commit, the files left out; text NULL hides
+/* Above the list, only when the list does not say it (its group rows count
+ * the files): nothing to commit, the files left out; text NULL hides
  * the line */
 static void show_summary(GitChanges* c, const gchar* text) {
     gtk_label_set_text(GTK_LABEL(c->summary_label), text != NULL ? text : "");
     gtk_widget_set_visible(c->summary_label, text != NULL);
 }
 
-/* The row to select after a read: the file selected before if still
- * there, else the first file */
+/* The row to select after a read: the file selected before if still shown,
+ * else the first file shown, else the first group */
 static guint row_to_select(GitChanges* c) {
-    GListModel* rows = G_LIST_MODEL(c->selection);
-    guint n = g_list_model_get_n_items(rows);
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(c->selection));
+    guint first_file = GTK_INVALID_LIST_POSITION;
     for (guint i = 0; i < n; i++) {
-        GitChangeItem* item = g_list_model_get_item(rows, i);
-        gboolean same = item->group == c->selected_group && g_strcmp0(item->change->path, c->selected_path) == 0;
+        GtkTreeListRow* row = row_at(c, i);
+        GitChangeItem* item = item_of(row);
+        gboolean file = item->change != NULL;
+        gboolean same = file && item->group == c->selected_group && g_strcmp0(item->change->path, c->selected_path) == 0;
         g_object_unref(item);
+        g_object_unref(row);
         if (same) return i;
+        if (file && first_file == GTK_INVALID_LIST_POSITION) first_file = i;
     }
-    return n > 0 ? 0 : GTK_INVALID_LIST_POSITION;
+    return first_file != GTK_INVALID_LIST_POSITION ? first_file : n > 0 ? 0 : GTK_INVALID_LIST_POSITION;
+}
+
+/* Unfold or fold each group as it was */
+static void restore_folding(GitChanges* c) {
+    guint n = g_list_model_get_n_items(G_LIST_MODEL(c->groups));
+    for (guint i = 0; i < n; i++) {
+        GtkTreeListRow* row = gtk_tree_list_model_get_child_row(c->tree, i);
+        GitChangeItem* item = item_of(row);
+        if (row != NULL && item != NULL) gtk_tree_list_row_set_expanded(row, c->unfolded[item->group]);
+        g_clear_object(&item);
+        g_clear_object(&row);
+    }
 }
 
 static void on_read_ready(GObject* source, GAsyncResult* res, gpointer data) {
@@ -266,14 +313,23 @@ static void on_read_ready(GObject* source, GAsyncResult* res, gpointer data) {
             counts[ch->group]++;
         }
         g_ptr_array_set_free_func(td->changes, NULL); /* the items take them over */
+        GitChangeItem* group = NULL;
         for (guint i = 0; i < td->changes->len; i++) {
-            g_ptr_array_add(items, item_new(g_ptr_array_index(td->changes, i)));
+            GitChange* ch = g_ptr_array_index(td->changes, i);
+            if (group == NULL || group->group != ch->group) { /* the changes come group by group */
+                group = group_new(ch->group);
+                g_ptr_array_add(items, group);
+            }
+            GitChangeItem* file = item_new(ch);
+            g_list_store_append(group->children, file);
+            g_object_unref(file);
         }
         g_ptr_array_set_size(td->changes, 0);
     }
 
     g_signal_handlers_block_by_func(c->selection, (gpointer)on_selection_changed, c);
-    g_list_store_splice(c->store, 0, g_list_model_get_n_items(G_LIST_MODEL(c->store)), items->pdata, items->len);
+    g_list_store_splice(c->groups, 0, g_list_model_get_n_items(G_LIST_MODEL(c->groups)), items->pdata, items->len);
+    restore_folding(c);
     gtk_single_selection_set_selected(c->selection, GTK_INVALID_LIST_POSITION);
     g_signal_handlers_unblock_by_func(c->selection, (gpointer)on_selection_changed, c);
     g_ptr_array_unref(items);
@@ -343,7 +399,7 @@ static void start_read(GitChanges* c) {
     c->cancellable = g_cancellable_new();
     ReadTask* td = g_new0(ReadTask, 1);
     td->root = g_strdup(c->root);
-    if (g_list_model_get_n_items(G_LIST_MODEL(c->store)) == 0) {
+    if (g_list_model_get_n_items(G_LIST_MODEL(c->groups)) == 0) {
         show_summary(c, _("Reading the changes…"));
     }
     GTask* task = g_task_new(NULL, c->cancellable, on_read_ready, c);
@@ -359,7 +415,7 @@ void git_changes_set_root(GitChanges* c, const gchar* root) {
         g_free(c->root);
         c->root = g_strdup(root);
         g_clear_pointer(&c->selected_path, g_free);
-        g_list_store_remove_all(c->store);
+        g_list_store_remove_all(c->groups);
         gtk_label_set_text(GTK_LABEL(c->header_label), "");
         gtk_text_buffer_set_text(c->detail_buf, "", -1);
     }
@@ -380,13 +436,26 @@ static void on_view_map(GtkWidget* widget, gpointer data) {
     if (c->root != NULL) start_read(c);
 }
 
-/* Enter or a double click on a file: preview it (the Preview tab in front) */
+/* Fold or unfold the group of row (unfold: TRUE, FALSE; -1: the other way) */
+static void fold(GtkTreeListRow* row, gint unfold) {
+    if (row == NULL || !gtk_tree_list_row_is_expandable(row)) return;
+    gtk_tree_list_row_set_expanded(row, unfold < 0 ? !gtk_tree_list_row_get_expanded(row) : unfold);
+}
+
+/* Enter or a double click: on a file, preview it (the Preview tab in front);
+ * on a group, fold or unfold it */
 static void on_activate(GtkListView* view, guint position, gpointer data) {
     (void)view;
     GitChanges* c = data;
-    GitChangeItem* item = g_list_model_get_item(G_LIST_MODEL(c->selection), position);
-    if (item == NULL) return;
-    if (item->change->status != 'D' && c->root != NULL) {
+    GtkTreeListRow* row = row_at(c, position);
+    GitChangeItem* item = item_of(row);
+    if (item == NULL) {
+        g_clear_object(&row);
+        return;
+    }
+    if (item->change == NULL) {
+        fold(row, -1);
+    } else if (item->change->status != 'D' && c->root != NULL) {
         AppData* app = c->app;
         g_free(app->preview_request_path);
         app->preview_request_path = g_build_filename(c->root, item->change->path, NULL);
@@ -395,6 +464,59 @@ static void on_activate(GtkListView* view, guint position, gpointer data) {
         g_clear_pointer(&app->preview_request_path, g_free); /* not taken: nothing subscribed */
     }
     g_object_unref(item);
+    g_object_unref(row);
+}
+
+/* Left folds the group (on a file: goes to its group), Right unfolds it;
+ * h / l in Vim mode, C-b / C-f in Emacs mode. After the navigation keys
+ * (focus_route_attach_list()), which leave these to the list. */
+static gboolean on_list_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                            gpointer data) {
+    (void)ctrl;
+    (void)keycode;
+    GitChanges* c = data;
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    gint dir = 0; /* -1: fold, 1: unfold */
+    if (mods == 0 && (keyval == GDK_KEY_Left || keyval == GDK_KEY_KP_Left)) dir = -1;
+    if (mods == 0 && (keyval == GDK_KEY_Right || keyval == GDK_KEY_KP_Right)) dir = 1;
+    switch (app_nav_style(c->app)) {
+    case NAV_STYLE_VIM:
+        if (mods == 0 && keyval == GDK_KEY_h) dir = -1;
+        if (mods == 0 && keyval == GDK_KEY_l) dir = 1;
+        break;
+    case NAV_STYLE_EMACS:
+        if (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_b) dir = -1;
+        if (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_f) dir = 1;
+        break;
+    default: break;
+    }
+    if (dir == 0) return FALSE;
+    GtkTreeListRow* row = gtk_single_selection_get_selected_item(c->selection);
+    if (row == NULL) return TRUE;
+    if (gtk_tree_list_row_is_expandable(row)) {
+        fold(row, dir > 0);
+    } else if (dir < 0) {
+        GtkTreeListRow* parent = gtk_tree_list_row_get_parent(row); /* the file's group */
+        if (parent != NULL) {
+            gtk_single_selection_set_selected(c->selection, gtk_tree_list_row_get_position(parent));
+            g_object_unref(parent);
+        }
+    }
+    return TRUE;
+}
+
+/* A click on a group row folds or unfolds it (the press is the row's: a
+ * double click does not fold it back) */
+static void on_group_pressed(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    (void)x;
+    (void)y;
+    (void)data;
+    GtkWidget* box = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
+    GtkListItem* li = g_object_get_data(G_OBJECT(box), "list-item");
+    GtkTreeListRow* row = li != NULL ? gtk_list_item_get_item(li) : NULL;
+    if (row == NULL || !gtk_tree_list_row_is_expandable(row)) return; /* a file: the list selects it */
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+    if (n_press == 1) fold(row, -1);
 }
 
 /* --- Rows: status letter, file name, its folder, lines added / removed */
@@ -411,6 +533,14 @@ static void on_row_setup(GtkSignalListItemFactory* factory, GtkListItem* li, gpo
     (void)factory;
     (void)data;
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_widget_set_hexpand(box, TRUE); /* the whole row takes the click, even a group's (no folder label) */
+    g_object_set_data(G_OBJECT(box), "list-item", li);
+    GtkGesture* click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_PRIMARY);
+    /* Before the row's own click, which would only select the group */
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click), GTK_PHASE_CAPTURE);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_group_pressed), NULL);
+    gtk_widget_add_controller(box, GTK_EVENT_CONTROLLER(click));
     GtkWidget* status = row_label(box, "git-status");
     gtk_label_set_width_chars(GTK_LABEL(status), 1);
     GtkWidget* name = row_label(box, NULL);
@@ -420,7 +550,11 @@ static void on_row_setup(GtkSignalListItemFactory* factory, GtkListItem* li, gpo
     gtk_widget_set_hexpand(dir, TRUE);
     row_label(box, "git-added");
     row_label(box, "git-removed");
-    gtk_list_item_set_child(li, box);
+    GtkWidget* expander = gtk_tree_expander_new();
+    gtk_widget_set_hexpand(expander, TRUE);
+    gtk_tree_expander_set_indent_for_icon(GTK_TREE_EXPANDER(expander), TRUE);
+    gtk_tree_expander_set_child(GTK_TREE_EXPANDER(expander), box);
+    gtk_list_item_set_child(li, expander);
 }
 
 static const gchar* const STATUS_CLASSES[] = { "git-st-modified", "git-st-added", "git-st-deleted",
@@ -436,19 +570,47 @@ static const gchar* status_class(gchar status) {
     }
 }
 
+/* A group folded or unfolded (arrow, click, keys): kept for the next reads */
+static void on_row_expanded(GtkTreeListRow* row, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    GitChanges* c = data;
+    GitChangeItem* item = item_of(row);
+    if (item != NULL && item->change == NULL) c->unfolded[item->group] = gtk_tree_list_row_get_expanded(row);
+    g_clear_object(&item);
+}
+
 static void on_row_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer data) {
     (void)factory;
-    (void)data;
-    GitChangeItem* item = gtk_list_item_get_item(li);
-    GtkWidget* status = gtk_widget_get_first_child(gtk_list_item_get_child(li));
+    GtkTreeListRow* row = gtk_list_item_get_item(li);
+    GtkWidget* expander = gtk_list_item_get_child(li);
+    gtk_tree_expander_set_list_row(GTK_TREE_EXPANDER(expander), row);
+    GitChangeItem* item = item_of(row);
+    GtkWidget* status = gtk_widget_get_first_child(gtk_tree_expander_get_child(GTK_TREE_EXPANDER(expander)));
     GtkWidget* name = gtk_widget_get_next_sibling(status);
     GtkWidget* dir = gtk_widget_get_next_sibling(name);
     GtkWidget* added = gtk_widget_get_next_sibling(dir);
     GtkWidget* removed = gtk_widget_get_next_sibling(added);
     for (gsize i = 0; i < G_N_ELEMENTS(STATUS_CLASSES); i++) gtk_widget_remove_css_class(status, STATUS_CLASSES[i]);
+    g_object_unref(item); /* the row keeps it */
 
     GitChange* ch = item->change;
-    gtk_widget_set_visible(removed, TRUE);
+    gboolean file = ch != NULL;
+    gtk_widget_set_visible(status, file);
+    gtk_widget_set_visible(added, file);
+    gtk_widget_set_visible(removed, file);
+    gtk_widget_set_visible(dir, file);
+    if (!file) {
+        /* A group: its title and how many files, folded or unfolded */
+        gtk_widget_add_css_class(name, "git-group");
+        gtk_widget_set_tooltip_text(name, _("Click or Enter: fold or unfold"));
+        gchar* text = g_strdup_printf("%s (%u)", git_change_group_title(item->group),
+                                      g_list_model_get_n_items(G_LIST_MODEL(item->children)));
+        gtk_label_set_text(GTK_LABEL(name), text);
+        g_free(text);
+        g_signal_connect(row, "notify::expanded", G_CALLBACK(on_row_expanded), data);
+        return;
+    }
+    gtk_widget_remove_css_class(name, "git-group");
     gtk_widget_set_tooltip_text(name, ch->path);
     gchar letter[2] = { ch->status, '\0' };
     gtk_label_set_text(GTK_LABEL(status), letter);
@@ -477,25 +639,11 @@ static void on_row_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpoi
     g_free(minus);
 }
 
-/* The header of a group's section: its title and how many files it holds
- * (not a row: never selected) */
-static void on_header_setup(GtkSignalListItemFactory* factory, GtkListHeader* header, gpointer data) {
+static void on_row_unbind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer data) {
     (void)factory;
-    (void)data;
-    GtkWidget* label = gtk_label_new(NULL);
-    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
-    gtk_widget_add_css_class(label, "git-group");
-    gtk_list_header_set_child(header, label);
-}
-
-static void on_header_bind(GtkSignalListItemFactory* factory, GtkListHeader* header, gpointer data) {
-    (void)factory;
-    (void)data;
-    GitChangeItem* first = gtk_list_header_get_item(header);
-    if (first == NULL) return;
-    gchar* text = g_strdup_printf("%s (%u)", git_change_group_title(first->group), gtk_list_header_get_n_items(header));
-    gtk_label_set_text(GTK_LABEL(gtk_list_header_get_child(header)), text);
-    g_free(text);
+    GtkTreeListRow* row = gtk_list_item_get_item(li);
+    if (row != NULL) g_signal_handlers_disconnect_by_func(row, (gpointer)on_row_expanded, data);
+    gtk_tree_expander_set_list_row(GTK_TREE_EXPANDER(gtk_list_item_get_child(li)), NULL);
 }
 
 void git_changes_cancel(GitChanges* c) {
@@ -506,7 +654,7 @@ void git_changes_cancel(GitChanges* c) {
 static void git_changes_free(gpointer data) {
     GitChanges* c = data;
     cancel_reads(c);
-    g_clear_object(&c->store);
+    g_clear_object(&c->groups);
     g_clear_object(&c->detail_buf);
     g_free(c->root);
     g_free(c->selected_path);
@@ -520,26 +668,24 @@ GitChanges* git_changes_new(AppData* app, GitChangesCountFunc counted, gpointer 
     c->counted = counted;
     c->counted_data = data;
 
-    c->store = g_list_store_new(GIT_TYPE_CHANGE_ITEM);
-    /* No sorter: the store's order; the section sorter only cuts it by group */
-    GtkSortListModel* sections = gtk_sort_list_model_new(G_LIST_MODEL(g_object_ref(c->store)), NULL);
-    gtk_sort_list_model_set_section_sorter(sections, GTK_SORTER(gtk_custom_sorter_new(compare_groups, NULL, NULL)));
-    c->selection = gtk_single_selection_new(G_LIST_MODEL(sections));
+    for (gint g = 0; g < GIT_CHANGE_GROUPS; g++) c->unfolded[g] = TRUE;
+    c->groups = g_list_store_new(GIT_TYPE_CHANGE_ITEM);
+    c->tree = gtk_tree_list_model_new(G_LIST_MODEL(g_object_ref(c->groups)), FALSE, FALSE, children_of, NULL, NULL);
+    c->selection = gtk_single_selection_new(G_LIST_MODEL(c->tree));
     gtk_single_selection_set_autoselect(c->selection, FALSE);
     gtk_single_selection_set_can_unselect(c->selection, TRUE);
     g_signal_connect(c->selection, "notify::selected-item", G_CALLBACK(on_selection_changed), c);
 
     GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
     g_signal_connect(factory, "setup", G_CALLBACK(on_row_setup), NULL);
-    g_signal_connect(factory, "bind", G_CALLBACK(on_row_bind), NULL);
+    g_signal_connect(factory, "bind", G_CALLBACK(on_row_bind), c);
+    g_signal_connect(factory, "unbind", G_CALLBACK(on_row_unbind), c);
     GtkWidget* list = gtk_list_view_new(GTK_SELECTION_MODEL(c->selection), factory);
-    GtkListItemFactory* headers = gtk_signal_list_item_factory_new();
-    g_signal_connect(headers, "setup", G_CALLBACK(on_header_setup), NULL);
-    g_signal_connect(headers, "bind", G_CALLBACK(on_header_bind), NULL);
-    gtk_list_view_set_header_factory(GTK_LIST_VIEW(list), headers);
-    g_object_unref(headers);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_list_key), c);
+    gtk_widget_add_controller(list, keys);
     gtk_widget_set_name(list, "git-changes");
-    gtk_widget_set_tooltip_text(list, _("Enter: preview the file"));
+    gtk_widget_set_tooltip_text(list, _("Enter: preview the file, fold or unfold the group"));
     g_signal_connect(list, "activate", G_CALLBACK(on_activate), c);
     focus_route_attach_list(app, list, c->selection);
 
