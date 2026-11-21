@@ -66,3 +66,15 @@ int git_lib_patch_line(const git_diff_delta* delta, const git_diff_hunk* hunk, c
     }
     return 0;
 }
+
+gchar* git_lib_short_id(const git_object* obj) {
+    git_buf buf = {0};
+    gchar* id = NULL;
+    if (git_object_short_id(&buf, obj) == 0 && buf.ptr != NULL) {
+        id = g_strndup(buf.ptr, buf.size);
+    } else {
+        id = g_strndup(git_oid_tostr_s(git_object_id(obj)), 7);
+    }
+    git_buf_dispose(&buf);
+    return id;
+}

@@ -18,6 +18,7 @@
 #include "diskuse/disk_usage_tab.h"
 #include "search/deep_search_tab.h"
 #include "preview/diff_tab.h"
+#include "git/git_tab.h"
 
 typedef enum {
     FM_OPEN,
@@ -38,7 +39,8 @@ typedef enum {
     FM_UNDO,
     FM_COMPARE_SELECT,
     FM_COMPARE_WITH,
-    FM_COMPARE_HEAD
+    FM_COMPARE_HEAD,
+    FM_GIT_HISTORY
 } FilesMenuAction;
 
 typedef struct {
@@ -107,6 +109,7 @@ static gboolean run_action(gpointer data) {
         break;
     }
     case FM_COMPARE_HEAD:     diff_tab_open_head(app, r->path, NULL); break;
+    case FM_GIT_HISTORY:      git_tab_show_history(app, r->path); break;
     }
     g_free(r->path);
     g_free(r);
@@ -225,6 +228,10 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
                 menu_item(box, popover, app, _("Compare with HEAD"), NULL, FM_COMPARE_HEAD);
             }
         }
+    }
+    if (path_copy_has_relative(row->path)) {
+        menu_separator(box);
+        menu_item(box, popover, app, _("Git History"), NULL, FM_GIT_HISTORY);
     }
     menu_separator(box);
     menu_item(box, popover, app, _("Bookmark…"), "Ctrl+D", FM_BOOKMARK);

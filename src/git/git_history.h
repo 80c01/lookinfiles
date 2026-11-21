@@ -19,6 +19,11 @@ GtkWidget* git_history_widget(GitHistory* h);
  * commits as are listed */
 void git_history_set_root(GitHistory* h, const gchar* root, gboolean reload);
 
+/* Only the commits that changed path (relative to the root, '/'
+ * separators; a file or a folder), shown beside the filter with a cross
+ * that clears it; NULL: every commit. Another root clears it. */
+void git_history_set_path(GitHistory* h, const gchar* path);
+
 /* Cancel the reads running (at exit) */
 void git_history_cancel(GitHistory* h);
 

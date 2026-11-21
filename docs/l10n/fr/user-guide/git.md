@@ -77,6 +77,11 @@ sous une ligne donnant son hash, son sujet, son auteur et sa date. Les 100
 commits les plus récents sont lus d’abord ; faire défiler jusqu’au bas de la
 liste (ou y amener la sélection) lit les 100 suivants.
 
+**Historique Git** dans le menu du clic droit d’un fichier ou d’un dossier
+de l’explorateur ne montre que les commits qui l’ont modifié (les
+renommages ne sont pas suivis) : son chemin s’affiche à côté du champ de
+filtre, et sa croix ramène tous les commits.
+
 Le champ au-dessus de la liste filtre l’historique : seuls restent les
 commits dont le message, l’auteur (nom ou e-mail) ou le hash contiennent
 chaque mot tapé (sans tenir compte de la casse), cherchés dans tout

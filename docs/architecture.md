@@ -180,12 +180,15 @@ Layers, from bottom to top
 - `git_utils` — `find_git_root()`, `git_relative_path()`, `git_resolve_dir()` (worktrees/submodules),
   `git_read_branch()` (plain file reads); through libgit2, never the git
   program (worker thread only): `scan_git_statuses()`, `git_read_head_blob()`,
-  `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
+  `git_show_commit()` (laid out like `git show --stat
   --patch`), `git_list_files()` (like `git ls-files --cached --others`;
   `git_list_files_by_kind()` says tracked, untracked or ignored).
 - `git_lib` — what the libgit2 readers share: libgit2 set up once
   (`git_lib_ready()`), a work tree opened (`git_lib_open()`), a patch printed
-  as git prints it (`git_lib_patch_line()`).
+  as git prints it (`git_lib_patch_line()`), a short hash (`git_lib_short_id()`).
+- `git_log` — the history through libgit2, worker thread only:
+  `git_read_log()` walks it from `HEAD` page by page, filtered by words
+  (`git_log_words()`) and by a path. Tested in `test_git_utils`.
 - `git_worktree` — the uncommitted changes of a work tree through libgit2,
   worker thread only: `git_read_changes()` lists the staged (index against
   `HEAD`, renames found), unstaged and untracked files with their lines
@@ -865,8 +868,9 @@ Layers, from bottom to top
 - `file_actions` — new file / new folder, rename and trash prompts.
 - `files_menu` — right-click menu of the files view (the key actions,
   plus Copy Name / Git Relative Path / Path (`path_copy`), Open With Default App through `GtkFileLauncher`, Open in
-  Browser Tab for HTML files through `browser_open()`, and Open Terminal
-  Here through `terminal_open()`).
+  Browser Tab for HTML files through `browser_open()`, Open Terminal
+  Here through `terminal_open()`, and Git History through
+  `git_tab_show_history()`).
 - `file_moves` — renames and moves to the trash with editor tabs and
   expansion following, remembered for one undo step (`u`, explorer bar Undo
   after the `app_notice()` message).
@@ -1191,6 +1195,11 @@ Layers, from bottom to top
   commit has its own cancellable, cancelled when the selection moves. The
   history is read 100 commits at a time (`skip` of `git_read_log()`): the end
   of the list reads the next page, a reload reads as many as are listed.
+  `git_history_set_path()` keeps only the commits that changed a path
+  (`git_read_log()` of `git_log`, which compares the path's tree entry with
+  each parent's, like `git log -- path`), shown beside the filter with a
+  cross that clears it; `git_tab_show_history()` (the explorer menu's
+  **Git History**) sets it and brings the view in front.
   `git_diff_text` lays out a patch in a `GtkTextBuffer` in the diff colours
   and cuts a huge one (`git_diff_text_cut()`).
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.

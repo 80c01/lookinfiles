@@ -20,4 +20,7 @@ git_repository* git_lib_open(const gchar* root);
 int git_lib_patch_line(const git_diff_delta* delta, const git_diff_hunk* hunk, const git_diff_line* line,
                        void* data);
 
+/* Shortest unique abbreviation of an object, like git's %h. g_free() */
+gchar* git_lib_short_id(const git_object* obj);
+
 #endif /* GIT_LIB_H */

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 10:41+0000\n"
+"POT-Creation-Date: 2026-11-21 10:49+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1147,7 +1147,9 @@ msgstr "Onglet Git"
 #: src/chrome/help.c:140
 msgid ""
 "Next view: Changes (uncommitted files and their patch), History (the commits)"
-msgstr "Vue suivante : Modifications (les fichiers non commités et leur patch), Historique (les commits)"
+msgstr ""
+"Vue suivante : Modifications (les fichiers non commités et leur patch), "
+"Historique (les commits)"
 
 #: src/chrome/help.c:141
 msgid "Changes: preview the selected file"
@@ -4816,7 +4818,7 @@ msgstr "Programmes"
 msgid "Other"
 msgstr "Autres"
 
-#: src/core/path_copy.c:28 src/git/git_history.c:561
+#: src/core/path_copy.c:28 src/git/git_history.c:573
 #, c-format
 msgid "Copied “%s”"
 msgstr "« %s » copié"
@@ -4858,7 +4860,7 @@ msgid "Show in Explorer"
 msgstr "Montrer dans l’explorateur"
 
 #: src/diskuse/disk_usage_list.c:384 src/editor/editor_tab_menu.c:337
-#: src/explorer/files_menu.c:181 src/preview/preview_menu.c:115
+#: src/explorer/files_menu.c:184 src/preview/preview_menu.c:115
 #: src/search/deep_search_list.c:384
 msgid "Copy Path"
 msgstr "Copier le chemin"
@@ -5180,7 +5182,7 @@ msgid "The folders open once the whole tree is read"
 msgstr "Les dossiers s’ouvrent une fois toute l’arborescence lue"
 
 #: src/diskuse/disk_usage_tab.c:666 src/diskuse/disk_usage_tab.c:735
-#: src/explorer/files_menu.c:201 src/explorer/files_menu.c:238
+#: src/explorer/files_menu.c:204 src/explorer/files_menu.c:245
 #: src/preview/dir_preview.c:447
 msgid "Disk Usage"
 msgstr "Espace disque"
@@ -5508,25 +5510,25 @@ msgstr "Recharger depuis le disque"
 msgid "Compare with Saved"
 msgstr "Comparer avec la version enregistrée"
 
-#: src/editor/editor_tab_menu.c:320 src/explorer/files_menu.c:225
+#: src/editor/editor_tab_menu.c:320 src/explorer/files_menu.c:228
 msgid "Compare with HEAD"
 msgstr "Comparer avec HEAD"
 
-#: src/editor/editor_tab_menu.c:322 src/explorer/files_menu.c:215
+#: src/editor/editor_tab_menu.c:322 src/explorer/files_menu.c:218
 msgid "Select for Compare"
 msgstr "Sélectionner pour comparer"
 
-#: src/editor/editor_tab_menu.c:327 src/explorer/files_menu.c:219
+#: src/editor/editor_tab_menu.c:327 src/explorer/files_menu.c:222
 #, c-format
 msgid "Compare with “%s”"
 msgstr "Comparer avec « %s »"
 
-#: src/editor/editor_tab_menu.c:333 src/explorer/files_menu.c:177
+#: src/editor/editor_tab_menu.c:333 src/explorer/files_menu.c:180
 #: src/preview/preview_menu.c:111
 msgid "Copy Name"
 msgstr "Copier le nom"
 
-#: src/editor/editor_tab_menu.c:335 src/explorer/files_menu.c:179
+#: src/editor/editor_tab_menu.c:335 src/explorer/files_menu.c:182
 #: src/preview/preview_menu.c:113
 msgid "Copy Git Relative Path"
 msgstr "Copier le chemin relatif git"
@@ -5907,7 +5909,7 @@ msgstr "Renommer / déplacer…"
 msgid "Delete"
 msgstr "Supprimer"
 
-#: src/explorer/bookmarks.c:1152 src/explorer/files_menu.c:186
+#: src/explorer/bookmarks.c:1152 src/explorer/files_menu.c:189
 msgid "Open"
 msgstr "Ouvrir"
 
@@ -5929,7 +5931,7 @@ msgid "Add Bookmark…"
 msgstr "Ajouter un signet…"
 
 #: src/explorer/bookmarks.c:1162 src/explorer/bookmarks.c:1166
-#: src/explorer/files_menu.c:235 src/explorer/remote.c:1030
+#: src/explorer/files_menu.c:242 src/explorer/remote.c:1030
 msgid "New Folder…"
 msgstr "Nouveau dossier…"
 
@@ -6058,48 +6060,52 @@ msgstr "Renommé à nouveau en « %s »"
 msgid "Cannot undo: %s"
 msgstr "Impossible d’annuler : %s"
 
-#: src/explorer/files_menu.c:55
+#: src/explorer/files_menu.c:57
 #, c-format
 msgid "Cannot open with the default application: %s"
 msgstr "Impossible d’ouvrir avec l’application par défaut : %s"
 
-#: src/explorer/files_menu.c:192
+#: src/explorer/files_menu.c:195
 msgid "Open in Side Panel"
 msgstr "Ouvrir dans le panneau latéral"
 
-#: src/explorer/files_menu.c:194
+#: src/explorer/files_menu.c:197
 msgid "Open With Default App"
 msgstr "Ouvrir avec l’application par défaut"
 
-#: src/explorer/files_menu.c:197
+#: src/explorer/files_menu.c:200
 msgid "Open in Browser Tab"
 msgstr "Ouvrir dans un onglet navigateur"
 
-#: src/explorer/files_menu.c:200 src/explorer/files_menu.c:237
+#: src/explorer/files_menu.c:203 src/explorer/files_menu.c:244
 msgid "Open Terminal Here"
 msgstr "Ouvrir un terminal ici"
 
-#: src/explorer/files_menu.c:202 src/explorer/files_menu.c:239
+#: src/explorer/files_menu.c:205 src/explorer/files_menu.c:246
 msgid "Search Here"
 msgstr "Rechercher ici"
 
-#: src/explorer/files_menu.c:205
+#: src/explorer/files_menu.c:208
 msgid "Rename…"
 msgstr "Renommer…"
 
-#: src/explorer/files_menu.c:206
+#: src/explorer/files_menu.c:209
 msgid "Move to Trash…"
 msgstr "Mettre à la corbeille…"
 
-#: src/explorer/files_menu.c:230 src/explorer/files_menu.c:240
+#: src/explorer/files_menu.c:234
+msgid "Git History"
+msgstr "Historique Git"
+
+#: src/explorer/files_menu.c:237 src/explorer/files_menu.c:247
 msgid "Bookmark…"
 msgstr "Ajouter un signet…"
 
-#: src/explorer/files_menu.c:234
+#: src/explorer/files_menu.c:241
 msgid "New File…"
 msgstr "Nouveau fichier…"
 
-#: src/explorer/files_menu.c:283 src/jupyter/ipynb_bar.c:100
+#: src/explorer/files_menu.c:290 src/jupyter/ipynb_bar.c:100
 msgid "Undo"
 msgstr "Annuler"
 
@@ -8435,30 +8441,30 @@ msgid_plural "… %u more lines not shown"
 msgstr[0] "… %u ligne de plus non affichée"
 msgstr[1] "… %u lignes de plus non affichées"
 
-#: src/git/git_history.c:174
+#: src/git/git_history.c:181
 msgid "(No diff available or git error)"
 msgstr "(Aucun diff disponible ou erreur git)"
 
-#: src/git/git_history.c:203
+#: src/git/git_history.c:210
 msgid "Detached HEAD"
 msgstr "HEAD détachée"
 
-#: src/git/git_history.c:204
+#: src/git/git_history.c:211
 #, c-format
 msgid "Current branch: %s"
 msgstr "Branche courante : %s"
 
-#: src/git/git_history.c:206
+#: src/git/git_history.c:213
 #, c-format
 msgid "Branch: %s"
 msgstr "Branche : %s"
 
-#: src/git/git_history.c:208
+#: src/git/git_history.c:215
 #, c-format
 msgid "Tag: %s"
 msgstr "Étiquette : %s"
 
-#: src/git/git_history.c:210
+#: src/git/git_history.c:217
 #, c-format
 msgid "Remote branch: %s"
 msgstr "Branche distante : %s"
@@ -8466,100 +8472,113 @@ msgstr "Branche distante : %s"
 #. TRANSLATORS: above the diff of a commit: short hash, subject, author,
 #. * relative date ("2 days ago") and full date ("2026-11-21 08:19"), in
 #. * this order
-#: src/git/git_history.c:321
+#: src/git/git_history.c:328
 #, c-format
 msgid "[%s] %s  •  %s  (%s, %s)"
 msgstr "[%s] %s  •  %s  (%s, %s)"
 
-#: src/git/git_history.c:349
+#: src/git/git_history.c:356
 msgid "No commit matches"
 msgstr "Aucun commit ne correspond"
 
-#: src/git/git_history.c:351
+#: src/git/git_history.c:358
 #, c-format
 msgid "The first %u matching commits"
 msgstr "Les %u premiers commits qui correspondent"
 
-#: src/git/git_history.c:353
+#: src/git/git_history.c:360
 #, c-format
 msgid "%u matching commit"
 msgid_plural "%u matching commits"
 msgstr[0] "%u commit correspondant"
 msgstr[1] "%u commits correspondants"
 
-#: src/git/git_history.c:356
+#: src/git/git_history.c:363
 #, c-format
 msgid "The last %u commits"
 msgstr "Les %u derniers commits"
 
-#: src/git/git_history.c:358
+#: src/git/git_history.c:365
 #, c-format
 msgid "%u commit"
 msgid_plural "%u commits"
 msgstr[0] "%u commit"
 msgstr[1] "%u commits"
 
-#: src/git/git_history.c:451
+#: src/git/git_history.c:458
 msgid "The history of this repository cannot be read."
 msgstr "L’historique de ce dépôt ne peut pas être lu."
 
-#: src/git/git_history.c:452
+#: src/git/git_history.c:459
+msgid "No commit changed this file."
+msgstr "Aucun commit n’a modifié ce fichier."
+
+#: src/git/git_history.c:460
 msgid "No commit matches the filter."
 msgstr "Aucun commit ne correspond au filtre."
 
-#: src/git/git_history.c:453
+#: src/git/git_history.c:461
 msgid "No commits in this repository."
 msgstr "Aucun commit dans ce dépôt."
 
-#: src/git/git_history.c:471
+#: src/git/git_history.c:480
 msgid "Reading the history…"
 msgstr "Lecture de l’historique…"
 
-#: src/git/git_history.c:520
+#: src/git/git_history.c:532
 msgid "Reading more commits…"
 msgstr "Lecture d’autres commits…"
 
 #. TRANSLATORS: %s is a short commit hash
-#: src/git/git_history.c:560
+#: src/git/git_history.c:572
 #, c-format
 msgid "Copied the message of %s"
 msgstr "Message de %s copié"
 
-#: src/git/git_history.c:663
+#: src/git/git_history.c:675
 msgid "Copy Hash"
 msgstr "Copier le hash"
 
-#: src/git/git_history.c:664
+#: src/git/git_history.c:676
 msgid "Copy Short Hash"
 msgstr "Copier le hash court"
 
-#: src/git/git_history.c:665
+#: src/git/git_history.c:677
 msgid "Copy Message"
 msgstr "Copier le message"
 
-#: src/git/git_history.c:765
+#: src/git/git_history.c:777
 msgid "Message"
 msgstr "Message"
 
-#: src/git/git_history.c:834
+#: src/git/git_history.c:869
 msgid "Commit"
 msgstr "Commit"
 
-#: src/git/git_history.c:836 src/office/ole_props.c:225
+#: src/git/git_history.c:871 src/office/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git/git_history.c:837 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
+#: src/git/git_history.c:872 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
 #: src/mail/mail_view.c:34 src/mail/mail_view.c:180
 #: src/preview/preview_formats.c:920
 msgid "Date"
 msgstr "Date"
 
-#: src/git/git_history.c:860
+#. TRANSLATORS: before the path whose history the Git tab shows
+#: src/git/git_history.c:899
+msgid "History of"
+msgstr "Historique de"
+
+#: src/git/git_history.c:906
+msgid "Show Every Commit"
+msgstr "Afficher tous les commits"
+
+#: src/git/git_history.c:915
 msgid "Filter the commits"
 msgstr "Filtrer les commits"
 
-#: src/git/git_history.c:862
+#: src/git/git_history.c:917
 msgid ""
 "Only the commits whose message, author or hash hold every word, in the whole "
 "history"
@@ -8567,35 +8586,41 @@ msgstr ""
 "Seulement les commits dont le message, l’auteur ou le hash contiennent tous "
 "les mots, dans tout l’historique"
 
-#: src/git/git_history.c:887
+#: src/git/git_history.c:942
 msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
-#: src/git/git_tab.c:62
+#: src/git/git_tab.c:63
 #, c-format
 msgid "Changes (%u)"
 msgstr "Modifications (%u)"
 
 #. TRANSLATORS: the views of the Git tab; v shows the next one
-#: src/git/git_tab.c:62 src/git/git_tab.c:121 src/git/git_worktree.c:18
+#: src/git/git_tab.c:63 src/git/git_tab.c:122 src/git/git_worktree.c:18
 msgid "Changes"
 msgstr "Modifications"
 
-#: src/git/git_tab.c:122
-msgid "Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)"
-msgstr "Modifications non commitées : indexées, non indexées, non suivies (v : vue suivante)"
-
 #: src/git/git_tab.c:123
+msgid "Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)"
+msgstr ""
+"Modifications non commitées : indexées, non indexées, non suivies (v : vue "
+"suivante)"
+
+#: src/git/git_tab.c:124
 msgid "History"
 msgstr "Historique"
 
-#: src/git/git_tab.c:124
+#: src/git/git_tab.c:125
 msgid "The Commits, Newest First (v: Next View)"
 msgstr "Les commits, du plus récent au plus ancien (v : vue suivante)"
 
-#: src/git/git_tab.c:142
+#: src/git/git_tab.c:143
 msgid "Git"
 msgstr "Git"
+
+#: src/git/git_tab.c:169
+msgid "Not in the repository of the current folder"
+msgstr "Hors du dépôt du dossier courant"
 
 #: src/git/git_utils.c:637
 #, c-format

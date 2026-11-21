@@ -1,6 +1,7 @@
 /* Unit tests for src/git/git_utils.c. Each test works in a fresh temporary
  * directory; repositories are made with libgit2 (no git program needed). */
 #include "git/git_utils.h"
+#include "git/git_log.h"
 
 #include <git2.h>
 #include <glib/gstdio.h>
@@ -349,7 +350,7 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     gchar* repo_dir = make_path(fx, "repo", NULL);
     git_repository* repo = repo_init(repo_dir);
 
-    GPtrArray* log = git_read_log(repo_dir, 0, 10, NULL, NULL, NULL);
+    GPtrArray* log = git_read_log(repo_dir, 0, 10, NULL, NULL, NULL, NULL);
     g_assert_nonnull(log);
     g_assert_cmpuint(log->len, ==, 0); /* no commit yet */
     g_ptr_array_unref(log);
@@ -361,7 +362,7 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     repo_add(repo, "a.txt");
     repo_commit(repo, "Second\ncommit", 120);
 
-    log = git_read_log(repo_dir, 0, 10, NULL, NULL, NULL);
+    log = git_read_log(repo_dir, 0, 10, NULL, NULL, NULL, NULL);
     g_assert_cmpuint(log->len, ==, 2);
     GitCommitInfo* newest = log->pdata[0];
     g_assert_cmpstr(newest->subject, ==, "Second commit"); /* first paragraph on one line */
@@ -378,12 +379,12 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     g_assert_cmpstr(oldest->date, ==, "3 days ago");
     g_ptr_array_unref(log);
 
-    log = git_read_log(repo_dir, 0, 1, NULL, NULL, NULL);
+    log = git_read_log(repo_dir, 0, 1, NULL, NULL, NULL, NULL);
     g_assert_cmpuint(log->len, ==, 1);
     g_ptr_array_unref(log);
 
     gchar* plain = make_path(fx, "plain", NULL);
-    g_assert_null(git_read_log(plain, 0, 10, NULL, NULL, NULL));
+    g_assert_null(git_read_log(plain, 0, 10, NULL, NULL, NULL, NULL));
     g_free(plain);
     git_repository_free(repo);
     g_free(repo_dir);
@@ -426,7 +427,7 @@ static void test_read_log_filtered(Fixture* fx, gconstpointer data) {
 
     gboolean more = TRUE;
     gchar** words = git_log_words("PARSER");
-    GPtrArray* log = git_read_log(repo_dir, 0, 10, words, NULL, &more);
+    GPtrArray* log = git_read_log(repo_dir, 0, 10, words, NULL, NULL, &more);
     gchar* got = log_subjects(log);
     g_assert_cmpstr(got, ==, "Fix a crash|Add the parser"); /* the body counts, any case */
     g_assert_false(more);
@@ -435,7 +436,7 @@ static void test_read_log_filtered(Fixture* fx, gconstpointer data) {
     g_strfreev(words);
 
     words = git_log_words("fix lexer");
-    log = git_read_log(repo_dir, 0, 10, words, NULL, NULL);
+    log = git_read_log(repo_dir, 0, 10, words, NULL, NULL, NULL);
     got = log_subjects(log);
     g_assert_cmpstr(got, ==, "Fix the lexer"); /* every word */
     g_free(got);
@@ -443,13 +444,13 @@ static void test_read_log_filtered(Fixture* fx, gconstpointer data) {
     g_strfreev(words);
 
     words = git_log_words("ada@example");
-    log = git_read_log(repo_dir, 0, 2, words, NULL, &more);
+    log = git_read_log(repo_dir, 0, 2, words, NULL, NULL, &more);
     g_assert_cmpuint(log->len, ==, 2); /* the author's email, limited to max */
     g_assert_true(more);
     gchar** by_hash = git_log_words(((GitCommitInfo*)log->pdata[1])->short_hash);
     g_ptr_array_unref(log);
     g_strfreev(words);
-    log = git_read_log(repo_dir, 0, 10, by_hash, NULL, NULL);
+    log = git_read_log(repo_dir, 0, 10, by_hash, NULL, NULL, NULL);
     got = log_subjects(log);
     g_assert_cmpstr(got, ==, "Speed up the lexer"); /* the hash */
     g_free(got);
@@ -457,20 +458,20 @@ static void test_read_log_filtered(Fixture* fx, gconstpointer data) {
     g_strfreev(by_hash);
 
     /* Page by page: skip counts the commits kept, not those walked */
-    log = git_read_log(repo_dir, 1, 2, NULL, NULL, &more);
+    log = git_read_log(repo_dir, 1, 2, NULL, NULL, NULL, &more);
     got = log_subjects(log);
     g_assert_cmpstr(got, ==, "Speed up the lexer|Fix a crash");
     g_assert_true(more);
     g_free(got);
     g_ptr_array_unref(log);
-    log = git_read_log(repo_dir, 3, 2, NULL, NULL, &more);
+    log = git_read_log(repo_dir, 3, 2, NULL, NULL, NULL, &more);
     got = log_subjects(log);
     g_assert_cmpstr(got, ==, "Add the parser");
     g_assert_false(more);
     g_free(got);
     g_ptr_array_unref(log);
     words = git_log_words("fix");
-    log = git_read_log(repo_dir, 1, 10, words, NULL, NULL);
+    log = git_read_log(repo_dir, 1, 10, words, NULL, NULL, NULL);
     got = log_subjects(log);
     g_assert_cmpstr(got, ==, "Fix a crash");
     g_free(got);
@@ -478,11 +479,58 @@ static void test_read_log_filtered(Fixture* fx, gconstpointer data) {
     g_strfreev(words);
 
     words = git_log_words("nothing-like-this");
-    log = git_read_log(repo_dir, 0, 10, words, NULL, &more);
+    log = git_read_log(repo_dir, 0, 10, words, NULL, NULL, &more);
     g_assert_cmpuint(log->len, ==, 0);
     g_assert_false(more);
     g_ptr_array_unref(log);
     g_strfreev(words);
+
+    git_repository_free(repo);
+    g_free(repo_dir);
+}
+
+/* With a path, only the commits that changed it (a file or a folder) */
+static void test_read_log_path(Fixture* fx, gconstpointer data) {
+    (void)data;
+    gchar* repo_dir = make_path(fx, "repo", NULL);
+    git_repository* repo = repo_init(repo_dir);
+    g_free(make_path(fx, "repo/a.txt", "1\n"));
+    g_free(make_path(fx, "repo/src/b.c", "1\n"));
+    repo_add(repo, "a.txt");
+    repo_add(repo, "src/b.c");
+    repo_commit(repo, "both", 300);
+    g_free(make_path(fx, "repo/a.txt", "2\n"));
+    repo_add(repo, "a.txt");
+    repo_commit(repo, "a only", 200);
+    g_free(make_path(fx, "repo/src/b.c", "2\n"));
+    repo_add(repo, "src/b.c");
+    repo_commit(repo, "b only", 100);
+
+    GPtrArray* log = git_read_log(repo_dir, 0, 10, NULL, "a.txt", NULL, NULL);
+    gchar* subjects = log_subjects(log);
+    g_assert_cmpstr(subjects, ==, "a only|both");
+    g_free(subjects);
+    g_ptr_array_unref(log);
+
+    log = git_read_log(repo_dir, 0, 10, NULL, "src", NULL, NULL);
+    subjects = log_subjects(log);
+    g_assert_cmpstr(subjects, ==, "b only|both");
+    g_free(subjects);
+    g_ptr_array_unref(log);
+
+    gchar** words = git_log_words("only");
+    gboolean more = TRUE;
+    log = git_read_log(repo_dir, 0, 10, words, "src/b.c", NULL, &more);
+    subjects = log_subjects(log);
+    g_assert_cmpstr(subjects, ==, "b only");
+    g_assert_false(more);
+    g_free(subjects);
+    g_ptr_array_unref(log);
+    g_strfreev(words);
+
+    log = git_read_log(repo_dir, 0, 10, NULL, "missing.txt", NULL, NULL);
+    g_assert_cmpuint(log->len, ==, 0);
+    g_ptr_array_unref(log);
 
     git_repository_free(repo);
     g_free(repo_dir);
@@ -499,7 +547,7 @@ static void test_show_commit(Fixture* fx, gconstpointer data) {
     repo_add(repo, "a.txt");
     repo_commit(repo, "Change a\n\nWhy it changed.", 0);
 
-    GPtrArray* log = git_read_log(repo_dir, 0, 1, NULL, NULL, NULL);
+    GPtrArray* log = git_read_log(repo_dir, 0, 1, NULL, NULL, NULL, NULL);
     const gchar* hash = ((GitCommitInfo*)log->pdata[0])->hash;
     gchar* text = git_show_commit(repo_dir, hash);
     g_assert_nonnull(text);
@@ -709,6 +757,7 @@ int main(int argc, char** argv) {
     g_test_add("/git_utils/read_log", Fixture, NULL, fixture_setup, test_read_log, fixture_teardown);
     g_test_add_func("/git_utils/log_words", test_log_words);
     g_test_add("/git_utils/read_log_filtered", Fixture, NULL, fixture_setup, test_read_log_filtered, fixture_teardown);
+    g_test_add("/git_utils/read_log_path", Fixture, NULL, fixture_setup, test_read_log_path, fixture_teardown);
     g_test_add("/git_utils/show_commit", Fixture, NULL, fixture_setup, test_show_commit, fixture_teardown);
     g_test_add("/git_utils/list_files", Fixture, NULL, fixture_setup, test_list_files, fixture_teardown);
     g_test_add_func("/git_utils/relative_date", test_relative_date);

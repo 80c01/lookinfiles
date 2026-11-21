@@ -73,21 +73,6 @@ typedef struct {
 
 void git_commit_info_free(gpointer info);
 
-/* The words of a history filter as typed (separated by spaces), casefolded;
- * NULL when text holds none (every commit). g_strfreev() */
-gchar** git_log_words(const gchar* text);
-
-/* max commits reachable from HEAD of the repository at root, newest first,
- * after the skip newest ones (to read the history page by page), keeping
- * only those whose message, author (name or email) or full hash
- * hold every word of words (git_log_words(); NULL keeps all), however far back
- * in the history (skip counts kept commits only): array of GitCommitInfo*,
- * empty without commits, NULL when
- * root is not a repository or cancellable was cancelled. *more (may be NULL)
- * is set when more commits would have been kept. Worker thread. */
-GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words, GCancellable* cancellable,
-                        gboolean* more);
-
 /* Header, message, diffstat and patch of commit hash (against its first
  * parent), laid out like `git show --stat --patch`. NULL when the commit is
  * not found. Valid UTF-8. Worker thread. Caller frees. */

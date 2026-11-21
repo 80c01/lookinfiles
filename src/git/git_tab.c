@@ -1,4 +1,5 @@
 #include "git/git_tab.h"
+#include "core/app_events.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
@@ -143,6 +144,37 @@ void git_tab_init(AppData* app) {
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, tab_label);
 
     git_tab_update(app, app->base_dir);
+}
+
+/* The Git tab in front of its notebook, on view, with the focus in it */
+static void show_view(GitTab* g, GitView view) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[view]), TRUE);
+    GtkWidget* nb = gtk_widget_get_ancestor(g->page, GTK_TYPE_NOTEBOOK);
+    if (nb != NULL) {
+        gint num = gtk_notebook_page_num(GTK_NOTEBOOK(nb), g->page);
+        if (num >= 0) gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), num);
+    }
+    focus_route_focus_page(g->app, g->page);
+}
+
+void git_tab_show_history(AppData* app, const gchar* path) {
+    GitTab* g = app != NULL ? app->git : NULL;
+    if (g == NULL || path == NULL) return;
+    gchar* full = g_canonicalize_filename(path, NULL);
+    gchar* start = g_file_test(full, G_FILE_TEST_IS_DIR) ? g_strdup(full) : g_path_get_dirname(full);
+    gchar* root = find_git_root(start);
+    gchar* rel = git_relative_path(full);
+    if (root == NULL || rel == NULL || !gtk_widget_get_visible(g->page) || g_strcmp0(root, g->current_root) != 0) {
+        /* The Git tab shows the repository of the current folder only */
+        app_notice(app, _("Not in the repository of the current folder"), FALSE);
+    } else {
+        git_history_set_path(g->history, g_strcmp0(rel, ".") == 0 ? NULL : rel);
+        show_view(g, GIT_VIEW_HISTORY);
+    }
+    g_free(rel);
+    g_free(root);
+    g_free(start);
+    g_free(full);
 }
 
 GtkWidget* git_tab_page(AppData* app) {

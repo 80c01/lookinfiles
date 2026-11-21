@@ -120,7 +120,8 @@ usage, search in it ([deep search](search.md#deep-search-shiftf)), rename,
 move to the trash, copy the name, the path relative to the git repository
 (inside one) or the absolute path, compare two text files (**Select for
 Compare** / **Compare with…**) or compare against Git `HEAD` (**Compare with
-HEAD**), bookmark, undo. On an empty area: new
+HEAD**), list the commits that changed it (**Git History**, in a repository),
+bookmark, undo. On an empty area: new
 file, new folder, terminal, disk usage, search here, and the same three copies for the current
 folder.
 

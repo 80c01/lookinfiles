@@ -73,6 +73,10 @@ diff below, under a line giving its hash, subject, author and date. The
 newest 100 commits are read first; scrolling to the end of the list (or
 moving the selection to its last commit) reads the next 100.
 
+**Git History** in the right-click menu of a file or folder of the explorer
+shows only the commits that changed it (renames are not followed): its path
+stands beside the filter field, and its cross brings every commit back.
+
 The field above the list filters the history: only the commits whose
 message, author (name or email) or hash hold every word typed (any case)
 stay, searched through the whole history, not just the commits shown. Beside

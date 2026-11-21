@@ -2,9 +2,11 @@
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "widgets/panels.h"
+#include "theme/icons.h"
 #include "theme/text_style.h"
 #include "git/git_diff_text.h"
 #include "git/git_refs.h"
+#include "git/git_log.h"
 #include "git/git_utils.h"
 #include "widgets/focus_route.h"
 
@@ -27,6 +29,9 @@ struct GitHistory {
     GtkWidget* filter;          /* search entry above the list */
     GtkWidget* count_label;     /* how many commits are listed, beside the filter */
     gchar** words;              /* filter words (git_log_words()), NULL: every commit */
+    gchar* path;                /* only the commits that changed it (from the root), or NULL */
+    GtkWidget* path_chip;       /* "File: path ×" beside the filter, shown with a path */
+    GtkWidget* path_label;      /* its text */
     GtkWidget* header_refs_box; /* branch/tag pills of the selected commit */
     GtkWidget* header_label;    /* summary of the selected commit */
     GtkTextBuffer* detail_buf;  /* diff of the selected commit */
@@ -91,6 +96,7 @@ static GitCommitInfo* git_commit_at(GitHistory* h, guint i) {
 typedef struct {
     gchar* git_root;
     gchar** words;       /* filter, NULL: every commit */
+    gchar* path;         /* path filter, or NULL */
     guint skip;          /* commits before the first one read (a next page) */
     guint max;           /* commits read */
     gboolean append;     /* a next page: added to the list, not replacing it */
@@ -105,6 +111,7 @@ static void git_log_task_data_free(gpointer data) {
     if (td == NULL) return;
     g_free(td->git_root);
     g_strfreev(td->words);
+    g_free(td->path);
     if (td->commits != NULL) {
         g_ptr_array_unref(td->commits);
     }
@@ -121,7 +128,7 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
 
     if (g_task_return_error_if_cancelled(task)) return;
 
-    GPtrArray* commits = git_read_log(td->git_root, td->skip, td->max, td->words, cancellable, &td->more);
+    GPtrArray* commits = git_read_log(td->git_root, td->skip, td->max, td->words, td->path, cancellable, &td->more);
     GHashTable* refs_map = NULL;
     if (!g_cancellable_is_cancelled(cancellable) && commits != NULL && commits->len > 0) {
         refs_map = git_read_refs(td->git_root);
@@ -344,7 +351,7 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
  * goes on after them) */
 static void show_count(GitHistory* h, guint n, gboolean more) {
     gchar* text;
-    if (h->words != NULL) {
+    if (h->words != NULL || h->path != NULL) {
         if (n == 0) {
             text = g_strdup(_("No commit matches"));
         } else if (more) {
@@ -449,6 +456,7 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
         populate_refs_box(h->header_refs_box, NULL, 0);
         gtk_label_set_text(GTK_LABEL(h->header_label),
                            td->failed         ? _("The history of this repository cannot be read.")
+                           : h->path != NULL  ? _("No commit changed this file.")
                            : h->words != NULL ? _("No commit matches the filter.")
                                               : _("No commits in this repository."));
         gtk_text_buffer_set_text(h->detail_buf, "", -1);
@@ -464,6 +472,7 @@ static void start_log_read(GitHistory* h) {
     GitLogTaskData* td = g_new0(GitLogTaskData, 1);
     td->git_root = g_strdup(h->current_root);
     td->words = g_strdupv(h->words);
+    td->path = g_strdup(h->path);
     td->max = MAX(h->wanted, GIT_LOG_PAGE);
     h->reading = TRUE;
     h->reading_more = FALSE; /* its read was cancelled with the cancellable */
@@ -500,6 +509,8 @@ void git_history_set_root(GitHistory* h, const gchar* root, gboolean reload) {
         g_free(h->current_root);
         h->current_root = g_strdup(root);
         h->wanted = GIT_LOG_PAGE; /* another repository: its first page */
+        g_clear_pointer(&h->path, g_free); /* a path of the other one */
+        gtk_widget_set_visible(h->path_chip, FALSE);
     }
     read_when_shown(h);
 }
@@ -514,6 +525,7 @@ static void read_more(GitHistory* h) {
     GitLogTaskData* td = g_new0(GitLogTaskData, 1);
     td->git_root = g_strdup(h->current_root);
     td->words = g_strdupv(h->words);
+    td->path = g_strdup(h->path);
     td->skip = g_list_model_get_n_items(G_LIST_MODEL(h->store));
     td->max = GIT_LOG_PAGE;
     td->append = TRUE;
@@ -794,6 +806,28 @@ static void on_view_map(GtkWidget* widget, gpointer data) {
     }
 }
 
+void git_history_set_path(GitHistory* h, const gchar* path) {
+    if (h == NULL) return;
+    if (path != NULL && path[0] == '\0') path = NULL;
+    gtk_widget_set_visible(h->path_chip, path != NULL);
+    if (path != NULL) {
+        gtk_label_set_text(GTK_LABEL(h->path_label), path);
+        gtk_widget_set_tooltip_text(h->path_label, path);
+    }
+    if (g_strcmp0(h->path, path) == 0) return;
+    g_free(h->path);
+    h->path = g_strdup(path);
+    if (h->current_root == NULL) return;
+    h->wanted = GIT_LOG_PAGE;
+    read_when_shown(h);
+}
+
+/* The cross of the path chip: every commit again */
+static void on_path_cleared(GtkButton* button, gpointer data) {
+    (void)button;
+    git_history_set_path(data, NULL);
+}
+
 void git_history_cancel(GitHistory* h) {
     if (h != NULL) cancel_reads(h);
 }
@@ -807,6 +841,7 @@ static void git_history_free(gpointer data) {
     g_free(h->current_root);
     g_free(h->selected_hash);
     g_strfreev(h->words);
+    g_free(h->path);
     g_free(h);
 }
 
@@ -855,6 +890,26 @@ GitHistory* git_history_new(AppData* app) {
     gtk_widget_set_margin_start(h->count_label, 12);
     gtk_widget_add_css_class(h->count_label, "cell-muted");
     gtk_box_append(GTK_BOX(list_head), h->count_label);
+    /* The path filter: only the commits that changed a file or a folder */
+    h->path_chip = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+    gtk_widget_add_css_class(h->path_chip, "git-path-chip");
+    gtk_widget_set_valign(h->path_chip, GTK_ALIGN_CENTER);
+    gtk_widget_set_visible(h->path_chip, FALSE);
+    /* TRANSLATORS: before the path whose history the Git tab shows */
+    GtkWidget* chip_title = gtk_label_new(_("History of"));
+    gtk_widget_add_css_class(chip_title, "cell-muted");
+    gtk_box_append(GTK_BOX(h->path_chip), chip_title);
+    h->path_label = gtk_label_new(NULL);
+    gtk_label_set_ellipsize(GTK_LABEL(h->path_label), PANGO_ELLIPSIZE_START);
+    gtk_label_set_max_width_chars(GTK_LABEL(h->path_label), 40);
+    gtk_box_append(GTK_BOX(h->path_chip), h->path_label);
+    GtkWidget* chip_clear = icon_button_new("edit-clear", _("Show Every Commit"));
+    gtk_button_set_has_frame(GTK_BUTTON(chip_clear), FALSE);
+    gtk_widget_set_focus_on_click(chip_clear, FALSE);
+    g_signal_connect(chip_clear, "clicked", G_CALLBACK(on_path_cleared), h);
+    gtk_box_append(GTK_BOX(h->path_chip), chip_clear);
+    gtk_box_append(GTK_BOX(list_head), h->path_chip);
+
     h->filter = gtk_search_entry_new();
     gtk_search_entry_set_search_delay(GTK_SEARCH_ENTRY(h->filter), 250);
     gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(h->filter), _("Filter the commits"));
