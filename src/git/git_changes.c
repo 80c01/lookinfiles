@@ -81,7 +81,13 @@ static void ensure_css(void) {
                   "#git-changes label.git-group { color: @fg_strong; font-weight: 600; }"
                   "#git-changes label.git-added { color: @git_added; font-feature-settings: \"tnum\"; }"
                   "#git-changes label.git-removed { color: @git_deleted; font-feature-settings: \"tnum\"; }"
-                  "#git-changes > row { padding: 1px 10px; }");
+                  "#git-changes > row { padding: 1px 10px; }"
+                  /* The look of the History list (columnview.data-table, theme.c) */
+                  "#git-changes { background-color: @bg_view; color: @fg; }"
+                  "#git-changes > row:hover { background-color: @bg_hover; }"
+                  "#git-changes > row:selected { background-color: @bg_selected; color: @fg_bright; }"
+                  "#git-changes > row:selected:backdrop { background-color: @bg_selected_inactive; }"
+                  "#git-changes > row:selected label { color: @fg_bright; }");
 }
 
 /* --- Reading the changes */
