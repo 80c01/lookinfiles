@@ -23,19 +23,32 @@ A file already open is not opened twice: its tab is shown.
 The **+** button at the right end of a tab bar (the preview panel's and
 each editor group's) opens a new tab in that group:
 
-- **Web Browser**: an empty browser tab, the address bar focused (in the
-  preview panel; needs WebKitGTK 6.0, or WebView2 on Windows, like
-  `Ctrl+Shift+B`).
-- **Canvas**: a new Canvas note "Untitled-N" in the notebook selected in the
-  Notes view, else the first one (see [notes](notes.md)).
+- **Application**: the **Applications** tab, which lists what a tab can
+  hold. Type to filter the list, move with `Up` / `Down` (`Page Up` /
+  `Page Down` by five), and press `Enter` or click an application: it opens
+  in place of the Applications tab. `Ctrl+W` or a middle click on the tab
+  closes it; it is not kept with the session.
+- **Editor**: an empty editor tab "Untitled-N" in the global mode (see
+  [Choosing the mode of a tab](#choosing-the-mode-of-a-tab)).
+- **Terminal**: a shell in a new tab (needs VTE).
+
+The applications:
+
+- **Web Browser**: an empty browser tab, the address bar focused (needs
+  WebKitGTK 6.0, or WebView2 on Windows, like `Ctrl+Shift+B`).
 - **Jupyter Notebook**: a notebook with one empty code cell, kept in memory
   until you save it: `Ctrl+S` asks for a file name (from the explorer's
   folder, `.ipynb` added). Closing it or quitting with changes asks to save
   them first; its kernel starts in the explorer's folder.
-- **Vim**, **Emacs**, **Notepad**: an empty editor tab "Untitled-N" in that
-  mode. Save it with the mode's Save As (Notepad `Ctrl+S`, Emacs `C-x C-s` or
-  `C-x C-w`, Vim `:w name`); closing it with changes asks first.
-- **Terminal**: a shell in a new tab (needs VTE).
+- **Canvas**: a new Canvas note "Untitled-N" in the notebook selected in the
+  Notes view, else the first one (see [notes](notes.md)).
+- **Org-mode**, **Vim**, **Emacs**, **Notepad**: an empty editor tab
+  "Untitled-N" in that mode. Save it with the mode's Save As (Notepad
+  `Ctrl+S`, Emacs and Org-mode `C-x C-s` or `C-x C-w`, Vim `:w name`);
+  closing it with changes asks first. An empty editor tab from **Editor**
+  is saved the same way.
+- **System Monitor**: the System Monitor tab of the preview panel (Linux
+  only, like a click on the processor chart of the top bar).
 
 A bullet (●) in the tab title marks unsaved changes. Closing a tab or
 quitting with unsaved changes asks first.

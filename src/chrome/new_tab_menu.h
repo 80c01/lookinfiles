@@ -4,10 +4,10 @@
 #include "core/app_types.h"
 
 /* The + button at the right end of the tab bar of the preview notebook and
- * of every editor notebook: its menu opens a new tab in that notebook, a
- * web page (always in the preview notebook: browser tabs live there), a
- * Canvas note, a Jupyter notebook in memory, an empty Vim, Emacs or Notepad
- * editor tab, or a terminal. */
+ * of every editor notebook: its menu opens a new tab in that notebook, the
+ * Applications tab (launcher_tab.h: web browser, Jupyter notebook, Canvas,
+ * Org-mode, Vim, Emacs, Notepad...), an empty editor tab in the mode of the
+ * Preferences, or a terminal. */
 
 /* Put the + button on nb's tab bar */
 void new_tab_menu_attach(AppData* app, GtkNotebook* nb);

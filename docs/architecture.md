@@ -1437,13 +1437,26 @@ Layers, from bottom to top
 - `new_tab_menu` — the **+** button (`add_button_new()`, the + of the
   workspace switcher) at the end of the tab bar of the preview
   notebook and of every editor notebook (`new_tab_menu_attach()` in `main.c`,
-  then `editor_set_notebook_hook()`): its popover opens a browser tab
-  (`browser_open()`, always in the preview notebook), a Canvas note
-  (`notes_new_canvas()`), a Jupyter notebook in memory
-  (`ipynb_tab_new_untitled()`), an empty Vim / Emacs / Notepad tab
-  (`editor_open_untitled()`) or a terminal (`terminal_add_tab()`) in the
-  notebook of the button; the browser and terminal entries are greyed out
-  without WebKitGTK / VTE.
+  then `editor_set_notebook_hook()`): its popover opens, in the notebook of
+  the button, the Applications tab (`launcher_tab_open()`), an empty editor
+  tab in the global mode (`editor_open_untitled()` with
+  `app->default_editor_mode`) or a terminal (`terminal_add_tab()`, greyed
+  out without VTE).
+- `launcher_tab` — the **Applications** tab (not an editor tab, not saved
+  with the session; closed by `launcher_tab_workspace_hidden()` when it is
+  in the preview notebook at a workspace switch): a `GtkListView` over a
+  `GtkStringList` of the ids of its `APPS` table (label, description, glyph
+  or file-type icon, availability: `browser_available()`,
+  `sysstat_host_available()`), filtered by a search field that keeps the
+  focus (`Up` / `Down` / `Page Up` / `Page Down` move the selection). The
+  chosen application opens in the same notebook (`browser_new_tab_in()`,
+  `ipynb_tab_new_untitled()`, `notes_new_canvas()`,
+  `editor_open_untitled()` in Org-mode / Vim / Emacs / Notepad;
+  `sysmon_tab_show()` in its own place), moved to the launcher's position,
+  then the launcher goes (`editor_remove_page()`). `Ctrl+W`
+  (`launcher_tab_close_shown()`, first in `close_shown_tab()`) and a middle
+  click close it. A new application is one more row of `APPS` and a case
+  of `open_app()`.
 - `status_bar` — panel status bars (no window-wide bar: editor tabs have
   their own, `editor_modes`): explorer bar (`create_explorer_bar()`: Git branch of the files
   view with modification `*` and ahead/behind `↑` / `↓` indicators, `app_notice()` message with Undo, sort order of the files view (click cycles it, like `o`); the message moves to the top bar,

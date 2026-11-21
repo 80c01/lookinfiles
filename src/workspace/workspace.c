@@ -29,6 +29,7 @@
 #include "latex/latex_errors.h"
 #include "search/deep_search_tab.h"
 #include "chrome/help_guide.h"
+#include "chrome/launcher_tab.h"
 #include "sysmon/sysmon_tab.h"
 #include "diskuse/disk_usage_tab.h"
 #include "preview/browser.h"
@@ -469,6 +470,7 @@ void workspace_switch(AppData* app, gint idx) {
             app->workspaces[app->current_ws].editor_panel = panel;
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            launcher_tab_workspace_hidden(app);
             sysmon_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             disk_usage_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             deep_search_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);

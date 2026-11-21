@@ -1,10 +1,8 @@
 /* The + button of the tab bars and its menu of new tabs (see new_tab_menu.h) */
 #include "chrome/new_tab_menu.h"
+#include "chrome/launcher_tab.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
-#include "jupyter/ipynb_tab.h"
-#include "notes/notes.h"
-#include "preview/browser.h"
 #include "terminal/terminal.h"
 #include "widgets/add_button.h"
 
@@ -12,36 +10,19 @@
 #define KIND_KEY "lookin-new-tab-kind"
 
 typedef enum {
-    NEW_TAB_WEB,
-    NEW_TAB_CANVAS,
-    NEW_TAB_JUPYTER,
-    NEW_TAB_VIM,
-    NEW_TAB_EMACS,
-    NEW_TAB_NOTEPAD,
+    NEW_TAB_APPLICATION,
+    NEW_TAB_EDITOR,
     NEW_TAB_TERMINAL
 } NewTabKind;
 
 static void open_new_tab(AppData* app, GtkNotebook* nb, NewTabKind kind) {
     switch (kind) {
-    case NEW_TAB_WEB:
-        browser_new_tab_in(app, nb);
+    case NEW_TAB_APPLICATION:
+        launcher_tab_open(app, nb);
         break;
-    case NEW_TAB_CANVAS: {
-        GtkWidget* page = notes_new_canvas(app);
-        if (page != NULL) editor_move_page_to(app, page, nb, -1);
-        break;
-    }
-    case NEW_TAB_JUPYTER:
-        ipynb_tab_new_untitled(app, nb);
-        break;
-    case NEW_TAB_VIM:
-        editor_open_untitled(app, nb, EDITOR_MODE_VIM);
-        break;
-    case NEW_TAB_EMACS:
-        editor_open_untitled(app, nb, EDITOR_MODE_EMACS);
-        break;
-    case NEW_TAB_NOTEPAD:
-        editor_open_untitled(app, nb, EDITOR_MODE_NOTEPAD);
+    case NEW_TAB_EDITOR:
+        /* In the mode of the Preferences; the other modes are in Application */
+        editor_open_untitled(app, nb, app->default_editor_mode);
         break;
     case NEW_TAB_TERMINAL:
 #ifdef HAVE_VTE
@@ -96,12 +77,8 @@ static void on_plus_clicked(GtkButton* button, gpointer data) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_set_margin_start(box, 4);
     gtk_widget_set_margin_end(box, 4);
-    menu_item(box, app, nb, _("Web Browser"), NEW_TAB_WEB, browser_available(), _("Needs WebKitGTK 6.0 (WebView2 on Windows)"));
-    menu_item(box, app, nb, _("Canvas"), NEW_TAB_CANVAS, TRUE, NULL);
-    menu_item(box, app, nb, _("Jupyter Notebook"), NEW_TAB_JUPYTER, TRUE, NULL);
-    menu_item(box, app, nb, _("Vim"), NEW_TAB_VIM, TRUE, NULL);
-    menu_item(box, app, nb, _("Emacs"), NEW_TAB_EMACS, TRUE, NULL);
-    menu_item(box, app, nb, _("Notepad"), NEW_TAB_NOTEPAD, TRUE, NULL);
+    menu_item(box, app, nb, _("Application"), NEW_TAB_APPLICATION, TRUE, NULL);
+    menu_item(box, app, nb, _("Editor"), NEW_TAB_EDITOR, TRUE, NULL);
     menu_item(box, app, nb, _("Terminal"), NEW_TAB_TERMINAL, has_terminal, _("Needs VTE for GTK 4"));
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect_swapped(popover, "closed", G_CALLBACK(gtk_widget_unparent), popover);

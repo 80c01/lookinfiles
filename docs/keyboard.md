@@ -367,6 +367,20 @@ other `Ctrl` and `Alt` shortcuts go to the application).
 | `Ctrl+W` | Close the tab (also its cross, or a middle click on the tab) |
 | `Ctrl+Alt+Arrow` / `Ctrl+Alt+HJKL`, right click on the tab | Move the browser tab to the pane beside it, a new split, the editor panel or the preview panel, as an editor tab (the menu also closes it) |
 
+### Applications tab
+
+The **Application** entry of the **+** button of a tab bar opens it: the
+applications a tab can hold (web browser, Jupyter notebook, Canvas,
+Org-mode, Vim, Emacs, Notepad, System Monitor). The search field keeps the
+focus and filters the list as you type (names and descriptions).
+
+| Key | Action |
+|---|---|
+| `Up` / `Down` | Previous / next application |
+| `Page Up` / `Page Down` | Five applications up / down |
+| `Enter` / click | Open the application in place of the Applications tab |
+| `Ctrl+W` (Vim: `Ctrl+W c`) | Close the tab (also a middle click on the tab) |
+
 ## Editor tabs
 
 Opening a file (`Enter` or double click in the explorer) adds a tab next to the
