@@ -14,6 +14,8 @@
 GtkWidget* sysmon_procs_new(AppData* app);
 /* The column view inside, to focus */
 GtkWidget* sysmon_procs_view(GtkWidget* procs);
+/* Memory page size of the machine shown (its rss_pages are in pages) */
+void sysmon_procs_set_page_size(GtkWidget* procs, guint64 page_size);
 /* Show these processes (SysProc*, read only) */
 void sysmon_procs_update(GtkWidget* procs, GPtrArray* list);
 /* Show only the processes whose name, user or PID hold every word of text

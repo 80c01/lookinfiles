@@ -97,6 +97,11 @@ Layers, from bottom to top
   Windows (CPU times in 100 ns, physical drives by `IOCTL_DISK_PERFORMANCE`,
   drives, Toolhelp processes; no load average or process state, which
   `sysstat_host_has_load()` / `_has_proc_state()` tell).
+- `sysstat_remote` — the statistics of a remote Linux machine: one shell
+  command (`sysstat_remote_command()`: the `/proc` files, `df -kP`, the uids
+  of the processes and `/etc/passwd`, in `@@<name>` sections) whose output
+  `sysstat_remote_parse()` gives to the `sysstat` parsers; the sample's time
+  is the machine's uptime (unit-tested, the command run by the local sh).
 - `countdown` — the countdown of the top bar timers: wall-clock deadline
   (right across a suspend), pause, immediate restart on expiry (cycles
   counted), a stop at 0 or an overtime below 0, the text shown and when it
@@ -1061,7 +1066,10 @@ Layers, from bottom to top
   filesystems and the processes (`sysmon_procs`: a sorted `GtkColumnView`
   filtered by the field above it through `proc_query`,
   read only), from `sysstat_host` samples read in a worker each second (processes
-  and filesystems only while the page is mapped). `sysmon_indicator` — the
+  and filesystems only while the page is mapped), or, while the workspace
+  is connected to a remote machine (`remote_path_active()`), from
+  `sysstat_remote` readings run by `ssh_exec_async()` (a source change drops
+  the readings still on their way). `sysmon_indicator` — the
   CPU chart of the top bar (`sysstat_host_cpu()` every 2 s; `LOOKIN_SYSMON_FROZEN`
   stops it for the UI tests), whose click opens or closes the tab.
 - `disk_usage_tab` — the Disk Usage tab in the preview notebook (one per

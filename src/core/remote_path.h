@@ -37,4 +37,9 @@ gboolean remote_path_parse(AppData* app, const gchar* text, gchar** out_local);
 gboolean remote_path_locate(AppData* app, const gchar* path, SshTarget* target, gchar** remote,
                             gchar** machine);
 
+/* The connected machine of the current workspace: its ssh target (strings
+ * owned by the machine) and name (caller frees; may be NULL). FALSE when the
+ * workspace is local. */
+gboolean remote_path_active(AppData* app, SshTarget* target, gchar** machine);
+
 #endif /* REMOTE_PATH_H */

@@ -242,6 +242,12 @@ les systèmes de fichiers sont les lecteurs fixes et amovibles, et les
 processus des autres utilisateurs (services) n’affichent ni processeur, ni
 mémoire, ni utilisateur, sauf si l’application tourne en administrateur.
 
+Quand l’espace de travail est connecté à une [machine distante](remote.md),
+l’onglet montre cette machine (son nom figure en tête de l’onglet) : elle
+est lue chaque seconde par SSH, par la liaison ouverte en se connectant, et
+doit être un Linux. Revenir aux fichiers locaux montre de nouveau cette
+machine ; le graphique de la barre du haut montre toujours cette machine.
+
 L’onglet ne fait qu’afficher : il n’arrête ni ne modifie jamais un
 processus. Les processus et les systèmes de fichiers ne sont lus que
 pendant que l’onglet est à l’écran. `Ctrl+W` ou un clic du milieu sur

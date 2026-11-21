@@ -13001,6 +13001,20 @@ msgstr "Exécuter les cellules demande Python 3 sur %s"
 msgid "Running cells needs Jupyter on %s: pip install jupyter_client ipykernel"
 msgstr "Exécuter les cellules demande Jupyter sur %s : pip install jupyter_client ipykernel"
 
+#: src/sysmon/sysmon_tab.c
+msgid "no Linux /proc there"
+msgstr "pas de /proc Linux là-bas"
+
+#: src/sysmon/sysmon_tab.c
+#, c-format
+msgid "Cannot read the statistics of %s: %s"
+msgstr "Impossible de lire les statistiques de %s : %s"
+
+#: src/sysmon/sysmon_tab.c
+#, c-format
+msgid "Reading the statistics of %s…"
+msgstr "Lecture des statistiques de %s…"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

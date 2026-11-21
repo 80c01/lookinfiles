@@ -89,6 +89,7 @@ module_path:
 memory_trim:profile
 sysstat:
 sysstat_host:sysstat
+sysstat_remote:sysstat
 proc_query:
 countdown:
 run_time:

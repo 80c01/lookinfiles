@@ -3,7 +3,10 @@
 #include "sysmon/sysmon_procs.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
+#include "core/ssh_session.h"
 #include "core/sysstat_host.h"
+#include "core/sysstat_remote.h"
 #include "git/git_tab.h"
 #include "theme/icons.h"
 #include "theme/palette.h"
@@ -43,13 +46,18 @@ typedef struct {
     GtkWidget* procs;    /* sysmon_procs */
     GtkWidget* procs_title;
     GtkWidget* procs_filter; /* search entry: filters the processes */
-    gchar* os;           /* system and version */
+    gchar* os;           /* system and version of this machine */
+    gchar* source;       /* the remote machine read (the workspace's), NULL: this one */
+    gchar* remote_host;  /* its host name and system, once read */
+    gchar* remote_os;
+    guint generation;    /* bumped when the source changes: older readings are dropped */
     guint net_rx, net_tx, disk_read, disk_write; /* series of the charts */
     gdouble load_peak;   /* highest load shown */
 
     SysSample* prev;     /* last sample read */
     GCancellable* cancel;
     gboolean busy;       /* a reading is running */
+    gboolean in_thread;  /* that reading is local: its worker borrows prev */
     guint timer;
     guint ticks;
     gint64 mounts_at;    /* time of the last filesystem reading, 0: never */
@@ -380,7 +388,9 @@ static void show_sample(SysmonTab* st, SysSample* s) {
 
     gchar* up = format_uptime(s->uptime);
     /* host · system and version · uptime · CPUs */
-    set_label(st->info, g_strdup_printf(_("%s · %s · up %s · %u CPUs"), g_get_host_name(), st->os, up, ncpu));
+    const gchar* host = st->source != NULL ? (st->remote_host != NULL ? st->remote_host : st->source) : g_get_host_name();
+    const gchar* os = st->source != NULL ? (st->remote_os != NULL ? st->remote_os : "") : st->os;
+    set_label(st->info, g_strdup_printf(_("%s · %s · up %s · %u CPUs"), host, os, up, ncpu));
     g_free(up);
 
     if (s->mounts != NULL) show_mounts(st, s->mounts);
@@ -393,7 +403,21 @@ static void show_sample(SysmonTab* st, SysSample* s) {
 typedef struct {
     SysSample* prev; /* borrowed: the tab keeps it until the reading is done */
     SysSampleFlags flags;
+    guint generation;
 } ReadJob;
+
+/* A sample read (rates filled): show it, keep it for the next rates */
+static void take_sample(SysmonTab* st, SysSample* s) {
+    if (st->prev != NULL) {
+        show_sample(st, s);
+    } else {
+        set_label(st->procs_title, g_strdup(_("Processes")));
+        if (s->mounts != NULL) show_mounts(st, s->mounts);
+    }
+    if (s->mounts != NULL) st->mounts_at = g_get_monotonic_time();
+    sysstat_sample_free(st->prev);
+    st->prev = s;
+}
 
 static void read_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancel) {
     (void)source;
@@ -413,26 +437,101 @@ static void on_read(GObject* source, GAsyncResult* res, gpointer data) {
         return;
     }
     st->busy = FALSE;
-    if (g_cancellable_is_cancelled(st->cancel)) {
-        sysstat_sample_free(s);
+    st->in_thread = FALSE;
+    ReadJob* job = g_task_get_task_data(G_TASK(res));
+    if (g_cancellable_is_cancelled(st->cancel) || job->generation != st->generation) {
+        sysstat_sample_free(s); /* the tab now shows another machine */
         return;
     }
-    if (st->prev != NULL) {
-        show_sample(st, s);
-    } else {
-        set_label(st->procs_title, g_strdup(_("Processes")));
-        if (s->mounts != NULL) show_mounts(st, s->mounts);
+    take_sample(st, s);
+}
+
+typedef struct {
+    SysmonTab* st;
+    GCancellable* cancel; /* the tab's: once cancelled, st is gone */
+    SysSampleFlags flags;
+    guint generation;
+} RemoteRead;
+
+static void on_remote_read(gint status, const gchar* out, const gchar* err, const GError* error, gpointer data) {
+    RemoteRead* r = data;
+    if (g_cancellable_is_cancelled(r->cancel)) {
+        g_object_unref(r->cancel);
+        g_free(r);
+        return;
     }
-    if (s->mounts != NULL) st->mounts_at = s->time_us;
-    sysstat_sample_free(st->prev);
-    st->prev = s;
+    SysmonTab* st = r->st;
+    st->busy = FALSE;
+    if (r->generation == st->generation) {
+        gchar* host = NULL;
+        gchar* os = NULL;
+        guint64 page_size = 0;
+        SysSample* s = status == 0 ? sysstat_remote_parse(out, r->flags, &host, &os, &page_size) : NULL;
+        if (s != NULL) {
+            g_free(st->remote_host);
+            st->remote_host = host;
+            g_free(st->remote_os);
+            st->remote_os = os;
+            sysmon_procs_set_page_size(st->procs, page_size);
+            sysstat_sample_rates(s, st->prev);
+            take_sample(st, s);
+        } else {
+            gchar* why = g_strstrip(g_strdup(err != NULL && err[0] != '\0' ? err
+                                             : error != NULL ? error->message : _("no Linux /proc there")));
+            set_label(st->info, g_strdup_printf(_("Cannot read the statistics of %s: %s"), st->source, why));
+            g_free(why);
+            g_free(host);
+            g_free(os);
+        }
+    }
+    g_object_unref(r->cancel);
+    g_free(r);
+}
+
+/* The machine to read changed (the workspace connected to another one, or
+ * went back to this machine): start again from nothing */
+static void switch_source(SysmonTab* st, gchar* machine) {
+    g_free(st->source);
+    st->source = machine;
+    g_clear_pointer(&st->remote_host, g_free);
+    g_clear_pointer(&st->remote_os, g_free);
+    st->generation++;
+    st->busy = FALSE; /* a reading still running is dropped when it ends */
+    g_clear_pointer(&st->prev, sysstat_sample_free);
+    st->mounts_at = 0;
+    st->load_peak = 0;
+    GPtrArray* none = g_ptr_array_new();
+    sysmon_procs_update(st->procs, none);
+    g_ptr_array_unref(none);
+    sysmon_procs_set_page_size(st->procs, sysstat_page_size());
+    if (machine != NULL) {
+        set_label(st->info, g_strdup_printf(_("Reading the statistics of %s…"), machine));
+    } else {
+        set_label(st->info, g_strdup(sysstat_host_available() ? ""
+                                     : _("System statistics are only available on Linux and Windows")));
+    }
 }
 
 /* Every second: read the statistics in a worker (the processes and the
  * filesystems only while the page is on screen) */
 static gboolean on_tick(gpointer data) {
     SysmonTab* st = data;
-    if (st->busy) return G_SOURCE_CONTINUE;
+    if (st->in_thread) return G_SOURCE_CONTINUE; /* switching now would free the prev it reads */
+    SshTarget target;
+    gboolean remote = FALSE;
+    if (gtk_widget_get_parent(st->page) != NULL) {
+        /* The machine of the workspace shown (the tab is in its notebook) */
+        gchar* machine = NULL;
+        remote = remote_path_active(st->app, &target, &machine);
+        if (g_strcmp0(machine, st->source) != 0) {
+            switch_source(st, machine);
+        } else {
+            g_free(machine);
+        }
+    } else if (st->source != NULL) {
+        return G_SOURCE_CONTINUE; /* in a hidden workspace: no remote reading */
+    }
+    if (st->busy || (!remote && !sysstat_host_available())) return G_SOURCE_CONTINUE;
     gboolean shown = gtk_widget_get_mapped(st->page);
     SysSampleFlags flags = 0;
     if (shown) {
@@ -441,10 +540,25 @@ static gboolean on_tick(gpointer data) {
             flags |= SYSSTAT_MOUNTS;
         }
     }
+    st->busy = TRUE;
+    if (remote) {
+        /* One shell command over the machine's master connection, never on
+         * this thread: the reading is parsed when it comes back */
+        RemoteRead* r = g_new0(RemoteRead, 1);
+        r->st = st;
+        r->cancel = g_object_ref(st->cancel);
+        r->flags = flags;
+        r->generation = st->generation;
+        gchar* cmd = sysstat_remote_command(flags);
+        ssh_exec_async(&target, cmd, NULL, st->cancel, on_remote_read, r);
+        g_free(cmd);
+        return G_SOURCE_CONTINUE;
+    }
     ReadJob* job = g_new0(ReadJob, 1);
     job->prev = st->prev;
     job->flags = flags;
-    st->busy = TRUE;
+    job->generation = st->generation;
+    st->in_thread = TRUE;
     GTask* task = g_task_new(st->page, st->cancel, on_read, NULL);
     g_task_set_task_data(task, job, g_free);
     g_task_run_in_thread(task, read_thread);
@@ -475,6 +589,9 @@ static void tab_free(gpointer data) {
     sysstat_sample_free(st->prev);
     g_array_unref(st->core_values);
     g_free(st->os);
+    g_free(st->source);
+    g_free(st->remote_host);
+    g_free(st->remote_os);
     g_clear_object(&st->label);
     g_free(st);
 }
@@ -674,7 +791,7 @@ static SysmonTab* ensure_page(AppData* app) {
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), st);
     gtk_widget_add_controller(st->label, GTK_EVENT_CONTROLLER(mclick));
 
-    if (sysstat_host_available()) st->timer = g_timeout_add_seconds(1, on_tick, st);
+    st->timer = g_timeout_add_seconds(1, on_tick, st); /* a remote machine may be read anyway */
     insert_page(app, st);
     return st;
 }

@@ -40,7 +40,9 @@ the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.
 
 Jupyter notebooks of the machine run their kernel on the machine itself
-(see [The editor](editor.md)), through the connection opened when connecting.
+(see [The editor](editor.md)), and the System Monitor tab shows the machine
+(see [The preview panel](preview-panel.md#system-monitor)), both through the
+connection opened when connecting.
 
 Paths on the machine are written as on the machine, `name:path`: the
 **New File** and **New Folder** dialogs show `server:~/projects` (not the

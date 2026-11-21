@@ -97,6 +97,16 @@ static void test_connected_machines(void) {
     g_assert_false(remote_path_locate(app, "/mnt/off/a", &t, &remote, &machine)); /* not connected */
     g_assert_null(remote);
 
+    g_assert_false(remote_path_active(app, &t, &machine)); /* no workspace machine */
+    app->current_remote_id = g_strdup("rem_1");
+    g_assert_true(remote_path_active(app, &t, &machine));
+    g_assert_cmpstr(machine, ==, "srv.example");
+    g_free(machine);
+    g_free(app->current_remote_id);
+    app->current_remote_id = g_strdup("rem_0"); /* not connected */
+    g_assert_false(remote_path_active(app, &t, &machine));
+    g_clear_pointer(&app->current_remote_id, g_free);
+
     on->is_connected = FALSE; /* remote_free() would unmount it */
     remote_free(app);
     g_free(app);

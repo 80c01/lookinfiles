@@ -123,6 +123,15 @@ gboolean remote_path_locate(AppData* app, const gchar* path, SshTarget* target, 
     return FALSE;
 }
 
+gboolean remote_path_active(AppData* app, SshTarget* target, gchar** machine) {
+    if (machine != NULL) *machine = NULL;
+    RemoteMachine* rm = remote_get_active_machine(app);
+    if (rm == NULL || !rm->is_connected || rm->host == NULL || rm->host[0] == '\0') return FALSE;
+    if (target != NULL) *target = remote_machine_target(rm);
+    if (machine != NULL) *machine = g_strdup(machine_label(rm));
+    return TRUE;
+}
+
 gboolean remote_path_parse(AppData* app, const gchar* text, gchar** out_local) {
     if (out_local != NULL) *out_local = NULL;
     for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {

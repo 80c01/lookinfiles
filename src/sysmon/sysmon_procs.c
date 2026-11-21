@@ -406,6 +406,11 @@ static void reorder(Procs* ps, GPtrArray* updated) {
 /* The rows stay from one update to the next (found by PID): only the cells
  * whose text changes are set, and the sorted list moves only the rows whose
  * place changes (the selection and the scroll position follow) */
+void sysmon_procs_set_page_size(GtkWidget* procs, guint64 page_size) {
+    Procs* ps = procs != NULL ? g_object_get_data(G_OBJECT(procs), PROCS_KEY) : NULL;
+    if (ps != NULL && page_size > 0) ps->page_size = page_size;
+}
+
 void sysmon_procs_update(GtkWidget* procs, GPtrArray* list) {
     Procs* ps = procs != NULL ? g_object_get_data(G_OBJECT(procs), PROCS_KEY) : NULL;
     if (ps == NULL || list == NULL) return;

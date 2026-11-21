@@ -220,6 +220,12 @@ filesystems are the fixed and removable drives, and the processes of other
 users (services) show no CPU, memory or user unless the application runs
 as administrator.
 
+When the workspace is connected to a [remote machine](remote.md), the tab
+shows that machine (its name heads the tab): it is read once a second over
+SSH, through the connection opened when connecting, and must be a Linux.
+Going back to local files shows this machine again; the top bar chart always
+shows this machine.
+
 The tab only shows: it never stops or changes a process. The processes and
 filesystems are read only while the tab is on screen. `Ctrl+W` or a middle
 click on the tab closes it.

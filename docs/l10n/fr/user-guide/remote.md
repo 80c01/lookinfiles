@@ -43,8 +43,9 @@ de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell
 local.
 
 Les notebooks Jupyter de la machine exécutent leur noyau sur la machine
-elle-même (voir [L’éditeur](editor.md)), par la liaison ouverte en se
-connectant.
+elle-même (voir [L’éditeur](editor.md)), et l’onglet Moniteur système montre
+la machine (voir [Le panneau d’aperçu](preview-panel.md#moniteur-système)),
+tous deux par la liaison ouverte en se connectant.
 
 Les chemins de la machine s’écrivent comme sur la machine, `nom:chemin` :
 les dialogues **Nouveau fichier** et **Nouveau dossier** affichent
