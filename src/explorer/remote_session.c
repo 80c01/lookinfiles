@@ -11,6 +11,16 @@
 
 static GHashTable* masters;    /* machine id -> SshMaster*, stopped when removed */
 static GHashTable* connecting; /* ids of the machines being connected */
+/* The secret typed for the master connection while connecting, given once
+ * more to sshfs asking the same question (its connection is its own) */
+static gchar* reuse_prompt;
+static gchar* reuse_secret;
+
+static void forget_secret(void) {
+    if (reuse_secret != NULL) memset(reuse_secret, 0, strlen(reuse_secret));
+    g_clear_pointer(&reuse_secret, g_free);
+    g_clear_pointer(&reuse_prompt, g_free);
+}
 
 /* ------------------------------------------------------------------------- */
 /* ssh prompts                                                               */
@@ -20,6 +30,7 @@ typedef struct {
     SshAskpassRequest* request;
     SshAskpassKind kind;
     GtkWidget* entry; /* the secret typed, NULL for a question */
+    gchar* prompt;
 } Prompt;
 
 static void on_prompt_response(AppDialog* dlg, gint response, gpointer data) {
@@ -27,10 +38,16 @@ static void on_prompt_response(AppDialog* dlg, gint response, gpointer data) {
     if (p->kind == SSH_ASKPASS_CONFIRM) {
         ssh_askpass_reply(p->request, response == APP_RESPONSE_YES ? "yes" : NULL);
     } else {
-        ssh_askpass_reply(p->request, response == APP_RESPONSE_OK
-                                          ? gtk_editable_get_text(GTK_EDITABLE(p->entry)) : NULL);
+        const gchar* secret = response == APP_RESPONSE_OK ? gtk_editable_get_text(GTK_EDITABLE(p->entry)) : NULL;
+        if (secret != NULL && connecting != NULL && g_hash_table_size(connecting) > 0) {
+            forget_secret();
+            reuse_prompt = g_strdup(p->prompt);
+            reuse_secret = g_strdup(secret);
+        }
+        ssh_askpass_reply(p->request, secret);
         gtk_editable_set_text(GTK_EDITABLE(p->entry), ""); /* the secret is not kept */
     }
+    g_free(p->prompt);
     g_free(p);
     app_dialog_destroy(dlg);
 }
@@ -42,6 +59,12 @@ static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar*
     g_strstrip(text);
     if (kind == SSH_ASKPASS_NOTICE) {
         app_notice(app, text, FALSE);
+        g_free(text);
+        return;
+    }
+    if (kind == SSH_ASKPASS_SECRET && reuse_secret != NULL && g_strcmp0(text, reuse_prompt) == 0) {
+        ssh_askpass_reply(request, reuse_secret); /* sshfs, just after the master */
+        forget_secret();
         g_free(text);
         return;
     }
@@ -73,6 +96,7 @@ static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar*
     Prompt* p = g_new0(Prompt, 1);
     p->request = request;
     p->kind = kind;
+    p->prompt = g_strdup(text);
     if (!question) {
         p->entry = gtk_password_entry_new();
         gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(p->entry), TRUE);
@@ -109,6 +133,7 @@ void remote_session_init(AppData* app, const gchar* argv0) {
 void remote_session_shutdown(void) {
     g_clear_pointer(&masters, g_hash_table_destroy);
     g_clear_pointer(&connecting, g_hash_table_destroy);
+    forget_secret();
     ssh_askpass_stop();
 }
 
@@ -149,7 +174,10 @@ static void on_sshfs_done(GObject* source, GAsyncResult* res, gpointer data) {
     g_main_loop_quit(w->loop);
 }
 
-/* sshfs user@host:dir mount_dir, its ssh through the master connection */
+/* sshfs user@host:dir mount_dir, with a connection of its own: the
+ * interface waits on the mount without a timeout (file reads on the main
+ * thread), so it must never wait behind a master connection that a terminal
+ * or a kernel session could stall */
 static gboolean run_sshfs(const RemoteMachine* rm, const SshTarget* t, const gchar* mount_dir, gchar** error_text) {
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(argv, g_strdup("sshfs"));
@@ -160,7 +188,7 @@ static gboolean run_sshfs(const RemoteMachine* rm, const SshTarget* t, const gch
     g_ptr_array_add(argv, g_strdup(mount_dir));
     g_ptr_array_add(argv, g_strdup("-o"));
     g_ptr_array_add(argv, g_strdup("reconnect,follow_symlinks,idmap=user"));
-    GPtrArray* opts = ssh_session_options(t, 0); /* passed on to its ssh */
+    GPtrArray* opts = ssh_session_options(t, SSH_ARGV_NO_MUX); /* passed on to its ssh */
     for (guint i = 0; i < opts->len; i++) {
         g_ptr_array_add(argv, g_strdup("-o"));
         g_ptr_array_add(argv, g_strdup(opts->pdata[i]));
@@ -227,6 +255,7 @@ gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* moun
     } else {
         ok = FALSE;
     }
+    forget_secret();
     app_notice(app, NULL, FALSE);
     g_hash_table_remove(connecting, id);
     g_free(id);

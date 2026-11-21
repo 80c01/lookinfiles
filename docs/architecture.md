@@ -57,7 +57,9 @@ Layers, from bottom to top
   -o`): keep-alive, `accept-new` host keys and, except on Windows, a master
   connection per machine (`ssh_master_start()`, socket
   `app_runtime_dir()/ssh/<pid>-<hash>`) that later ssh runs reuse without a
-  new login (sshfs, remote commands; never a terminal); `ssh_exec_async()` runs a remote command. Programs started there
+  new login (remote commands and kernels; never a terminal nor sshfs: a
+  stalled master must not freeze the interface, which reads the mount
+  synchronously); `ssh_exec_async()` runs a remote command. Programs started there
   get `ssh_session_set_env()` variables, no controlling terminal, and die
   with the application on Linux (unit-tested with a fake ssh).
 - `ssh_askpass` — ssh password and passphrase prompts: ssh runs this program
@@ -915,8 +917,8 @@ Layers, from bottom to top
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
-  `remote_store`; the connection, password dialogs and sshfs mount in
-  `remote_session`, through `ssh_session`). The notes view is `notes.c` (rows, selection, keys, menu),
+  `remote_store`; the master connection, password dialogs and sshfs mount
+  (on a connection of its own) in `remote_session`, through `ssh_session`). The notes view is `notes.c` (rows, selection, keys, menu),
   `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`;
   `notes_new_canvas()` makes and opens a Canvas note without a dialog (the
   **+** button of `new_tab_menu`). `notes_search` is the `SearchArea` of

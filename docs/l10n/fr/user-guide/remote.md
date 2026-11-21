@@ -43,8 +43,8 @@ de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell
 local.
 
 Les notebooks Jupyter de la machine exécutent leur noyau sur la machine
-elle-même (voir [L’éditeur](editor.md)), par la connexion ouverte pour les
-fichiers.
+elle-même (voir [L’éditeur](editor.md)), par la liaison ouverte en se
+connectant.
 
 Les chemins de la machine s’écrivent comme sur la machine, `nom:chemin` :
 les dialogues **Nouveau fichier** et **Nouveau dossier** affichent
@@ -54,10 +54,12 @@ infobulles des onglets. Tapez les chemins de la même façon (`serveur:~/a`,
 ou `serveur:docs` depuis le **Dossier distant**) ; un chemin hors du
 dossier distant est refusé.
 
-La connexion ouverte pour les fichiers est gardée tant que vous parcourez
-la machine (multiplexage OpenSSH ; pas sous Windows) et se ferme quand vous
-vous déconnectez ou quittez. Les terminaux SSH ouvrent leur propre
-connexion : s’il faut un mot de passe, il est demandé dans le terminal.
+La connexion ouvre une liaison pour les commandes exécutées sur la machine
+(noyaux Jupyter ; multiplexage OpenSSH, pas sous Windows), gardée jusqu’à la
+déconnexion ou la fermeture ; les fichiers et les terminaux SSH ont leurs
+propres connexions. Un mot de passe tapé en se connectant sert aussi à la
+connexion des fichiers ; un terminal qui en a besoin le demande dans le
+terminal.
 
 Les machines sont montées sous `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (en général `/run/user/1000/…` ; sans `$XDG_RUNTIME_DIR`,

@@ -5,11 +5,11 @@
  * Linux, macOS and Windows 10+), so ~/.ssh/config, the agent, ProxyJump and
  * known_hosts work as in a shell. Every ssh run builds its command line with
  * ssh_session_argv(); where OpenSSH can multiplex (not on Windows) a master
- * connection (ssh_master_start()) is opened once per machine and every
- * later ssh (sshfs, remote commands) goes through it without authenticating
- * again. Never an interactive terminal (SSH_ARGV_NO_MUX with SSH_ARGV_TTY):
- * the master writes to the tty of its clients with blocking writes, so one
- * terminal not read in time stalls every session of the master. Programs started here get the variables set with
+ * connection (ssh_master_start()) is opened once per machine and the remote
+ * commands (ssh_exec_async(), kernels) go through it without authenticating
+ * again. Never an interactive terminal nor sshfs (SSH_ARGV_NO_MUX): one
+ * session can stall the master (it writes to tty clients with blocking
+ * writes), and the interface waits on sshfs synchronously. Programs started here get the variables set with
  * ssh_session_set_env() (the password prompt, ssh_askpass.h), have no
  * controlling terminal, and die with the application (Linux). GIO only, no
  * widgets; unit-tested with a fake ssh program. */

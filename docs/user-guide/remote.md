@@ -40,7 +40,7 @@ the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.
 
 Jupyter notebooks of the machine run their kernel on the machine itself
-(see [The editor](editor.md)), through the connection opened for the files.
+(see [The editor](editor.md)), through the connection opened when connecting.
 
 Paths on the machine are written as on the machine, `name:path`: the
 **New File** and **New Folder** dialogs show `server:~/projects` (not the
@@ -49,10 +49,11 @@ local mount point), and so do the notebook **Save** dialog, the Emacs
 or `server:docs` from the **Remote Directory**); paths outside the remote
 directory are refused.
 
-The connection opened for the files is kept while you browse (OpenSSH
-multiplexing; not on Windows) and closed when you disconnect or quit. SSH
-terminals open connections of their own: one that asks for a password asks
-in the terminal.
+Connecting opens a connection for the commands run on the machine (Jupyter
+kernels; OpenSSH multiplexing, not on Windows), kept until you disconnect or
+quit; the files and the SSH terminals have connections of their own. A
+password typed when connecting serves the files' connection too; a terminal
+that needs one asks in the terminal.
 
 Machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (usually `/run/user/1000/…`; without `$XDG_RUNTIME_DIR`,
