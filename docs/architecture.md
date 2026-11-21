@@ -1443,8 +1443,9 @@ Layers, from bottom to top
   `app->default_editor_mode`) or a terminal (`terminal_add_tab()`, greyed
   out without VTE).
 - `launcher_tab` — the **Applications** tab (not an editor tab, not saved
-  with the session; closed by `launcher_tab_workspace_hidden()` when it is
-  in the preview notebook at a workspace switch): a `GtkListView` over a
+  with the session; in the preview notebook, put aside with its workspace by
+  `launcher_tab_workspace_hidden()` / `_shown()` / `_removed()`, kept in
+  `VirtualLayout.launcher_pages`): a `GtkListView` over a
   `GtkStringList` of the ids of its `APPS` table (label, description, glyph
   or file-type icon, availability: `browser_available()`,
   `sysstat_host_available()`), filtered by a search field that keeps the

@@ -26,12 +26,12 @@ Le bouton **+** au bout à droite d’une barre d’onglets (celle du panneau
 d’aperçu et celle de chaque groupe d’édition) ouvre un nouvel onglet dans
 ce groupe :
 
-- **Application** : l’onglet **Applications**, qui liste ce qu’un onglet
-  peut contenir. Tapez pour filtrer la liste, déplacez-vous avec `Haut` /
+- **Applications** : un onglet qui liste ce qu’un onglet peut contenir. Tapez pour filtrer la liste, déplacez-vous avec `Haut` /
   `Bas` (`Page préc.` / `Page suiv.` de cinq en cinq), et appuyez sur
   `Entrée` ou cliquez sur une application : elle s’ouvre à la place de
   l’onglet Applications. `Ctrl+W` ou un clic du milieu sur l’onglet le
-  ferme ; il n’est pas gardé avec la session.
+  ferme. Chaque espace de travail garde le sien ; il n’est pas gardé
+  avec la session.
 - **Éditeur** : un onglet d’édition vide « Sans-titre-N » dans le mode
   global (voir [Choisir le mode d’un onglet](#choisir-le-mode-dun-onglet)).
 - **Terminal** : un shell dans un nouvel onglet (VTE est nécessaire).

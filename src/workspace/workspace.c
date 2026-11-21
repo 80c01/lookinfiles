@@ -470,7 +470,7 @@ void workspace_switch(AppData* app, gint idx) {
             app->workspaces[app->current_ws].editor_panel = panel;
             project_search_workspace_hidden(app, &app->workspaces[app->current_ws]);
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
-            launcher_tab_workspace_hidden(app);
+            launcher_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             sysmon_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             disk_usage_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             deep_search_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -512,6 +512,7 @@ void workspace_switch(AppData* app, gint idx) {
         code_refs_workspace_shown(app, ws);
         latex_errors_workspace_shown(app, ws);
         browser_workspace_shown(app, ws);
+        launcher_tab_workspace_shown(app, ws);
         canvas_view_workspace_shown(app, ws);
         video_tab_workspace_shown(app, ws);
         ipynb_tab_workspace_shown(app, ws);
@@ -788,6 +789,7 @@ void workspace_remove(AppData* app, gint idx) {
     code_refs_workspace_removed(app, rm);
     latex_errors_workspace_removed(app, rm);
     browser_workspace_removed(app, rm);
+    launcher_tab_workspace_removed(app, rm);
 #ifdef HAVE_VTE
     terminal_workspace_removed(app, rm);
 #endif

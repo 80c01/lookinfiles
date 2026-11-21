@@ -135,6 +135,7 @@ typedef struct {
     GtkWidget* problems_page;      /* its Problems tab while another workspace is shown (owned ref, code_problems.c) */
     GtkWidget* deep_search_page;   /* its Deep Search tab while another workspace is shown (owned ref, deep_search_tab.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
+    GPtrArray* launcher_pages;     /* its Applications tabs of the preview notebook while another workspace is shown (owned refs, launcher_tab.c) */
     GPtrArray* canvas_pages;       /* its Canvas tabs of the preview notebook while another workspace is shown (owned refs, canvas_view.c) */
     GPtrArray* video_pages;        /* its Video tabs of the preview notebook while another workspace is shown (owned refs, video_tab.c) */
     GPtrArray* ipynb_pages;        /* its Jupyter notebook tabs of the preview notebook while another workspace is shown (owned refs, ipynb_tab.c) */

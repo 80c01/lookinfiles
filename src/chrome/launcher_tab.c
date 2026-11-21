@@ -53,6 +53,8 @@ static const LauncherApp APPS[] = {
 typedef struct {
     AppData* app;
     GtkWidget* page;
+    GtkWidget* label; /* the tab header, kept while its workspace is hidden */
+    gint hidden_at;   /* its position in the preview notebook when hidden */
     GtkWidget* entry;
     GtkWidget* list;
     GtkWidget* empty;
@@ -89,6 +91,7 @@ static LauncherTab* tab_of(GtkWidget* page) {
 
 static void tab_free(gpointer data) {
     LauncherTab* lt = data;
+    g_clear_object(&lt->label);
     g_free(lt->query);
     g_free(lt);
 }
@@ -403,6 +406,7 @@ void launcher_tab_open(AppData* app, GtkNotebook* nb) {
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(mclick), GDK_BUTTON_MIDDLE);
     g_signal_connect(mclick, "released", G_CALLBACK(on_label_middle_click), page);
     gtk_widget_add_controller(label, GTK_EVENT_CONTROLLER(mclick));
+    lt->label = g_object_ref(label);
 
     gint idx = gtk_notebook_append_page(nb, page, label);
     gtk_notebook_set_tab_reorderable(nb, page, TRUE);
@@ -429,11 +433,69 @@ gboolean launcher_tab_close_shown(AppData* app) {
     return TRUE;
 }
 
-void launcher_tab_workspace_hidden(AppData* app) {
-    if (app == NULL || app->notebook == NULL) return;
+/* The Applications tabs of the preview notebook, in their order */
+static GPtrArray* preview_pages(AppData* app) {
+    GPtrArray* pages = g_ptr_array_new();
+    if (app->notebook == NULL) return pages;
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
-    for (gint i = gtk_notebook_get_n_pages(nb) - 1; i >= 0; i--) {
-        LauncherTab* lt = tab_of(gtk_notebook_get_nth_page(nb, i));
-        if (lt != NULL) close_page(lt, FALSE);
+    for (gint i = 0; i < gtk_notebook_get_n_pages(nb); i++) {
+        GtkWidget* page = gtk_notebook_get_nth_page(nb, i);
+        if (tab_of(page) != NULL) g_ptr_array_add(pages, page);
     }
+    return pages;
+}
+
+/* Take the page out of the preview notebook: an owned ref */
+static GtkWidget* detach_page(LauncherTab* lt) {
+    GtkWidget* page = g_object_ref(lt->page);
+    GtkNotebook* nb = notebook_of(page);
+    if (nb != NULL) {
+        GtkRoot* root = gtk_widget_get_root(page);
+        GtkWidget* focus = root != NULL ? gtk_root_get_focus(root) : NULL;
+        if (focus != NULL && gtk_widget_is_ancestor(focus, page)) gtk_root_set_focus(root, NULL);
+        lt->hidden_at = gtk_notebook_page_num(nb, page);
+        gtk_notebook_remove_page(nb, lt->hidden_at);
+    }
+    return page;
+}
+
+void launcher_tab_workspace_hidden(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    GPtrArray* pages = preview_pages(app);
+    if (pages->len > 0 && ws->launcher_pages == NULL) {
+        ws->launcher_pages = g_ptr_array_new_with_free_func(g_object_unref);
+    }
+    for (guint i = 0; i < pages->len; i++) {
+        g_ptr_array_add(ws->launcher_pages, detach_page(tab_of(g_ptr_array_index(pages, i))));
+    }
+    g_ptr_array_unref(pages);
+}
+
+void launcher_tab_workspace_shown(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL || ws->launcher_pages == NULL) return;
+    GPtrArray* pages = ws->launcher_pages;
+    ws->launcher_pages = NULL;
+    if (app->notebook != NULL) {
+        GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
+        for (guint i = 0; i < pages->len; i++) {
+            GtkWidget* page = g_ptr_array_index(pages, i);
+            LauncherTab* lt = tab_of(page);
+            if (lt == NULL || lt->label == NULL) continue;
+            gint at = MIN(lt->hidden_at, gtk_notebook_get_n_pages(nb));
+            gtk_notebook_insert_page(nb, page, lt->label, at);
+            gtk_notebook_set_tab_reorderable(nb, page, TRUE);
+            gtk_notebook_set_tab_detachable(nb, page, TRUE);
+        }
+    }
+    g_ptr_array_unref(pages);
+}
+
+void launcher_tab_workspace_removed(AppData* app, VirtualLayout* ws) {
+    if (app == NULL || ws == NULL) return;
+    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces && ws == &app->workspaces[app->current_ws]) {
+        GPtrArray* pages = preview_pages(app);
+        for (guint i = 0; i < pages->len; i++) g_object_unref(detach_page(tab_of(g_ptr_array_index(pages, i))));
+        g_ptr_array_unref(pages);
+    }
+    g_clear_pointer(&ws->launcher_pages, g_ptr_array_unref);
 }

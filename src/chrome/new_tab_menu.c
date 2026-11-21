@@ -21,7 +21,7 @@ static void open_new_tab(AppData* app, GtkNotebook* nb, NewTabKind kind) {
         launcher_tab_open(app, nb);
         break;
     case NEW_TAB_EDITOR:
-        /* In the mode of the Preferences; the other modes are in Application */
+        /* In the mode of the Preferences; the other modes are in Applications */
         editor_open_untitled(app, nb, app->default_editor_mode);
         break;
     case NEW_TAB_TERMINAL:
@@ -77,7 +77,7 @@ static void on_plus_clicked(GtkButton* button, gpointer data) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_set_margin_start(box, 4);
     gtk_widget_set_margin_end(box, 4);
-    menu_item(box, app, nb, _("Application"), NEW_TAB_APPLICATION, TRUE, NULL);
+    menu_item(box, app, nb, _("Applications"), NEW_TAB_APPLICATION, TRUE, NULL);
     menu_item(box, app, nb, _("Editor"), NEW_TAB_EDITOR, TRUE, NULL);
     menu_item(box, app, nb, _("Terminal"), NEW_TAB_TERMINAL, has_terminal, _("Needs VTE for GTK 4"));
     gtk_popover_set_child(GTK_POPOVER(popover), box);

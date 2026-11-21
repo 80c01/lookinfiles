@@ -23,11 +23,11 @@ A file already open is not opened twice: its tab is shown.
 The **+** button at the right end of a tab bar (the preview panel's and
 each editor group's) opens a new tab in that group:
 
-- **Application**: the **Applications** tab, which lists what a tab can
-  hold. Type to filter the list, move with `Up` / `Down` (`Page Up` /
+- **Applications**: a tab that lists what a tab can hold. Type to filter the list, move with `Up` / `Down` (`Page Up` /
   `Page Down` by five), and press `Enter` or click an application: it opens
   in place of the Applications tab. `Ctrl+W` or a middle click on the tab
-  closes it; it is not kept with the session.
+  closes it. Each workspace keeps its own; it is not kept with the
+  session.
 - **Editor**: an empty editor tab "Untitled-N" in the global mode (see
   [Choosing the mode of a tab](#choosing-the-mode-of-a-tab)).
 - **Terminal**: a shell in a new tab (needs VTE).
