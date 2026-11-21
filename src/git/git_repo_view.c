@@ -55,7 +55,9 @@ static GtkWidget* cell(GtkWidget* grid, const gchar* text, const gchar* css_clas
     GtkWidget* label = gtk_label_new(text);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_label_set_selectable(GTK_LABEL(label), selectable);
-    gtk_label_set_wrap(GTK_LABEL(label), selectable);
+    /* Wrapped: a long setting or message never widens the preview panel (a
+     * notebook is as wide as its widest page) */
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_label_set_wrap_mode(GTK_LABEL(label), PANGO_WRAP_WORD_CHAR);
     gtk_widget_set_focusable(label, FALSE); /* selectable labels would take the Tab key */
     if (css_class != NULL) gtk_widget_add_css_class(label, css_class);
@@ -384,14 +386,16 @@ GitRepoView* git_repo_view_new(AppData* app) {
     section(box, _("Branches"), v->branches);
     section(box, _("Configuration"), NULL);
 
-    /* Above the configuration: its filter and the files to edit */
+    /* Above the configuration: its filter, then the files to edit (on two
+     * rows: on one, they would make the preview panel wide) */
     GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     v->filter = gtk_search_entry_new();
     gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(v->filter), _("Filter the settings"));
     gtk_widget_set_tooltip_text(v->filter, _("Only the settings whose name or value hold every word"));
     gtk_editable_set_width_chars(GTK_EDITABLE(v->filter), 24);
+    gtk_widget_set_halign(v->filter, GTK_ALIGN_START);
     g_signal_connect(v->filter, "search-changed", G_CALLBACK(on_filter_changed), v);
-    gtk_box_append(GTK_BOX(bar), v->filter);
+    gtk_box_append(GTK_BOX(box), v->filter);
     GtkWidget* edit_repo = icon_button_new("document-edit", _("Open .git/config in an Editor Tab"));
     icon_button_set_content(edit_repo, "document-edit", _("Edit .git/config"));
     g_signal_connect(edit_repo, "clicked", G_CALLBACK(on_edit_repo), v);
