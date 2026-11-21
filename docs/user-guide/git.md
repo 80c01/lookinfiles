@@ -46,8 +46,9 @@ left edge.
 The **Git Commits** tab, next to the **Preview** tab, appears when the
 current folder is in a repository. It lists the history, newest first, with
 the commit, message (preceded by coloured badges for `HEAD`, local and remote
-branches, and tags), author and date of each commit. Select one to see its
-full diff below. The newest 100 commits are read first; scrolling to the
+branches, and tags), author and date of each commit (relative, in full in
+its tooltip). Select one to see its full diff below, under a line giving its
+hash, subject, author and date. The newest 100 commits are read first; scrolling to the
 end of the list (or moving the selection to its last commit) reads the next
 100.
 

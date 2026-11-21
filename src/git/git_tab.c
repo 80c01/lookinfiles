@@ -94,6 +94,7 @@ typedef struct {
     guint max;           /* commits read */
     gboolean append;     /* a next page: added to the list, not replacing it */
     gboolean more;       /* the history goes on after the commits read */
+    gboolean failed;     /* the repository could not be read */
     GPtrArray* commits;  /* array of GitCommitInfo* */
     GHashTable* refs_map; /* sha -> GPtrArray* of GitRefInfo* */
 } GitLogTaskData;
@@ -132,6 +133,7 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
         return;
     }
 
+    td->failed = commits == NULL;
     td->commits = commits != NULL ? commits : g_ptr_array_new_with_free_func(git_commit_info_free);
     td->refs_map = refs_map;
     g_task_return_boolean(task, TRUE);
@@ -371,6 +373,15 @@ static void cancel_show(GitTab* g) {
     }
 }
 
+/* The date of a commit in full, in the local time zone ("2026-11-21 08:19") */
+static gchar* exact_date(const GitCommitInfo* ci) {
+    GDateTime* t = g_date_time_new_from_unix_local(ci->time);
+    if (t == NULL) return g_strdup("");
+    gchar* text = g_date_time_format(t, "%Y-%m-%d %H:%M");
+    g_date_time_unref(t);
+    return text != NULL ? text : g_strdup("");
+}
+
 static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* pspec, gpointer user_data) {
     (void)pspec;
     AppData* app = (AppData*)user_data;
@@ -395,11 +406,16 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
     }
 
     populate_refs_box(g->header_refs_box, item->refs, 0);
-    gchar* header_text = g_strdup_printf("[%s] %s  •  %s  (%s)",
+    gchar* when = exact_date(item->info);
+    /* TRANSLATORS: above the diff of a commit: short hash, subject, author,
+     * relative date ("2 days ago") and full date ("2026-11-21 08:19"), in
+     * this order */
+    gchar* header_text = g_strdup_printf(_("[%s] %s  •  %s  (%s, %s)"),
                                         short_hash ? short_hash : "",
                                         subject ? subject : "",
                                         author ? author : "",
-                                        date ? date : "");
+                                        date ? date : "", when);
+    g_free(when);
     gtk_label_set_text(GTK_LABEL(g->header_label), header_text);
     g_free(header_text);
 
@@ -509,7 +525,11 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
 
     /* Select the newest commit, or keep an older commit the user selected */
     guint n = g_list_model_get_n_items(G_LIST_MODEL(g->store));
-    show_count(g, n, td->more);
+    if (td->failed) {
+        gtk_label_set_text(GTK_LABEL(g->count_label), "");
+    } else {
+        show_count(g, n, td->more);
+    }
     if (n > 0) {
         guint target = 0;
         if (!follow_head && g->selected_hash != NULL) {
@@ -524,7 +544,9 @@ static void on_git_log_ready(GObject* source_object, GAsyncResult* res, gpointer
     } else {
         populate_refs_box(g->header_refs_box, NULL, 0);
         gtk_label_set_text(GTK_LABEL(g->header_label),
-                           g->words != NULL ? _("No commit matches the filter.") : _("No commits in this repository."));
+                           td->failed         ? _("The history of this repository cannot be read.")
+                           : g->words != NULL ? _("No commit matches the filter.")
+                                              : _("No commits in this repository."));
         gtk_text_buffer_set_text(g->detail_buf, "", -1);
     }
 }
@@ -811,7 +833,14 @@ static void on_git_cell_bind(GtkSignalListItemFactory* factory, GtkListItem* ite
     gsize offset = GPOINTER_TO_SIZE(g_object_get_data(G_OBJECT(factory), "field-offset"));
     const gchar* text = (commit != NULL && commit->info != NULL)
                             ? G_STRUCT_MEMBER(const gchar*, commit->info, offset) : NULL;
-    gtk_label_set_text(GTK_LABEL(gtk_list_item_get_child(item)), text != NULL ? text : "");
+    GtkWidget* label = gtk_list_item_get_child(item);
+    gtk_label_set_text(GTK_LABEL(label), text != NULL ? text : "");
+    /* The Date column: the full date in its tooltip */
+    if (offset == G_STRUCT_OFFSET(GitCommitInfo, date)) {
+        gchar* when = commit != NULL && commit->info != NULL ? exact_date(commit->info) : NULL;
+        gtk_widget_set_tooltip_text(label, when);
+        g_free(when);
+    }
 }
 
 static void git_add_column(AppData* app, GtkWidget* view, const gchar* title, gsize field_offset,

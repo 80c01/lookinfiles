@@ -49,7 +49,9 @@ L’onglet **Commits Git**, à côté de l’onglet **Aperçu**, apparaît quand
 dossier courant est dans un dépôt. Il liste l’historique, du plus récent au
 plus ancien, avec le commit, le message (précédé de badges colorés pour
 `HEAD`, les branches locales et distantes, et les tags), l’auteur et la date
-de chaque commit. Sélectionnez-en un pour voir son diff complet en dessous. Les 100 commits les plus récents sont lus
+de chaque commit (relative, complète dans son infobulle). Sélectionnez-en un
+pour voir son diff complet en dessous, sous une ligne donnant son hash, son
+sujet, son auteur et sa date. Les 100 commits les plus récents sont lus
 d’abord ; faire défiler jusqu’au bas de la liste (ou y amener la sélection)
 lit les 100 suivants.
 

@@ -814,7 +814,8 @@ GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words,
                 ci->message = g_utf8_make_valid(message != NULL ? message : "", -1);
                 g_strchomp(ci->message);
                 ci->author = g_utf8_make_valid(author != NULL && author->name != NULL ? author->name : "", -1);
-                ci->date = git_relative_date(now - (gint64)git_commit_time(c));
+                ci->time = (gint64)git_commit_time(c);
+                ci->date = git_relative_date(now - ci->time);
                 g_ptr_array_add(commits, ci);
                 git_commit_free(c);
             }

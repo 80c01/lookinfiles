@@ -68,6 +68,7 @@ typedef struct {
     gchar* message;    /* whole message, without its trailing line breaks */
     gchar* author;
     gchar* date; /* committer date relative to now, like git's %cr */
+    gint64 time; /* committer date, seconds since the epoch */
 } GitCommitInfo;
 
 void git_commit_info_free(gpointer info);

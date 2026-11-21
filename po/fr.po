@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 09:12+0000\n"
+"POT-Creation-Date: 2026-11-21 09:13+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -4806,7 +4806,7 @@ msgstr "Programmes"
 msgid "Other"
 msgstr "Autres"
 
-#: src/core/path_copy.c:28 src/git/git_tab.c:674
+#: src/core/path_copy.c:28 src/git/git_tab.c:696
 #, c-format
 msgid "Copied “%s”"
 msgstr "« %s » copié"
@@ -8334,126 +8334,138 @@ msgstr "Jeu"
 msgid "Solitaire"
 msgstr "Solitaire"
 
-#: src/git/git_tab.c:178
+#: src/git/git_tab.c:180
 #, c-format
 msgid "… %u more line not shown"
 msgid_plural "… %u more lines not shown"
 msgstr[0] "… %u ligne de plus non affichée"
 msgstr[1] "… %u lignes de plus non affichées"
 
-#: src/git/git_tab.c:200
+#: src/git/git_tab.c:202
 msgid "(No diff available or git error)"
 msgstr "(Aucun diff disponible ou erreur git)"
 
-#: src/git/git_tab.c:301
+#: src/git/git_tab.c:303
 msgid "Detached HEAD"
 msgstr "HEAD détachée"
 
-#: src/git/git_tab.c:302
+#: src/git/git_tab.c:304
 #, c-format
 msgid "Current branch: %s"
 msgstr "Branche courante : %s"
 
-#: src/git/git_tab.c:304
+#: src/git/git_tab.c:306
 #, c-format
 msgid "Branch: %s"
 msgstr "Branche : %s"
 
-#: src/git/git_tab.c:306
+#: src/git/git_tab.c:308
 #, c-format
 msgid "Tag: %s"
 msgstr "Étiquette : %s"
 
-#: src/git/git_tab.c:308
+#: src/git/git_tab.c:310
 #, c-format
 msgid "Remote branch: %s"
 msgstr "Branche distante : %s"
 
-#: src/git/git_tab.c:426
+#. TRANSLATORS: above the diff of a commit: short hash, subject, author,
+#. * relative date ("2 days ago") and full date ("2026-11-21 08:19"), in
+#. * this order
+#: src/git/git_tab.c:413
+#, c-format
+msgid "[%s] %s  •  %s  (%s, %s)"
+msgstr "[%s] %s  •  %s  (%s, %s)"
+
+#: src/git/git_tab.c:442
 msgid "No commit matches"
 msgstr "Aucun commit ne correspond"
 
-#: src/git/git_tab.c:428
+#: src/git/git_tab.c:444
 #, c-format
 msgid "The first %u matching commits"
 msgstr "Les %u premiers commits qui correspondent"
 
-#: src/git/git_tab.c:430
+#: src/git/git_tab.c:446
 #, c-format
 msgid "%u matching commit"
 msgid_plural "%u matching commits"
 msgstr[0] "%u commit correspondant"
 msgstr[1] "%u commits correspondants"
 
-#: src/git/git_tab.c:433
+#: src/git/git_tab.c:449
 #, c-format
 msgid "The last %u commits"
 msgstr "Les %u derniers commits"
 
-#: src/git/git_tab.c:435
+#: src/git/git_tab.c:451
 #, c-format
 msgid "%u commit"
 msgid_plural "%u commits"
 msgstr[0] "%u commit"
 msgstr[1] "%u commits"
 
-#: src/git/git_tab.c:527
+#: src/git/git_tab.c:547
+msgid "The history of this repository cannot be read."
+msgstr "L’historique de ce dépôt ne peut pas être lu."
+
+#: src/git/git_tab.c:548
 msgid "No commit matches the filter."
 msgstr "Aucun commit ne correspond au filtre."
 
-#: src/git/git_tab.c:527
+#: src/git/git_tab.c:549
 msgid "No commits in this repository."
 msgstr "Aucun commit dans ce dépôt."
 
-#: src/git/git_tab.c:608
+#: src/git/git_tab.c:630
 msgid "Reading the history…"
 msgstr "Lecture de l’historique…"
 
-#: src/git/git_tab.c:632
+#: src/git/git_tab.c:654
 msgid "Reading more commits…"
 msgstr "Lecture d’autres commits…"
 
 #. TRANSLATORS: %s is a short commit hash
-#: src/git/git_tab.c:673
+#: src/git/git_tab.c:695
 #, c-format
 msgid "Copied the message of %s"
 msgstr "Message de %s copié"
 
-#: src/git/git_tab.c:782
+#: src/git/git_tab.c:804
 msgid "Copy Hash"
 msgstr "Copier le hash"
 
-#: src/git/git_tab.c:783
+#: src/git/git_tab.c:805
 msgid "Copy Short Hash"
 msgstr "Copier le hash court"
 
-#: src/git/git_tab.c:784
+#: src/git/git_tab.c:806
 msgid "Copy Message"
 msgstr "Copier le message"
 
-#: src/git/git_tab.c:877
+#: src/git/git_tab.c:906
 msgid "Message"
 msgstr "Message"
 
-#: src/git/git_tab.c:936
+#: src/git/git_tab.c:965
 msgid "Commit"
 msgstr "Commit"
 
-#: src/git/git_tab.c:938 src/office/ole_props.c:225
+#: src/git/git_tab.c:967 src/office/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"
 
-#: src/git/git_tab.c:939 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
+#: src/git/git_tab.c:968 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
 #: src/mail/mail_view.c:34 src/mail/mail_view.c:180
 #: src/preview/preview_formats.c:920
 msgid "Date"
 msgstr "Date"
 
-#: src/git/git_tab.c:962
+#: src/git/git_tab.c:991
 msgid "Filter the commits"
 msgstr "Filtrer les commits"
 
-#: src/git/git_tab.c:964
+#: src/git/git_tab.c:993
 msgid ""
 "Only the commits whose message, author or hash hold every word, in the whole "
 "history"
@@ -8461,11 +8473,11 @@ msgstr ""
 "Seulement les commits dont le message, l’auteur ou le hash contiennent tous "
 "les mots, dans tout l’historique"
 
-#: src/git/git_tab.c:989
+#: src/git/git_tab.c:1018
 msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
-#: src/git/git_tab.c:1035
+#: src/git/git_tab.c:1064
 msgid "Git Commits"
 msgstr "Commits Git"
 

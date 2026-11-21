@@ -367,6 +367,9 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     g_assert_cmpstr(newest->subject, ==, "Second commit"); /* first paragraph on one line */
     g_assert_cmpstr(newest->author, ==, "Ada");
     g_assert_cmpstr(newest->date, ==, "2 minutes ago");
+    gint64 now = g_get_real_time() / G_USEC_PER_SEC;
+    g_assert_cmpint(newest->time, >=, now - 125); /* committed 120 s ago */
+    g_assert_cmpint(newest->time, <=, now - 115);
     g_assert_cmpuint(strlen(newest->hash), ==, 40);
     g_assert_true(g_str_has_prefix(newest->hash, newest->short_hash));
     GitCommitInfo* oldest = log->pdata[1];
