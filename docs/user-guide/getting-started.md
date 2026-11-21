@@ -49,7 +49,7 @@ hidden.
 │ ~ › projects › site      [1][2][+]  Layouts Themes │ Explorer Preview │
 │                                                    │ Terminal  Help   │  ← top bar
 ├───────────────┬──────────────────────────────────────────────────────┤
-│ Explorer      │ Preview │ main.c ● │ Git Commits                     │
+│ Explorer      │ Preview │ main.c ● │ Git                             │
 │ [▢][▢][▢][▢]  │                                                      │
 │ ▸ src         │   rendered file, editor tabs,                        │
 │ ▾ docs        │   commit history, search results                     │
@@ -87,7 +87,7 @@ hidden.
   top: files, bookmarks, notes and remote machines. Below them, a small
   toolbar with the actions of the view.
 - **Preview panel** (right). The **Preview** tab shows the selected file.
-  Editor tabs open next to it, and so do the **Git Commits**, **Search**,
+  Editor tabs open next to it, and so do the **Git**, **Search**,
   **References** and **Help** tabs.
 - **Terminal** (below or beside the preview). Shell panes, opened with
   `Ctrl+T`.

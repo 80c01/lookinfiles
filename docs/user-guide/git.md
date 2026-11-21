@@ -41,16 +41,37 @@ the lines changed since the last commit, as in VS Code:
 Editor tabs update the bars as you type. The minimap shows them along its
 left edge.
 
-## The Git Commits tab
+## The Git tab
 
-The **Git Commits** tab, next to the **Preview** tab, appears when the
-current folder is in a repository. It lists the history, newest first, with
-the commit, message (preceded by coloured badges for `HEAD`, local and remote
-branches, and tags), author and date of each commit (relative, in full in
-its tooltip). Select one to see its full diff below, under a line giving its
-hash, subject, author and date. The newest 100 commits are read first; scrolling to the
-end of the list (or moving the selection to its last commit) reads the next
-100.
+The **Git** tab, next to the **Preview** tab, appears when the current folder
+is in a repository. The buttons at its top (or `v`) switch between its two
+views: **Changes** and **History**.
+
+### Changes
+
+What is not committed yet, in three groups:
+
+- **Staged**: what the next commit will hold (`git add`);
+- **Changes**: what changed in the files since then, not staged;
+- **Untracked**: the new files git does not follow yet.
+
+A file staged and then changed again is in both of the first two groups.
+Each file shows its status letter (the badges of the explorer), its folder
+and the lines it adds and removes (`+12 −3`). Select a file to see its patch
+below: what the commit will add for a staged file, what changed since it was
+staged for the others, the whole file for an untracked one. `Enter` or a
+double click previews the file. The button says how many files are changed;
+the list is read again each time the view is shown and when the folder
+changes.
+
+### History
+
+The history, newest first, with the commit, message (preceded by coloured
+badges for `HEAD`, local and remote branches, and tags), author and date of
+each commit (relative, in full in its tooltip). Select one to see its full
+diff below, under a line giving its hash, subject, author and date. The
+newest 100 commits are read first; scrolling to the end of the list (or
+moving the selection to its last commit) reads the next 100.
 
 The field above the list filters the history: only the commits whose
 message, author (name or email) or hash hold every word typed (any case)

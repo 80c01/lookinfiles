@@ -8,6 +8,10 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The Git tab (formerly **Git Commits**) has two views, chosen by the
+  buttons at its top or `v`: **Changes** lists the uncommitted files, staged,
+  not staged and untracked, with the lines each adds and removes and its
+  patch below; **History** is the commit list as before.
 - Apache Parquet files (`.parquet`) are previewed: the first 100 rows as a
   table (dates, timestamps, decimals and lists shown as values), then the
   schema with each column's type, encodings, compression and size, the row

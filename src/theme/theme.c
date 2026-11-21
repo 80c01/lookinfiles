@@ -1082,7 +1082,7 @@ void apply_panel_borders(void) {
         "columnview.data-table > listview > row:selected label {\n"
         "  color: @fg_bright;\n"
         "}\n"
-        /* ---- Git Commits tab ---- */
+        /* ---- Git tab ---- */
         "#git-tree label.git-hash {\n"
         "  color: @accent_fg;\n"
         "  font-family: @font_code;\n"

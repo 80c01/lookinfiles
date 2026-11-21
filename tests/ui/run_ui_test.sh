@@ -377,7 +377,7 @@ key Escape
 xdotool mousemove 700 300 click 1    # focus the Vim tab text
 key ctrl+w c;           shot editor_closed   # Vim window command closes the tab
 xdotool mousemove 150 600 click 1    # focus the explorer (empty area)
-key ctrl+w;             shot last_editor_closed   # must show Preview, not Git Commits
+key ctrl+w;             shot last_editor_closed   # must show Preview, not Git
 key alt+plus;           shot workspace_added
 key alt+1;              shot workspace_1
 key i;                  shot hidden_toggle
@@ -530,7 +530,9 @@ key ctrl+equal ctrl+equal;       shot fonts_larger
 key ctrl+0;                      shot fonts_theme_sizes
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
 sleep 3;                shot external_file_created   # let the async rescan settle
-xdotool mousemove 508 50 click 1     # Git Commits tab
+xdotool mousemove 508 50 click 1     # Git tab, on its Changes view
+sleep 1;                shot git_changes_view      # external.txt untracked, its patch below
+key v;                  shot git_history_view      # v: the next view, History
 # Commit made outside the app: the Git tab must list it (fixed date: stable shot)
 ( cd "$FIX/work" && git add external.txt &&
   GIT_AUTHOR_DATE="2000-01-02T00:00:00Z" GIT_COMMITTER_DATE="2000-01-02T00:00:00Z" \
@@ -591,7 +593,7 @@ key ctrl+k ctrl+i; sleep 1; shot code_help_card       # what answer() is
 key Escape End Left Left Left
 key ctrl+shift+space; sleep 1; shot code_help_signature   # inside answer( )
 key Escape Left
-key shift+F12; sleep 1; shot code_refs_tab            # References tab after Git Commits
+key shift+F12; sleep 1; shot code_refs_tab            # References tab after Git
 key Return; sleep 0.5;  shot code_refs_opened         # first reference opened
 key ctrl+shift+o; sleep 0.5; shot code_symbols_dialog
 xdotool type --delay 80 "ma"

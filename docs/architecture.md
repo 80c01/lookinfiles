@@ -183,6 +183,14 @@ Layers, from bottom to top
   `git_read_log()`, `git_show_commit()` (laid out like `git show --stat
   --patch`), `git_list_files()` (like `git ls-files --cached --others`;
   `git_list_files_by_kind()` says tracked, untracked or ignored).
+- `git_lib` — what the libgit2 readers share: libgit2 set up once
+  (`git_lib_ready()`), a work tree opened (`git_lib_open()`), a patch printed
+  as git prints it (`git_lib_patch_line()`).
+- `git_worktree` — the uncommitted changes of a work tree through libgit2,
+  worker thread only: `git_read_changes()` lists the staged (index against
+  `HEAD`, renames found), unstaged and untracked files with their lines
+  added and removed (binary: -1; at most a given number), and
+  `git_change_patch()` gives the patch of one of them. Unit-tested.
 - `git_refs` — reads branch, `HEAD` and tag (lightweight and annotated)
   decorations per commit SHA through libgit2 (`git_read_refs()`,
   `git_ref_display_name()`), displayed as badges in `git_tab`. Worker thread,
@@ -724,7 +732,7 @@ Layers, from bottom to top
   prefix key). Widgets taking the global mode keys are marked with
   `focus_route_mark_nav()`, the one focused in a page without them (a web
   page) with `focus_route_mark_focus()`; `focus_route_attach_list()` gives a list page
-  (Git Commits, References) those keys.
+  (Git, References) those keys.
 - `text_style` — Dark+ GtkSourceView scheme, monospace, panel background,
   syntax language (`is_code_file()`, `apply_viewer_language()`).
 - `theme` — global stylesheet (`apply_panel_borders()`); every module's CSS
@@ -1167,7 +1175,13 @@ Layers, from bottom to top
   open `deep_search_tab` and `disk_usage_tab` on the folder.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
   `git_tab` is the Git tab: the notebook page, its visibility (shown in a
-  repository) and the repository root, handed to its views. `git_history`
+  repository), the repository root handed to its views, and the linked
+  toggle buttons over the `GtkStack` of the views (`v`: the next one).
+  `git_changes` is its Changes view (`GitChanges`, freed with its widget):
+  the files of `git_read_changes()` under a header per group, read again
+  each time the view comes on screen (`map`) and on each `git_tab_update()`
+  while shown; the patch of the selected file has its own cancellable;
+  `Enter` previews the file through `APP_EVENT_PREVIEW_PATH`. `git_history`
   is its History view (`GitHistory`, freed with its widget; its tasks reach
   it through their callback data and are cancelled first). It reads the
   history only when the view is on screen (`map`); while hidden, a new

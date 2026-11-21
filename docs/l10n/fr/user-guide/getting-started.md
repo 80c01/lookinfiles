@@ -50,7 +50,7 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
 │ ~ › projects › site      [1][2][+]  Disp. Thèmes │ Explorateur Aperçu │
 │                                                  │ Terminal  Aide     │  ← barre du haut
 ├───────────────┬──────────────────────────────────────────────────────┤
-│ Explorateur   │ Aperçu │ main.c ● │ Commits Git                      │
+│ Explorateur   │ Aperçu │ main.c ● │ Git                              │
 │ [▢][▢][▢][▢]  │                                                      │
 │ ▸ src         │   fichier rendu, onglets d’édition,                  │
 │ ▾ docs        │   historique des commits, résultats de recherche     │
@@ -93,7 +93,7 @@ d’édition dédié, l’explorateur et l’aperçu masqués.
   En dessous, une petite barre d’outils avec les actions de la vue.
 - **Panneau Aperçu** (à droite). L’onglet **Aperçu** montre le fichier
   sélectionné. Les onglets d’édition s’ouvrent à côté, de même que les
-  onglets **Commits Git**, **Recherche**, **Références** et **Aide**.
+  onglets **Git**, **Recherche**, **Références** et **Aide**.
 - **Terminal** (sous l’aperçu ou à côté). Des panneaux de shell, ouverts
   avec `Ctrl+T`.
 - **Barre de l’explorateur** (en bas de l’explorateur). La branche git et

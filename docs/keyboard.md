@@ -40,7 +40,7 @@ Clicking a tab also puts the focus in it; a middle click on an editor,
 **References**, **Search**, **Problems** or **LaTeX** tab closes it, and so
 does `Ctrl+W` (Notepad) / `Ctrl+W c` (Vim) on these four tabs when they have
 the focus or are in front in the preview panel. They move to another pane
-like an editor tab: drag the tab, or right-click it. In the **Git Commits**,
+like an editor tab: drag the tab, or right-click it. In the **Git**,
 **References** and **Search** tabs, the navigation keys of the global mode move in the list
 (`Enter` opens). A key sequence left unfinished (`g`, `C-x`, `Ctrl+W`, a
 count) is dropped when the focus moves to another panel or tab.
@@ -250,11 +250,13 @@ mode move in the process list)
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the processes: only those whose name, user or PID hold every word typed (any case) and that meet every condition: `cpu>10` (also `cpu>10%`), `mem>100M` (`K`, `M`, `G`, `T`; no unit: MB), `threads>=50`, with `>`, `>=`, `<`, `<=` (a process stays shown for three readings once its values no longer match, and as long as it is selected; the title gives how many match); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the System Monitor tab (also its cross) |
 
-**Git Commits tab** (the history of the repository of the current folder;
-the navigation keys of the global mode move in the list)
+**Git tab** (the uncommitted changes and the history of the repository of
+the current folder; the navigation keys of the global mode move in the lists)
 
 | Key | Action |
 |---|---|
+| `v` (not in the filter field) | Next view: **Changes** (the uncommitted files: staged, not staged, untracked, and the patch of the selected one), **History** (the commits) |
+| `Enter` / double click on a file of **Changes** | Preview it (the Preview tab comes in front) |
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the commits: only those whose message, author (name or email) or hash hold every word typed (any case), searched through the whole history (100 at a time, like the list: the end of the list reads the next ones; beside the field, how many are listed); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
 | `Ctrl+C` (Notepad), `y` (Vim), `M-w` (Emacs) | Copy the full hash of the selected commit |
 | Right click on a commit | Copy its hash, its short hash or its whole message |
@@ -448,7 +450,7 @@ Repeated on a definition, the lookup goes to the next candidate (other
 definitions, then the declarations). The message line tells which one is shown
 and how many there are.
 
-The references are listed in a **References** tab next to **Git Commits**
+The references are listed in a **References** tab next to **Git**
 (grouped by file, `Enter` or a double click opens one, the cross closes the
 tab). Back (`Ctrl+O`, `M-,`, `Ctrl+Alt+-`), in the list or in the reference
 opened, returns to where the lookup started. The other occurrences of the identifier under the cursor are

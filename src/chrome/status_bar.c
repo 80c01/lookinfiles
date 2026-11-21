@@ -542,7 +542,7 @@ void update_status_bar(AppData* app) {
         return;
     }
 
-    /* The branch only makes sense for the files view (like the Git Commits tab) */
+    /* The branch only makes sense for the files view (like the Git tab) */
     gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES);
     gchar* branch = files_view ? git_read_branch(app->base_dir) : NULL;
     if (branch != NULL) {

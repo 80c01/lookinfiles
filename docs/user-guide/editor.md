@@ -295,8 +295,8 @@ place stays where it was in the preview.
   `% !TEX root = ../main.tex` line, else the document of its folder (or of
   the folder above) that includes it with `\input` or `\include`, else
   `main.tex`.
-- Errors, warnings and bad boxes go to the **LaTeX** tab, next to **Git
-  Commits**, with the source line of each error. `Enter` or a double click
+- Errors, warnings and bad boxes go to the **LaTeX** tab, next to
+  **Git**, with the source line of each error. `Enter` or a double click
   opens the place in an editor tab. The tab opens by itself when there are
   errors or warnings.
 - The files of the compilation (`.aux`, `.log`, `.synctex.gz`...) are

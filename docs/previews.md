@@ -114,7 +114,8 @@ format.
   moves the view); an empty or unreadable page falls back to its text
   summary.
 - Summaries of notebooks, bookmark folders and machines.
-- A **Git Commits** tab listing the repository history with each commit's diff,
+- A **Git** tab with the uncommitted changes (staged, not staged, untracked,
+  each file's patch) and the repository history with each commit's diff,
   and a **Search** tab with the results of a search in files (`Ctrl+Shift+F`).
 - Git change bars in the text preview and the editor, as in VS Code: lines
   added (green), modified (blue) or deleted (red marker) since the last commit;

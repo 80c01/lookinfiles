@@ -119,6 +119,8 @@ static GtkWidget* find_marked(GtkWidget* w) {
     }
     if (GTK_IS_LIST_VIEW(w) || GTK_IS_COLUMN_VIEW(w) || GTK_IS_TEXT_VIEW(w)) return NULL;
     for (GtkWidget* c = gtk_widget_get_first_child(w); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        /* Not the hidden pages of a GtkStack (the views of the Git tab) */
+        if (!gtk_widget_get_visible(c) || !gtk_widget_get_child_visible(c)) continue;
         GtkWidget* found = find_marked(c);
         if (found != NULL) return found;
     }

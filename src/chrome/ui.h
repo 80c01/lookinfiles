@@ -9,7 +9,7 @@ void focus_adjacent_panel(gint step, AppData* app);
 void focus_next_panel(AppData* app);
 void focus_prev_panel(AppData* app);
 /* Close the focused editor tab, else the current one if it is on screen
- * (never a tab hidden behind Git Commits or References) */
+ * (never a tab hidden behind Git or References) */
 void close_shown_tab(AppData* app);
 
 /* Before quitting (Ctrl+Q, window closed): confirm unsaved changes of every

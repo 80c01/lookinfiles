@@ -24,7 +24,7 @@ dans les trois modes.
 
 - Redemander la définition sur une définition passe au candidat suivant ;
   la ligne de message dit lequel est affiché et combien il y en a.
-- L’onglet **Références**, à côté de **Commits Git**, liste les
+- L’onglet **Références**, à côté de **Git**, liste les
   utilisations regroupées par fichier. `Enter` ou un double-clic en ouvre
   une ; la croix ferme l’onglet. Le retour (`Ctrl-O` en Vim, `M-,` en
   Emacs, `Ctrl+Alt+-` en Notepad), depuis la liste ou depuis la référence

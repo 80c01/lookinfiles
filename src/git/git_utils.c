@@ -5,35 +5,10 @@
 #include "git/git_utils.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
+#include "git/git_lib.h"
 
 #include <git2.h>
 #include <string.h>
-
-/* libgit2 is initialised once and stays so until the process exits */
-static void libgit2_ready(void) {
-    static gsize done = 0;
-    if (g_once_init_enter(&done)) {
-        git_libgit2_init();
-        g_once_init_leave(&done, 1);
-    }
-}
-
-/* The repository whose work tree starts at root, NULL if none (or bare) */
-static git_repository* open_work_tree(const gchar* root) {
-    if (root == NULL) {
-        return NULL;
-    }
-    libgit2_ready();
-    git_repository* repo = NULL;
-    if (git_repository_open_ext(&repo, root, GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) != 0) {
-        return NULL;
-    }
-    if (git_repository_is_bare(repo)) {
-        git_repository_free(repo);
-        return NULL;
-    }
-    return repo;
-}
 
 /* full relative to root with '/' separators, NULL when it is not below root.
  * '\\' separates components on Windows only: elsewhere it is a file name
@@ -198,7 +173,7 @@ static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
         return;
     }
     gchar* git_root = g_canonicalize_filename(raw_root, NULL);
-    git_repository* repo = open_work_tree(git_root);
+    git_repository* repo = git_lib_open(git_root);
     git_status_list* list = NULL;
     git_status_options opts;
     git_status_options_init(&opts, GIT_STATUS_OPTIONS_VERSION);
@@ -371,7 +346,7 @@ GPtrArray* git_list_branches(const gchar* dir) {
     if (root == NULL) {
         return NULL;
     }
-    git_repository* repo = open_work_tree(root);
+    git_repository* repo = git_lib_open(root);
     g_free(root);
     if (repo == NULL) {
         return NULL;
@@ -437,7 +412,7 @@ gboolean git_checkout_branch(const gchar* dir, const gchar* branch_name, gchar**
         }
         return FALSE;
     }
-    git_repository* repo = open_work_tree(root);
+    git_repository* repo = git_lib_open(root);
     g_free(root);
     if (repo == NULL) {
         if (error_msg != NULL) {
@@ -537,7 +512,7 @@ gboolean git_read_ahead_behind(const gchar* dir, guint* ahead, guint* behind) {
     if (root == NULL) {
         return FALSE;
     }
-    git_repository* repo = open_work_tree(root);
+    git_repository* repo = git_lib_open(root);
     g_free(root);
     if (repo == NULL) {
         return FALSE;
@@ -616,7 +591,7 @@ gchar* git_read_head_blob(const gchar* path, gsize* len) {
     g_free(dir);
     gchar* rel = root != NULL ? path_below(root, full) : NULL;
     g_free(full);
-    git_repository* repo = rel != NULL ? open_work_tree(root) : NULL;
+    git_repository* repo = rel != NULL ? git_lib_open(root) : NULL;
     g_free(root);
 
     gchar* out = NULL;
@@ -768,7 +743,7 @@ static gboolean commit_matches(git_commit* c, const gchar* hash, gchar** words) 
 GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words, GCancellable* cancellable,
                         gboolean* more) {
     if (more != NULL) *more = FALSE;
-    git_repository* repo = open_work_tree(root);
+    git_repository* repo = git_lib_open(root);
     if (repo == NULL) {
         return NULL;
     }
@@ -1073,51 +1048,6 @@ static void append_diffstat(GString* out, git_diff* diff) {
     g_free(lines);
 }
 
-/* git_diff_print() callback: the patch text as git prints it (hunk headers
- * without trailing blanks, no "---" / "+++" for files empty on both sides) */
-static int append_patch_line(const git_diff_delta* delta, const git_diff_hunk* hunk, const git_diff_line* line,
-                             void* data) {
-    (void)hunk;
-    GString* out = data;
-    switch (line->origin) {
-    case GIT_DIFF_LINE_CONTEXT:
-    case GIT_DIFF_LINE_ADDITION:
-    case GIT_DIFF_LINE_DELETION:
-        g_string_append_c(out, line->origin);
-        g_string_append_len(out, line->content, (gssize)line->content_len);
-        break;
-    case GIT_DIFF_LINE_HUNK_HDR: {
-        gsize len = line->content_len;
-        while (len > 0 && g_ascii_isspace(line->content[len - 1])) {
-            len--;
-        }
-        g_string_append_len(out, line->content, (gssize)len);
-        g_string_append_c(out, '\n');
-        break;
-    }
-    case GIT_DIFF_LINE_FILE_HDR:
-        if (delta->old_file.size == 0 && delta->new_file.size == 0) {
-            /* No content on either side: git prints no "---" / "+++" lines */
-            gchar* hdr = g_strndup(line->content, line->content_len);
-            gchar** rows = g_strsplit(hdr, "\n", -1);
-            for (gint i = 0; rows[i] != NULL && rows[i][0] != '\0'; i++) {
-                if (!g_str_has_prefix(rows[i], "--- ") && !g_str_has_prefix(rows[i], "+++ ")) {
-                    g_string_append_printf(out, "%s\n", rows[i]);
-                }
-            }
-            g_strfreev(rows);
-            g_free(hdr);
-            break;
-        }
-        g_string_append_len(out, line->content, (gssize)line->content_len);
-        break;
-    default:
-        g_string_append_len(out, line->content, (gssize)line->content_len);
-        break;
-    }
-    return 0;
-}
-
 /* "---", diffstat then patch of commit c against its first parent (the empty
  * tree for a root commit) */
 static void append_commit_diff(GString* out, git_repository* repo, git_commit* c) {
@@ -1145,7 +1075,7 @@ static void append_commit_diff(GString* out, git_repository* repo, git_commit* c
             g_string_append(out, "---\n");
             append_diffstat(out, diff);
             g_string_append_c(out, '\n');
-            git_diff_print(diff, GIT_DIFF_FORMAT_PATCH, append_patch_line, out);
+            git_diff_print(diff, GIT_DIFF_FORMAT_PATCH, git_lib_patch_line, out);
         }
     }
     git_diff_free(diff);
@@ -1158,7 +1088,7 @@ gchar* git_show_commit(const gchar* root, const gchar* hash) {
     if (hash == NULL || hash[0] == '\0') {
         return NULL;
     }
-    git_repository* repo = open_work_tree(root);
+    git_repository* repo = git_lib_open(root);
     if (repo == NULL) {
         return NULL;
     }
@@ -1179,7 +1109,7 @@ gchar* git_show_commit(const gchar* root, const gchar* hash) {
 }
 
 gboolean git_list_files_by_kind(const gchar* root, gboolean with_ignored, GitKindFunc func, gpointer data) {
-    git_repository* repo = open_work_tree(root);
+    git_repository* repo = git_lib_open(root);
     if (repo == NULL) {
         return FALSE;
     }

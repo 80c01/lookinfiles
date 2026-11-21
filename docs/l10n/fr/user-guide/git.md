@@ -43,17 +43,39 @@ dans VS Code :
 Les onglets d’édition mettent les barres à jour pendant la frappe. La
 minicarte les montre le long de son bord gauche.
 
-## L’onglet Commits Git
+## L’onglet Git
 
-L’onglet **Commits Git**, à côté de l’onglet **Aperçu**, apparaît quand le
-dossier courant est dans un dépôt. Il liste l’historique, du plus récent au
-plus ancien, avec le commit, le message (précédé de badges colorés pour
-`HEAD`, les branches locales et distantes, et les tags), l’auteur et la date
-de chaque commit (relative, complète dans son infobulle). Sélectionnez-en un
-pour voir son diff complet en dessous, sous une ligne donnant son hash, son
-sujet, son auteur et sa date. Les 100 commits les plus récents sont lus
-d’abord ; faire défiler jusqu’au bas de la liste (ou y amener la sélection)
-lit les 100 suivants.
+L’onglet **Git**, à côté de l’onglet **Aperçu**, apparaît quand le dossier
+courant est dans un dépôt. Les boutons en haut (ou `v`) passent d’une de ses
+deux vues à l’autre : **Modifications** et **Historique**.
+
+### Modifications
+
+Ce qui n’est pas encore commité, en trois groupes :
+
+- **Indexé** : ce que contiendra le prochain commit (`git add`) ;
+- **Modifications** : ce qui a changé dans les fichiers depuis, non indexé ;
+- **Non suivi** : les nouveaux fichiers que git ne suit pas encore.
+
+Un fichier indexé puis modifié de nouveau est dans les deux premiers
+groupes. Chaque fichier montre sa lettre d’état (les badges de
+l’explorateur), son dossier et les lignes qu’il ajoute et retire
+(`+12 −3`). Sélectionnez un fichier pour voir son patch en dessous : ce que
+le commit ajoutera pour un fichier indexé, ce qui a changé depuis l’index
+pour les autres, le fichier entier pour un fichier non suivi. `Entrée` ou un
+double-clic affiche le fichier dans l’aperçu. Le bouton indique combien de
+fichiers sont modifiés ; la liste est relue chaque fois que la vue est
+affichée et quand le dossier change.
+
+### Historique
+
+L’historique, du plus récent au plus ancien, avec le commit, le message
+(précédé de badges colorés pour `HEAD`, les branches locales et distantes,
+et les tags), l’auteur et la date de chaque commit (relative, complète dans
+son infobulle). Sélectionnez-en un pour voir son diff complet en dessous,
+sous une ligne donnant son hash, son sujet, son auteur et sa date. Les 100
+commits les plus récents sont lus d’abord ; faire défiler jusqu’au bas de la
+liste (ou y amener la sélection) lit les 100 suivants.
 
 Le champ au-dessus de la liste filtre l’historique : seuls restent les
 commits dont le message, l’auteur (nom ou e-mail) ou le hash contiennent

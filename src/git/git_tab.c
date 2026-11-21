@@ -1,14 +1,26 @@
 #include "git/git_tab.h"
 #include "core/i18n.h"
 #include "theme/icons.h"
+#include "theme/theme.h"
+#include "git/git_changes.h"
 #include "git/git_history.h"
 #include "git/git_utils.h"
+#include "widgets/focus_route.h"
+
+/* The views of the Git tab, in the order of their buttons */
+typedef enum { GIT_VIEW_CHANGES, GIT_VIEW_HISTORY, GIT_VIEW_COUNT } GitView;
+
+static const gchar* const VIEW_NAMES[GIT_VIEW_COUNT] = { "changes", "history" };
 
 /* Git tab state (app->git), created by git_tab_init(): the notebook page and
  * its views */
 typedef struct GitTab GitTab;
 struct GitTab {
+    AppData* app;
     GtkWidget* page;            /* notebook page of the tab */
+    GtkWidget* stack;           /* the views */
+    GtkWidget* buttons[GIT_VIEW_COUNT]; /* linked toggle buttons choosing them */
+    GitChanges* changes;        /* the Changes view (freed with its widget) */
     GitHistory* history;        /* the History view (freed with its widget) */
     gchar* current_root;        /* repository shown, or NULL */
 };
@@ -30,6 +42,8 @@ static void update_root(AppData* app, const gchar* dir, gboolean reload) {
     gtk_widget_set_visible(g->page, root != NULL);
     g_free(g->current_root);
     g->current_root = root;
+    /* Files may have changed with each update: the Changes view reads again */
+    git_changes_set_root(g->changes, root);
     git_history_set_root(g->history, root, reload);
 }
 
@@ -42,20 +56,90 @@ void git_tab_update(AppData* app, const gchar* dir) {
     update_root(app, dir, FALSE);
 }
 
+/* The Changes button says how many files are changed */
+static void on_changes_counted(guint n, gpointer data) {
+    GitTab* g = data;
+    gchar* text = n > 0 ? g_strdup_printf(_("Changes (%u)"), n) : g_strdup(_("Changes"));
+    gtk_button_set_label(GTK_BUTTON(g->buttons[GIT_VIEW_CHANGES]), text);
+    g_free(text);
+}
+
+static void on_view_toggled(GtkToggleButton* button, gpointer data) {
+    GitTab* g = data;
+    if (!gtk_toggle_button_get_active(button)) return;
+    for (gint i = 0; i < GIT_VIEW_COUNT; i++) {
+        if (g->buttons[i] == GTK_WIDGET(button)) {
+            gtk_stack_set_visible_child_name(GTK_STACK(g->stack), VIEW_NAMES[i]);
+        }
+    }
+}
+
+static GtkWidget* view_button(GitTab* g, GitView view, const gchar* label, const gchar* tooltip) {
+    GtkWidget* b = gtk_toggle_button_new_with_label(label);
+    gtk_widget_set_tooltip_text(b, tooltip);
+    gtk_widget_set_focus_on_click(b, FALSE);
+    if (view > 0) gtk_toggle_button_set_group(GTK_TOGGLE_BUTTON(b), GTK_TOGGLE_BUTTON(g->buttons[0]));
+    g_signal_connect(b, "toggled", G_CALLBACK(on_view_toggled), g);
+    g->buttons[view] = b;
+    return b;
+}
+
+/* v in the tab (not in a text field): the next view, with the focus in it */
+static gboolean on_page_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                            gpointer data) {
+    (void)keycode;
+    GitTab* g = data;
+    if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) != 0 || keyval != GDK_KEY_v) return FALSE;
+    GtkWidget* page = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    GtkWidget* focus = gtk_root_get_focus(gtk_widget_get_root(page));
+    if (focus != NULL && (GTK_IS_EDITABLE(focus) || GTK_IS_TEXT_VIEW(focus))) return FALSE;
+    const gchar* shown = gtk_stack_get_visible_child_name(GTK_STACK(g->stack));
+    gint next = 0;
+    for (gint i = 0; i < GIT_VIEW_COUNT; i++) {
+        if (g_strcmp0(shown, VIEW_NAMES[i]) == 0) next = (i + 1) % GIT_VIEW_COUNT;
+    }
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[next]), TRUE);
+    focus_route_focus_page(g->app, g->page);
+    return TRUE;
+}
+
 void git_tab_init(AppData* app) {
     if (app == NULL || app->notebook == NULL) return;
 
     GitTab* g = g_new0(GitTab, 1);
     app->git = g;
+    g->app = app;
+    g->changes = git_changes_new(app, on_changes_counted, g);
     g->history = git_history_new(app);
+    theme_add_css(".git-switcher { margin: 4px 8px 2px 8px; }");
+
+    GtkWidget* switcher = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_add_css_class(switcher, "linked");
+    gtk_widget_add_css_class(switcher, "git-switcher");
+    gtk_widget_set_halign(switcher, GTK_ALIGN_START);
+    /* TRANSLATORS: the views of the Git tab; v shows the next one */
+    gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_CHANGES, _("Changes"),
+                                                  _("Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)")));
+    gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_HISTORY, _("History"),
+                                                  _("The Commits, Newest First (v: Next View)")));
+
+    g->stack = gtk_stack_new();
+    gtk_widget_set_vexpand(g->stack, TRUE);
+    gtk_stack_add_named(GTK_STACK(g->stack), git_changes_widget(g->changes), VIEW_NAMES[GIT_VIEW_CHANGES]);
+    gtk_stack_add_named(GTK_STACK(g->stack), git_history_widget(g->history), VIEW_NAMES[GIT_VIEW_HISTORY]);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_CHANGES]), TRUE);
 
     GtkWidget* tab_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(tab_box, TRUE);
     gtk_widget_set_vexpand(tab_box, TRUE);
-    gtk_box_append(GTK_BOX(tab_box), git_history_widget(g->history));
+    gtk_box_append(GTK_BOX(tab_box), switcher);
+    gtk_box_append(GTK_BOX(tab_box), g->stack);
     g->page = tab_box;
+    GtkEventController* keys = gtk_event_controller_key_new();
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_page_key), g);
+    gtk_widget_add_controller(tab_box, keys);
 
-    GtkWidget* tab_label = icon_label_new("document-open-recent", _("Git Commits"));
+    GtkWidget* tab_label = icon_label_new("document-open-recent", _("Git"));
     gtk_notebook_append_page(GTK_NOTEBOOK(app->notebook), tab_box, tab_label);
 
     git_tab_update(app, app->base_dir);
@@ -70,6 +154,7 @@ void git_tab_cleanup(AppData* app) {
     if (g == NULL) return;
     /* The views stay with their widgets until the window goes; their reads
      * stop now */
+    git_changes_cancel(g->changes);
     git_history_cancel(g->history);
     g_free(g->current_root);
     g_clear_pointer(&app->git, g_free);

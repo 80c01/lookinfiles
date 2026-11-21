@@ -334,7 +334,7 @@ compilation, l’endroit reste où il était dans l’aperçu.
   (ou du dossier au-dessus) qui l’inclut avec `\input` ou `\include`,
   sinon `main.tex`.
 - Les erreurs, avertissements et boîtes mal remplies vont dans l’onglet
-  **LaTeX**, à côté de **Commits Git**, avec la ligne source de chaque
+  **LaTeX**, à côté de **Git**, avec la ligne source de chaque
   erreur. `Enter` ou un double-clic ouvre l’endroit dans un onglet
   d’édition.
   L’onglet s’ouvre de lui-même quand il y a des erreurs ou des

@@ -72,7 +72,7 @@ panels, `Ctrl+Q` to quit.
 | Component | Package (Debian / Ubuntu) | Needed for |
 |---|---|---|
 | GTK 4.12 or newer | `libgtk-4-dev` | Required |
-| libgit2 1.1 or newer | `libgit2-dev` | Required (status badges, change bars, Git Commits tab) |
+| libgit2 1.1 or newer | `libgit2-dev` | Required (status badges, change bars, Git tab) |
 | C compiler, make, pkg-config | `build-essential pkg-config` | Required |
 | VTE for GTK 4 | `libvte-2.91-gtk4-dev` | Embedded terminal |
 | GtkSourceView 5 | `libgtksourceview-5-dev` | Syntax highlighting |

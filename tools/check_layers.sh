@@ -63,7 +63,9 @@ remote_mounts:app_paths
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
-git_utils:palette,i18n
+git_utils:palette,i18n,git_lib
+git_lib:
+git_worktree:git_lib,i18n
 git_refs:
 line_diff:
 latex_log:

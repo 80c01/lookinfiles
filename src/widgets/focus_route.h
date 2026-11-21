@@ -4,7 +4,7 @@
 /* Where the keyboard focus is (explorer, preview, another notebook page,
  * editor tab), so that every key handler routes a key the same way; tab
  * switching that always lands the focus in the new page; the navigation keys
- * of the global mode in list pages (Git Commits, References). */
+ * of the global mode in list pages (Git, References). */
 #include "core/app_types.h"
 #include "explorer/nav_keys.h"
 
@@ -12,7 +12,7 @@ typedef enum {
     FOCUS_AREA_NONE = 0, /* no focus, or another panel (terminal, help, bars) */
     FOCUS_AREA_EXPLORER, /* the explorer list */
     FOCUS_AREA_PREVIEW,  /* the Preview page */
-    FOCUS_AREA_PAGE,     /* another page of the preview notebook (Git Commits, References) */
+    FOCUS_AREA_PAGE,     /* another page of the preview notebook (Git, References) */
     FOCUS_AREA_EDITOR    /* an editor tab (its view, command line, minibuffer...) */
 } FocusArea;
 
