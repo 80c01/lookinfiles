@@ -15,6 +15,8 @@
 #define MONTHS_LABEL_H 18.0
 /* Past this many months, one bar per year */
 #define MONTHS_MAX 72
+/* Widest slot of a bar */
+#define MONTHS_MAX_SLOT 28.0
 
 typedef struct {
     gchar* label; /* under the bar, NULL: none */
@@ -261,7 +263,7 @@ static void draw_months(Chart* c, cairo_t* cr, gint width, PangoLayout* layout) 
     if (n == 0) return;
     guint top = 0;
     for (guint i = 0; i < n; i++) top = MAX(top, g_array_index(c->bars, Bar, i).count);
-    gdouble slot = (gdouble)width / n;
+    gdouble slot = MIN((gdouble)width / n, MONTHS_MAX_SLOT); /* a few months: narrow bars on the left */
     gdouble gap = slot > 6.0 ? 1.0 : 0.0;
     gdouble last_label = -1000.0;
     set_color(cr, PAL_BORDER, 1.0);
@@ -282,7 +284,7 @@ static void draw_months(Chart* c, cairo_t* cr, gint width, PangoLayout* layout) 
 
 static gchar* months_tip(Chart* c, gint width, gint x, gint y) {
     if (c->bars->len == 0 || y > MONTHS_H) return NULL;
-    guint i = (guint)(x / ((gdouble)width / c->bars->len));
+    guint i = (guint)(x / MIN((gdouble)width / c->bars->len, MONTHS_MAX_SLOT));
     if (i >= c->bars->len) return NULL;
     return g_strdup(g_array_index(c->bars, Bar, i).tip);
 }

@@ -538,7 +538,7 @@ key v;                  shot git_history_view      # v: the next view, History
   GIT_AUTHOR_DATE="2000-01-02T00:00:00Z" GIT_COMMITTER_DATE="2000-01-02T00:00:00Z" \
       git -c user.email=ui@test -c user.name=ui commit -qm "external commit" )
 sleep 3;                shot git_tab_after_commit
-xdotool mousemove 420 160 click 1   # older commit: its diff replaces the newest one
+xdotool mousemove 420 195 click 1   # older commit: its diff replaces the newest one
                         shot git_older_commit
 # Filter the history (Ctrl+F from the list): only "external commit" stays;
 # Enter goes back to the list with the filter kept, Escape twice empties it
@@ -548,7 +548,7 @@ key Return;             shot git_filter_back_to_list
 key ctrl+f Escape;      shot git_filter_emptied
 key Escape;             shot git_filter_closed
 key ctrl+c;             shot git_copy_hash         # notice with the full hash
-xdotool mousemove 600 140 click 3; sleep 0.3; shot git_commit_menu
+xdotool mousemove 600 175 click 3; sleep 0.3; shot git_commit_menu
 key Escape;             shot git_commit_menu_closed
 # A longer history: the first page lists 100 commits, End reads the rest
 ( cd "$FIX/work" && i=0 && while [ $i -lt 150 ]; do
@@ -559,6 +559,8 @@ key Escape;             shot git_commit_menu_closed
   done )
 sleep 3;                shot git_first_page
 key End;                shot git_next_page         # 152 commits listed, the 100th selected
+key v; sleep 1;         shot git_statistics_view   # v again: commits by day, hour, month, author
+key v v;                shot git_history_again     # Changes, then History
 # Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
 # bar takes the tab (the emptied split closes)
 xdotool mousemove 347 50 click 1;   shot tab_docked   # plan.org to the editor panel

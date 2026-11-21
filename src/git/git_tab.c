@@ -60,10 +60,10 @@ void git_tab_update(AppData* app, const gchar* dir) {
     update_root(app, dir, FALSE);
 }
 
-/* The Changes button says how many files are changed */
+/* The Changes button says how many files are changed, when known */
 static void on_changes_counted(guint n, gpointer data) {
     GitTab* g = data;
-    gchar* text = n > 0 ? g_strdup_printf(_("Changes (%u)"), n) : g_strdup(_("Changes"));
+    gchar* text = n > 0 && n != G_MAXUINT ? g_strdup_printf(_("Changes (%u)"), n) : g_strdup(_("Changes"));
     gtk_button_set_label(GTK_BUTTON(g->buttons[GIT_VIEW_CHANGES]), text);
     g_free(text);
 }

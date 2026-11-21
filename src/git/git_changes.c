@@ -333,7 +333,11 @@ void git_changes_set_root(GitChanges* c, const gchar* root) {
     }
     if (c->root == NULL) return;
     c->stale = !gtk_widget_get_mapped(c->widget);
-    if (!c->stale) start_read(c);
+    if (!c->stale) {
+        start_read(c);
+    } else if (c->counted != NULL) {
+        c->counted(G_MAXUINT, c->counted_data); /* the last count may be wrong now */
+    }
 }
 
 /* The view comes on screen: the work tree may have changed anywhere below

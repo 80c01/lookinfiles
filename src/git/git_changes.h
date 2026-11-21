@@ -9,7 +9,8 @@
  * screen; each time it comes on screen it reads them again. */
 typedef struct GitChanges GitChanges;
 
-/* After each read: how many files are listed (n), for the view's button */
+/* After each read: how many files are listed (n), for the view's button;
+ * G_MAXUINT: not known (the view is hidden and may be out of date) */
 typedef void (*GitChangesCountFunc)(guint n, gpointer data);
 
 /* A new view; freed with its widget */
