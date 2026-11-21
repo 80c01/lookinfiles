@@ -60,9 +60,10 @@ Each file shows its status letter (the badges of the explorer), its folder
 and the lines it adds and removes (`+12 −3`). Select a file to see its patch
 below: what the commit will add for a staged file, what changed since it was
 staged for the others, the whole file for an untracked one. `Enter` or a
-double click previews the file. The button says how many files are changed;
-the list is read again each time the view is shown and when the folder
-changes.
+double click previews the file. The button says how many changes there
+are, from the other views too (counted from the status only, as fast as
+`git status`); the list is read again each time the view is shown and when
+the folder changes.
 
 ### History
 

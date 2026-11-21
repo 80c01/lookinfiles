@@ -157,6 +157,9 @@ static void test_groups(Fixture* fx, gconstpointer data) {
     g_assert_cmpint(c->status, ==, 'U');
     g_assert_cmpint(c->added, ==, 2);
 
+    /* Counted from the status alone: the same number */
+    g_assert_cmpint(git_count_changes(fx->dir, NULL), ==, 6);
+
     /* Groups in order */
     for (guint i = 1; i < changes->len; i++) {
         const GitChange* prev = g_ptr_array_index(changes, i - 1);
@@ -185,6 +188,7 @@ static void test_rename(Fixture* fx, gconstpointer data) {
     g_assert_cmpstr(c->path, ==, "renamed.txt");
     g_assert_cmpstr(c->old_path, ==, "old.txt");
     g_ptr_array_unref(changes);
+    g_assert_cmpint(git_count_changes(fx->dir, NULL), ==, 1); /* a rename is one change */
 
     gchar* patch = git_change_patch(fx->dir, "renamed.txt", GIT_CHANGE_STAGED);
     g_assert_nonnull(patch);
@@ -250,6 +254,7 @@ static void test_max(Fixture* fx, gconstpointer data) {
     g_assert_cmpuint(changes->len, ==, 2);
     g_assert_true(more);
     g_ptr_array_unref(changes);
+    g_assert_cmpint(git_count_changes(fx->dir, NULL), ==, 3); /* no limit */
 }
 
 /* A binary file has no line counts */
@@ -273,6 +278,7 @@ static void test_not_a_repo(void) {
     g_assert_null(git_read_changes(tmp, 0, NULL, NULL));
     g_assert_null(git_change_patch(tmp, "x", GIT_CHANGE_UNSTAGED));
     g_assert_null(git_read_changes(NULL, 0, NULL, NULL));
+    g_assert_cmpint(git_count_changes(tmp, NULL), ==, -1);
     g_rmdir(tmp);
     g_free(tmp);
 }
@@ -283,6 +289,7 @@ static void test_cancelled(Fixture* fx, gconstpointer data) {
     GCancellable* cancel = g_cancellable_new();
     g_cancellable_cancel(cancel);
     g_assert_null(git_read_changes(fx->dir, 0, cancel, NULL));
+    g_assert_cmpint(git_count_changes(fx->dir, cancel), ==, -1);
     g_object_unref(cancel);
 }
 

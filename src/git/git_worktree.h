@@ -37,6 +37,12 @@ void git_change_free(gpointer change);
  * work tree or cancellable was cancelled. */
 GPtrArray* git_read_changes(const gchar* root, guint max, GCancellable* cancellable, gboolean* more);
 
+/* How many changes git_read_changes() would list (no limit), counted from
+ * the status of the work tree only (no line counts, no patches: as fast as
+ * `git status`); -1 when root is not a work tree or cancellable was
+ * cancelled. */
+gint git_count_changes(const gchar* root, GCancellable* cancellable);
+
 /* The patch of path in group (`git diff --cached`, `git diff`, or the whole
  * file for an untracked one), NULL if it cannot be read; "" when path has
  * no change there */

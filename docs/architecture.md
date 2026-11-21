@@ -197,7 +197,8 @@ Layers, from bottom to top
   worker thread only: `git_read_changes()` lists the staged (index against
   `HEAD`, renames found), unstaged and untracked files with their lines
   added and removed (binary: -1; at most a given number), and
-  `git_change_patch()` gives the patch of one of them. Unit-tested.
+  `git_change_patch()` gives the patch of one of them; `git_count_changes()`
+  counts them from the status alone (no lines, no patches). Unit-tested.
 - `git_refs` — reads branch, `HEAD` and tag (lightweight and annotated)
   decorations per commit SHA through libgit2 (`git_read_refs()`,
   `git_ref_display_name()`), displayed as badges in `git_tab`. Worker thread,
@@ -1189,7 +1190,8 @@ Layers, from bottom to top
   the files of `git_read_changes()` in a section per group (a `GtkSortListModel`
   section sorter, a header factory: headers are never selected), read again
   each time the view comes on screen (`map`) and on each `git_tab_update()`
-  while shown; the patch of the selected file has its own cancellable;
+  while shown (hidden, only `git_count_changes()` for the count on its
+  button); the patch of the selected file has its own cancellable;
   `Enter` previews the file through `APP_EVENT_PREVIEW_PATH`. `git_history`
   is its History view (`GitHistory`, freed with its widget; its tasks reach
   it through their callback data and are cancelled first). It reads the

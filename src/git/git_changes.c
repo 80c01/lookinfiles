@@ -28,6 +28,7 @@ struct GitChanges {
     GitChangeGroup selected_group;
     GCancellable* cancellable;  /* the read of the changes */
     GCancellable* patch_cancellable; /* the patch of the selected file */
+    GCancellable* count_cancellable; /* the count of the changes while hidden */
     gboolean stale;             /* read again when the view is shown */
     GitChangesCountFunc counted;
     gpointer counted_data;
@@ -104,6 +105,7 @@ typedef struct {
     gchar* root;
     GPtrArray* changes; /* GitChange*, NULL: the work tree cannot be read */
     gboolean more;      /* some were left out (GIT_CHANGES_MAX) */
+    gint total;         /* how many changes in all (git_count_changes()), -1: unknown */
 } ReadTask;
 
 static void read_task_free(gpointer data) {
@@ -117,6 +119,8 @@ static void read_thread(GTask* task, gpointer source, gpointer data, GCancellabl
     (void)source;
     ReadTask* td = data;
     td->changes = git_read_changes(td->root, GIT_CHANGES_MAX, cancellable, &td->more);
+    /* The list is cut: the button still says how many there are */
+    td->total = td->changes == NULL ? -1 : td->more ? git_count_changes(td->root, cancellable) : (gint)td->changes->len;
     if (g_task_return_error_if_cancelled(task)) return;
     g_task_return_boolean(task, TRUE);
 }
@@ -156,8 +160,16 @@ static void cancel_patch(GitChanges* c) {
     }
 }
 
+static void cancel_count(GitChanges* c) {
+    if (c->count_cancellable != NULL) {
+        g_cancellable_cancel(c->count_cancellable);
+        g_clear_object(&c->count_cancellable);
+    }
+}
+
 static void cancel_reads(GitChanges* c) {
     cancel_patch(c);
+    cancel_count(c);
     if (c->cancellable != NULL) {
         g_cancellable_cancel(c->cancellable);
         g_clear_object(&c->cancellable);
@@ -272,7 +284,7 @@ static void on_read_ready(GObject* source, GAsyncResult* res, gpointer data) {
                     : files == 0        ? _("Nothing to commit: the work tree is clean")
                                         : cut);
     g_free(cut);
-    if (c->counted != NULL) c->counted(files, c->counted_data);
+    if (c->counted != NULL) c->counted(td->total >= 0 ? (guint)td->total : files, c->counted_data);
 
     guint row = row_to_select(c);
     if (row != GTK_INVALID_LIST_POSITION) {
@@ -282,6 +294,47 @@ static void on_read_ready(GObject* source, GAsyncResult* res, gpointer data) {
         gtk_label_set_text(GTK_LABEL(c->header_label), "");
         gtk_text_buffer_set_text(c->detail_buf, "", -1);
     }
+}
+
+/* --- The count alone, while the view is hidden (for its button) */
+
+typedef struct {
+    gchar* root;
+    gint count;
+} CountTask;
+
+static void count_task_free(gpointer data) {
+    CountTask* td = data;
+    g_free(td->root);
+    g_free(td);
+}
+
+static void count_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    CountTask* td = data;
+    td->count = git_count_changes(td->root, cancellable);
+    if (g_task_return_error_if_cancelled(task)) return;
+    g_task_return_boolean(task, TRUE);
+}
+
+static void on_count_ready(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    GTask* task = G_TASK(res);
+    if (!g_task_propagate_boolean(task, NULL)) return; /* cancelled: a newer count or read, or exit */
+    GitChanges* c = data;
+    CountTask* td = g_task_get_task_data(task);
+    if (c->counted != NULL) c->counted(td->count >= 0 ? (guint)td->count : G_MAXUINT, c->counted_data);
+}
+
+static void start_count(GitChanges* c) {
+    cancel_count(c);
+    c->count_cancellable = g_cancellable_new();
+    CountTask* td = g_new0(CountTask, 1);
+    td->root = g_strdup(c->root);
+    GTask* task = g_task_new(NULL, c->count_cancellable, on_count_ready, c);
+    g_task_set_task_data(task, td, count_task_free);
+    g_task_run_in_thread(task, count_thread);
+    g_object_unref(task);
 }
 
 static void start_read(GitChanges* c) {
@@ -314,8 +367,8 @@ void git_changes_set_root(GitChanges* c, const gchar* root) {
     c->stale = !gtk_widget_get_mapped(c->widget);
     if (!c->stale) {
         start_read(c);
-    } else if (c->counted != NULL) {
-        c->counted(G_MAXUINT, c->counted_data); /* the last count may be wrong now */
+    } else {
+        start_count(c); /* hidden: the count only, for the button */
     }
 }
 

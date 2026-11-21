@@ -6,11 +6,13 @@
 /* The Changes view of the Git tab: the uncommitted changes of the work tree
  * (staged, not staged, untracked; git_worktree) and the patch of the file
  * selected below them. Read on a worker thread only while the view is on
- * screen; each time it comes on screen it reads them again. */
+ * screen; each time it comes on screen it reads them again. Hidden, it
+ * only counts them (git_count_changes()) on each git_changes_set_root(). */
 typedef struct GitChanges GitChanges;
 
-/* After each read: how many files are listed (n), for the view's button;
- * G_MAXUINT: not known (the view is hidden and may be out of date) */
+/* After each read, and each update while hidden (the changes counted
+ * without being read): how many changes there are (n), for the view's
+ * button; G_MAXUINT: not known (the work tree cannot be read) */
 typedef void (*GitChangesCountFunc)(guint n, gpointer data);
 
 /* A new view; freed with its widget */

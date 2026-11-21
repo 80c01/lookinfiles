@@ -64,9 +64,10 @@ l’explorateur), son dossier et les lignes qu’il ajoute et retire
 (`+12 −3`). Sélectionnez un fichier pour voir son patch en dessous : ce que
 le commit ajoutera pour un fichier indexé, ce qui a changé depuis l’index
 pour les autres, le fichier entier pour un fichier non suivi. `Entrée` ou un
-double-clic affiche le fichier dans l’aperçu. Le bouton indique combien de
-fichiers sont modifiés ; la liste est relue chaque fois que la vue est
-affichée et quand le dossier change.
+double-clic affiche le fichier dans l’aperçu. Le bouton indique combien il
+y a de modifications, depuis les autres vues aussi (comptées à partir du
+seul statut, aussi vite que `git status`) ; la liste est relue chaque fois
+que la vue est affichée et quand le dossier change.
 
 ### Historique
 

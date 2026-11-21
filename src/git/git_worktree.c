@@ -163,6 +163,41 @@ GPtrArray* git_read_changes(const gchar* root, guint max, GCancellable* cancella
     return out;
 }
 
+/* Changes of the index against HEAD, and of the work tree against the
+ * index (a conflict is one of them), as git_read_changes() groups them */
+#define INDEX_FLAGS (GIT_STATUS_INDEX_NEW | GIT_STATUS_INDEX_MODIFIED | GIT_STATUS_INDEX_DELETED | \
+                     GIT_STATUS_INDEX_RENAMED | GIT_STATUS_INDEX_TYPECHANGE)
+#define WORKDIR_FLAGS (GIT_STATUS_WT_MODIFIED | GIT_STATUS_WT_DELETED | GIT_STATUS_WT_TYPECHANGE | \
+                       GIT_STATUS_WT_RENAMED | GIT_STATUS_WT_NEW | GIT_STATUS_CONFLICTED)
+
+gint git_count_changes(const gchar* root, GCancellable* cancellable) {
+    git_repository* repo = git_lib_open(root);
+    if (repo == NULL) return -1;
+    git_status_options opts;
+    git_status_options_init(&opts, GIT_STATUS_OPTIONS_VERSION);
+    opts.show = GIT_STATUS_SHOW_INDEX_AND_WORKDIR;
+    opts.flags = GIT_STATUS_OPT_INCLUDE_UNTRACKED | GIT_STATUS_OPT_RECURSE_UNTRACKED_DIRS |
+                 GIT_STATUS_OPT_RENAMES_HEAD_TO_INDEX;
+    git_status_list* list = NULL;
+    gint count = -1;
+    if (!g_cancellable_is_cancelled(cancellable) && git_status_list_new(&list, repo, &opts) == 0) {
+        count = 0;
+        gsize n = git_status_list_entrycount(list);
+        for (gsize i = 0; i < n; i++) {
+            const git_status_entry* e = git_status_byindex(list, i);
+            if (e->status & GIT_STATUS_CONFLICTED) {
+                count++; /* one change, not staged */
+                continue;
+            }
+            count += (e->status & INDEX_FLAGS) != 0;
+            count += (e->status & WORKDIR_FLAGS) != 0;
+        }
+        git_status_list_free(list);
+    }
+    git_repository_free(repo);
+    return g_cancellable_is_cancelled(cancellable) ? -1 : count;
+}
+
 /* The patch of the delta of diff whose new (or old) path is path, "" if
  * there is none */
 static gchar* patch_of(git_diff* diff, const gchar* path) {
