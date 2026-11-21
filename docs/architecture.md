@@ -187,8 +187,12 @@ Layers, from bottom to top
   (`git_lib_ready()`), a work tree opened (`git_lib_open()`), a patch printed
   as git prints it (`git_lib_patch_line()`), a short hash (`git_lib_short_id()`).
 - `git_log` — the history through libgit2, worker thread only:
-  `git_read_log()` walks it from `HEAD` page by page, filtered by words
-  (`git_log_words()`) and by a path. Tested in `test_git_utils`.
+  `git_read_log()` walks it from `HEAD` page by page, children before
+  their parents, filtered by words (`git_log_words()`) and by a path; each
+  commit keeps its parents. Tested in `test_git_utils`.
+- `git_graph` — the lanes of the commit graph (pure): `git_graph_add()`
+  takes the commits newest first and gives each row its dot's column and
+  the lines joining it to the rows above and below. Unit-tested.
 - `git_repo_info` — the setup of a repository through libgit2 (worker
   thread): the effective identity and its level, the remotes, the local
   branches with their upstream (gone, ahead, behind), every config entry

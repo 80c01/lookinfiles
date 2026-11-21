@@ -83,7 +83,8 @@ GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words,
     GPtrArray* commits = g_ptr_array_new_with_free_func(git_commit_info_free);
     git_revwalk* walk = NULL;
     if (git_revwalk_new(&walk, repo) == 0) {
-        git_revwalk_sorting(walk, GIT_SORT_TIME);
+        /* Children before their parents (the graph needs it), newest first */
+        git_revwalk_sorting(walk, GIT_SORT_TOPOLOGICAL | GIT_SORT_TIME);
         gint64 now = g_get_real_time() / G_USEC_PER_SEC;
         git_oid oid;
         guint seen = 0;
@@ -124,6 +125,12 @@ GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words,
                 ci->author = g_utf8_make_valid(author != NULL && author->name != NULL ? author->name : "", -1);
                 ci->time = (gint64)git_commit_time(c);
                 ci->date = git_relative_date(now - ci->time);
+                guint n_parents = git_commit_parentcount(c);
+                ci->parents = g_new0(gchar*, n_parents + 1);
+                for (guint p = 0; p < n_parents; p++) {
+                    gchar sha[GIT_OID_MAX_HEXSIZE + 1]; /* not git_oid_tostr_s(): its buffer holds hash */
+                    ci->parents[p] = g_strdup(git_oid_tostr(sha, sizeof sha, git_commit_parent_id(c, p)));
+                }
                 g_ptr_array_add(commits, ci);
                 git_commit_free(c);
             }

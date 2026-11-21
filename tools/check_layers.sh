@@ -70,6 +70,7 @@ git_worktree:git_lib,i18n
 git_stats:git_lib
 git_repo_info:git_lib,i18n
 git_refs:
+git_graph:
 line_diff:
 latex_log:
 latex_root:

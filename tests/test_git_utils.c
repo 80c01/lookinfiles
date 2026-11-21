@@ -377,6 +377,9 @@ static void test_read_log(Fixture* fx, gconstpointer data) {
     g_assert_cmpstr(oldest->subject, ==, "First commit");
     g_assert_cmpstr(oldest->message, ==, "First commit\n\nBody"); /* whole, no trailing line break */
     g_assert_cmpstr(oldest->date, ==, "3 days ago");
+    g_assert_cmpuint(g_strv_length(newest->parents), ==, 1); /* its parent: the oldest */
+    g_assert_cmpstr(newest->parents[0], ==, oldest->hash);
+    g_assert_cmpuint(g_strv_length(oldest->parents), ==, 0); /* a root */
     g_ptr_array_unref(log);
 
     log = git_read_log(repo_dir, 0, 1, NULL, NULL, NULL, NULL);

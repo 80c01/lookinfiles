@@ -69,6 +69,7 @@ typedef struct {
     gchar* author;
     gchar* date; /* committer date relative to now, like git's %cr */
     gint64 time; /* committer date, seconds since the epoch */
+    gchar** parents; /* full SHAs of the parents, first parent first (NULL-terminated, empty for a root) */
 } GitCommitInfo;
 
 void git_commit_info_free(gpointer info);

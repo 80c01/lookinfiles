@@ -9,7 +9,8 @@
  * NULL when text holds none (every commit). g_strfreev() */
 gchar** git_log_words(const gchar* text);
 
-/* max commits reachable from HEAD of the repository at root, newest first,
+/* max commits reachable from HEAD of the repository at root, newest first
+ * with every commit before its parents (like `git log --topo-order`),
  * after the skip newest ones (to read the history page by page), keeping
  * only those whose message, author (name or email) or full hash
  * hold every word of words (git_log_words(); NULL keeps all) and, when path

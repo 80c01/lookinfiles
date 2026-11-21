@@ -624,6 +624,7 @@ void git_commit_info_free(gpointer data) {
     g_free(c->message);
     g_free(c->author);
     g_free(c->date);
+    g_strfreev(c->parents);
     g_free(c);
 }
 
