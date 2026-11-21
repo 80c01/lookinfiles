@@ -22,7 +22,8 @@ struct GitTab {
     GtkTextBuffer* detail_buf;  /* diff of the selected commit */
     gchar* current_root;        /* repository shown, or NULL */
     gchar* selected_hash;       /* selected commit, or NULL */
-    GCancellable* cancellable;  /* log and show tasks */
+    GCancellable* cancellable;  /* log and show tasks of current_root */
+    GCancellable* show_cancellable; /* diff of the selected commit being read */
     gboolean log_stale;         /* current_root's history is read when the tab is shown */
 };
 
@@ -253,6 +254,7 @@ static void on_git_show_ready(GObject* source_object, GAsyncResult* res, gpointe
     (void)user_data;
     GTask* task = G_TASK(res);
     GitShowTaskData* td = (GitShowTaskData*)g_task_get_task_data(task);
+    if (!g_task_propagate_boolean(task, NULL)) return; /* cancelled: another commit or repository */
     if (td == NULL || td->app == NULL || td->app->git == NULL) return;
 
     GitTab* g = td->app->git;
@@ -338,6 +340,14 @@ static void populate_refs_box(GtkWidget* box, GPtrArray* refs, guint max_badges)
     }
 }
 
+/* Cancel the diff being read for the selected commit, if any */
+static void cancel_show(GitTab* g) {
+    if (g->show_cancellable != NULL) {
+        g_cancellable_cancel(g->show_cancellable);
+        g_clear_object(&g->show_cancellable);
+    }
+}
+
 static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* pspec, gpointer user_data) {
     (void)pspec;
     AppData* app = (AppData*)user_data;
@@ -371,7 +381,10 @@ static void on_git_selection_changed(GtkSingleSelection* selection, GParamSpec* 
     td->git_root = g_strdup(g->current_root);
     td->commit_hash = g_strdup(hash);
 
-    GTask* task = g_task_new(NULL, g->cancellable, on_git_show_ready, NULL);
+    /* Moving fast in the list: the diff of the previous commit is not wanted */
+    cancel_show(g);
+    g->show_cancellable = g_cancellable_new();
+    GTask* task = g_task_new(NULL, g->show_cancellable, on_git_show_ready, NULL);
     g_task_set_task_data(task, td, git_show_task_data_free);
     g_task_run_in_thread(task, git_show_thread_func);
     g_object_unref(task);
@@ -482,6 +495,7 @@ void git_tab_update(AppData* app, const gchar* dir) {
     g_free(g->current_root);
     g->current_root = root;
 
+    cancel_show(g);
     if (g->cancellable != NULL) {
         g_cancellable_cancel(g->cancellable);
         g_clear_object(&g->cancellable);
@@ -497,6 +511,7 @@ void git_tab_update(AppData* app, const gchar* dir) {
 /* Read the history of g->current_root on a worker thread */
 static void start_log_read(AppData* app) {
     GitTab* g = app->git;
+    cancel_show(g);
     if (g->cancellable != NULL) {
         g_cancellable_cancel(g->cancellable);
         g_clear_object(&g->cancellable);
@@ -711,6 +726,7 @@ GtkWidget* git_tab_page(AppData* app) {
 void git_tab_cleanup(AppData* app) {
     GitTab* g = app != NULL ? app->git : NULL;
     if (g == NULL) return;
+    cancel_show(g);
     if (g->cancellable != NULL) {
         g_cancellable_cancel(g->cancellable);
         g_clear_object(&g->cancellable);
