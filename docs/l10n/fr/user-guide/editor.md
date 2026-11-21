@@ -53,9 +53,9 @@ Les applications :
   du mode (Notepad `Ctrl+S`, Emacs et Org-mode `C-x C-s` ou `C-x C-w`, Vim
   `:w nom`) ; le fermer avec des modifications demande d’abord. Un onglet
   d’édition vide ouvert par **Éditeur** s’enregistre de la même façon.
-- **Moniteur système** : l’onglet Moniteur système du panneau d’aperçu
-  (Linux seulement, comme un clic sur le graphique du processeur de la
-  barre du haut).
+- **Markdown** : un onglet d’édition vide « Sans-titre-N.md » dans le mode
+  global, coloré comme du Markdown, ses titres dans la tagbar ;
+  il s’enregistre de la même façon.
 
 Une puce (●) dans le titre de l’onglet signale des modifications non
 enregistrées. Fermer un onglet ou quitter avec des modifications non

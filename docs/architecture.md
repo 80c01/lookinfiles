@@ -1180,7 +1180,9 @@ Layers, from bottom to top
   own: `ipynb_tab`) when no editor tab has it; a movable page that edits a
   file names it with `editor_page_set_file()`. `editor_open_untitled()` opens an
   empty tab without a file in a given notebook (unlike `editor_open_buffer()`,
-  a scratch buffer, it asks before closing with changes);
+  a scratch buffer, it asks before closing with changes;
+  `editor_open_untitled_as()` adds an extension to its name, which gives
+  the kind of document: highlighting, outline);
   `editor_add_page_to()` puts a movable page in a given notebook;
   `editor_set_notebook_hook()` lets the chrome add its buttons to each new
   editor notebook (`new_tab_menu`).
@@ -1447,13 +1449,12 @@ Layers, from bottom to top
   `launcher_tab_workspace_hidden()` / `_shown()` / `_removed()`, kept in
   `VirtualLayout.launcher_pages`): a `GtkListView` over a
   `GtkStringList` of the ids of its `APPS` table (label, description, glyph
-  or file-type icon, availability: `browser_available()`,
-  `sysstat_host_available()`), filtered by a search field that keeps the
+  or file-type icon, availability: `browser_available()`), filtered by a search field that keeps the
   focus (`Up` / `Down` / `Page Up` / `Page Down` move the selection). The
   chosen application opens in the same notebook (`browser_new_tab_in()`,
   `ipynb_tab_new_untitled()`, `notes_new_canvas()`,
-  `editor_open_untitled()` in Org-mode / Vim / Emacs / Notepad;
-  `sysmon_tab_show()` in its own place), moved to the launcher's position,
+  `editor_open_untitled()` in Org-mode / Vim / Emacs / Notepad,
+  `editor_open_untitled_as()` with `.md` for Markdown), moved to the launcher's position,
   then the launcher goes (`editor_remove_page()`). `Ctrl+W`
   (`launcher_tab_close_shown()`, first in `close_shown_tab()`) and a middle
   click close it. A new application is one more row of `APPS` and a case

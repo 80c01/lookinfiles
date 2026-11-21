@@ -475,11 +475,17 @@ EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode) 
 }
 
 EditorTab* editor_open_untitled(AppData* app, GtkNotebook* nb, EditorMode mode) {
+    return editor_open_untitled_as(app, nb, mode, NULL);
+}
+
+EditorTab* editor_open_untitled_as(AppData* app, GtkNotebook* nb, EditorMode mode, const gchar* extension) {
     if (app == NULL || nb == NULL) return NULL;
     /* The first "Untitled-N" no open tab without a file has */
     gchar* name = NULL;
     for (gint n = 1; name == NULL; n++) {
-        name = g_strdup_printf(_("Untitled-%d"), n);
+        gchar* base = g_strdup_printf(_("Untitled-%d"), n);
+        name = extension != NULL ? g_strconcat(base, extension, NULL) : g_strdup(base);
+        g_free(base);
         for (GList* l = app->editors; l != NULL; l = l->next) {
             EditorTab* t = (EditorTab*)l->data;
             if (t != NULL && t->path == NULL && g_strcmp0(t->name, name) == 0) {
@@ -500,6 +506,7 @@ EditorTab* editor_open_untitled(AppData* app, GtkNotebook* nb, EditorMode mode) 
 #else
     GtkTextBuffer* buffer = gtk_text_buffer_new(NULL);
 #endif
+    if (extension != NULL) editor_apply_language(buffer, name); /* highlighted as its kind */
     build_view(app, tab, buffer);
     gtk_text_buffer_set_modified(tab->buffer, FALSE);
     editor_tab_add_page(app, tab, nb);

@@ -63,6 +63,9 @@ EditorTab* editor_open_buffer(AppData* app, const gchar* name, EditorMode mode);
  * Save As) in mode, as the current page of nb (an editor notebook or the
  * preview notebook); unlike a buffer, closing it with changes asks first */
 EditorTab* editor_open_untitled(AppData* app, GtkNotebook* nb, EditorMode mode);
+/* The same, named "Untitled-N<extension>" (".md": a Markdown document, its
+ * highlighting and outline) */
+EditorTab* editor_open_untitled_as(AppData* app, GtkNotebook* nb, EditorMode mode, const gchar* extension);
 /* Open full in the dedicated editor panel (moving its tab there when it is
  * open in the preview notebook). keep_focus: widget given the focus back
  * (Emacs C-o), NULL to focus the editor (Vim t). NULL when not editable. */

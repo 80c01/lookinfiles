@@ -3,7 +3,7 @@
 
 /* The Applications tab (Applications entry of the + menu, new_tab_menu.h):
  * a list of the applications a tab can hold (web browser, Jupyter notebook,
- * Canvas, Org-mode, Vim, Emacs, Notepad, System Monitor), filtered by the
+ * Canvas, Org-mode, Markdown, Vim, Emacs, Notepad), filtered by the
  * search field that has the focus. Up / Down / Page Up / Page Down move in
  * the list from the field, Enter or a click opens the application, which
  * takes the place of the tab in its notebook. Closed with Ctrl+W (Vim

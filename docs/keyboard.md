@@ -371,7 +371,7 @@ other `Ctrl` and `Alt` shortcuts go to the application).
 
 The **Applications** entry of the **+** button of a tab bar opens it: the
 applications a tab can hold (web browser, Jupyter notebook, Canvas,
-Org-mode, Vim, Emacs, Notepad, System Monitor). The search field keeps the
+Org-mode, Markdown, Vim, Emacs, Notepad). The search field keeps the
 focus and filters the list as you type (names and descriptions).
 
 | Key | Action |

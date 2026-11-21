@@ -1,12 +1,10 @@
 /* The Applications tab: the applications a new tab can hold (see launcher_tab.h) */
 #include "chrome/launcher_tab.h"
 #include "core/i18n.h"
-#include "core/sysstat_host.h"
 #include "editor/editor.h"
 #include "jupyter/ipynb_tab.h"
 #include "notes/notes.h"
 #include "preview/browser.h"
-#include "sysmon/sysmon_tab.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "widgets/focus_route.h"
@@ -18,10 +16,10 @@ typedef enum {
     LAUNCH_JUPYTER,
     LAUNCH_CANVAS,
     LAUNCH_ORG,
+    LAUNCH_MARKDOWN,
     LAUNCH_VIM,
     LAUNCH_EMACS,
-    LAUNCH_NOTEPAD,
-    LAUNCH_SYSMON
+    LAUNCH_NOTEPAD
 } LaunchKind;
 
 typedef struct {
@@ -42,12 +40,11 @@ static const LauncherApp APPS[] = {
     {"canvas", LAUNCH_CANVAS, N_("Canvas"), N_("A new Canvas note: text boxes and pictures on a page"), "canvas",
      NULL, NULL},
     {"org", LAUNCH_ORG, N_("Org-mode"), N_("An empty Org-mode document"), NULL, "notes.org", NULL},
+    {"markdown", LAUNCH_MARKDOWN, N_("Markdown"), N_("An empty Markdown document"), NULL, "README.md", NULL},
     {"vim", LAUNCH_VIM, N_("Vim"), N_("An empty editor tab with the Vim keys"), "document-edit", NULL, NULL},
     {"emacs", LAUNCH_EMACS, N_("Emacs"), N_("An empty editor tab with the Emacs keys"), "document-edit", NULL, NULL},
     {"notepad", LAUNCH_NOTEPAD, N_("Notepad"), N_("An empty editor tab with the usual keys"), "text-x-generic", NULL,
      NULL},
-    {"sysmon", LAUNCH_SYSMON, N_("System Monitor"), N_("Processor, memory, disks, network and processes"),
-     "utilities-system-monitor", NULL, N_("Needs Linux")},
 };
 
 typedef struct {
@@ -74,8 +71,6 @@ static gboolean app_available(const LauncherApp* a) {
     switch (a->kind) {
     case LAUNCH_WEB:
         return browser_available();
-    case LAUNCH_SYSMON:
-        return sysstat_host_available();
     default:
         return TRUE;
     }
@@ -144,7 +139,6 @@ static void open_app(LauncherTab* lt, const LauncherApp* a) {
     if (nb == NULL) return;
     g_object_ref(nb);
     gint at = gtk_notebook_page_num(nb, lt->page);
-    gboolean in_place = TRUE;
     switch (a->kind) {
     case LAUNCH_WEB:
         browser_new_tab_in(app, nb);
@@ -160,6 +154,9 @@ static void open_app(LauncherTab* lt, const LauncherApp* a) {
     case LAUNCH_ORG:
         editor_open_untitled(app, nb, EDITOR_MODE_ORGMODE);
         break;
+    case LAUNCH_MARKDOWN:
+        editor_open_untitled_as(app, nb, app->default_editor_mode, ".md");
+        break;
     case LAUNCH_VIM:
         editor_open_untitled(app, nb, EDITOR_MODE_VIM);
         break;
@@ -169,18 +166,13 @@ static void open_app(LauncherTab* lt, const LauncherApp* a) {
     case LAUNCH_NOTEPAD:
         editor_open_untitled(app, nb, EDITOR_MODE_NOTEPAD);
         break;
-    case LAUNCH_SYSMON:
-        /* Its own place in the preview notebook */
-        in_place = FALSE;
-        sysmon_tab_show(app);
-        break;
     }
     /* The new tab takes the place of this one */
     gint cur = gtk_notebook_get_current_page(nb);
     GtkWidget* opened = cur >= 0 ? gtk_notebook_get_nth_page(nb, cur) : NULL;
-    if (opened == lt->page) opened = NULL; /* opened in another notebook */
+    if (opened == lt->page) opened = NULL; /* nothing opened */
     if (opened != NULL) g_object_ref(opened);
-    if (in_place && opened != NULL && at >= 0) gtk_notebook_reorder_child(nb, opened, at);
+    if (opened != NULL && at >= 0) gtk_notebook_reorder_child(nb, opened, at);
     g_object_unref(nb);
     close_page(lt, FALSE); /* lt is freed */
     GtkRoot* root = opened != NULL ? gtk_widget_get_root(opened) : NULL;

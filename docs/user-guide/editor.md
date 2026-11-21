@@ -47,8 +47,8 @@ The applications:
   `Ctrl+S`, Emacs and Org-mode `C-x C-s` or `C-x C-w`, Vim `:w name`);
   closing it with changes asks first. An empty editor tab from **Editor**
   is saved the same way.
-- **System Monitor**: the System Monitor tab of the preview panel (Linux
-  only, like a click on the processor chart of the top bar).
+- **Markdown**: an empty editor tab "Untitled-N.md" in the global mode,
+  highlighted as Markdown, its headings in the tagbar; saved the same way.
 
 A bullet (●) in the tab title marks unsaved changes. Closing a tab or
 quitting with unsaved changes asks first.

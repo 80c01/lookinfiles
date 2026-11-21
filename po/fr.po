@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 07:48+0000\n"
+"POT-Creation-Date: 2026-11-21 07:57+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -35,7 +35,7 @@ msgstr "_Réinitialiser"
 #: src/canvas/canvas_crop.c:373 src/chrome/preferences.c:546
 #: src/chrome/themes.c:222 src/chrome/themes.c:237 src/chrome/themes.c:682
 #: src/code/code_rename.c:309 src/code/code_symbols.c:236
-#: src/code/code_workspace_symbols.c:443 src/editor/editor.c:704
+#: src/code/code_workspace_symbols.c:443 src/editor/editor.c:711
 #: src/editor/editor_watch.c:715 src/editor/editor_watch.c:721
 #: src/editor/editor_watch.c:763 src/explorer/bookmark_dialog.c:203
 #: src/explorer/bookmarks.c:595 src/explorer/file_actions.c:42
@@ -1578,7 +1578,7 @@ msgid "Video: seek 5 seconds back / forward (also in the explorer)"
 msgstr "Vidéo : reculer / avancer de 5 secondes (aussi dans l’explorateur)"
 
 #: src/chrome/help.c:232 src/chrome/help.c:236 src/chrome/help.c:237
-#: src/chrome/launcher_tab.c:44
+#: src/chrome/launcher_tab.c:42
 msgid "Org-mode"
 msgstr "Org-mode"
 
@@ -2682,90 +2682,81 @@ msgstr "Fermer l’aide"
 msgid "Help"
 msgstr "Aide"
 
-#: src/chrome/launcher_tab.c:38
+#: src/chrome/launcher_tab.c:36
 msgid "Web Browser"
 msgstr "Navigateur web"
 
-#: src/chrome/launcher_tab.c:38
+#: src/chrome/launcher_tab.c:36
 msgid "Web pages in a tab"
 msgstr "Des pages web dans un onglet"
 
-#: src/chrome/launcher_tab.c:39
+#: src/chrome/launcher_tab.c:37
 msgid "Needs WebKitGTK 6.0 (WebView2 on Windows)"
 msgstr "Nécessite WebKitGTK 6.0 (WebView2 sous Windows)"
 
-#: src/chrome/launcher_tab.c:40
+#: src/chrome/launcher_tab.c:38
 msgid "Jupyter Notebook"
 msgstr "Notebook Jupyter"
 
-#: src/chrome/launcher_tab.c:40
+#: src/chrome/launcher_tab.c:38
 msgid "A new notebook in memory, run cell by cell"
 msgstr "Un nouveau notebook en mémoire, exécuté cellule par cellule"
 
-#: src/chrome/launcher_tab.c:42
+#: src/chrome/launcher_tab.c:40
 msgid "Canvas"
 msgstr "Canvas"
 
-#: src/chrome/launcher_tab.c:42
+#: src/chrome/launcher_tab.c:40
 msgid "A new Canvas note: text boxes and pictures on a page"
 msgstr "Une nouvelle note Canvas : zones de texte et images sur une page"
 
-#: src/chrome/launcher_tab.c:44
+#: src/chrome/launcher_tab.c:42
 msgid "An empty Org-mode document"
 msgstr "Un document Org-mode vide"
 
-#: src/chrome/launcher_tab.c:45
+#: src/chrome/launcher_tab.c:43 src/jupyter/ipynb_tab.c:370
+msgid "Markdown"
+msgstr "Markdown"
+
+#: src/chrome/launcher_tab.c:43
+msgid "An empty Markdown document"
+msgstr "Un document Markdown vide"
+
+#: src/chrome/launcher_tab.c:44
 msgid "Vim"
 msgstr "Vim"
 
-#: src/chrome/launcher_tab.c:45
+#: src/chrome/launcher_tab.c:44
 msgid "An empty editor tab with the Vim keys"
 msgstr "Un onglet d’édition vide avec les touches de Vim"
 
-#: src/chrome/launcher_tab.c:46
+#: src/chrome/launcher_tab.c:45
 msgid "Emacs"
 msgstr "Emacs"
 
-#: src/chrome/launcher_tab.c:46
+#: src/chrome/launcher_tab.c:45
 msgid "An empty editor tab with the Emacs keys"
 msgstr "Un onglet d’édition vide avec les touches d’Emacs"
 
-#: src/chrome/launcher_tab.c:47
+#: src/chrome/launcher_tab.c:46
 msgid "Notepad"
 msgstr "Notepad"
 
-#: src/chrome/launcher_tab.c:47
+#: src/chrome/launcher_tab.c:46
 msgid "An empty editor tab with the usual keys"
 msgstr "Un onglet d’édition vide avec les touches habituelles"
 
-#: src/chrome/launcher_tab.c:49 src/sysmon/sysmon_tab.c:552
-#: src/sysmon/sysmon_tab.c:635
-msgid "System Monitor"
-msgstr "Moniteur système"
-
-#: src/chrome/launcher_tab.c:49
-msgid "Processor, memory, disks, network and processes"
-msgstr "Processeur, mémoire, disques, réseau et processus"
-
-#: src/chrome/launcher_tab.c:50
-msgid "Needs Linux"
-msgstr "Nécessite Linux"
-
-#: src/chrome/launcher_tab.c:358
+#: src/chrome/launcher_tab.c:353
 msgid "Search the applications"
 msgstr "Chercher dans les applications"
 
-#: src/chrome/launcher_tab.c:394
+#: src/chrome/launcher_tab.c:389
 msgid "No application matches"
 msgstr "Aucune application ne correspond"
 
-#: src/chrome/launcher_tab.c:401
+#: src/chrome/launcher_tab.c:396 src/chrome/new_tab_menu.c:80
 msgid "Applications"
 msgstr "Applications"
-
-#: src/chrome/new_tab_menu.c:80 src/office/ole_props.c:248
-msgid "Application"
-msgstr "Application"
 
 #: src/chrome/new_tab_menu.c:81 src/chrome/preferences.c:564
 msgid "Editor"
@@ -5173,26 +5164,26 @@ msgstr "La roue vient une fois le dossier lu"
 msgid "Parent Folder"
 msgstr "Dossier parent"
 
-#: src/editor/editor.c:482 src/notes/notes_actions.c:121
+#: src/editor/editor.c:486 src/notes/notes_actions.c:121
 #: src/notes/notes_actions.c:149
 #, c-format
 msgid "Untitled-%d"
 msgstr "Sans-titre-%d"
 
-#: src/editor/editor.c:703
+#: src/editor/editor.c:710
 msgid "Unsaved Changes"
 msgstr "Modifications non enregistrées"
 
-#: src/editor/editor.c:705 src/jupyter/ipynb_save.c:185
+#: src/editor/editor.c:712 src/jupyter/ipynb_save.c:185
 msgid "Close _Without Saving"
 msgstr "Fermer _sans enregistrer"
 
-#: src/editor/editor.c:707
+#: src/editor/editor.c:714
 #, c-format
 msgid "%s has unsaved changes. Close anyway?"
 msgstr "%s contient des modifications non enregistrées. Fermer quand même ?"
 
-#: src/editor/editor.c:1110
+#: src/editor/editor.c:1117
 #, c-format
 msgid "Cannot save %s: %s"
 msgstr "Impossible d’enregistrer %s : %s"
@@ -8800,10 +8791,6 @@ msgid "Double-click or Enter to edit the Markdown"
 msgstr "Double-clic ou Enter pour éditer le Markdown"
 
 #: src/jupyter/ipynb_tab.c:370
-msgid "Markdown"
-msgstr "Markdown"
-
-#: src/jupyter/ipynb_tab.c:370
 msgid "Raw"
 msgstr "Brut"
 
@@ -9940,6 +9927,10 @@ msgid "%d slide"
 msgid_plural "%d slides"
 msgstr[0] "%d diapositive"
 msgstr[1] "%d diapositives"
+
+#: src/office/ole_props.c:248
+msgid "Application"
+msgstr "Application"
 
 #: src/office/ole_props.c:249
 msgid "Security"
@@ -11926,6 +11917,10 @@ msgstr "Processus (%u)"
 msgid "Processes"
 msgstr "Processus"
 
+#: src/sysmon/sysmon_tab.c:552 src/sysmon/sysmon_tab.c:635
+msgid "System Monitor"
+msgstr "Moniteur système"
+
 #: src/sysmon/sysmon_tab.c:556
 msgid "Close System Monitor"
 msgstr "Fermer le moniteur système"
@@ -12370,6 +12365,12 @@ msgstr "Ouvrir l’espace de travail"
 #: src/workspace/workspace_menu.c:86
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
+
+#~ msgid "Processor, memory, disks, network and processes"
+#~ msgstr "Processeur, mémoire, disques, réseau et processus"
+
+#~ msgid "Needs Linux"
+#~ msgstr "Nécessite Linux"
 
 #~ msgid ""
 #~ "Execute command (e.g. set-justification-center, goto-line, save-buffer)"
