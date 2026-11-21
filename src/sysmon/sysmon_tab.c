@@ -42,6 +42,7 @@ typedef struct {
     GtkWidget* mounts;   /* GtkGrid of the filesystems */
     GtkWidget* procs;    /* sysmon_procs */
     GtkWidget* procs_title;
+    GtkWidget* procs_filter; /* search entry: filters the processes */
     gchar* os;           /* system and version */
     guint net_rx, net_tx, disk_read, disk_write; /* series of the charts */
     gdouble load_peak;   /* highest load shown */
@@ -301,6 +302,18 @@ static void show_mounts(SysmonTab* st, GPtrArray* mounts) {
 }
 
 /* A new sample (rates filled): every card, and what was read with it */
+/* Title of the process list: how many, and how many match the filter */
+static void show_procs_count(SysmonTab* st) {
+    guint shown = 0, total = 0;
+    sysmon_procs_counts(st->procs, &shown, &total);
+    if (sysmon_procs_filtered(st->procs)) {
+        /* TRANSLATORS: processes matching the filter, of all the processes */
+        set_label(st->procs_title, g_strdup_printf(_("Processes (%u of %u)"), shown, total));
+    } else {
+        set_label(st->procs_title, g_strdup_printf(_("Processes (%u)"), total));
+    }
+}
+
 static void show_sample(SysmonTab* st, SysSample* s) {
     guint ncpu = s->cpu->len > 1 ? s->cpu->len - 1 : 1;
 
@@ -373,7 +386,7 @@ static void show_sample(SysmonTab* st, SysSample* s) {
     if (s->mounts != NULL) show_mounts(st, s->mounts);
     if (s->procs != NULL) {
         sysmon_procs_update(st->procs, s->procs);
-        set_label(st->procs_title, g_strdup_printf(_("Processes (%u)"), s->procs->len));
+        show_procs_count(st);
     }
 }
 
@@ -530,6 +543,52 @@ static GtkWidget* section_title(const gchar* text) {
     return l;
 }
 
+static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
+    SysmonTab* st = data;
+    sysmon_procs_set_filter(st->procs, gtk_editable_get_text(GTK_EDITABLE(entry)));
+    if (st->prev != NULL) show_procs_count(st);
+}
+
+/* From the filter field back to the list, on its first row when none is
+ * selected */
+static void focus_procs(SysmonTab* st) {
+    GtkWidget* view = sysmon_procs_view(st->procs);
+    GtkSelectionModel* sel = gtk_column_view_get_model(GTK_COLUMN_VIEW(view));
+    if (GTK_IS_SINGLE_SELECTION(sel) && g_list_model_get_n_items(G_LIST_MODEL(sel)) > 0 &&
+        gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(sel)) == GTK_INVALID_LIST_POSITION) {
+        gtk_single_selection_set_selected(GTK_SINGLE_SELECTION(sel), 0);
+    }
+    gtk_widget_grab_focus(view);
+}
+
+/* In the filter field: Enter or Down go to the list (the filter stays),
+ * Escape (Emacs: also C-g) empties the field, then goes to the list */
+static gboolean on_filter_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                              gpointer data) {
+    (void)ctrl;
+    (void)keycode;
+    SysmonTab* st = data;
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    gboolean cancel = (mods == 0 && keyval == GDK_KEY_Escape) ||
+                      (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_g &&
+                       app_nav_style(st->app) == NAV_STYLE_EMACS);
+    if (cancel) {
+        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(st->procs_filter));
+        if (text != NULL && text[0] != '\0') {
+            gtk_editable_set_text(GTK_EDITABLE(st->procs_filter), "");
+        } else {
+            focus_procs(st);
+        }
+        return TRUE;
+    }
+    if (mods == 0 && (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter ||
+                      keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down)) {
+        focus_procs(st);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static SysmonTab* ensure_page(AppData* app) {
     SysmonTab* st = tab_state(app);
     if (st != NULL || app->notebook == NULL) return st;
@@ -608,9 +667,28 @@ static SysmonTab* ensure_page(AppData* app) {
 
     /* Bottom: the processes */
     GtkWidget* bottom = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget* procs_head = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     st->procs_title = section_title(_("Processes"));
-    gtk_box_append(GTK_BOX(bottom), st->procs_title);
+    gtk_widget_set_hexpand(st->procs_title, TRUE);
+    gtk_box_append(GTK_BOX(procs_head), st->procs_title);
     st->procs = sysmon_procs_new(app);
+    st->procs_filter = gtk_search_entry_new();
+    gtk_search_entry_set_search_delay(GTK_SEARCH_ENTRY(st->procs_filter), 150);
+    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(st->procs_filter), _("Filter the processes"));
+    gtk_widget_set_tooltip_text(st->procs_filter, _("Only the processes whose name, user or PID hold every word"));
+    gtk_editable_set_width_chars(GTK_EDITABLE(st->procs_filter), 24);
+    gtk_widget_set_valign(st->procs_filter, GTK_ALIGN_END);
+    gtk_widget_set_margin_top(st->procs_filter, 6);
+    gtk_widget_set_margin_end(st->procs_filter, 12);
+    gtk_widget_set_margin_bottom(st->procs_filter, 4);
+    g_signal_connect(st->procs_filter, "search-changed", G_CALLBACK(on_filter_changed), st);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_filter_key), st);
+    gtk_widget_add_controller(st->procs_filter, keys);
+    focus_route_list_search(sysmon_procs_view(st->procs), st->procs_filter);
+    gtk_box_append(GTK_BOX(procs_head), st->procs_filter);
+    gtk_box_append(GTK_BOX(bottom), procs_head);
     gtk_box_append(GTK_BOX(bottom), st->procs);
 
     GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_VERTICAL);

@@ -1000,7 +1000,8 @@ Layers, from bottom to top
 - `sysmon_tab` — the System Monitor tab in the preview notebook (one per
   workspace, kept like the Help tab): cards with `sparkline` charts (CPU and
   a bar per core, memory and swap, load, network, disk I/O), the mounted
-  filesystems and the processes (`sysmon_procs`: a sorted `GtkColumnView`,
+  filesystems and the processes (`sysmon_procs`: a sorted `GtkColumnView`
+  filtered by the field above it,
   read only), from `sysstat_host` samples read in a worker each second (processes
   and filesystems only while the page is mapped). `sysmon_indicator` — the
   CPU chart of the top bar (`sysstat_host_cpu()` every 2 s; `LOOKIN_SYSMON_FROZEN`

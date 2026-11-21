@@ -205,7 +205,10 @@ panel (another click closes it):
   with a chart of the last two minutes, updated every second;
 - the mounted **Filesystems**, with how full each one is;
 - the **Processes**, by CPU use at first: click a column header to sort by
-  it. The CPU of a process counts 100% for one full core.
+  it. The CPU of a process counts 100% for one full core. The field above
+  the list keeps only the processes whose name, user or PID hold every word
+  typed (`Ctrl+F`, `/` in Vim mode or `C-s` in Emacs mode go to it from the
+  list; `Esc` empties it).
 
 On Windows there is no load average card and no process state; the
 filesystems are the fixed and removable drives, and the processes of other

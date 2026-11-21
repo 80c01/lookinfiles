@@ -447,6 +447,8 @@ static gboolean is_modifier_key(guint keyval) {
            keyval == GDK_KEY_ISO_Level3_Shift || keyval == GDK_KEY_ISO_Level5_Shift;
 }
 
+#define LIST_SEARCH_KEY "lookin-list-search"
+
 static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, guint keycode,
                             GdkModifierType state, gpointer data) {
     (void)keycode;
@@ -510,8 +512,17 @@ static gboolean on_list_key(GtkEventControllerKey* controller, guint keyval, gui
     case NAV_TAB_PREV:
         focus_route_panel_action(app, list, action);
         return TRUE;
+    case NAV_SEARCH:
+    case NAV_SEARCH_BACKWARD: {
+        GtkWidget* entry = g_object_get_data(G_OBJECT(list), LIST_SEARCH_KEY);
+        if (entry != NULL && gtk_widget_get_visible(entry)) {
+            gtk_widget_grab_focus(entry);
+            gtk_editable_select_region(GTK_EDITABLE(entry), 0, -1);
+        }
+        return TRUE;
+    }
     default:
-        return TRUE; /* prefixes, and keys a list has no use for (search) */
+        return TRUE; /* prefixes, and keys a list has no use for */
     }
 }
 
@@ -531,4 +542,13 @@ void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* 
     g_signal_connect_data(keys, "key-pressed", G_CALLBACK(on_list_key), ln,
                           list_nav_free, 0);
     gtk_widget_add_controller(list, keys);
+}
+
+void focus_route_list_search(GtkWidget* list, GtkWidget* entry) {
+    if (list == NULL) return;
+    if (entry != NULL) {
+        g_object_set_data_full(G_OBJECT(list), LIST_SEARCH_KEY, g_object_ref(entry), g_object_unref);
+    } else {
+        g_object_set_data(G_OBJECT(list), LIST_SEARCH_KEY, NULL);
+    }
 }

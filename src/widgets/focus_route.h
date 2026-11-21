@@ -82,4 +82,8 @@ void focus_route_panel_action(AppData* app, GtkWidget* widget, NavAction action)
  * first / last, page down / up, center / top / bottom, panel and tab keys */
 void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* selection);
 
+/* The search key of the global mode (Ctrl+F, /, C-s) in that list focuses
+ * entry (an editable: its filter field); NULL: no field */
+void focus_route_list_search(GtkWidget* list, GtkWidget* entry);
+
 #endif /* FOCUS_ROUTE_H */

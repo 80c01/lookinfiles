@@ -3,7 +3,7 @@
 
 /* The process list of the System Monitor tab: a GtkColumnView (name, PID,
  * user, CPU %, memory, threads, state) sorted by a click on a column header,
- * by CPU at first. Read only: the rows are kept from one update to the
+ * by CPU at first, filtered by the words of a search field. Read only: the rows are kept from one update to the
  * next (by PID) and changed in place, the selection and the scroll position
  * stay. */
 #include "core/app_types.h"
@@ -16,5 +16,12 @@ GtkWidget* sysmon_procs_new(AppData* app);
 GtkWidget* sysmon_procs_view(GtkWidget* procs);
 /* Show these processes (SysProc*, read only) */
 void sysmon_procs_update(GtkWidget* procs, GPtrArray* list);
+/* Show only the processes whose name, user or PID hold every word of text
+ * (any case); NULL or blank: every process */
+void sysmon_procs_set_filter(GtkWidget* procs, const gchar* text);
+/* A filter is set */
+gboolean sysmon_procs_filtered(GtkWidget* procs);
+/* Rows shown (after the filter) and processes listed */
+void sysmon_procs_counts(GtkWidget* procs, guint* shown, guint* total);
 
 #endif /* SYSMON_PROCS_H */
