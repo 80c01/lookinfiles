@@ -47,7 +47,8 @@ minicarte les montre le long de son bord gauche.
 
 L’onglet **Git**, à côté de l’onglet **Aperçu**, apparaît quand le dossier
 courant est dans un dépôt. Les boutons en haut (ou `v`) passent d’une de ses
-deux vues à l’autre : **Modifications** et **Historique**.
+trois vues à l’autre : **Modifications**, **Historique** et
+**Statistiques**.
 
 ### Modifications
 
@@ -96,6 +97,25 @@ commit sélectionné.
 
 Les touches de navigation du mode global se déplacent dans la liste
 (`j` / `k` en Vim, les flèches dans tous les modes).
+
+### Statistiques
+
+Combien de commits, par combien d’auteurs, du premier mois au dernier,
+puis :
+
+- **Les douze derniers mois** : un carré par jour, une colonne par semaine
+  (le lundi en haut), plus foncé avec plus de commits ;
+- **Par jour de la semaine et par heure** : un cercle par heure de chaque
+  jour, plus grand avec plus de commits, à l’heure de chaque auteur (dans
+  son propre fuseau horaire) ;
+- **Par mois** : une barre par mois depuis le premier commit (par année
+  au-delà de six ans) ;
+- **Auteurs** : leurs commits, leur part et les mois de leurs premier et
+  dernier commits, du plus actif au moins actif (les 20 premiers).
+
+Chaque carré, cercle et barre donne son nombre dans son infobulle. Tout
+l’historique est compté quand la vue est affichée, et de nouveau après un
+commit.
 
 ## Fichiers diff et patch
 

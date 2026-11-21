@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 10:49+0000\n"
+"POT-Creation-Date: 2026-11-21 10:54+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1146,10 +1146,9 @@ msgstr "Onglet Git"
 
 #: src/chrome/help.c:140
 msgid ""
-"Next view: Changes (uncommitted files and their patch), History (the commits)"
-msgstr ""
-"Vue suivante : Modifications (les fichiers non commités et leur patch), "
-"Historique (les commits)"
+"Next view: Changes (uncommitted files and their patch), History (the "
+"commits), Statistics"
+msgstr "Vue suivante : Modifications (les fichiers non commités et leur patch), Historique (les commits), Statistiques"
 
 #: src/chrome/help.c:141
 msgid "Changes: preview the selected file"
@@ -8498,14 +8497,14 @@ msgstr[1] "%u commits correspondants"
 msgid "The last %u commits"
 msgstr "Les %u derniers commits"
 
-#: src/git/git_history.c:365
+#: src/git/git_history.c:365 src/git/git_stats_view.c:109
 #, c-format
 msgid "%u commit"
 msgid_plural "%u commits"
 msgstr[0] "%u commit"
 msgstr[1] "%u commits"
 
-#: src/git/git_history.c:458
+#: src/git/git_history.c:458 src/git/git_stats_view.c:151
 msgid "The history of this repository cannot be read."
 msgstr "L’historique de ce dépôt ne peut pas être lu."
 
@@ -8517,11 +8516,11 @@ msgstr "Aucun commit n’a modifié ce fichier."
 msgid "No commit matches the filter."
 msgstr "Aucun commit ne correspond au filtre."
 
-#: src/git/git_history.c:461
+#: src/git/git_history.c:461 src/git/git_stats_view.c:104
 msgid "No commits in this repository."
 msgstr "Aucun commit dans ce dépôt."
 
-#: src/git/git_history.c:480
+#: src/git/git_history.c:480 src/git/git_stats_view.c:163
 msgid "Reading the history…"
 msgstr "Lecture de l’historique…"
 
@@ -8590,35 +8589,103 @@ msgstr ""
 msgid "Select a commit to view diff"
 msgstr "Sélectionnez un commit pour voir son diff"
 
-#: src/git/git_tab.c:63
+#. TRANSLATORS: tooltip of a day of the activity chart: commits, date
+#: src/git/git_stats_charts.c:170
+#, c-format
+msgid "%u commit on %s"
+msgid_plural "%u commits on %s"
+msgstr[0] "%u commit le %s"
+msgstr[1] "%u commits le %s"
+
+#. TRANSLATORS: tooltip of the punch card: commits, day of the week, hours
+#: src/git/git_stats_charts.c:220
+#, c-format
+msgid "%u commit on %s, %02d:00–%02d:00"
+msgid_plural "%u commits on %s, %02d:00–%02d:00"
+msgstr[0] "%u commit le %s, %02d:00–%02d:00"
+msgstr[1] "%u commits le %s, %02d:00–%02d:00"
+
+#. TRANSLATORS: tooltip of a bar of commits: commits, month ("2026-11") or year
+#: src/git/git_stats_charts.c:249 src/git/git_stats_charts.c:255
+#, c-format
+msgid "%u commit in %s"
+msgid_plural "%u commits in %s"
+msgstr[0] "%u commit en %s"
+msgstr[1] "%u commits en %s"
+
+#: src/git/git_stats_view.c:90
+#, c-format
+msgid "and %u more author"
+msgid_plural "and %u more authors"
+msgstr[0] "et %u autre auteur"
+msgstr[1] "et %u autres auteurs"
+
+#: src/git/git_stats_view.c:110
+#, c-format
+msgid "%u author"
+msgid_plural "%u authors"
+msgstr[0] "%u auteur"
+msgstr[1] "%u auteurs"
+
+#. TRANSLATORS: summary of the Statistics view: "120 commits", "3 authors", first and last months
+#: src/git/git_stats_view.c:112
+#, c-format
+msgid "%s by %s, from %s to %s"
+msgstr "%s par %s, de %s à %s"
+
+#: src/git/git_stats_view.c:229
+msgid "The Last Twelve Months"
+msgstr "Les douze derniers mois"
+
+#: src/git/git_stats_view.c:230
+msgid "By Day of the Week and Hour (Author's Time)"
+msgstr "Par jour de la semaine et par heure (heure de l’auteur)"
+
+#: src/git/git_stats_view.c:231
+msgid "By Month"
+msgstr "Par mois"
+
+#: src/git/git_stats_view.c:236
+msgid "Authors"
+msgstr "Auteurs"
+
+#: src/git/git_tab.c:66
 #, c-format
 msgid "Changes (%u)"
 msgstr "Modifications (%u)"
 
 #. TRANSLATORS: the views of the Git tab; v shows the next one
-#: src/git/git_tab.c:63 src/git/git_tab.c:122 src/git/git_worktree.c:18
+#: src/git/git_tab.c:66 src/git/git_tab.c:126 src/git/git_worktree.c:18
 msgid "Changes"
 msgstr "Modifications"
 
-#: src/git/git_tab.c:123
+#: src/git/git_tab.c:127
 msgid "Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)"
 msgstr ""
 "Modifications non commitées : indexées, non indexées, non suivies (v : vue "
 "suivante)"
 
-#: src/git/git_tab.c:124
+#: src/git/git_tab.c:128
 msgid "History"
 msgstr "Historique"
 
-#: src/git/git_tab.c:125
+#: src/git/git_tab.c:129
 msgid "The Commits, Newest First (v: Next View)"
 msgstr "Les commits, du plus récent au plus ancien (v : vue suivante)"
 
-#: src/git/git_tab.c:143
+#: src/git/git_tab.c:130
+msgid "Statistics"
+msgstr "Statistiques"
+
+#: src/git/git_tab.c:131
+msgid "Commits by Day, Hour, Month and Author (v: Next View)"
+msgstr "Commits par jour, heure, mois et auteur (v : vue suivante)"
+
+#: src/git/git_tab.c:150
 msgid "Git"
 msgstr "Git"
 
-#: src/git/git_tab.c:169
+#: src/git/git_tab.c:176
 msgid "Not in the repository of the current folder"
 msgstr "Hors du dépôt du dossier courant"
 

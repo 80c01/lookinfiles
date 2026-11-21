@@ -67,6 +67,7 @@ git_utils:palette,i18n,git_lib
 git_lib:
 git_log:git_utils,git_lib
 git_worktree:git_lib,i18n
+git_stats:git_lib
 git_refs:
 line_diff:
 latex_log:

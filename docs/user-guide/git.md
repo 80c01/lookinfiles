@@ -44,8 +44,8 @@ left edge.
 ## The Git tab
 
 The **Git** tab, next to the **Preview** tab, appears when the current folder
-is in a repository. The buttons at its top (or `v`) switch between its two
-views: **Changes** and **History**.
+is in a repository. The buttons at its top (or `v`) switch between its
+three views: **Changes**, **History** and **Statistics**.
 
 ### Changes
 
@@ -91,6 +91,24 @@ the selected commit.
 
 The navigation keys of the global mode move in the list (`j` / `k` in Vim,
 the arrows in every mode).
+
+### Statistics
+
+How many commits, by how many authors, from the first month to the last,
+then:
+
+- **The last twelve months**: a square per day, a column per week (Monday on
+  top), darker with more commits;
+- **By day of the week and hour**: a circle per hour of each day, larger
+  with more commits, at the time of day of each author (in their own time
+  zone);
+- **By month**: a bar per month since the first commit (per year past six
+  years);
+- **Authors**: their commits, their share and the months of their first and
+  last commits, most commits first (the first 20).
+
+Each square, circle and bar gives its count in its tooltip. The whole
+history is counted when the view is shown, and again after a commit.
 
 ## Diff and patch files
 

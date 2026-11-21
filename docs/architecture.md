@@ -189,6 +189,10 @@ Layers, from bottom to top
 - `git_log` — the history through libgit2, worker thread only:
   `git_read_log()` walks it from `HEAD` page by page, filtered by words
   (`git_log_words()`) and by a path. Tested in `test_git_utils`.
+- `git_stats` — commits counted per day, per day of the week and hour (in
+  the author's time zone), per month and per author (`git_stats_add()`),
+  and `git_stats_read()`, which walks the history from `HEAD` (worker
+  thread). Unit-tested.
 - `git_worktree` — the uncommitted changes of a work tree through libgit2,
   worker thread only: `git_read_changes()` lists the staged (index against
   `HEAD`, renames found), unstaged and untracked files with their lines
@@ -1200,6 +1204,11 @@ Layers, from bottom to top
   each parent's, like `git log -- path`), shown beside the filter with a
   cross that clears it; `git_tab_show_history()` (the explorer menu's
   **Git History**) sets it and brings the view in front.
+  `git_stats_view` is the Statistics view: `git_stats_read()` in a worker
+  when the view is on screen (again on a reload), a summary, the three
+  `git_stats_charts` (GtkDrawingAreas in the palette colours: the last 53
+  weeks a square per day, the punch card, the commits per month or year;
+  they borrow the view's `GitStats`) and the authors in a `GtkGrid`.
   `git_diff_text` lays out a patch in a `GtkTextBuffer` in the diff colours
   and cuts a huge one (`git_diff_text_cut()`).
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.

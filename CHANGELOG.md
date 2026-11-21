@@ -12,6 +12,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   buttons at its top or `v`: **Changes** lists the uncommitted files, staged,
   not staged and untracked, with the lines each adds and removes and its
   patch below; **History** is the commit list as before.
+- A **Statistics** view in the Git tab: the commits of the last twelve
+  months a square per day, by day of the week and hour (in each author's
+  time zone), by month, and by author.
 - **Git History** in the right-click menu of a file or folder lists only the
   commits that changed it, in the History view of the Git tab.
 - Apache Parquet files (`.parquet`) are previewed: the first 100 rows as a

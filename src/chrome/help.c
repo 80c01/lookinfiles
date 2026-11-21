@@ -137,7 +137,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("System Monitor tab"), "C-s", N_("Filter the processes: only those whose name, user or PID hold every word and that meet every condition such as cpu>10 or mem>100M (RET / Down: back to the list, Esc or C-g: empty the field, again: back to the list)"), EM},
     {N_("System Monitor tab"), "Ctrl+W", N_("Close the System Monitor tab"), NP},
     {N_("System Monitor tab"), "Ctrl+W c", N_("Close the System Monitor tab"), VI},
-    {N_("Git tab"), "v", N_("Next view: Changes (uncommitted files and their patch), History (the commits)"), 0},
+    {N_("Git tab"), "v", N_("Next view: Changes (uncommitted files and their patch), History (the commits), Statistics"), 0},
     {N_("Git tab"), "Enter", N_("Changes: preview the selected file"), 0},
     {N_("Git tab"), "Ctrl+F", N_("Filter the commits: only those whose message, author or hash hold every word, in the whole history (Enter / Down: back to the list, Esc: empty the field, again: back to the list)"), NP},
     {N_("Git tab"), "/", N_("Filter the commits: only those whose message, author or hash hold every word, in the whole history (Enter / Down: back to the list, Esc: empty the field, again: back to the list)"), VI},
