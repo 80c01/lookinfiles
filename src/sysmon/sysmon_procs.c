@@ -1,9 +1,9 @@
 /* The process list of the System Monitor tab (see sysmon_procs.h) */
 #include "sysmon/sysmon_procs.h"
 #include "core/i18n.h"
+#include "core/proc_query.h"
 #include "core/sysstat_host.h"
 #include "widgets/focus_route.h"
-#include <string.h>
 
 #define PROCS_KEY "lookin-sysmon-procs"
 
@@ -31,6 +31,9 @@ struct _SysmonProc {
     guint threads;
     gchar state;
     guint seen; /* generation of the last update that listed it */
+    guint grace;       /* readings it stays shown when its values no longer match the filter (0: hidden) */
+    gboolean pinnable; /* shown under the current filter: kept while selected */
+    gboolean pinned;   /* shown only because it is selected */
 };
 
 G_DEFINE_FINAL_TYPE(SysmonProc, sysmon_proc, G_TYPE_OBJECT)
@@ -60,7 +63,7 @@ typedef struct {
     GHashTable* by_pid; /* pid -> SysmonProc in the store (borrowed) */
     GtkSingleSelection* selection;
     GtkCustomFilter* filter;
-    gchar** words; /* filter: casefolded words, each in the name, user or PID; NULL: every row */
+    ProcQuery* query; /* the filter, NULL: every row */
     GtkWidget* view;
     guint64 page_size;
     guint generation;
@@ -200,25 +203,54 @@ static GtkColumnViewColumn* add_column(GtkWidget* view, const gchar* title, Proc
     return c;
 }
 
-/* Every word of the filter is in the name, the user or the PID */
+/* Readings a row stays shown once its values no longer match (cpu>10 for
+ * a process around 10%): it does not blink in and out every second */
+#define GRACE 3
+
+static ProcQueryRow query_row(const SysmonProc* p) {
+    ProcQueryRow r = {p->name, p->user, p->pid, p->cpu, p->rss, p->threads};
+    return r;
+}
+
+/* After a reading (or a new filter): the values of the row against the
+ * filter. TRUE when that shows or hides it. */
+static gboolean rate_values(Procs* ps, SysmonProc* p, gboolean reset) {
+    gboolean was = p->grace > 0;
+    ProcQueryRow r = query_row(p);
+    if (!proc_query_has_conditions(ps->query) || proc_query_match_values(ps->query, &r)) {
+        p->grace = GRACE;
+    } else if (reset) {
+        p->grace = 0;
+    } else if (p->grace > 0) {
+        p->grace--;
+    }
+    return was != (p->grace > 0);
+}
+
+/* Every word in the name, the user or the PID, and the values matching
+ * (or matched in the last readings); the selected row stays shown when its
+ * values no longer match */
 static gboolean proc_matches(gpointer item, gpointer data) {
     Procs* ps = data;
-    if (ps->words == NULL) return TRUE;
     SysmonProc* p = item;
-    gchar* text = g_strdup_printf("%s %s %d", p->name != NULL ? p->name : "", p->user != NULL ? p->user : "", p->pid);
-    gchar* folded = g_utf8_casefold(text, -1);
-    gboolean all = TRUE;
-    for (gchar** w = ps->words; *w != NULL && all; w++) all = strstr(folded, *w) != NULL;
-    g_free(folded);
-    g_free(text);
-    return all;
+    p->pinned = FALSE;
+    if (ps->query == NULL) return TRUE;
+    ProcQueryRow r = query_row(p);
+    if (!proc_query_match_words(ps->query, &r)) return FALSE;
+    if (p->grace > 0) {
+        p->pinnable = TRUE;
+        return TRUE;
+    }
+    gpointer selected = ps->selection != NULL ? gtk_single_selection_get_selected_item(ps->selection) : NULL;
+    p->pinned = p->pinnable && selected == item;
+    return p->pinned;
 }
 
 static void procs_free(gpointer data) {
     Procs* ps = data;
     g_object_unref(ps->selection); /* holds the sorted model, which holds the filter model and the store */
     g_object_unref(ps->store);
-    g_strfreev(ps->words);
+    proc_query_free(ps->query);
     g_hash_table_unref(ps->by_pid);
     g_free(ps);
 }
@@ -269,21 +301,14 @@ GtkWidget* sysmon_procs_view(GtkWidget* procs) {
 void sysmon_procs_set_filter(GtkWidget* procs, const gchar* text) {
     Procs* ps = procs != NULL ? g_object_get_data(G_OBJECT(procs), PROCS_KEY) : NULL;
     if (ps == NULL) return;
-    gchar* folded = g_utf8_casefold(text != NULL ? text : "", -1);
-    gchar** words = g_strsplit_set(g_strstrip(folded), " \t", -1);
-    g_free(folded);
-    GPtrArray* kept = g_ptr_array_new();
-    for (gchar** w = words; *w != NULL; w++) {
-        if ((*w)[0] != '\0') g_ptr_array_add(kept, g_strdup(*w));
-    }
-    g_strfreev(words);
-    g_strfreev(ps->words);
-    ps->words = NULL;
-    if (kept->len > 0) {
-        g_ptr_array_add(kept, NULL);
-        ps->words = (gchar**)g_ptr_array_free(kept, FALSE);
-    } else {
-        g_ptr_array_free(kept, TRUE);
+    proc_query_free(ps->query);
+    ps->query = proc_query_parse(text);
+    GListModel* model = G_LIST_MODEL(ps->store);
+    for (guint i = 0, n = g_list_model_get_n_items(model); i < n; i++) {
+        SysmonProc* p = g_list_model_get_item(model, i);
+        rate_values(ps, p, TRUE);
+        p->pinnable = FALSE;
+        g_object_unref(p);
     }
     gtk_filter_changed(GTK_FILTER(ps->filter), GTK_FILTER_CHANGE_DIFFERENT);
 }
@@ -296,7 +321,7 @@ void sysmon_procs_counts(GtkWidget* procs, guint* shown, guint* total) {
 
 gboolean sysmon_procs_filtered(GtkWidget* procs) {
     Procs* ps = procs != NULL ? g_object_get_data(G_OBJECT(procs), PROCS_KEY) : NULL;
-    return ps != NULL && ps->words != NULL;
+    return ps != NULL && ps->query != NULL;
 }
 
 /* Copy a reading into a row: TRUE when a value changed; *renamed set when
@@ -388,6 +413,8 @@ void sysmon_procs_update(GtkWidget* procs, GPtrArray* list) {
 
     GPtrArray* added = g_ptr_array_new_with_free_func(g_object_unref);
     GPtrArray* updated = g_ptr_array_new();
+    GPtrArray* refilter = g_ptr_array_new(); /* rows the filter now shows or hides */
+    gpointer selected = gtk_single_selection_get_selected_item(ps->selection);
     gboolean renamed = FALSE;
     for (guint i = 0; i < list->len; i++) {
         const SysProc* sp = g_ptr_array_index(list, i);
@@ -398,10 +425,13 @@ void sysmon_procs_update(GtkWidget* procs, GPtrArray* list) {
             p->pid = sp->pid;
             gboolean unused = FALSE;
             fill_proc(p, sp, ps->page_size, &unused);
+            rate_values(ps, p, TRUE);
             g_hash_table_insert(ps->by_pid, GINT_TO_POINTER(p->pid), p);
             g_ptr_array_add(added, p);
-        } else if (fill_proc(p, sp, ps->page_size, &renamed)) {
-            g_ptr_array_add(updated, p);
+        } else {
+            if (fill_proc(p, sp, ps->page_size, &renamed)) g_ptr_array_add(updated, p);
+            /* Shown or hidden by its values, or kept only while it was selected */
+            if (rate_values(ps, p, FALSE) || (p->pinned && p != selected)) g_ptr_array_add(refilter, p);
         }
         p->seen = gen;
     }
@@ -425,8 +455,19 @@ void sysmon_procs_update(GtkWidget* procs, GPtrArray* list) {
     }
     g_ptr_array_unref(added);
 
-    /* A row renamed may now match the filter, or no longer */
-    if (renamed && ps->words != NULL) gtk_filter_changed(GTK_FILTER(ps->filter), GTK_FILTER_CHANGE_DIFFERENT);
+    /* A row renamed may now match the filter, or no longer; the rows shown
+     * or hidden by their values are replaced by themselves in the store,
+     * which the filter looks at again (a row at a time, as above) */
+    if (renamed && ps->query != NULL) {
+        gtk_filter_changed(GTK_FILTER(ps->filter), GTK_FILTER_CHANGE_DIFFERENT);
+    } else if (ps->query != NULL) {
+        for (guint i = 0; i < refilter->len; i++) {
+            gpointer item = g_ptr_array_index(refilter, i);
+            guint pos;
+            if (g_list_store_find(ps->store, item, &pos)) g_list_store_splice(ps->store, pos, 1, &item, 1);
+        }
+    }
+    g_ptr_array_unref(refilter);
 
     /* New values: the cells shown, then the order */
     for (guint i = 0; i < updated->len; i++) g_signal_emit(g_ptr_array_index(updated, i), changed_signal, 0);

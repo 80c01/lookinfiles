@@ -229,8 +229,13 @@ ferme) :
   l’en-tête d’une colonne trie selon elle. Le processeur d’un processus
   compte 100 % pour un cœur entier. Le champ au-dessus de la liste ne garde
   que les processus dont le nom, l’utilisateur ou le PID contiennent chaque
-  mot tapé (`Ctrl+F`, `/` en mode Vim ou `C-s` en mode Emacs y mènent depuis
-  la liste ; `Échap` le vide).
+  mot tapé, et des conditions sur les valeurs : `cpu>10`, `mem>100M` (`K`,
+  `M`, `G` ; un nombre seul compte en Mo), `threads>=50`, avec `>`, `>=`, `<`
+  ou `<=` ; `firefox mem>500M` donne les processus Firefox de plus de 500 Mo.
+  Un processus reste affiché trois secondes après que ses valeurs ne
+  correspondent plus, et tant qu’il est sélectionné : la liste ne clignote
+  pas. `Ctrl+F`, `/` en mode Vim ou `C-s` en mode Emacs mènent au champ
+  depuis la liste ; `Échap` le vide.
 
 Sous Windows, il n’y a ni carte de charge moyenne ni état des processus ;
 les systèmes de fichiers sont les lecteurs fixes et amovibles, et les

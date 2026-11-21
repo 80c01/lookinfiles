@@ -207,8 +207,13 @@ panel (another click closes it):
 - the **Processes**, by CPU use at first: click a column header to sort by
   it. The CPU of a process counts 100% for one full core. The field above
   the list keeps only the processes whose name, user or PID hold every word
-  typed (`Ctrl+F`, `/` in Vim mode or `C-s` in Emacs mode go to it from the
-  list; `Esc` empties it).
+  typed, and conditions on the values: `cpu>10`, `mem>100M` (`K`, `M`, `G`;
+  a number alone counts in MB), `threads>=50`, with `>`, `>=`, `<` or `<=`;
+  `firefox mem>500M` gives the Firefox processes over 500 MB. A process
+  stays shown for three seconds once its values no longer match, and as
+  long as it is selected, so the list does not blink. `Ctrl+F`, `/` in Vim
+  mode or `C-s` in Emacs mode go to the field from the list; `Esc` empties
+  it.
 
 On Windows there is no load average card and no process state; the
 filesystems are the fixed and removable drives, and the processes of other

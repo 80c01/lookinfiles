@@ -80,6 +80,7 @@ module_path:
 memory_trim:profile
 sysstat:
 sysstat_host:sysstat
+proc_query:
 countdown:
 run_time:
 disk_scan:

@@ -75,6 +75,9 @@ Layers, from bottom to top
   whole disks of `/sys/block` only) in a worker thread (`statvfs()` on a
   network mount can block), `sysstat_sample_rates()` turns two snapshots into
   CPU percentages (a process: 100 = one core), network and disk rates.
+- `proc_query` — the filter of the System Monitor's process list: words
+  (name, user, PID) and conditions on the values (`cpu>10`, `mem>100M`,
+  `threads>=50`), parsed once and matched per row.
 - `sysstat_host` — the statistics of the running machine in `sysstat`
   types, what the system monitor calls: `/proc` on Linux, the Win32 API on
   Windows (CPU times in 100 ns, physical drives by `IOCTL_DISK_PERFORMANCE`,
@@ -1001,7 +1004,7 @@ Layers, from bottom to top
   workspace, kept like the Help tab): cards with `sparkline` charts (CPU and
   a bar per core, memory and swap, load, network, disk I/O), the mounted
   filesystems and the processes (`sysmon_procs`: a sorted `GtkColumnView`
-  filtered by the field above it,
+  filtered by the field above it through `proc_query`,
   read only), from `sysstat_host` samples read in a worker each second (processes
   and filesystems only while the page is mapped). `sysmon_indicator` — the
   CPU chart of the top bar (`sysstat_host_cpu()` every 2 s; `LOOKIN_SYSMON_FROZEN`

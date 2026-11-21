@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-21 08:18+0000\n"
+"POT-Creation-Date: 2026-11-21 08:26+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1114,17 +1114,17 @@ msgstr "Trier les processus selon cette colonne (de nouveau : ordre inverse)"
 
 #: src/chrome/help.c:135 src/chrome/help.c:136
 msgid ""
-"Filter the processes: only those whose name, user or PID hold every word "
-"(Enter / Down: back to the list, Esc: empty the field, again: back to the "
-"list)"
-msgstr "Filtrer les processus : seulement ceux dont le nom, l’utilisateur ou le PID contiennent tous les mots (Entrée / Bas : retour à la liste, Échap : vider le champ, à nouveau : retour à la liste)"
+"Filter the processes: only those whose name, user or PID hold every word and "
+"that meet every condition such as cpu>10 or mem>100M (Enter / Down: back to "
+"the list, Esc: empty the field, again: back to the list)"
+msgstr "Filtrer les processus : seulement ceux dont le nom, l’utilisateur ou le PID contiennent tous les mots et qui remplissent chaque condition, comme cpu>10 ou mem>100M (Entrée / Bas : retour à la liste, Échap : vider le champ, à nouveau : retour à la liste)"
 
 #: src/chrome/help.c:137
 msgid ""
-"Filter the processes: only those whose name, user or PID hold every word "
-"(RET / Down: back to the list, Esc or C-g: empty the field, again: back to "
-"the list)"
-msgstr "Filtrer les processus : seulement ceux dont le nom, l’utilisateur ou le PID contiennent tous les mots (RET / Bas : retour à la liste, Échap ou C-g : vider le champ, à nouveau : retour à la liste)"
+"Filter the processes: only those whose name, user or PID hold every word and "
+"that meet every condition such as cpu>10 or mem>100M (RET / Down: back to "
+"the list, Esc or C-g: empty the field, again: back to the list)"
+msgstr "Filtrer les processus : seulement ceux dont le nom, l’utilisateur ou le PID contiennent tous les mots et qui remplissent chaque condition, comme cpu>10 ou mem>100M (RET / Bas : retour à la liste, Échap ou C-g : vider le champ, à nouveau : retour à la liste)"
 
 #: src/chrome/help.c:138 src/chrome/help.c:139
 msgid "Close the System Monitor tab"
@@ -7967,7 +7967,7 @@ msgstr "%1$s pages (%2$s Ko), max %3$s pages"
 msgid "%1$s pages (%2$s KB), unbounded"
 msgstr "%1$s pages (%2$s Ko), sans limite"
 
-#: src/formats/wasm_info.c:291 src/sysmon/sysmon_procs.c:240
+#: src/formats/wasm_info.c:291 src/sysmon/sysmon_procs.c:272
 #: src/sysmon/sysmon_tab.c:638
 msgid "Memory"
 msgstr "Mémoire"
@@ -10898,7 +10898,7 @@ msgstr "Déconnectée"
 msgid "Host"
 msgstr "Hôte"
 
-#: src/preview/preview_summary.c:93 src/sysmon/sysmon_procs.c:238
+#: src/preview/preview_summary.c:93 src/sysmon/sysmon_procs.c:270
 msgid "User"
 msgstr "Utilisateur"
 
@@ -11817,47 +11817,47 @@ msgstr ""
 msgid "System Monitor: CPU, memory, disks, network and processes"
 msgstr "Moniteur système : processeur, mémoire, disques, réseau et processus"
 
-#: src/sysmon/sysmon_procs.c:74
+#: src/sysmon/sysmon_procs.c:77
 msgid "Running"
 msgstr "En cours"
 
-#: src/sysmon/sysmon_procs.c:75
+#: src/sysmon/sysmon_procs.c:78
 msgid "Sleeping"
 msgstr "En veille"
 
-#: src/sysmon/sysmon_procs.c:76
+#: src/sysmon/sysmon_procs.c:79
 msgid "Waiting"
 msgstr "En attente"
 
-#: src/sysmon/sysmon_procs.c:77
+#: src/sysmon/sysmon_procs.c:80
 msgid "Zombie"
 msgstr "Zombie"
 
-#: src/sysmon/sysmon_procs.c:79
+#: src/sysmon/sysmon_procs.c:82
 msgid "Stopped"
 msgstr "Arrêté"
 
-#: src/sysmon/sysmon_procs.c:80
+#: src/sysmon/sysmon_procs.c:83
 msgid "Idle"
 msgstr "Inactif"
 
-#: src/sysmon/sysmon_procs.c:236
+#: src/sysmon/sysmon_procs.c:268
 msgid "Process"
 msgstr "Processus"
 
-#: src/sysmon/sysmon_procs.c:237
+#: src/sysmon/sysmon_procs.c:269
 msgid "PID"
 msgstr "PID"
 
-#: src/sysmon/sysmon_procs.c:239
+#: src/sysmon/sysmon_procs.c:271
 msgid "CPU %"
 msgstr "Proc. %"
 
-#: src/sysmon/sysmon_procs.c:241
+#: src/sysmon/sysmon_procs.c:273
 msgid "Threads"
 msgstr "Threads"
 
-#: src/sysmon/sysmon_procs.c:242
+#: src/sysmon/sysmon_procs.c:274
 msgid "State"
 msgstr "État"
 
@@ -11942,7 +11942,7 @@ msgstr "%s · %s · allumé depuis %s · %u processeurs"
 msgid "Processes"
 msgstr "Processus"
 
-#: src/sysmon/sysmon_tab.c:611 src/sysmon/sysmon_tab.c:713
+#: src/sysmon/sysmon_tab.c:611 src/sysmon/sysmon_tab.c:715
 msgid "System Monitor"
 msgstr "Moniteur système"
 
@@ -11986,11 +11986,14 @@ msgstr "Systèmes de fichiers"
 msgid "Filter the processes"
 msgstr "Filtrer les processus"
 
-#: src/sysmon/sysmon_tab.c:678
-msgid "Only the processes whose name, user or PID hold every word"
-msgstr "Seulement les processus dont le nom, l’utilisateur ou le PID contiennent tous les mots"
+#: src/sysmon/sysmon_tab.c:679
+msgid ""
+"Only the processes whose name, user or PID hold every word, and whose values "
+"meet every condition: cpu>10, mem>100M (no unit: MB), threads>=50; also < "
+"and <="
+msgstr "Seulement les processus dont le nom, l’utilisateur ou le PID contiennent tous les mots, et dont les valeurs remplissent chaque condition : cpu>10, mem>100M (sans unité : Mo), threads>=50 ; aussi < et <="
 
-#: src/sysmon/sysmon_tab.c:707
+#: src/sysmon/sysmon_tab.c:709
 msgid "System statistics are only available on Linux and Windows"
 msgstr "Les statistiques système ne sont disponibles que sous Linux et Windows"
 

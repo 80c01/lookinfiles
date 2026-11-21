@@ -675,7 +675,9 @@ static SysmonTab* ensure_page(AppData* app) {
     st->procs_filter = gtk_search_entry_new();
     gtk_search_entry_set_search_delay(GTK_SEARCH_ENTRY(st->procs_filter), 150);
     gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(st->procs_filter), _("Filter the processes"));
-    gtk_widget_set_tooltip_text(st->procs_filter, _("Only the processes whose name, user or PID hold every word"));
+    gtk_widget_set_tooltip_text(st->procs_filter,
+                                _("Only the processes whose name, user or PID hold every word, and whose values meet "
+                                  "every condition: cpu>10, mem>100M (no unit: MB), threads>=50; also < and <="));
     gtk_editable_set_width_chars(GTK_EDITABLE(st->procs_filter), 24);
     gtk_widget_set_valign(st->procs_filter, GTK_ALIGN_END);
     gtk_widget_set_margin_top(st->procs_filter, 6);
