@@ -185,7 +185,8 @@ Layers, from bottom to top
   `git_list_files_by_kind()` says tracked, untracked or ignored).
 - `git_lib` — what the libgit2 readers share: libgit2 set up once
   (`git_lib_ready()`), a work tree opened (`git_lib_open()`), a patch printed
-  as git prints it (`git_lib_patch_line()`), a short hash (`git_lib_short_id()`).
+  as git prints it (`git_lib_patch_line()`), a short hash (`git_lib_short_id()`),
+  git's date of a signature (`git_lib_signature_date()`).
 - `git_log` — the history through libgit2, worker thread only:
   `git_read_log()` walks it from `HEAD` page by page, children before
   their parents, filtered by words (`git_log_words()`) and by a path; each
@@ -198,6 +199,11 @@ Layers, from bottom to top
   branches with their upstream (gone, ahead, behind), every config entry
   with its level and whether a closer level overrides it; secrets masked
   (`git_mask_url()`, `git_config_key_secret()`). Unit-tested.
+- `git_stash_tags` — the stashes and the tags of a repository through
+  libgit2 (worker thread): `git_read_stashes()`, `git_read_tags()` (newest
+  first), and what one holds as text: `git_show_stash()` (its patch against
+  its base, then its untracked files), `git_show_tag()` (the tag's header and
+  message, then `git_show_commit()` of its commit). Unit-tested.
 - `git_stats` — commits counted per day, per day of the week and hour (in
   the author's time zone), per month and per author (`git_stats_add()`),
   and `git_stats_read()`, which walks the history from `HEAD` (worker
@@ -1235,6 +1241,11 @@ Layers, from bottom to top
   configuration, and buttons that open `.git/config` and the global config
   in an editor tab through `APP_EVENT_EDIT_PATH` (`git/` does not depend on
   `editor/`).
+  `git_stash_view` is the Stashes & Tags view: `git_read_stashes()` and
+  `git_read_tags()` in a worker each time the view comes on screen (and on
+  each update while shown), two foldable groups in a `GtkListView` over a
+  `GtkTreeListModel` like the Changes view, and the content of the entry
+  selected (`git_show_stash()` / `git_show_tag()` in a worker) below.
   `git_diff_text` lays out a patch in a `GtkTextBuffer` in the diff colours
   and cuts a huge one (`git_diff_text_cut()`).
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.

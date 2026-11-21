@@ -572,6 +572,14 @@ sleep 3;                shot git_first_page
 key End;                shot git_next_page         # 152 commits listed, the 100th selected
 key v; sleep 1;         shot git_statistics_view   # v again: commits by day, hour, month, author
 key v; sleep 1;         shot git_repository_view   # identity, remotes, branches, configuration
+# A tag and a stash made outside the app (fixed dates: stable shot)
+( cd "$FIX/work" && export GIT_AUTHOR_DATE="2000-01-04T00:00:00Z" GIT_COMMITTER_DATE="2000-01-04T00:00:00Z" &&
+  git -c user.email=ui@test -c user.name=ui tag -a v1.0 -m "First release" &&
+  echo "draft" >> README.md &&
+  git -c user.email=ui@test -c user.name=ui stash push -q -m "try a draft" )
+key v; sleep 1;         shot git_stash_tags_view   # the stash, its patch below, then the tag
+key Down Down;          shot git_tag_selected      # the tag: its message, then its commit
+key ctrl+c;             shot git_copy_tag_name     # notice with "v1.0"
 key v v;                shot git_history_again     # Changes, then History
 # Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
 # bar takes the tab (the emptied split closes)

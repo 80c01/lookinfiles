@@ -69,6 +69,7 @@ git_log:git_utils,git_lib
 git_worktree:git_lib,i18n
 git_stats:git_lib
 git_repo_info:git_lib,i18n
+git_stash_tags:git_lib,git_utils
 git_refs:
 git_graph:
 line_diff:

@@ -45,8 +45,8 @@ left edge.
 
 The **Git** tab, next to the **Preview** tab, appears when the current folder
 is in a repository. The buttons at its top (or `v`) switch between its
-four views: **Changes**, **History**, **Statistics** and **Repository**. It
-opens on **History**.
+five views: **Changes**, **History**, **Statistics**, **Repository** and
+**Stashes & Tags**. It opens on **History**.
 
 ### Changes
 
@@ -145,6 +145,26 @@ and in settings that hold them (tokens, passwords, extra HTTP headers).
 The view only shows the setup; **Edit .git/config** and **Edit Global
 Config** open those files in an editor tab. It is read again each time it
 is shown.
+
+### Stashes & Tags
+
+Two groups, which fold like those of **Changes**:
+
+- **Stashes**: what `git stash` put aside, newest first: its name
+  (`stash@{0}`), its message (the branch and commit it was made on) and its
+  age;
+- **Tags**: each tag, newest first: its name, its message (else the subject
+  of its commit), its commit and its date; its tooltip says whether it is
+  annotated (`git tag -a`) or lightweight.
+
+Select a stash to see below what it changes against the commit it was made
+on (`git stash show --patch`), then the untracked files it holds when it
+was made with `git stash -u`. Select a tag to see its tagger, date and
+message when it is annotated, then its commit and the commit's diff (`git
+show`). A right click copies the name, the hash or the message; `Ctrl+C`
+(`y` in Vim mode, `M-w` in Emacs mode) copies the name. The view only
+shows them: to apply, drop or make a stash or a tag, use git in the
+terminal. It is read again each time it is shown.
 
 ## Diff and patch files
 

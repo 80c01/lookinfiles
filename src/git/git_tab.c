@@ -6,14 +6,16 @@
 #include "git/git_changes.h"
 #include "git/git_history.h"
 #include "git/git_repo_view.h"
+#include "git/git_stash_view.h"
 #include "git/git_stats_view.h"
 #include "git/git_utils.h"
 #include "widgets/focus_route.h"
 
 /* The views of the Git tab, in the order of their buttons */
-typedef enum { GIT_VIEW_CHANGES, GIT_VIEW_HISTORY, GIT_VIEW_STATS, GIT_VIEW_REPO, GIT_VIEW_COUNT } GitView;
+typedef enum { GIT_VIEW_CHANGES, GIT_VIEW_HISTORY, GIT_VIEW_STATS, GIT_VIEW_REPO, GIT_VIEW_STASH_TAGS, GIT_VIEW_COUNT } GitView;
 
-static const gchar* const VIEW_NAMES[GIT_VIEW_COUNT] = { "changes", "history", "statistics", "repository" };
+static const gchar* const VIEW_NAMES[GIT_VIEW_COUNT] = { "changes", "history", "statistics", "repository",
+                                                         "stashes-tags" };
 
 /* Git tab state (app->git), created by git_tab_init(): the notebook page and
  * its views */
@@ -27,6 +29,7 @@ struct GitTab {
     GitHistory* history;        /* the History view (freed with its widget) */
     GitStatsView* stats;        /* the Statistics view (freed with its widget) */
     GitRepoView* repo;          /* the Repository view (freed with its widget) */
+    GitStashView* stash_tags;   /* the Stashes & Tags view (freed with its widget) */
     gchar* current_root;        /* repository shown, or NULL */
 };
 
@@ -52,6 +55,7 @@ static void update_root(AppData* app, const gchar* dir, gboolean reload) {
     git_history_set_root(g->history, root, reload);
     git_stats_view_set_root(g->stats, root, reload);
     git_repo_view_set_root(g->repo, root, reload);
+    git_stash_view_set_root(g->stash_tags, root);
 }
 
 void git_tab_reload(AppData* app) {
@@ -120,6 +124,7 @@ void git_tab_init(AppData* app) {
     g->history = git_history_new(app);
     g->stats = git_stats_view_new(app);
     g->repo = git_repo_view_new(app);
+    g->stash_tags = git_stash_view_new(app);
     theme_add_css(".git-switcher { margin: 4px 8px 2px 8px; }");
 
     GtkWidget* switcher = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -135,6 +140,8 @@ void git_tab_init(AppData* app) {
                                                   _("Commits by Day, Hour, Month and Author (v: Next View)")));
     gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_REPO, _("Repository"),
                                                   _("Identity, Remotes, Branches and Configuration (v: Next View)")));
+    gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_STASH_TAGS, _("Stashes & Tags"),
+                                                  _("The Stashes and the Tags, Newest First (v: Next View)")));
 
     g->stack = gtk_stack_new();
     gtk_widget_set_vexpand(g->stack, TRUE);
@@ -142,6 +149,7 @@ void git_tab_init(AppData* app) {
     gtk_stack_add_named(GTK_STACK(g->stack), git_history_widget(g->history), VIEW_NAMES[GIT_VIEW_HISTORY]);
     gtk_stack_add_named(GTK_STACK(g->stack), git_stats_view_widget(g->stats), VIEW_NAMES[GIT_VIEW_STATS]);
     gtk_stack_add_named(GTK_STACK(g->stack), git_repo_view_widget(g->repo), VIEW_NAMES[GIT_VIEW_REPO]);
+    gtk_stack_add_named(GTK_STACK(g->stack), git_stash_view_widget(g->stash_tags), VIEW_NAMES[GIT_VIEW_STASH_TAGS]);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_HISTORY]), TRUE); /* the view shown first */
 
     GtkWidget* tab_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -204,6 +212,7 @@ void git_tab_cleanup(AppData* app) {
     git_history_cancel(g->history);
     git_stats_view_cancel(g->stats);
     git_repo_view_cancel(g->repo);
+    git_stash_view_cancel(g->stash_tags);
     g_free(g->current_root);
     g_clear_pointer(&app->git, g_free);
 }

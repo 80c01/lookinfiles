@@ -78,3 +78,29 @@ gchar* git_lib_short_id(const git_object* obj) {
     git_buf_dispose(&buf);
     return id;
 }
+
+/* git's default date format, in the signature's time zone and in English
+ * whatever the locale: "Thu Nov 5 14:03:12 2026 +0100" */
+gchar* git_lib_signature_date(const git_time* when) {
+    static const gchar* const DAYS[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+    static const gchar* const MONTHS[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    GDateTime* utc = g_date_time_new_from_unix_utc((gint64)when->time);
+    if (utc == NULL) {
+        return g_strdup("");
+    }
+    GTimeZone* tz = g_time_zone_new_offset(when->offset * 60);
+    GDateTime* t = g_date_time_to_timezone(utc, tz);
+    gint offset = when->offset < 0 ? -when->offset : when->offset;
+    gchar* text = g_strdup_printf("%s %s %d %02d:%02d:%02d %d %c%02d%02d",
+                                  DAYS[g_date_time_get_day_of_week(t) - 1],
+                                  MONTHS[g_date_time_get_month(t) - 1],
+                                  g_date_time_get_day_of_month(t), g_date_time_get_hour(t),
+                                  g_date_time_get_minute(t), g_date_time_get_second(t),
+                                  g_date_time_get_year(t), when->offset < 0 ? '-' : '+',
+                                  offset / 60, offset % 60);
+    g_date_time_unref(t);
+    g_time_zone_unref(tz);
+    g_date_time_unref(utc);
+    return text;
+}

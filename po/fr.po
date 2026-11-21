@@ -1148,11 +1148,12 @@ msgstr "Onglet Git"
 #: src/chrome/help.c:140
 msgid ""
 "Next view: Changes (uncommitted files and their patch), History (the "
-"commits), Statistics, Repository (identity, remotes, branches, configuration)"
+"commits), Statistics, Repository (identity, remotes, branches, "
+"configuration), Stashes & Tags"
 msgstr ""
 "Vue suivante : Modifications (les fichiers non commités et leur patch), "
 "Historique (les commits), Statistiques, Dépôt (identité, remotes, branches, "
-"configuration)"
+"configuration), Stashes et tags"
 
 #: src/chrome/help.c:141
 msgid ""
@@ -1161,16 +1162,16 @@ msgid ""
 msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu, replier ou déplier le groupe sélectionné (aussi un clic)"
 
 #: src/chrome/help.c:142
-msgid "Changes: fold / unfold the group (Left on a file: its group)"
-msgstr "Modifications : replier / déplier le groupe (Gauche sur un fichier : son groupe)"
+msgid "Changes, Stashes & Tags: fold / unfold the group (Left on an entry: its group)"
+msgstr "Modifications, Stashes et tags : replier / déplier le groupe (Gauche sur une entrée : son groupe)"
 
 #: src/chrome/help.c:143
-msgid "Changes: fold / unfold the group (h on a file: its group)"
-msgstr "Modifications : replier / déplier le groupe (h sur un fichier : son groupe)"
+msgid "Changes, Stashes & Tags: fold / unfold the group (h on an entry: its group)"
+msgstr "Modifications, Stashes et tags : replier / déplier le groupe (h sur une entrée : son groupe)"
 
 #: src/chrome/help.c:144
-msgid "Changes: fold / unfold the group (C-b on a file: its group)"
-msgstr "Modifications : replier / déplier le groupe (C-b sur un fichier : son groupe)"
+msgid "Changes, Stashes & Tags: fold / unfold the group (C-b on an entry: its group)"
+msgstr "Modifications, Stashes et tags : replier / déplier le groupe (C-b sur une entrée : son groupe)"
 
 #: src/chrome/help.c:145 src/chrome/help.c:146
 msgid ""
@@ -8567,6 +8568,50 @@ msgstr "Les commits de toutes les branches et de tous les tags, pas seulement ce
 
 msgid "History: the commits of every branch and tag, or of the current branch only (the All Branches button)"
 msgstr "Historique : les commits de toutes les branches et de tous les tags, ou de la branche courante seulement (le bouton Toutes les branches)"
+
+#. TRANSLATORS: the views of the Git tab; v shows the next one
+msgid "Stashes & Tags"
+msgstr "Stashes et tags"
+
+msgid "The Stashes and the Tags, Newest First (v: Next View)"
+msgstr "Les stashes et les tags, du plus récent au plus ancien (v : vue suivante)"
+
+#. TRANSLATORS: the groups of the Stashes & Tags view of the Git tab
+msgid "Stashes"
+msgstr "Stashes"
+
+msgid "Tags"
+msgstr "Tags"
+
+msgid "This entry cannot be read."
+msgstr "Cette entrée ne peut pas être lue."
+
+#. TRANSLATORS: above the content of a stash or a tag: its name, its
+#. message, the relative date ("2 days ago") and the full date
+#. ("2026-11-21 08:19")
+msgid "%s  •  %s  (%s, %s)"
+msgstr "%s  •  %s  (%s, %s)"
+
+msgid "The stashes and tags of this repository cannot be read."
+msgstr "Les stashes et les tags de ce dépôt ne peuvent pas être lus."
+
+msgid "No stash and no tag in this repository"
+msgstr "Aucun stash et aucun tag dans ce dépôt"
+
+msgid "Reading the stashes and tags…"
+msgstr "Lecture des stashes et des tags…"
+
+msgid "Annotated tag"
+msgstr "Tag annoté"
+
+msgid "Lightweight tag"
+msgstr "Tag léger"
+
+msgid "Enter: fold or unfold the group; right click: copy"
+msgstr "Entrée : replier ou déplier le groupe ; clic droit : copier"
+
+msgid "Stashes & Tags: copy the name of the selected stash or tag (right click: name, hash or message)"
+msgstr "Stashes et tags : copier le nom du stash ou du tag sélectionné (clic droit : nom, hash ou message)"
 
 #: src/git/git_history.c:871 src/office/ole_props.c:225
 msgid "Author"

@@ -47,8 +47,8 @@ minicarte les montre le long de son bord gauche.
 
 L’onglet **Git**, à côté de l’onglet **Aperçu**, apparaît quand le dossier
 courant est dans un dépôt. Les boutons en haut (ou `v`) passent d’une de ses
-quatre vues à l’autre : **Modifications**, **Historique**, **Statistiques**
-et **Dépôt**. Il s’ouvre sur **Historique**.
+cinq vues à l’autre : **Modifications**, **Historique**, **Statistiques**,
+**Dépôt** et **Stashes et tags**. Il s’ouvre sur **Historique**.
 
 ### Modifications
 
@@ -155,6 +155,27 @@ Les mots de passe et les jetons ne sont jamais affichés : dans les URL
 montrer la configuration ; **Modifier .git/config** et **Modifier la
 config globale** ouvrent ces fichiers dans un onglet d’édition. Elle est
 relue chaque fois qu’elle est affichée.
+
+### Stashes et tags
+
+Deux groupes, qui se replient comme ceux de **Modifications** :
+
+- **Stashes** : ce que `git stash` a mis de côté, du plus récent au plus
+  ancien : son nom (`stash@{0}`), son message (la branche et le commit sur
+  lesquels il a été fait) et son âge ;
+- **Tags** : chaque tag, du plus récent au plus ancien : son nom, son
+  message (sinon le sujet de son commit), son commit et sa date ; son
+  infobulle dit s’il est annoté (`git tag -a`) ou léger.
+
+Sélectionnez un stash pour voir en dessous ce qu’il change par rapport au
+commit sur lequel il a été fait (`git stash show --patch`), puis les
+fichiers non suivis qu’il contient quand il a été fait avec `git stash -u`.
+Sélectionnez un tag pour voir son auteur, sa date et son message quand il
+est annoté, puis son commit et le diff de ce commit (`git show`). Un clic
+droit copie le nom, le hash ou le message ; `Ctrl+C` (`y` en mode Vim,
+`M-w` en mode Emacs) copie le nom. La vue ne fait que les montrer : pour
+appliquer, supprimer ou créer un stash ou un tag, utilisez git dans le
+terminal. Elle est relue chaque fois qu’elle est affichée.
 
 ## Fichiers diff et patch
 

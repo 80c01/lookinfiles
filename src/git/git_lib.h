@@ -23,4 +23,8 @@ int git_lib_patch_line(const git_diff_delta* delta, const git_diff_hunk* hunk, c
 /* Shortest unique abbreviation of an object, like git's %h. g_free() */
 gchar* git_lib_short_id(const git_object* obj);
 
+/* git's default date format, in the signature's time zone and in English
+ * whatever the locale: "Thu Nov 5 14:03:12 2026 +0100". g_free() */
+gchar* git_lib_signature_date(const git_time* when);
+
 #endif /* GIT_LIB_H */

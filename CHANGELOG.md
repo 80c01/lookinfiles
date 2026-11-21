@@ -20,6 +20,9 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and the commits to push or pull, and the whole configuration with the
   level of each setting (passwords and tokens masked); buttons open
   `.git/config` and the global config in an editor tab.
+- A **Stashes & Tags** view in the Git tab: the stashes and the tags,
+  newest first, in two groups that fold; the selected stash shows its patch
+  (with its untracked files), the selected tag its message and its commit.
 - **Git History** in the right-click menu of a file or folder lists only the
   commits that changed it, in the History view of the Git tab.
 - Apache Parquet files (`.parquet`) are previewed: the first 100 rows as a
