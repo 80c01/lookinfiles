@@ -523,6 +523,21 @@ gboolean layout_position_idle(gpointer data) {
     return FALSE;
 }
 
+/* The viewer side of the terminal split shrinks below its minimum size only
+ * beside the terminal. Stacked over it, GtkPaned would otherwise give it,
+ * when the window measures its width for its minimum height, less height
+ * than its pages need (GTK warns), as it counts a side that may shrink as 0. */
+static void sync_viewer_shrink(GtkWidget* right_paned) {
+    gboolean beside = gtk_orientable_get_orientation(GTK_ORIENTABLE(right_paned)) == GTK_ORIENTATION_HORIZONTAL;
+    gtk_paned_set_shrink_start_child(GTK_PANED(right_paned), beside);
+}
+
+static void on_right_orientation(GObject* object, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    (void)data;
+    sync_viewer_shrink(GTK_WIDGET(object));
+}
+
 /* Assemble viewer and terminal into a pane pair with given orientation */
 void layout_build(AppData* app, GtkOrientation orientation) {
     if (app->right_paned != NULL) {
@@ -537,7 +552,8 @@ void layout_build(AppData* app, GtkOrientation orientation) {
     GtkWidget* center_child = (app->editor_paned != NULL) ? app->editor_paned : app->viewer_box;
     gtk_paned_set_start_child(GTK_PANED(right_paned), center_child);
     gtk_paned_set_resize_start_child(GTK_PANED(right_paned), FALSE);
-    gtk_paned_set_shrink_start_child(GTK_PANED(right_paned), TRUE);
+    sync_viewer_shrink(right_paned);
+    g_signal_connect(right_paned, "notify::orientation", G_CALLBACK(on_right_orientation), NULL);
     gtk_paned_set_end_child(GTK_PANED(right_paned), app->term_scroll);
     gtk_paned_set_resize_end_child(GTK_PANED(right_paned), TRUE);
     gtk_paned_set_shrink_end_child(GTK_PANED(right_paned), TRUE);
