@@ -1166,13 +1166,19 @@ Layers, from bottom to top
   **Disk Usage** buttons over its top right corner (`dir_preview_wrap()`)
   open `deep_search_tab` and `disk_usage_tab` on the folder.
 - `orgmode`, `pdf`, `video`, `audio`, `git_tab` — preview renderers / tabs.
-  `git_tab` reads the history only when its tab is on screen (`map`); while
-  hidden, a new repository or a change in `.git` only marks it stale. Its
+  `git_tab` is the Git tab: the notebook page, its visibility (shown in a
+  repository) and the repository root, handed to its views. `git_history`
+  is its History view (`GitHistory`, freed with its widget; its tasks reach
+  it through their callback data and are cancelled first). It reads the
+  history only when the view is on screen (`map`); while hidden, a new
+  repository or a change in `.git` only marks it stale. Its
   filter field gives words to `git_read_log()`, which walks the whole history
   on a worker thread (cancelled by a newer read); the diff of the selected
   commit has its own cancellable, cancelled when the selection moves. The
   history is read 100 commits at a time (`skip` of `git_read_log()`): the end
   of the list reads the next page, a reload reads as many as are listed.
+  `git_diff_text` lays out a patch in a `GtkTextBuffer` in the diff colours
+  and cuts a huge one (`git_diff_text_cut()`).
   `orgmode` renders and edits Org files on disk; it knows nothing of editor tabs.
   `org_fold` keeps the folding of the Org preview (headings folded by hand,
   the global Shift+Tab state) that `orgmode` toggles and `viewer` renders with
