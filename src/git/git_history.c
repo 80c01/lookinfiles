@@ -49,6 +49,8 @@ struct GitHistory {
     GitGraph* graph;            /* lanes after the commits listed, NULL: no graph (a filter) */
     guint graph_lanes;          /* widest row of the graph */
     GtkColumnViewColumn* graph_column; /* the Graph column, shown without a filter */
+    GtkWidget* all_button;      /* toggle: the commits of every branch, not only HEAD's */
+    gboolean all_branches;      /* its state */
 };
 
 /* One row of the commit list (item of GitHistory.store) */
@@ -104,6 +106,7 @@ typedef struct {
     gchar* git_root;
     gchar** words;       /* filter, NULL: every commit */
     gchar* path;         /* path filter, or NULL */
+    gboolean all_branches; /* every branch and tag, not only HEAD */
     guint skip;          /* commits before the first one read (a next page) */
     guint max;           /* commits read */
     gboolean append;     /* a next page: added to the list, not replacing it */
@@ -135,7 +138,8 @@ static void git_log_thread_func(GTask* task, gpointer source_object,
 
     if (g_task_return_error_if_cancelled(task)) return;
 
-    GPtrArray* commits = git_read_log(td->git_root, td->skip, td->max, td->words, td->path, cancellable, &td->more);
+    GPtrArray* commits = git_read_log(td->git_root, td->skip, td->max, td->words, td->path, td->all_branches,
+                                     cancellable, &td->more);
     GHashTable* refs_map = NULL;
     if (!g_cancellable_is_cancelled(cancellable) && commits != NULL && commits->len > 0) {
         refs_map = git_read_refs(td->git_root);
@@ -492,6 +496,7 @@ static void start_log_read(GitHistory* h) {
     td->git_root = g_strdup(h->current_root);
     td->words = g_strdupv(h->words);
     td->path = g_strdup(h->path);
+    td->all_branches = h->all_branches;
     td->max = MAX(h->wanted, GIT_LOG_PAGE);
     h->reading = TRUE;
     h->reading_more = FALSE; /* its read was cancelled with the cancellable */
@@ -545,6 +550,7 @@ static void read_more(GitHistory* h) {
     td->git_root = g_strdup(h->current_root);
     td->words = g_strdupv(h->words);
     td->path = g_strdup(h->path);
+    td->all_branches = h->all_branches;
     td->skip = g_list_model_get_n_items(G_LIST_MODEL(h->store));
     td->max = GIT_LOG_PAGE;
     td->append = TRUE;
@@ -841,6 +847,30 @@ static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
     read_when_shown(h);
 }
 
+/* The All Branches button: the history of every branch, or of HEAD only */
+static void on_all_toggled(GtkToggleButton* button, gpointer data) {
+    GitHistory* h = data;
+    gboolean all = gtk_toggle_button_get_active(button);
+    if (all == h->all_branches) return;
+    h->all_branches = all;
+    if (h->current_root == NULL) return;
+    h->wanted = GIT_LOG_PAGE;
+    read_when_shown(h);
+}
+
+/* a in the view (not in the filter field): every branch or HEAD only */
+static gboolean on_view_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
+                            gpointer data) {
+    (void)keycode;
+    GitHistory* h = data;
+    if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) != 0 || keyval != GDK_KEY_a) return FALSE;
+    GtkWidget* view = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    GtkWidget* focus = gtk_root_get_focus(gtk_widget_get_root(view));
+    if (focus != NULL && (GTK_IS_EDITABLE(focus) || GTK_IS_TEXT_VIEW(focus))) return FALSE;
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(h->all_button), !h->all_branches);
+    return TRUE;
+}
+
 /* The view comes on screen: read the history it waits for */
 static void on_view_map(GtkWidget* widget, gpointer data) {
     (void)widget;
@@ -957,6 +987,15 @@ GitHistory* git_history_new(AppData* app) {
     gtk_box_append(GTK_BOX(h->path_chip), chip_clear);
     gtk_box_append(GTK_BOX(list_head), h->path_chip);
 
+    /* TRANSLATORS: button of the History view; a toggles it */
+    h->all_button = gtk_toggle_button_new_with_label(_("All Branches"));
+    gtk_widget_set_tooltip_text(h->all_button,
+                                _("The commits of every branch and tag, not only those of the current branch (a)"));
+    gtk_widget_set_focus_on_click(h->all_button, FALSE);
+    gtk_widget_set_valign(h->all_button, GTK_ALIGN_CENTER);
+    g_signal_connect(h->all_button, "toggled", G_CALLBACK(on_all_toggled), h);
+    gtk_box_append(GTK_BOX(list_head), h->all_button);
+
     h->filter = gtk_search_entry_new();
     gtk_search_entry_set_search_delay(GTK_SEARCH_ENTRY(h->filter), 250);
     gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(h->filter), _("Filter the commits"));
@@ -1027,6 +1066,9 @@ GitHistory* git_history_new(AppData* app) {
     h->widget = paned;
     g_object_set_data_full(G_OBJECT(paned), GIT_HISTORY_KEY, h, git_history_free);
     g_signal_connect(paned, "map", G_CALLBACK(on_view_map), h);
+    GtkEventController* keys = gtk_event_controller_key_new();
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_view_key), h);
+    gtk_widget_add_controller(paned, keys);
     return h;
 }
 

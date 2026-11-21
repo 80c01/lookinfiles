@@ -145,6 +145,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Git tab"), "Ctrl+F", N_("Filter the commits: only those whose message, author or hash hold every word, in the whole history (Enter / Down: back to the list, Esc: empty the field, again: back to the list)"), NP},
     {N_("Git tab"), "/", N_("Filter the commits: only those whose message, author or hash hold every word, in the whole history (Enter / Down: back to the list, Esc: empty the field, again: back to the list)"), VI},
     {N_("Git tab"), "C-s", N_("Filter the commits: only those whose message, author or hash hold every word, in the whole history (RET / Down: back to the list, Esc or C-g: empty the field, again: back to the list)"), EM},
+    {N_("Git tab"), "a", N_("History: the commits of every branch and tag, or of the current branch only (the All Branches button)"), 0},
     {N_("Git tab"), "Ctrl+C", N_("Copy the hash of the selected commit (right click: hash, short hash or message)"), NP},
     {N_("Git tab"), "y", N_("Copy the hash of the selected commit (right click: hash, short hash or message)"), VI},
     {N_("Git tab"), "M-w", N_("Copy the hash of the selected commit (right click: hash, short hash or message)"), EM},

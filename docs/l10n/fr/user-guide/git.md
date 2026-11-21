@@ -82,7 +82,12 @@ sur la ligne de sa branche, chaque commit au-dessus de ses parents, avec une
 couleur par ligne : un merge envoie une ligne vers la branche qu’il a
 intégrée, et les lignes se rejoignent là où les branches sont parties. Il
 est masqué tant qu’un filtre est actif, car les commits écartés couperaient
-ses lignes. Sélectionnez-en un pour voir son diff complet en dessous,
+ses lignes.
+
+La liste montre les commits de la branche courante (`HEAD`). **Toutes les
+branches** (ou `a` dans la vue) y ajoute ceux de toutes les branches locales
+et distantes et de tous les tags, comme `git log --all` : le graphe montre
+alors chaque branche à côté des autres. Sélectionnez-en un pour voir son diff complet en dessous,
 sous une ligne donnant son hash, son sujet, son auteur et sa date. Les 100
 commits les plus récents sont lus d’abord ; faire défiler jusqu’au bas de la
 liste (ou y amener la sélection) lit les 100 suivants.

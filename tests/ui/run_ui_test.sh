@@ -547,6 +547,8 @@ xdotool mousemove 484 84 click 1     # History button again
   GIT_AUTHOR_DATE="2000-01-02T00:00:00Z" GIT_COMMITTER_DATE="2000-01-02T00:00:00Z" \
       git -c user.email=ui@test -c user.name=ui commit -qm "external commit" )
 sleep 3;                shot git_tab_after_commit
+key a; sleep 1;         shot git_all_branches      # every branch and tag: the button on
+key a; sleep 1;         shot git_head_only         # back to the current branch
 xdotool mousemove 420 195 click 1   # older commit: its diff replaces the newest one
                         shot git_older_commit
 # Filter the history (Ctrl+F from the list): only "external commit" stays;

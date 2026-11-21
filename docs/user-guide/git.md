@@ -77,7 +77,11 @@ date of each commit (relative, in full in its tooltip). The graph draws each
 commit as a dot on the line of its branch, every commit above its parents,
 with a colour per line: a merge sends a line to the branch it brought in,
 and lines meet where branches started. It is hidden while a filter is on,
-since the commits left out would break its lines. Select one to see its full
+since the commits left out would break its lines.
+
+The list shows the commits of the current branch (`HEAD`). **All Branches**
+(or `a` in the view) adds those of every local and remote branch and tag,
+like `git log --all`: the graph then shows each branch beside the others. Select one to see its full
 diff below, under a line giving its hash, subject, author and date. The
 newest 100 commits are read first; scrolling to the end of the list (or
 moving the selection to its last commit) reads the next 100.

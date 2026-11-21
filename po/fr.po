@@ -8558,6 +8558,16 @@ msgstr "Commit"
 msgid "Graph"
 msgstr "Graphe"
 
+#. TRANSLATORS: button of the History view; a toggles it
+msgid "All Branches"
+msgstr "Toutes les branches"
+
+msgid "The commits of every branch and tag, not only those of the current branch (a)"
+msgstr "Les commits de toutes les branches et de tous les tags, pas seulement ceux de la branche courante (a)"
+
+msgid "History: the commits of every branch and tag, or of the current branch only (the All Branches button)"
+msgstr "Historique : les commits de toutes les branches et de tous les tags, ou de la branche courante seulement (le bouton Toutes les branches)"
+
 #: src/git/git_history.c:871 src/office/ole_props.c:225
 msgid "Author"
 msgstr "Auteur"

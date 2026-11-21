@@ -74,7 +74,7 @@ static gboolean commit_touches(git_commit* c, const gchar* path) {
 #define LOG_CANCEL_STEP 256
 
 GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words, const gchar* path,
-                        GCancellable* cancellable, gboolean* more) {
+                        gboolean all_branches, GCancellable* cancellable, gboolean* more) {
     if (more != NULL) *more = FALSE;
     git_repository* repo = git_lib_open(root);
     if (repo == NULL) {
@@ -88,6 +88,11 @@ GPtrArray* git_read_log(const gchar* root, guint skip, guint max, gchar** words,
         gint64 now = g_get_real_time() / G_USEC_PER_SEC;
         git_oid oid;
         guint seen = 0;
+        if (all_branches) { /* refs that are not commits are left out */
+            git_revwalk_push_glob(walk, "heads");
+            git_revwalk_push_glob(walk, "remotes");
+            git_revwalk_push_glob(walk, "tags");
+        }
         if (git_revwalk_push_head(walk) == 0) { /* fails without commits */
             while (git_revwalk_next(&oid, walk) == 0) {
                 if (++seen % LOG_CANCEL_STEP == 0 && g_cancellable_is_cancelled(cancellable)) {

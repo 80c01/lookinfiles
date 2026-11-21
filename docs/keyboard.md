@@ -260,6 +260,7 @@ the current folder; the navigation keys of the global mode move in the lists)
 | `Enter` / click on a group of **Changes** (Staged, Changes, Untracked) | Fold or unfold it (kept while the app runs) |
 | `Left` / `Right` (Vim: `h` / `l`; Emacs: `C-b` / `C-f`) in **Changes** | Fold / unfold the selected group; on a file, `Left` goes to its group |
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the commits: only those whose message, author (name or email) or hash hold every word typed (any case), searched through the whole history (100 at a time, like the list: the end of the list reads the next ones; beside the field, how many are listed); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
+| `a` (not in the filter field) | **History**: the commits of every branch and tag, or of the current branch only again (the **All Branches** button) |
 | `Ctrl+C` (Notepad), `y` (Vim), `M-w` (Emacs) | Copy the full hash of the selected commit |
 | Right click on a commit | Copy its hash, its short hash or its whole message |
 

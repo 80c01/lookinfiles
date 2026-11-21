@@ -1216,7 +1216,9 @@ Layers, from bottom to top
   the UI thread as each page is stored (the lanes go on from page to page,
   a whole read starts them again), each row drawn by a `git_graph_cell` (a
   `GtkDrawingArea` in the palette colours; the column's width follows the
-  widest row, up to `GIT_GRAPH_CELL_MAX_LANES` lanes).
+  widest row, up to `GIT_GRAPH_CELL_MAX_LANES` lanes). Its **All Branches**
+  button (`a`) has `git_read_log()` walk every branch and tag, not only
+  `HEAD`.
   `git_history_set_path()` keeps only the commits that changed a path
   (`git_read_log()` of `git_log`, which compares the path's tree entry with
   each parent's, like `git log -- path`), shown beside the filter with a
