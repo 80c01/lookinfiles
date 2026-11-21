@@ -549,46 +549,6 @@ static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
     if (st->prev != NULL) show_procs_count(st);
 }
 
-/* From the filter field back to the list, on its first row when none is
- * selected */
-static void focus_procs(SysmonTab* st) {
-    GtkWidget* view = sysmon_procs_view(st->procs);
-    GtkSelectionModel* sel = gtk_column_view_get_model(GTK_COLUMN_VIEW(view));
-    if (GTK_IS_SINGLE_SELECTION(sel) && g_list_model_get_n_items(G_LIST_MODEL(sel)) > 0 &&
-        gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(sel)) == GTK_INVALID_LIST_POSITION) {
-        gtk_single_selection_set_selected(GTK_SINGLE_SELECTION(sel), 0);
-    }
-    gtk_widget_grab_focus(view);
-}
-
-/* In the filter field: Enter or Down go to the list (the filter stays),
- * Escape (Emacs: also C-g) empties the field, then goes to the list */
-static gboolean on_filter_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
-                              gpointer data) {
-    (void)ctrl;
-    (void)keycode;
-    SysmonTab* st = data;
-    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
-    gboolean cancel = (mods == 0 && keyval == GDK_KEY_Escape) ||
-                      (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_g &&
-                       app_nav_style(st->app) == NAV_STYLE_EMACS);
-    if (cancel) {
-        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(st->procs_filter));
-        if (text != NULL && text[0] != '\0') {
-            gtk_editable_set_text(GTK_EDITABLE(st->procs_filter), "");
-        } else {
-            focus_procs(st);
-        }
-        return TRUE;
-    }
-    if (mods == 0 && (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter ||
-                      keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down)) {
-        focus_procs(st);
-        return TRUE;
-    }
-    return FALSE;
-}
-
 static SysmonTab* ensure_page(AppData* app) {
     SysmonTab* st = tab_state(app);
     if (st != NULL || app->notebook == NULL) return st;
@@ -684,11 +644,7 @@ static SysmonTab* ensure_page(AppData* app) {
     gtk_widget_set_margin_end(st->procs_filter, 12);
     gtk_widget_set_margin_bottom(st->procs_filter, 4);
     g_signal_connect(st->procs_filter, "search-changed", G_CALLBACK(on_filter_changed), st);
-    GtkEventController* keys = gtk_event_controller_key_new();
-    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
-    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_filter_key), st);
-    gtk_widget_add_controller(st->procs_filter, keys);
-    focus_route_list_search(sysmon_procs_view(st->procs), st->procs_filter);
+    focus_route_list_search(app, sysmon_procs_view(st->procs), st->procs_filter);
     gtk_box_append(GTK_BOX(procs_head), st->procs_filter);
     gtk_box_append(GTK_BOX(bottom), procs_head);
     gtk_box_append(GTK_BOX(bottom), st->procs);

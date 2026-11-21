@@ -82,8 +82,11 @@ void focus_route_panel_action(AppData* app, GtkWidget* widget, NavAction action)
  * first / last, page down / up, center / top / bottom, panel and tab keys */
 void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* selection);
 
-/* The search key of the global mode (Ctrl+F, /, C-s) in that list focuses
- * entry (an editable: its filter field); NULL: no field */
-void focus_route_list_search(GtkWidget* list, GtkWidget* entry);
+/* The search key of the global mode (Ctrl+F, /, C-s) in that list (a
+ * GtkColumnView or GtkListView over a GtkSingleSelection) focuses entry (an
+ * editable: its filter field); NULL: no field. In entry, Enter or Down go
+ * back to the list (on its first row when none is selected), Escape (Emacs:
+ * also C-g) empties it, then goes back to the list. */
+void focus_route_list_search(AppData* app, GtkWidget* list, GtkWidget* entry);
 
 #endif /* FOCUS_ROUTE_H */

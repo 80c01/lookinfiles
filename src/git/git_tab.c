@@ -19,7 +19,6 @@ struct GitTab {
     GtkWidget* page;            /* notebook page of the tab */
     GListStore* store;          /* commit list (GitCommit items) */
     GtkSingleSelection* selection; /* selection over store */
-    GtkWidget* view;            /* GtkColumnView of the commits */
     GtkWidget* filter;          /* search entry above the list */
     GtkWidget* count_label;     /* how many commits are listed, beside the filter */
     gchar** words;              /* filter words (git_log_words()), NULL: every commit */
@@ -665,46 +664,6 @@ static void on_filter_changed(GtkSearchEntry* entry, gpointer data) {
     if (!g->log_stale) start_log_read(app);
 }
 
-/* From the filter field back to the list, on its first row when none is
- * selected */
-static void focus_commits(GitTab* g) {
-    if (g_list_model_get_n_items(G_LIST_MODEL(g->selection)) > 0 &&
-        gtk_single_selection_get_selected(g->selection) == GTK_INVALID_LIST_POSITION) {
-        gtk_single_selection_set_selected(g->selection, 0);
-    }
-    gtk_widget_grab_focus(g->view);
-}
-
-/* In the filter field: Enter or Down go to the list (the filter stays),
- * Escape (Emacs: also C-g) empties the field, then goes to the list */
-static gboolean on_filter_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
-                              gpointer data) {
-    (void)ctrl;
-    (void)keycode;
-    AppData* app = data;
-    GitTab* g = app->git;
-    if (g == NULL) return FALSE;
-    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
-    gboolean cancel = (mods == 0 && keyval == GDK_KEY_Escape) ||
-                      (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_g &&
-                       app_nav_style(app) == NAV_STYLE_EMACS);
-    if (cancel) {
-        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(g->filter));
-        if (text != NULL && text[0] != '\0') {
-            gtk_editable_set_text(GTK_EDITABLE(g->filter), "");
-        } else {
-            focus_commits(g);
-        }
-        return TRUE;
-    }
-    if (mods == 0 && (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter ||
-                      keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down)) {
-        focus_commits(g);
-        return TRUE;
-    }
-    return FALSE;
-}
-
 /* The tab comes on screen: read the history it waits for */
 static void on_page_map(GtkWidget* page, gpointer data) {
     (void)page;
@@ -731,7 +690,6 @@ void git_tab_init(AppData* app) {
                      G_CALLBACK(on_git_selection_changed), app);
 
     GtkWidget* tree_view = gtk_column_view_new(GTK_SELECTION_MODEL(g->selection));
-    g->view = tree_view;
     focus_route_attach_list(app, tree_view, g->selection);
     gtk_widget_set_name(tree_view, "git-tree");
     gtk_widget_add_css_class(tree_view, "data-table");
@@ -768,11 +726,7 @@ void git_tab_init(AppData* app) {
     gtk_widget_set_margin_end(g->filter, 12);
     gtk_widget_set_margin_bottom(g->filter, 4);
     g_signal_connect(g->filter, "search-changed", G_CALLBACK(on_filter_changed), app);
-    GtkEventController* keys = gtk_event_controller_key_new();
-    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
-    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_filter_key), app);
-    gtk_widget_add_controller(g->filter, keys);
-    focus_route_list_search(tree_view, g->filter);
+    focus_route_list_search(app, tree_view, g->filter);
     gtk_box_append(GTK_BOX(list_head), g->filter);
 
     GtkWidget* list_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);

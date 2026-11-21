@@ -544,11 +544,67 @@ void focus_route_attach_list(AppData* app, GtkWidget* list, GtkSingleSelection* 
     gtk_widget_add_controller(list, keys);
 }
 
-void focus_route_list_search(GtkWidget* list, GtkWidget* entry) {
-    if (list == NULL) return;
-    if (entry != NULL) {
-        g_object_set_data_full(G_OBJECT(list), LIST_SEARCH_KEY, g_object_ref(entry), g_object_unref);
-    } else {
-        g_object_set_data(G_OBJECT(list), LIST_SEARCH_KEY, NULL);
+/* The list a filter field goes back to */
+typedef struct {
+    AppData* app;
+    GtkWidget* list; /* not owned: the list holds the field */
+} ListFilter;
+
+static void list_filter_free(gpointer data, GClosure* closure) {
+    (void)closure;
+    g_free(data);
+}
+
+/* Focus list, on its first row when none is selected */
+static void focus_list_from_filter(GtkWidget* list) {
+    GtkSelectionModel* sel = GTK_IS_COLUMN_VIEW(list) ? gtk_column_view_get_model(GTK_COLUMN_VIEW(list))
+                             : GTK_IS_LIST_VIEW(list) ? gtk_list_view_get_model(GTK_LIST_VIEW(list))
+                                                      : NULL;
+    if (GTK_IS_SINGLE_SELECTION(sel) && g_list_model_get_n_items(G_LIST_MODEL(sel)) > 0 &&
+        gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(sel)) == GTK_INVALID_LIST_POSITION) {
+        gtk_single_selection_set_selected(GTK_SINGLE_SELECTION(sel), 0);
     }
+    gtk_widget_grab_focus(list);
+}
+
+static gboolean on_list_filter_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
+                                   GdkModifierType state, gpointer data) {
+    (void)keycode;
+    ListFilter* lf = data;
+    GtkWidget* entry = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl));
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK);
+    gboolean cancel = (mods == 0 && keyval == GDK_KEY_Escape) ||
+                      (mods == GDK_CONTROL_MASK && gdk_keyval_to_lower(keyval) == GDK_KEY_g &&
+                       app_nav_style(lf->app) == NAV_STYLE_EMACS);
+    if (cancel) {
+        const gchar* text = gtk_editable_get_text(GTK_EDITABLE(entry));
+        if (text != NULL && text[0] != '\0') {
+            gtk_editable_set_text(GTK_EDITABLE(entry), "");
+        } else {
+            focus_list_from_filter(lf->list);
+        }
+        return TRUE;
+    }
+    if (mods == 0 && (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter || keyval == GDK_KEY_ISO_Enter ||
+                      keyval == GDK_KEY_Down || keyval == GDK_KEY_KP_Down)) {
+        focus_list_from_filter(lf->list);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void focus_route_list_search(AppData* app, GtkWidget* list, GtkWidget* entry) {
+    if (list == NULL) return;
+    if (entry == NULL) {
+        g_object_set_data(G_OBJECT(list), LIST_SEARCH_KEY, NULL);
+        return;
+    }
+    g_object_set_data_full(G_OBJECT(list), LIST_SEARCH_KEY, g_object_ref(entry), g_object_unref);
+    ListFilter* lf = g_new0(ListFilter, 1);
+    lf->app = app;
+    lf->list = list;
+    GtkEventController* keys = gtk_event_controller_key_new();
+    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
+    g_signal_connect_data(keys, "key-pressed", G_CALLBACK(on_list_filter_key), lf, list_filter_free, 0);
+    gtk_widget_add_controller(entry, keys);
 }

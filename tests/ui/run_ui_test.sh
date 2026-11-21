@@ -538,6 +538,13 @@ xdotool mousemove 508 50 click 1     # Git Commits tab
 sleep 3;                shot git_tab_after_commit
 xdotool mousemove 420 120 click 1   # older commit: its diff replaces the newest one
                         shot git_older_commit
+# Filter the history (Ctrl+F from the list): only "external commit" stays;
+# Enter goes back to the list with the filter kept, Escape twice empties it
+key ctrl+f; xdotool type --delay 60 "external"
+sleep 0.5;              shot git_filter_typed
+key Return;             shot git_filter_back_to_list
+key ctrl+f Escape;      shot git_filter_emptied
+key Escape;             shot git_filter_closed
 # Editor tabs dragged with the mouse: an edge of an editor splits it, its tab
 # bar takes the tab (the emptied split closes)
 xdotool mousemove 347 50 click 1;   shot tab_docked   # plan.org to the editor panel
