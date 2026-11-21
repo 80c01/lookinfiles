@@ -530,9 +530,11 @@ key ctrl+equal ctrl+equal;       shot fonts_larger
 key ctrl+0;                      shot fonts_theme_sizes
 echo "external" > "$FIX/work/external.txt"   # created outside the app: the tree must update
 sleep 3;                shot external_file_created   # let the async rescan settle
-xdotool mousemove 508 50 click 1     # Git tab, on its Changes view
+xdotool mousemove 508 50 click 1     # Git tab, on its History view
+sleep 1;                shot git_history_view
+xdotool mousemove 390 84 click 1     # Changes button
 sleep 1;                shot git_changes_view      # external.txt untracked, its patch below
-key v;                  shot git_history_view      # v: the next view, History
+xdotool mousemove 484 84 click 1     # History button again
 # Commit made outside the app: the Git tab must list it (fixed date: stable shot)
 ( cd "$FIX/work" && git add external.txt &&
   GIT_AUTHOR_DATE="2000-01-02T00:00:00Z" GIT_COMMITTER_DATE="2000-01-02T00:00:00Z" \

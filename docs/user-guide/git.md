@@ -45,7 +45,8 @@ left edge.
 
 The **Git** tab, next to the **Preview** tab, appears when the current folder
 is in a repository. The buttons at its top (or `v`) switch between its
-three views: **Changes**, **History** and **Statistics**.
+three views: **Changes**, **History** and **Statistics**. It opens on
+**History**.
 
 ### Changes
 

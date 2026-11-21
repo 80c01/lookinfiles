@@ -135,7 +135,7 @@ void git_tab_init(AppData* app) {
     gtk_stack_add_named(GTK_STACK(g->stack), git_changes_widget(g->changes), VIEW_NAMES[GIT_VIEW_CHANGES]);
     gtk_stack_add_named(GTK_STACK(g->stack), git_history_widget(g->history), VIEW_NAMES[GIT_VIEW_HISTORY]);
     gtk_stack_add_named(GTK_STACK(g->stack), git_stats_view_widget(g->stats), VIEW_NAMES[GIT_VIEW_STATS]);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_CHANGES]), TRUE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_HISTORY]), TRUE); /* the view shown first */
 
     GtkWidget* tab_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(tab_box, TRUE);

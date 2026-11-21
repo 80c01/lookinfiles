@@ -48,7 +48,7 @@ minicarte les montre le long de son bord gauche.
 L’onglet **Git**, à côté de l’onglet **Aperçu**, apparaît quand le dossier
 courant est dans un dépôt. Les boutons en haut (ou `v`) passent d’une de ses
 trois vues à l’autre : **Modifications**, **Historique** et
-**Statistiques**.
+**Statistiques**. Il s’ouvre sur **Historique**.
 
 ### Modifications
 
