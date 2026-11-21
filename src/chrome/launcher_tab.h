@@ -6,8 +6,8 @@
  * Canvas, Org-mode, Markdown, Vim, Emacs, Notepad), filtered by the
  * search field that has the focus. Up / Down / Page Up / Page Down move in
  * the list from the field, Enter or a click opens the application, which
- * takes the place of the tab in its notebook. Closed with Ctrl+W (Vim
- * Ctrl+W c) or a middle click on the tab. It is not saved with the session;
+ * takes the place of the tab in its notebook. Closed with Escape in the
+ * field, Ctrl+W (Vim Ctrl+W c) or a middle click on the tab. It is not saved with the session;
  * each workspace keeps its own. */
 #include "core/app_types.h"
 

@@ -379,6 +379,7 @@ focus and filters the list as you type (names and descriptions).
 | `Up` / `Down` | Previous / next application |
 | `Page Up` / `Page Down` | Five applications up / down |
 | `Enter` / click | Open the application in place of the Applications tab |
+| `Esc` | Close the tab |
 | `Ctrl+W` (Vim: `Ctrl+W c`) | Close the tab (also a middle click on the tab) |
 
 ## Editor tabs

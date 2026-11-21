@@ -234,13 +234,18 @@ static void on_list_activate(GtkListView* list, guint position, gpointer data) {
     open_app(lt, a);
 }
 
-/* Up / Down / Page Up / Page Down from the search field move in the list */
+/* Up / Down / Page Up / Page Down from the search field move in the list,
+ * Escape closes the tab */
 static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
                              gpointer data) {
     (void)ctrl;
     (void)keycode;
     LauncherTab* lt = data;
     if ((state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) != 0) return FALSE;
+    if (keyval == GDK_KEY_Escape) {
+        close_page(lt, TRUE);
+        return TRUE;
+    }
     gint step = 0;
     switch (keyval) {
     case GDK_KEY_Down:

@@ -178,6 +178,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Applications tab"), "Up / Down", N_("Previous / next application"), 0},
     {N_("Applications tab"), "PgUp / PgDn", N_("Five applications up / down"), 0},
     {N_("Applications tab"), NC_("key", "Enter / Click"), N_("Open the application in place of the Applications tab"), 0},
+    {N_("Applications tab"), "Esc", N_("Close the Applications tab"), 0},
     {N_("Applications tab"), "Ctrl+W", N_("Close the Applications tab (also a middle click on the tab)"), NP},
     {N_("Applications tab"), "Ctrl+W c", N_("Close the Applications tab (also a middle click on the tab)"), VI},
     {N_("Diff tab"), "Alt+Down / Alt+Up", N_("Next / previous change hunk (also ]c / [c in Vim, M-n / M-p in Emacs)"), 0},

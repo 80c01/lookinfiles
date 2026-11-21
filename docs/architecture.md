@@ -1450,7 +1450,8 @@ Layers, from bottom to top
   `VirtualLayout.launcher_pages`): a `GtkListView` over a
   `GtkStringList` of the ids of its `APPS` table (label, description, glyph
   or file-type icon, availability: `browser_available()`), filtered by a search field that keeps the
-  focus (`Up` / `Down` / `Page Up` / `Page Down` move the selection). The
+  focus (`Up` / `Down` / `Page Up` / `Page Down` move the selection, `Esc`
+  closes the tab). The
   chosen application opens in the same notebook (`browser_new_tab_in()`,
   `ipynb_tab_new_untitled()`, `notes_new_canvas()`,
   `editor_open_untitled()` in Org-mode / Vim / Emacs / Notepad,
