@@ -376,9 +376,8 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     };
 
     if (file_kind_is_media(td->kind)) {
-        if (td->kind != FILE_KIND_VIDEO && td->kind != FILE_KIND_AUDIO) { /* players stream the mount */
-            td->local = preview_source_local(td->full, cancellable);
-        }
+        td->local = preview_source_local(td->full, td->kind == FILE_KIND_VIDEO || td->kind == FILE_KIND_AUDIO,
+                                         cancellable); /* remote: a copy to open */
         preview_source_close(fp);
         g_free(contents);
         g_task_return_boolean(task, TRUE);
@@ -392,7 +391,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
          * first PREVIEW_BYTES only, whatever the file size */
         GError* err = NULL;
         if (structured) {
-            td->local = preview_source_local(td->full, cancellable); /* remote: a copy to open */
+            td->local = preview_source_local(td->full, FALSE, cancellable); /* remote: a copy to open */
             input.path = td->local != NULL ? td->local : td->full;
             td->doc = preview_format_build(&input, cancellable, &err);
         }

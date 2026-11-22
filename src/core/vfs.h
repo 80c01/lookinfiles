@@ -77,6 +77,10 @@ gboolean vfs_rename(const gchar* from, const gchar* to, gboolean replace, GError
  * session cannot tell); waits for the answer on the calling thread */
 gboolean vfs_file_test(const gchar* path, GFileTest test);
 
+/* The same from offset on (at most max bytes) */
+GBytes* vfs_read_range(const gchar* path, guint64 offset, guint64 max, guint64* size, GCancellable* cancel,
+                       GError** error);
+
 /* Whether error says the SFTP session could not serve the call (no master
  * connection, lost, no answer) rather than the server's answer about the
  * file: a caller may then read the sshfs mount instead */

@@ -229,6 +229,7 @@ typedef struct {
     gboolean done;
     GPtrArray* entries; /* list: VfsEntry */
     VfsEntry info;      /* stat */
+    guint64 offset;     /* read: from there */
     guint64 max;        /* read: bytes wanted */
     guint64 size;       /* read: the file's size */
     GBytes* bytes;      /* read; write: the contents */
@@ -474,15 +475,21 @@ static gboolean run_read(gpointer data) {
     if (c == NULL) {
         job_done(j, error);
     } else {
-        sftp_client_read_async(c, j->remote, j->max, NULL, on_read, j);
+        sftp_client_read_range_async(c, j->remote, j->offset, j->max, NULL, on_read, j);
     }
     return G_SOURCE_REMOVE;
 }
 
 GBytes* vfs_read(const gchar* path, guint64 max, guint64* size, GCancellable* cancel, GError** error) {
+    return vfs_read_range(path, 0, max, size, cancel, error);
+}
+
+GBytes* vfs_read_range(const gchar* path, guint64 offset, guint64 max, guint64* size, GCancellable* cancel,
+                       GError** error) {
     if (size != NULL) *size = 0;
     Job* j = job_new(path, error);
     if (j == NULL) return NULL;
+    j->offset = offset;
     j->max = max;
     GBytes* out = NULL;
     if (job_run(j, run_read, cancel, error)) {

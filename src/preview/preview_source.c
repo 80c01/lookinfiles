@@ -8,8 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define COPY_MAX_BYTES (64 * 1024 * 1024)   /* larger files: the mount */
-#define CACHE_MAX_BYTES (512 * 1024 * 1024) /* the copies kept, in all */
+#define COPY_MAX_BYTES (64 * 1024 * 1024)                    /* larger files: the mount */
+#define PLAYER_COPY_MAX_BYTES (512 * 1024 * 1024)            /* video, audio */
+#define CACHE_MAX_BYTES (G_GUINT64_CONSTANT(1) << 30)         /* the copies kept, in all */
 
 struct PreviewSource {
     FILE* fp;     /* a local file (or the mount) */
@@ -72,10 +73,10 @@ void preview_source_close(PreviewSource* src) {
     g_free(src);
 }
 
-gchar* preview_source_local(const gchar* path, GCancellable* cancel) {
+gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel) {
     if (path == NULL || !vfs_is_remote(path)) return NULL;
     GError* error = NULL;
-    gchar* local = vfs_cache_copy(path, COPY_MAX_BYTES, cancel, &error);
+    gchar* local = vfs_cache_copy(path, player ? PLAYER_COPY_MAX_BYTES : COPY_MAX_BYTES, cancel, &error);
     if (local == NULL) {
         g_debug("no local copy of %s: %s; reading the mount", path, error->message);
         g_error_free(error);

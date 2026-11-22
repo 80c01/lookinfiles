@@ -664,7 +664,8 @@ typedef struct {
     guint64 max;
     gboolean size_known;
     guint64 size;
-    guint64 target; /* bytes wanted: min(size, max) */
+    guint64 start;  /* where the reading starts */
+    guint64 target; /* where it ends: min(size, start + max) */
     guint64 eof_at; /* where the server said end of file (G_MAXUINT64: not yet) */
     guint64 next;   /* offset of the next READ */
     guint inflight;
@@ -690,10 +691,11 @@ static void read_return(ReadRun* run) {
     if (run->err != NULL) {
         g_task_return_error(run->task, g_steal_pointer(&run->err));
     } else {
-        guint64 end = MIN(MIN(run->target, run->eof_at), (guint64)run->buf->len);
+        guint64 stop = MIN(run->target, run->eof_at);
+        guint64 end = MIN(stop > run->start ? stop - run->start : 0, (guint64)run->buf->len);
         g_byte_array_set_size(run->buf, (guint)end);
         guint64* size = g_new(guint64, 1);
-        *size = run->size_known ? run->size : end;
+        *size = run->size_known ? run->size : run->start + end;
         g_task_set_task_data(run->task, size, g_free);
         g_task_return_pointer(run->task, g_bytes_new(run->buf->data, run->buf->len), (GDestroyNotify)g_bytes_unref);
     }
@@ -746,8 +748,9 @@ static void on_read_data(SftpClient* c, guint8 type, SftpReader* r, const GError
         if (!sftp_get_data(r, &bytes, &n) || n > ch->len) {
             if (run->err == NULL) run->err = bad_reply();
         } else if (run->err == NULL) {
-            if (run->buf->len < ch->off + n) g_byte_array_set_size(run->buf, (guint)(ch->off + n));
-            memcpy(run->buf->data + ch->off, bytes, n);
+            guint64 at = ch->off - run->start; /* in the buffer */
+            if (run->buf->len < at + n) g_byte_array_set_size(run->buf, (guint)(at + n));
+            memcpy(run->buf->data + at, bytes, n);
             /* A short read before the end: ask for the rest */
             if (n < ch->len && ch->off + n < run->eof_at) read_chunk(run, ch->off + n, ch->len - n);
         }
@@ -774,17 +777,17 @@ static void on_read_fstat(SftpClient* c, guint8 type, SftpReader* r, const GErro
     if (error == NULL && type == SFTP_ATTRS && sftp_get_attrs(r, &a) && (a.flags & SFTP_ATTR_SIZE)) {
         run->size_known = TRUE;
         run->size = a.size;
-        run->target = MIN(a.size, run->max);
-        if (run->target <= G_MAXUINT / 2) { /* the room at once, filled as the data comes */
+        run->target = MAX(run->start, MIN(a.size, run->target));
+        if (run->target - run->start <= G_MAXUINT / 2) { /* the room at once, filled as the data comes */
             g_byte_array_unref(run->buf);
-            run->buf = g_byte_array_sized_new((guint)run->target);
+            run->buf = g_byte_array_sized_new((guint)(run->target - run->start));
         }
     } else if (error != NULL) {
         run->err = g_error_copy(error);
     }
-    if (run->target > G_MAXUINT / 2) { /* GByteArray: guint lengths */
+    if (run->target - run->start > G_MAXUINT / 2) { /* GByteArray: guint lengths */
         if (!run->size_known) {
-            run->target = G_MAXUINT / 2;
+            run->target = run->start + G_MAXUINT / 2;
         } else if (run->err == NULL) {
             run->err = g_error_new_literal(G_IO_ERROR, G_IO_ERROR_NO_SPACE, _("the file is too large to read"));
         }
@@ -804,11 +807,18 @@ static void on_read_open(SftpClient* c, guint8 type, SftpReader* r, const GError
 
 void sftp_client_read_async(SftpClient* c, const gchar* path, guint64 max_bytes, GCancellable* cancel,
                             GAsyncReadyCallback done, gpointer data) {
+    sftp_client_read_range_async(c, path, 0, max_bytes, cancel, done, data);
+}
+
+void sftp_client_read_range_async(SftpClient* c, const gchar* path, guint64 offset, guint64 max_bytes,
+                                  GCancellable* cancel, GAsyncReadyCallback done, gpointer data) {
     ReadRun* run = g_new0(ReadRun, 1);
     run->c = client_ref(c);
     run->task = new_task(cancel, done, data, sftp_client_read_async);
     run->max = max_bytes;
-    run->target = max_bytes;
+    run->start = offset;
+    run->next = offset;
+    run->target = max_bytes > G_MAXUINT64 - offset ? G_MAXUINT64 : offset + max_bytes;
     run->eof_at = G_MAXUINT64;
     run->buf = g_byte_array_new();
     guint32 id = 0;

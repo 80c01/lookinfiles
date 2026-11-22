@@ -43,10 +43,11 @@ and folders, renames and deletes go over SFTP too. A remote machine has no
 trash: deleting a file or a folder there (after a confirmation that says
 so) is for good, and cannot be undone with `u`.
 
-Images, PDFs, archives and documents are copied over SFTP into the cache
-folder (`~/.cache/lookinfiles/remote-files`) to be previewed, once per
-version of the file (up to 64 MB each, 512 MB in all, the oldest removed
-first). Videos and sounds still play through the mount.
+Images, PDFs, archives, documents, videos and sounds are copied over SFTP
+into the cache folder (`~/.cache/lookinfiles/remote-files`) to be previewed,
+once per version of the file (up to 64 MB each, 512 MB for a video or a
+sound, 1 GB in all, the oldest removed first). A large video takes the time
+of its copy before it plays.
 
 A file of a remote machine open in the editor is checked for changes made
 on the machine every 3 seconds, over SFTP: the editor then reacts as for a

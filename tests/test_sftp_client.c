@@ -94,6 +94,29 @@ static GBytes* do_read(SftpClient* c, const gchar* path, guint64 max, guint64* s
     return b;
 }
 
+static GBytes* do_read_range(SftpClient* c, const gchar* path, guint64 off, guint64 max, guint64* size,
+                            GError** err) {
+    sftp_client_read_range_async(c, path, off, max, NULL, on_done, &result);
+    GAsyncResult* r = wait_for(&result);
+    GBytes* b = sftp_client_read_finish(r, size, err);
+    g_object_unref(r);
+    return b;
+}
+
+/* A range of path as read back matches contents */
+static void check_range(SftpClient* c, const gchar* path, GBytes* contents, guint64 off, guint64 max) {
+    GError* err = NULL;
+    guint64 size = 0;
+    GBytes* part = do_read_range(c, path, off, max, &size, &err);
+    g_assert_no_error(err);
+    gsize total = 0;
+    const guint8* d = g_bytes_get_data(contents, &total);
+    gsize want = off >= total ? 0 : (gsize)MIN((guint64)(total - off), max);
+    g_assert_cmpuint(size, ==, total);
+    g_assert_cmpmem(g_bytes_get_data(part, NULL), g_bytes_get_size(part), d + MIN(off, total), want);
+    g_bytes_unref(part);
+}
+
 static gboolean do_stat(SftpClient* c, const gchar* path, gboolean follow, SftpAttrs* a, GError** err) {
     sftp_client_stat_async(c, path, follow, NULL, on_done, &result);
     GAsyncResult* r = wait_for(&result);
@@ -226,6 +249,11 @@ static void test_files(gconstpointer data) {
     g_assert_cmpmem(g_bytes_get_data(back, NULL), 1000, g_bytes_get_data(contents, NULL), 1000);
     g_bytes_unref(back);
 
+    check_range(c, big, contents, 0, 10);
+    check_range(c, big, contents, 777777, 300000);  /* across chunks */
+    check_range(c, big, contents, 1200000, G_MAXUINT64); /* the tail */
+    check_range(c, big, contents, 5000000, 100);    /* past the end: nothing */
+
     gchar* empty = g_build_filename(dir, "empty", NULL);
     GBytes* none = g_bytes_new(NULL, 0);
     g_assert_true(do_write(c, empty, none, 0600, &err));
@@ -343,6 +371,8 @@ static void test_short_reads(void) {
     g_assert_no_error(err);
     g_assert_true(g_bytes_equal(back, contents));
     g_bytes_unref(back);
+    check_range(p->client, path, contents, 12345, 40000);
+    check_range(p->client, path, contents, 99000, 1 << 20); /* past the end: what is there */
     back = do_read(p->client, path, 70 * 1000 + 1, NULL, &err);
     g_assert_cmpuint(g_bytes_get_size(back), ==, 70 * 1000 + 1);
     g_assert_cmpmem(g_bytes_get_data(back, NULL), 70 * 1000 + 1, d, 70 * 1000 + 1);

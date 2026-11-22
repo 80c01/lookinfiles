@@ -46,11 +46,11 @@ renommages et les suppressions passent aussi en SFTP. Une machine distante
 n’a pas de corbeille : y supprimer un fichier ou un dossier (après une
 confirmation qui le dit) est définitif, et `u` ne l’annule pas.
 
-Les images, PDF, archives et documents sont copiés en SFTP dans le dossier
-de cache (`~/.cache/lookinfiles/remote-files`) pour être prévisualisés, une
-fois par version du fichier (64 Mo au plus chacun, 512 Mo en tout, les plus
-anciens retirés d’abord). Les vidéos et les sons passent encore par le
-montage.
+Les images, PDF, archives, documents, vidéos et sons sont copiés en SFTP
+dans le dossier de cache (`~/.cache/lookinfiles/remote-files`) pour être
+prévisualisés, une fois par version du fichier (64 Mo au plus chacun,
+512 Mo pour une vidéo ou un son, 1 Go en tout, les plus anciens retirés
+d’abord). Une grande vidéo prend le temps de sa copie avant de démarrer.
 
 Un fichier d’une machine distante ouvert dans l’éditeur est vérifié toutes
 les 3 secondes, en SFTP, pour les modifications faites sur la machine :

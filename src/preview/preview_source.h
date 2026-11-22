@@ -22,10 +22,10 @@ PreviewSource* preview_source_open(const gchar* path, gboolean head, GCancellabl
 gsize preview_source_read(PreviewSource* src, void* buf, gsize n);
 void preview_source_close(PreviewSource* src);
 
-/* For what opens a file by its path (images, PDF, archives, documents): a
- * local copy of a remote machine's file (vfs_cache.h, files up to 64 MB),
- * NULL when path is not remote or cannot be copied (path itself is then
- * read: the mount). Caller frees. */
-gchar* preview_source_local(const gchar* path, GCancellable* cancel);
+/* For what opens a file by its path (images, PDF, archives, documents; a
+ * player: player): a local copy of a remote machine's file (vfs_cache.h,
+ * up to 64 MB, 512 MB for a player), NULL when path is not remote or cannot
+ * be copied (path itself is then read: the mount). Caller frees. */
+gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel);
 
 #endif /* PREVIEW_SOURCE_H */

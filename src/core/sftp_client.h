@@ -66,6 +66,10 @@ GPtrArray* sftp_client_list_finish(GAsyncResult* result, GError** error);
  * none: what was read). */
 void sftp_client_read_async(SftpClient* client, const gchar* path, guint64 max_bytes, GCancellable* cancel,
                             GAsyncReadyCallback done, gpointer data);
+/* The same from offset on: at most max_bytes bytes (fewer at the end of
+ * the file); sftp_client_read_finish() */
+void sftp_client_read_range_async(SftpClient* client, const gchar* path, guint64 offset, guint64 max_bytes,
+                                  GCancellable* cancel, GAsyncReadyCallback done, gpointer data);
 GBytes* sftp_client_read_finish(GAsyncResult* result, guint64* size, GError** error);
 
 /* Write contents to path, safely: into a temporary file in the same folder

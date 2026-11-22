@@ -420,10 +420,28 @@ static void test_cache(void) {
     g_clear_error(&err);
 
     /* Preview: a copy for a remote file, nothing for a local one */
-    gchar* via = preview_source_local("/virtual/c/pic.png", NULL);
+    gchar* via = preview_source_local("/virtual/c/pic.png", FALSE, NULL);
     g_assert_cmpstr(via, ==, local);
     g_free(via);
-    g_assert_null(preview_source_local(rf, NULL));
+    g_assert_null(preview_source_local(rf, FALSE, NULL));
+
+    /* A large file: copied a piece at a time */
+    gchar* rbig = g_build_filename(remote, "movie.mkv", NULL);
+    gsize big_len = 8 * 1024 * 1024 * 2 + 12345; /* more than two pieces */
+    gchar* big = g_malloc(big_len);
+    for (gsize i = 0; i < big_len; i++) big[i] = (gchar)(i * 31 + i / 4099);
+    g_assert_true(g_file_set_contents(rbig, big, (gssize)big_len, NULL));
+    gchar* lbig = vfs_cache_copy("/virtual/c/movie.mkv", G_MAXUINT64, NULL, &err);
+    g_assert_no_error(err);
+    gchar* back = NULL;
+    gsize back_len = 0;
+    g_assert_true(g_file_get_contents(lbig, &back, &back_len, NULL));
+    g_assert_cmpmem(back, back_len, big, big_len);
+    g_free(back);
+    g_free(lbig);
+    g_free(big);
+    g_unlink(rbig);
+    g_free(rbig);
 
     /* Trim: the oldest go first */
     gchar* rf2 = g_build_filename(remote, "b.bin", NULL);
@@ -431,7 +449,7 @@ static void test_cache(void) {
     gchar* local2 = vfs_cache_copy("/virtual/c/b.bin", 1000, NULL, &err);
     g_assert_nonnull(local2);
     g_assert_cmpuint(vfs_cache_trim(G_MAXUINT64), ==, 0);
-    g_assert_cmpuint(vfs_cache_trim(0), ==, 2);
+    g_assert_cmpuint(vfs_cache_trim(0), ==, 3); /* pic.png, movie.mkv, b.bin */
     g_assert_false(g_file_test(local, G_FILE_TEST_EXISTS));
     g_assert_false(g_file_test(local2, G_FILE_TEST_EXISTS));
 

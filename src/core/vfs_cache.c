@@ -5,9 +5,11 @@
 #include "core/vfs.h"
 
 #include <glib/gstdio.h>
+#include <stdio.h>
 #include <string.h>
 
-#define STAMP_FILE ".stamp" /* "<size> <mtime>" of the remote file copied */
+#define STAMP_FILE ".stamp"           /* "<size> <mtime>" of the remote file copied */
+#define PIECE_BYTES (8 * 1024 * 1024) /* read over SFTP and written a piece at a time */
 
 gchar* vfs_cache_dir(void) {
     gchar* cache = app_cache_dir();
@@ -25,6 +27,39 @@ static gchar* copy_dir(const gchar* path) {
     g_free(base);
     g_free(sum);
     return dir;
+}
+
+/* path copied to local, a piece at a time (never the whole file in memory) */
+static gboolean copy_pieces(const gchar* path, guint64 size, const gchar* local, GCancellable* cancel,
+                            GError** error) {
+    gchar* part = g_strconcat(local, ".part", NULL);
+    FILE* f = g_fopen(part, "wb");
+    if (f == NULL) {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("the cache folder cannot be made"));
+        g_free(part);
+        return FALSE;
+    }
+    gboolean ok = TRUE;
+    for (guint64 off = 0; ok && off < size;) {
+        GBytes* piece = vfs_read_range(path, off, PIECE_BYTES, NULL, cancel, error);
+        gsize n = 0;
+        const guint8* d = piece != NULL ? g_bytes_get_data(piece, &n) : NULL;
+        ok = piece != NULL && (n == 0 || fwrite(d, 1, n, f) == n);
+        if (piece != NULL && n == 0) size = off; /* shorter now: the end */
+        if (piece != NULL && !ok) {
+            g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, _("the copy cannot be written"));
+        }
+        if (piece != NULL) g_bytes_unref(piece);
+        off += n;
+    }
+    ok = fclose(f) == 0 && ok;
+    if (ok && g_rename(part, local) != 0) {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("the copy cannot be written"));
+        ok = FALSE;
+    }
+    if (!ok) g_unlink(part);
+    g_free(part);
+    return ok;
 }
 
 gchar* vfs_cache_copy(const gchar* path, guint64 max_bytes, GCancellable* cancel, GError** error) {
@@ -52,17 +87,14 @@ gchar* vfs_cache_copy(const gchar* path, guint64 max_bytes, GCancellable* cancel
     if (fresh) {
         g_file_set_contents(stamp_path, stamp, -1, NULL); /* its date: recently used, trimmed last */
     } else {
-        GBytes* bytes = vfs_read(path, max_bytes, NULL, cancel, error);
-        gboolean ok = bytes != NULL && g_mkdir_with_parents(dir, 0700) == 0;
-        if (ok) {
-            gsize n = 0;
-            const gchar* d = g_bytes_get_data(bytes, &n);
-            g_unlink(stamp_path); /* no stamp while the copy changes */
-            ok = g_file_set_contents(local, d, (gssize)n, error) && g_file_set_contents(stamp_path, stamp, -1, error);
-        } else if (bytes != NULL) {
+        gboolean ok = g_mkdir_with_parents(dir, 0700) == 0;
+        if (!ok) {
             g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("the cache folder cannot be made"));
+        } else {
+            g_unlink(stamp_path); /* no stamp while the copy changes */
+            ok = copy_pieces(path, (guint64)e.size, local, cancel, error) &&
+                 g_file_set_contents(stamp_path, stamp, -1, error);
         }
-        if (bytes != NULL) g_bytes_unref(bytes);
         if (!ok) g_clear_pointer(&local, g_free);
     }
     g_free(stamp);

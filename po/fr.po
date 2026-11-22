@@ -13083,6 +13083,10 @@ msgstr "le fichier est trop volumineux pour être copié"
 msgid "the cache folder cannot be made"
 msgstr "le dossier de cache ne peut pas être créé"
 
+#: src/core/vfs_cache.c
+msgid "the copy cannot be written"
+msgstr "la copie ne peut pas être écrite"
+
 #: src/core/vfs.c
 msgid "a file of that name already exists"
 msgstr "un fichier de ce nom existe déjà"

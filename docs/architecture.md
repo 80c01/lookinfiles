@@ -102,12 +102,12 @@ Layers, from bottom to top
   far: listings, text and hex previews, folder previews and READMEs, opening
   in the editor, saving, new file and folder, rename, delete, and (through
   `vfs_cache`) the previews that open a file by path, and the editor's
-  disk-change watch (`vfs_watch`). Still on the mount: video and audio, copy
-  and drag and drop.
+  disk-change watch (`vfs_watch`).
 - `vfs_cache` — local copies of remote files for the readers that open a
   path (image decoders, poppler, archive and database readers):
   `vfs_cache_copy()` reads the file over SFTP once into
-  `app_cache_dir()/remote-files/<hash>/<name>` (its own name: readers go by
+  `app_cache_dir()/remote-files/<hash>/<name>`, 8 MB pieces at a time
+  (`vfs_read_range()`, never the whole file in memory; its own name: readers go by
   the extension) and uses it again while the remote size and date stay the
   same; `vfs_cache_trim()` removes the least recently used copies past a
   total size (unit-tested).
@@ -548,8 +548,8 @@ Layers, from bottom to top
   `PREVIEW_BYTES`, or all of it), and its stamp (`vfs_stat()`); the mount
   when the SFTP session cannot serve. Used by `viewer` and `dir_preview`.
   `preview_source_local()`: a remote file's local copy (`vfs_cache`, up to
-  64 MB, 512 MB of copies kept) for the images, PDFs and structured previews
-  that open a path.
+  64 MB, 512 MB for video and audio, 1 GB of copies kept) for the images,
+  PDFs, players and structured previews that open a path.
 - `preview_media` — media previews (`preview_media_show()`: image, PDF,
   video, audio) and `preview_media_leave_players()` before a text preview.
 - `preview_cache` — bounded most-recently-used cache of previews built,
