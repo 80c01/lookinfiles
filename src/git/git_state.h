@@ -14,6 +14,11 @@ GitState* git_state_new(GHashTable* statuses, const gchar* root, gboolean has_up
                         guint ahead, guint behind);
 void git_state_free(GitState* state);
 
+/* The branch, when it was read with the state (a remote machine's folder,
+ * whose .git/HEAD cannot be read here); NULL otherwise */
+void git_state_set_branch(GitState* state, const gchar* branch);
+const gchar* git_state_branch(const GitState* state);
+
 /* Map of full_path -> badge markup, NULL if none */
 GHashTable* git_state_badges(const GitState* state);
 /* Badge markup of path, NULL if unchanged */
@@ -29,7 +34,7 @@ guint git_state_behind(const GitState* state);
 
 /* Same badges on the same paths */
 gboolean git_state_same_badges(const GitState* a, const GitState* b);
-/* Same changes flag and upstream counts */
+/* Same changes flag, upstream counts and branch */
 gboolean git_state_same_counts(const GitState* a, const GitState* b);
 
 #endif /* GIT_STATE_H */

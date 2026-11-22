@@ -1,6 +1,7 @@
 #include "explorer/file_list.h"
 #include "core/vfs.h"
 #include "core/profile.h"
+#include "git/git_remote.h"
 #include "git/git_state.h"
 #include "preview/preview_state.h"
 #include "core/i18n.h"
@@ -61,6 +62,12 @@ static void git_scan_thread_func(GTask* task, gpointer source_object,
     (void)cancellable;
     GitScanTaskData* td = (GitScanTaskData*)task_data;
     gint64 start = profile_start();
+    if (vfs_is_remote(td->base_dir)) { /* git status run on the machine */
+        td->state = git_remote_scan(td->base_dir, cancellable);
+        profile_done(start, "remote git status %s (worker)", td->base_dir);
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
     gchar* dir = g_canonicalize_filename(td->base_dir, NULL);
     GHashTable* statuses = scan_git_statuses(dir);
     guint ahead = 0, behind = 0;

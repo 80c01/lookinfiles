@@ -97,12 +97,21 @@ Les machines ajoutées à la main sont enregistrées dans
 ## Pas encore disponible sur une machine distante
 
 Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
-locaux : Git (pas de badges ni d’onglet Git), Deep Search, l’occupation
+locaux : l’onglet Git, Deep Search, l’occupation
 disque, les serveurs de langage (complétion, diagnostics) et la compilation
 LaTeX. L’ouverture d’un fichier avec une autre application n’est pas
 disponible non plus. Deep Search, l’occupation disque et l’ouverture avec
 l’application par défaut le disent dans la barre d’état ; les autres
 restent éteintes.
+
+## Git
+
+Dans un dépôt de la machine, l’explorateur affiche les badges Git des
+fichiers modifiés et la barre d’état la branche, avec `*` pour les
+modifications non validées et les commits d’avance et de retard sur la
+branche amont : `git status` s’exécute sur la machine (il faut `git`) à
+chaque relecture du dossier. L’onglet Git (historique, modifications,
+branches) n’y est pas encore disponible.
 
 ## Recherche dans les fichiers et Aller au fichier
 

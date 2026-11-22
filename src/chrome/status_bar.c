@@ -546,11 +546,15 @@ void update_status_bar(AppData* app) {
 
     /* The branch only makes sense for the files view (like the Git tab) */
     gboolean files_view = (app->sidebar_view == SIDEBAR_VIEW_FILES);
-    gchar* branch = files_view ? git_read_branch(app->base_dir) : NULL;
+    gboolean remote = files_view && app->base_dir != NULL && vfs_is_remote(app->base_dir);
+    const GitState* git = app->git_state;
+    /* A remote machine's branch comes with its scan (git ran there) */
+    gchar* branch = !files_view ? NULL
+                    : remote    ? g_strdup(git_state_branch(git))
+                                : git_read_branch(app->base_dir);
     if (branch != NULL) {
-        gchar* root = find_git_root(app->base_dir);
-        const GitState* git = app->git_state;
-        gboolean in_scanned_repo = (root != NULL && g_strcmp0(root, git_state_root(git)) == 0);
+        gchar* root = remote ? NULL : find_git_root(app->base_dir);
+        gboolean in_scanned_repo = remote || (root != NULL && g_strcmp0(root, git_state_root(git)) == 0);
         g_free(root);
 
         GString* text = g_string_new(NULL);

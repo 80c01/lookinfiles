@@ -621,6 +621,10 @@ Layers, from bottom to top
   (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
   lines, the matches counted, the first one kept (the deep search); or
   given lines (`text_matcher_search_text()`).
+- `git_remote` — Git on a remote machine: `git status --porcelain -z
+  --branch` run there through `vfs_exec()` read as a `GitState` (badges by
+  `git_parse_porcelain()` of `git_utils`, branch, upstream counts;
+  unit-tested).
 - `remote_search` — search in files and Go to File on a remote machine:
   the files listed (git ls-files, else find) and the lines that may match
   found (grep) by commands run there through `vfs_exec()`, the matches then

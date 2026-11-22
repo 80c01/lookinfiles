@@ -228,6 +228,82 @@ static void scan_git_repo_into(GHashTable* statuses, const gchar* raw_root) {
     g_free(git_root);
 }
 
+/* The branch line of `git status --branch`: "## main...origin/main [ahead 1,
+ * behind 2]", "## No commits yet on main", "## HEAD (no branch)" */
+static void parse_branch_line(const gchar* line, gchar** branch, gboolean* has_upstream, guint* ahead,
+                              guint* behind) {
+    const gchar* b = line + 3;
+    if (g_str_has_prefix(b, "No commits yet on ")) b += strlen("No commits yet on ");
+    if (g_str_has_prefix(b, "Initial commit on ")) b += strlen("Initial commit on ");
+    const gchar* dots = strstr(b, "...");
+    const gchar* space = strchr(b, ' ');
+    const gchar* end = dots != NULL ? dots : space != NULL ? space : b + strlen(b);
+    *branch = g_str_has_prefix(b, "HEAD (no branch)") ? g_strdup("HEAD") : g_strndup(b, (gsize)(end - b));
+    *has_upstream = dots != NULL;
+    const gchar* counts = strchr(end, '[');
+    const gchar* a = counts != NULL ? strstr(counts, "ahead ") : NULL;
+    const gchar* h = counts != NULL ? strstr(counts, "behind ") : NULL;
+    *ahead = a != NULL ? (guint)g_ascii_strtoull(a + 6, NULL, 10) : 0;
+    *behind = h != NULL ? (guint)g_ascii_strtoull(h + 7, NULL, 10) : 0;
+}
+
+GHashTable* git_parse_porcelain(const gchar* git_root, const gchar* data, gsize len, gchar** branch,
+                                gboolean* has_upstream, guint* ahead, guint* behind) {
+    *branch = NULL;
+    *has_upstream = FALSE;
+    *ahead = *behind = 0;
+    GHashTable* statuses = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    gchar* root = g_canonicalize_filename(git_root, NULL);
+    const gchar* end = data + len;
+    for (const gchar* p = data; p < end;) {
+        const gchar* nul = memchr(p, '\0', (gsize)(end - p));
+        if (nul == NULL) break; /* cut short */
+        const gchar* entry = p;
+        p = nul + 1;
+        if (g_str_has_prefix(entry, "## ")) {
+            g_free(*branch);
+            parse_branch_line(entry, branch, has_upstream, ahead, behind);
+            continue;
+        }
+        if (nul - entry < 4 || entry[2] != ' ') continue;
+        gchar x = entry[0], y = entry[1];
+        const gchar* rel = entry + 3;
+        if (x == 'R' || x == 'C') { /* "R  new\0old": the old name follows */
+            const gchar* old = memchr(p, '\0', (gsize)(end - p));
+            if (old != NULL) p = old + 1;
+        }
+        if (x == '!' && y == '!') continue; /* ignored */
+        PaletteRole role = PAL_GIT_MODIFIED;
+        const gchar* letter = "M";
+        gboolean untracked = FALSE;
+        if (x == 'U' || y == 'U' || (x == 'A' && y == 'A') || (x == 'D' && y == 'D')) {
+            role = PAL_GIT_CONFLICT;
+            letter = "!";
+        } else if (x == '?' && y == '?') {
+            role = PAL_GIT_ADDED;
+            letter = "U";
+            untracked = TRUE;
+        } else if (x == 'A' && y == ' ') {
+            role = PAL_GIT_ADDED;
+            letter = "A";
+        } else if (x == 'D' || y == 'D') {
+            role = PAL_GIT_DELETED;
+            letter = "D";
+        } else if (x == 'R' || y == 'R') {
+            role = PAL_GIT_RENAMED;
+            letter = "R";
+        }
+        gchar* plain = g_strdup(rel);
+        gsize n = strlen(plain);
+        if (n > 0 && plain[n - 1] == '/') plain[n - 1] = '\0'; /* an untracked folder */
+        if (plain[0] != '\0') add_status(statuses, root, plain, role, letter, !untracked, untracked);
+        g_free(plain);
+    }
+    g_free(root);
+    if (g_hash_table_size(statuses) == 0) g_clear_pointer(&statuses, g_hash_table_destroy);
+    return statuses;
+}
+
 /* Status of the repository of dir: full_path -> badge markup (see git_utils.h) */
 GHashTable* scan_git_statuses(const gchar* dir) {
     if (dir == NULL || dir[0] == '\0') {

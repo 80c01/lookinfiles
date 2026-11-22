@@ -7,6 +7,7 @@ struct GitState {
     gboolean has_upstream;
     guint ahead;
     guint behind;
+    gchar* branch; /* when read with the state (a remote machine's), else NULL */
 };
 
 GitState* git_state_new(GHashTable* statuses, const gchar* root, gboolean has_upstream,
@@ -28,7 +29,18 @@ void git_state_free(GitState* state) {
         g_hash_table_destroy(state->statuses);
     }
     g_free(state->root);
+    g_free(state->branch);
     g_free(state);
+}
+
+void git_state_set_branch(GitState* state, const gchar* branch) {
+    if (state == NULL) return;
+    g_free(state->branch);
+    state->branch = g_strdup(branch);
+}
+
+const gchar* git_state_branch(const GitState* state) {
+    return state != NULL ? state->branch : NULL;
 }
 
 GHashTable* git_state_badges(const GitState* state) {
@@ -88,5 +100,6 @@ gboolean git_state_same_counts(const GitState* a, const GitState* b) {
     return git_state_has_changes(a) == git_state_has_changes(b) &&
            git_state_has_upstream(a) == git_state_has_upstream(b) &&
            git_state_ahead(a) == git_state_ahead(b) &&
-           git_state_behind(a) == git_state_behind(b);
+           git_state_behind(a) == git_state_behind(b) &&
+           g_strcmp0(git_state_branch(a), git_state_branch(b)) == 0;
 }

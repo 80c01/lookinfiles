@@ -54,6 +54,14 @@ gboolean git_read_ahead_behind(const gchar* dir, guint* ahead, guint* behind);
  * worker thread. Caller destroys the table. */
 GHashTable* scan_git_statuses(const gchar* dir);
 
+/* The same from the output of `git status --porcelain=v1 -z --branch
+ * --untracked-files=all` run elsewhere (a remote machine): the badges of
+ * the paths below git_root (NULL when nothing changed) and, from its
+ * "## " header, the branch (caller frees; NULL without a header) and the
+ * counts ahead of and behind its upstream (FALSE: no upstream) */
+GHashTable* git_parse_porcelain(const gchar* git_root, const gchar* data, gsize len, gchar** branch,
+                                gboolean* has_upstream, guint* ahead, guint* behind);
+
 /* Content of file path in the last commit (HEAD) of its repository, *len its
  * size (cut at the first NUL: binary files are not shown as text). NULL
  * outside a repository or when HEAD has no such file (untracked, new). Worker
