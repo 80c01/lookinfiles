@@ -69,6 +69,17 @@ if [ -n "${PREFIX}" ] && [ -d "${PREFIX}/bin" ]; then
         cp -r "${PREFIX}/lib/gdk-pixbuf-2.0" "${STAGE_DIR}/lib/"
     fi
 
+    # GLib starts every child process (ssh, git, shells...) through these
+    # helpers, looked up next to libglib-2.0-0.dll: without them spawning
+    # fails with "Failed to execute helper program"
+    for helper in "${PREFIX}"/bin/gspawn-win*-helper*.exe; do
+        [ -f "${helper}" ] && cp "${helper}" "${STAGE_DIR}/"
+    done
+    if ! ls "${STAGE_DIR}"/gspawn-win*-helper*.exe >/dev/null 2>&1; then
+        echo "Error: gspawn helpers not found in ${PREFIX}/bin" >&2
+        exit 1
+    fi
+
     # Collect DLLs recursively using ldd/ntldd
     echo "==> Collecting dependent DLLs..."
     copied=1
