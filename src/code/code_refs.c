@@ -134,6 +134,11 @@ static void on_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer da
     gtk_list_item_set_child(item, box);
 }
 
+/* Bytes of a result's line shown around the match */
+#define SHOWN_BEFORE_BYTES 120
+#define SHOWN_MATCH_BYTES 200
+#define SHOWN_AFTER_BYTES 240
+
 static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
     (void)f;
     (void)data;
@@ -153,17 +158,30 @@ static void on_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer dat
                                          it->shown, it->count);
         g_free(base);
     } else {
-        /* Leading spaces dropped, the name in bold on a highlight */
+        /* Leading spaces dropped, the name in bold on a highlight; a long
+         * line (minified code) cut around it: a label lays out all it holds */
         const gchar* t = it->text;
         gint skip = 0;
         while (t[skip] == ' ' && skip < it->column) skip++;
-        gint col = it->column - skip;
-        gint len = MIN(it->length, (gint)strlen(t + skip) - col);
-        gchar* before = g_strndup(t + skip, (gsize)MAX(col, 0));
-        gchar* name = g_strndup(t + skip + col, (gsize)MAX(len, 0));
-        const gchar* after = t + skip + col + MAX(len, 0);
-        markup = g_markup_printf_escaped("<span foreground=\"%s\">%5d</span>  %s<span background=\"%s\"><b>%s</b></span>%s",
-                                         palette_color(PAL_FG_SUBTLE), it->line + 1, before, palette_color(PAL_EDITOR_MATCH), name, after);
+        const gchar* line = t + skip;
+        gint line_len = (gint)strlen(line);
+        gint col = CLAMP(it->column - skip, 0, line_len);
+        gint len = CLAMP(it->length, 0, line_len - col);
+        len = MIN(len, SHOWN_MATCH_BYTES);
+        const gchar* from = line + MAX(col - SHOWN_BEFORE_BYTES, 0);
+        while (from > line && ((guchar)*from & 0xC0) == 0x80) from--; /* a character's start */
+        const gchar* hit = line + col;
+        const gchar* hit_end = hit + len;
+        while (*hit_end != '\0' && ((guchar)*hit_end & 0xC0) == 0x80) hit_end++; /* whole characters */
+        const gchar* to = hit_end + MIN(line_len - (gint)(hit_end - line), SHOWN_AFTER_BYTES);
+        while (*to != '\0' && ((guchar)*to & 0xC0) == 0x80) to++;
+        gchar* before = g_strndup(from, (gsize)(hit - from));
+        gchar* name = g_strndup(hit, (gsize)(hit_end - hit));
+        gchar* after = g_strndup(hit_end, (gsize)(to - hit_end));
+        markup = g_markup_printf_escaped("<span foreground=\"%s\">%5d</span>  %s%s<span background=\"%s\"><b>%s</b></span>%s%s",
+                                         palette_color(PAL_FG_SUBTLE), it->line + 1, from > line ? "…" : "", before,
+                                         palette_color(PAL_EDITOR_MATCH), name, after, *to != '\0' ? "…" : "");
+        g_free(after);
         g_free(name);
         g_free(before);
     }
