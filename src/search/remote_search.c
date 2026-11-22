@@ -38,22 +38,37 @@ static gchar* fuzzy_pattern(const gchar* query) {
     return g_string_free(s, FALSE);
 }
 
-gchar* remote_search_grep_command(const gchar* query, const TextSearchOptions* opts, gboolean ignored) {
+/* grep over the NUL-separated files of its input, after list (NULL: the
+ * input of the command itself) */
+static gchar* grep_command(const gchar* list, const gchar* query, const TextSearchOptions* opts, guint max_per_file) {
     /* A superset of the matches: whole words and fuzzy runs are checked here
      * afterwards (text_search.h) */
     gchar* pattern = opts->fuzzy ? fuzzy_pattern(query) : g_strdup(query);
     gchar* quoted = ssh_session_quote(pattern);
-    gchar* list = remote_search_list_command(ignored);
+    gchar* source = list != NULL ? g_strdup_printf("{ %s; } 2>/dev/null | ", list) : g_strdup("");
+    gchar* max = max_per_file > 0 ? g_strdup_printf(" -m %u", max_per_file) : g_strdup("");
     const gchar* kind = opts->fuzzy ? "-E" : opts->regex ? "$R" : "-F";
     gchar* cmd = g_strdup_printf("export LC_ALL=C.UTF-8; R=-E; %s"
-                                 "{ %s; } 2>/dev/null | xargs -0 grep -nHI --null %s%s -e %s -- 2>/dev/null"
+                                 "%sxargs -0 grep -nHI --null%s %s%s -e %s -- 2>/dev/null"
                                  " | head -c %d; exit 0",
                                  opts->regex && !opts->fuzzy ? "printf 'a\\n' | grep -qP a 2>/dev/null && R=-P; " : "",
-                                 list, kind, opts->match_case ? "" : " -i", quoted, REMOTE_SEARCH_MAX_OUTPUT);
-    g_free(list);
+                                 source, max, kind, opts->match_case ? "" : " -i", quoted, REMOTE_SEARCH_MAX_OUTPUT);
+    g_free(max);
+    g_free(source);
     g_free(quoted);
     g_free(pattern);
     return cmd;
+}
+
+gchar* remote_search_grep_command(const gchar* query, const TextSearchOptions* opts, gboolean ignored) {
+    gchar* list = remote_search_list_command(ignored);
+    gchar* cmd = grep_command(list, query, opts, 0);
+    g_free(list);
+    return cmd;
+}
+
+gchar* remote_search_grep_input_command(const gchar* query, const TextSearchOptions* opts, guint max_per_file) {
+    return grep_command(NULL, query, opts, max_per_file);
 }
 
 /* rel without a leading "./" */
@@ -145,7 +160,7 @@ GPtrArray* remote_search_files(const gchar* root, const gchar* query, const Text
     gchar* cmd = remote_search_grep_command(query, opts, ignored);
     gint status = 0;
     GBytes* bytes = NULL;
-    gboolean ok = vfs_exec(root, cmd, cancel, &status, &bytes, error);
+    gboolean ok = vfs_exec(root, cmd, NULL, cancel, &status, &bytes, error);
     g_free(cmd);
     if (!ok) return NULL;
     gsize len = 0;
@@ -162,7 +177,7 @@ GPtrArray* remote_search_all_files(const gchar* root, guint max, GCancellable* c
     gchar* cmd = remote_search_list_command(FALSE);
     gint status = 0;
     GBytes* bytes = NULL;
-    gboolean ok = vfs_exec(root, cmd, cancel, &status, &bytes, error);
+    gboolean ok = vfs_exec(root, cmd, NULL, cancel, &status, &bytes, error);
     g_free(cmd);
     if (!ok) return NULL;
     gsize len = 0;

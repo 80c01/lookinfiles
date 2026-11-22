@@ -1,6 +1,7 @@
 /* The Deep Search tab (see deep_search_tab.h) */
 #include "search/deep_search_tab.h"
 #include "core/remote_path.h"
+#include "core/vfs.h"
 #include "search/deep_search.h"
 #include "search/deep_search_charts.h"
 #include "search/deep_search_date.h"
@@ -353,6 +354,11 @@ static gboolean read_form(DeepSearchTab* dt, DeepQuery* q) {
  * when empty */
 static gchar* folder_path(DeepSearchTab* dt) {
     gchar* path = g_strstrip(g_strdup(field_text(dt->folder)));
+    gchar* local = NULL;
+    if (remote_path_parse(dt->app, path, &local)) { /* "machine:path": where it is seen here */
+        g_free(path);
+        return local; /* NULL: outside the machine's folder */
+    }
     if (path[0] == '~' && (path[1] == '\0' || path[1] == '/')) {
         gchar* home = g_build_filename(g_get_home_dir(), path + 1, NULL);
         g_free(path);
@@ -371,9 +377,11 @@ static void start_search(DeepSearchTab* dt) {
         show_error(dt, dt->folder, g_strdup(_("Type the folder to search")));
         return;
     }
-    if (!g_file_test(root, G_FILE_TEST_IS_DIR)) {
+    if (!vfs_file_test(root, G_FILE_TEST_IS_DIR)) { /* over SFTP for a remote machine's folder */
         /* TRANSLATORS: %s is a folder path */
-        show_error(dt, dt->folder, g_strdup_printf(_("No such folder: %s"), root));
+        gchar* shown = remote_path_display(dt->app, root);
+        show_error(dt, dt->folder, g_strdup_printf(_("No such folder: %s"), shown));
+        g_free(shown);
         g_free(root);
         return;
     }
@@ -1079,10 +1087,11 @@ static DeepSearchTab* ensure_page(AppData* app) {
 
 void deep_search_tab_show(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return;
-    if (remote_path_refuse(app, path, _("Deep Search is not available on a remote machine yet"))) return;
     DeepSearchTab* dt = ensure_page(app);
     if (dt == NULL) return;
-    gtk_editable_set_text(GTK_EDITABLE(dt->folder), path);
+    gchar* shown = remote_path_display(app, path); /* machine:path, not the local folder it is seen at */
+    gtk_editable_set_text(GTK_EDITABLE(dt->folder), shown);
+    g_free(shown);
     GtkNotebook* nb = deep_search_page_notebook(dt->page);
     if (nb == NULL) return;
     /* The preview panel holding the tab shows when hidden */

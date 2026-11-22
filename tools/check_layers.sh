@@ -247,7 +247,8 @@ xml_text:
 text_search:code_index,i18n
 remote_search:text_search,code_index,ssh_session,vfs
 deep_query:text_search,path_globs,file_types,i18n
-deep_search:deep_query
+deep_search:deep_query,deep_search_remote,remote_search,vfs
+deep_search_remote:deep_query,text_search,code_index
 deep_search_store:app_paths,deep_query,file_types,i18n
 session_store:app_paths,layout_store
 tab_tree:

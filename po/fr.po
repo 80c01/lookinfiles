@@ -13075,10 +13075,6 @@ msgstr "la machine distante ne répond pas"
 msgid "Disk Usage is not available on a remote machine yet"
 msgstr "L’occupation disque n’est pas encore disponible sur une machine distante"
 
-#: src/search/deep_search_tab.c
-msgid "Deep Search is not available on a remote machine yet"
-msgstr "Deep Search n’est pas encore disponible sur une machine distante"
-
 #: src/search/project_search.c
 #, c-format
 msgid "the remote machine could not be searched: %s"

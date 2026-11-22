@@ -75,7 +75,7 @@ GPtrArray* git_remote_parse_branches(const gchar* data, gsize len) {
 GPtrArray* git_remote_list_branches(const gchar* dir, GCancellable* cancel) {
     gint status = 0;
     GBytes* out = NULL;
-    if (!vfs_exec(dir, GIT_REMOTE_BRANCHES_COMMAND " 2>/dev/null", cancel, &status, &out, NULL)) return NULL;
+    if (!vfs_exec(dir, GIT_REMOTE_BRANCHES_COMMAND " 2>/dev/null", NULL, cancel, &status, &out, NULL)) return NULL;
     GPtrArray* branches = NULL;
     if (status == 0) {
         gsize len = 0;
@@ -99,7 +99,7 @@ gboolean git_remote_checkout(const gchar* dir, const gchar* branch, gchar** erro
     gint status = 0;
     GBytes* out = NULL;
     GError* error = NULL;
-    gboolean ok = vfs_exec(dir, cmd, NULL, &status, &out, &error);
+    gboolean ok = vfs_exec(dir, cmd, NULL, NULL, &status, &out, &error);
     if (!ok) {
         *error_msg = g_strdup(error->message);
         g_error_free(error);
@@ -124,7 +124,7 @@ gboolean git_remote_checkout(const gchar* dir, const gchar* branch, gchar** erro
 GitState* git_remote_scan(const gchar* dir, GCancellable* cancel) {
     gint status = 0;
     GBytes* out = NULL;
-    if (!vfs_exec(dir, GIT_REMOTE_STATUS_COMMAND, cancel, &status, &out, NULL)) return NULL;
+    if (!vfs_exec(dir, GIT_REMOTE_STATUS_COMMAND, NULL, cancel, &status, &out, NULL)) return NULL;
     GitState* state = NULL;
     if (status == 0) {
         gsize len = 0;

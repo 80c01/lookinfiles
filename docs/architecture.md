@@ -625,6 +625,10 @@ Layers, from bottom to top
   --branch` run there through `vfs_exec()` read as a `GitState` (badges by
   `git_parse_porcelain()` of `git_utils`, branch, upstream counts;
   unit-tested).
+- `deep_search_remote` — the pieces of a deep search on a remote machine:
+  the `find -printf` command and its records, the matches of grep's lines
+  by file (unit-tested); `deep_search` streams find's output through
+  `vfs_spawn()` and greps the files passing the cheap criteria in batches.
 - `remote_search` — search in files and Go to File on a remote machine:
   the files listed (git ls-files, else find) and the lines that may match
   found (grep) by commands run there through `vfs_exec()`, the matches then
@@ -875,8 +879,8 @@ Layers, from bottom to top
   them, `<machine>:<remote path>`, instead of the local folder they are seen
   at: shown by `remote_path_display()`, read back by `remote_path_parse()`
   (unit-tested); `remote_path_refuse()` says in the status bar that a
-  feature working on local files only (Disk Usage, Deep Search, Open With
-  Default App) is not available on a remote machine yet.
+  feature working on local files only (Disk Usage, Open With Default App)
+  is not available on a remote machine yet.
 - `preview_summary` — summaries shown in the preview for rows without
   file content (remote machine, notebook, bookmark folder, trash, Canvas
   note) as typed lines (title, fields, headings, items, keys), and their

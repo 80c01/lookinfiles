@@ -468,24 +468,37 @@ static void on_exec_done(GObject* source, GAsyncResult* res, gpointer data) {
     g_free(run);
 }
 
-gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GCancellable* cancel, gint* status,
-                       GBytes** out, GError** error) {
-    *out = NULL;
+/* command on t through its master (none: NOT_CONNECTED, no login of its
+ * own, as ssh_exec_async()) */
+static GSubprocess* spawn_command(const SshTarget* t, const gchar* command, GSubprocessFlags flags, GError** error) {
     gchar* sock = ssh_session_control_path(t);
     gboolean missing = sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS);
     g_free(sock);
-    if (missing) { /* as ssh_exec_async(): no login of its own */
+    if (missing) {
         g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED, _("the SSH connection to the machine is not open"));
-        return FALSE;
+        return NULL;
     }
     GPtrArray* argv = ssh_session_argv(t, 0);
     g_ptr_array_add(argv, g_strdup(command != NULL ? command : "true"));
-    GSubprocess* p = spawn(argv, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
-                                     G_SUBPROCESS_FLAGS_STDERR_PIPE, error);
+    GSubprocess* p = spawn(argv, flags, error);
     g_ptr_array_unref(argv);
+    return p;
+}
+
+GSubprocess* ssh_spawn(const SshTarget* t, const gchar* command, GError** error) {
+    return spawn_command(t, command, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                         G_SUBPROCESS_FLAGS_STDERR_SILENCE, error);
+}
+
+gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GBytes* input, GCancellable* cancel, gint* status,
+                       GBytes** out, GError** error) {
+    *out = NULL;
+    GSubprocess* p = spawn_command(t, command, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                                   G_SUBPROCESS_FLAGS_STDERR_PIPE, error);
     if (p == NULL) return FALSE;
     GBytes* err = NULL;
-    GBytes* in = g_bytes_new(NULL, 0); /* stdin closed at once (a pipe needs its bytes, even none) */
+    /* A pipe needs its bytes, even none: stdin then closed at once */
+    GBytes* in = input != NULL ? g_bytes_ref(input) : g_bytes_new(NULL, 0);
     gboolean ok = g_subprocess_communicate(p, in, cancel, out, &err, error);
     g_bytes_unref(in);
     if (ok) {

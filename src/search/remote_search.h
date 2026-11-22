@@ -25,6 +25,10 @@ gchar* remote_search_list_command(gboolean ignored);
  * the matches; binary files skipped. Caller frees. */
 gchar* remote_search_grep_command(const gchar* query, const TextSearchOptions* opts, gboolean ignored);
 
+/* The same over the files its standard input names (relative or absolute,
+ * each ended by a NUL), at most max_per_file lines of each (0: all) */
+gchar* remote_search_grep_input_command(const gchar* query, const TextSearchOptions* opts, guint max_per_file);
+
 /* The paths of a NUL-separated list (remote_search_list_command()), below
  * root ("./" dropped), those keep (NULL: all) keeps, at most max
  * (*truncated then) */

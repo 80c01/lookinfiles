@@ -420,19 +420,36 @@ static void know(const gchar* path, const VfsEntry* e) {
     g_mutex_unlock(&known_lock);
 }
 
-gboolean vfs_exec(const gchar* path, const gchar* command, GCancellable* cancel, gint* status, GBytes** out,
-                  GError** error) {
+/* command run in the remote folder of j */
+static gchar* command_in(const Job* j, const gchar* command) {
+    gchar* dir = ssh_session_quote(j->remote);
+    gchar* line = g_strdup_printf("cd %s && { %s; }", dir, command);
+    g_free(dir);
+    return line;
+}
+
+gboolean vfs_exec(const gchar* path, const gchar* command, GBytes* input, GCancellable* cancel, gint* status,
+                  GBytes** out, GError** error) {
     *out = NULL;
     Job* j = job_new(path, error); /* the mount and the remote path; not run on the thread */
     if (j == NULL) return FALSE;
     SshTarget t = mount_target(j->m);
-    gchar* dir = ssh_session_quote(j->remote);
-    gchar* line = g_strdup_printf("cd %s && { %s; }", dir, command);
-    gboolean ok = ssh_exec_sync(&t, line, cancel, status, out, error);
+    gchar* line = command_in(j, command);
+    gboolean ok = ssh_exec_sync(&t, line, input, cancel, status, out, error);
     g_free(line);
-    g_free(dir);
     job_unref(j);
     return ok;
+}
+
+GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error) {
+    Job* j = job_new(path, error);
+    if (j == NULL) return NULL;
+    SshTarget t = mount_target(j->m);
+    gchar* line = command_in(j, command);
+    GSubprocess* p = ssh_spawn(&t, line, error);
+    g_free(line);
+    job_unref(j);
+    return p;
 }
 
 gboolean vfs_peek(const gchar* path, VfsEntry* e) {

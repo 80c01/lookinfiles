@@ -94,12 +94,17 @@ typedef void (*SshExecFunc)(gint status, const gchar* out, const gchar* err, con
  * is asked for (ssh_session_on_master_missing()). */
 void ssh_exec_async(const SshTarget* target, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data);
-/* The same, waiting for the end (worker threads only): TRUE when it ran,
- * with its exit status and output (bytes, NULs kept; caller unrefs);
- * FALSE with error when it could not run (not connected, cancelled, or
- * ssh failed: status 255, its error text) */
-gboolean ssh_exec_sync(const SshTarget* target, const gchar* command, GCancellable* cancel, gint* status,
-                       GBytes** out, GError** error);
+/* The same, waiting for the end (worker threads only), input (NULL: none)
+ * on its standard input: TRUE when it ran, with its exit status and output
+ * (bytes, NULs kept; caller unrefs); FALSE with error when it could not
+ * run (not connected, cancelled, or ssh failed: status 255, its error
+ * text) */
+gboolean ssh_exec_sync(const SshTarget* target, const gchar* command, GBytes* input, GCancellable* cancel,
+                       gint* status, GBytes** out, GError** error);
+/* command started on target through its master, its output read as it
+ * comes (g_subprocess_get_stdout_pipe(); stdin a pipe, errors dropped);
+ * NULL with error as ssh_exec_sync() */
+GSubprocess* ssh_spawn(const SshTarget* target, const gchar* command, GError** error);
 /* arg quoted for a POSIX remote shell. Caller frees. */
 gchar* ssh_session_quote(const gchar* arg);
 

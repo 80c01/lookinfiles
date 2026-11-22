@@ -52,11 +52,13 @@ GPtrArray* vfs_list(const gchar* path, GCancellable* cancel, GError** error);
 gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError** error);
 
 /* Run command (a line for the remote shell) on the machine of path, in
- * the remote folder path is (worker threads only): ssh_exec_sync(), its
- * exit status and output. FALSE with error when it could not run, or when
- * path is not remote. */
-gboolean vfs_exec(const gchar* path, const gchar* command, GCancellable* cancel, gint* status, GBytes** out,
-                  GError** error);
+ * the remote folder path is (worker threads only), input (NULL: none) on
+ * its standard input: ssh_exec_sync(), its exit status and output. FALSE
+ * with error when it could not run, or when path is not remote. */
+gboolean vfs_exec(const gchar* path, const gchar* command, GBytes* input, GCancellable* cancel, gint* status,
+                  GBytes** out, GError** error);
+/* The same started, its output read as it comes (ssh_spawn()) */
+GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error);
 
 /* What the last vfs_list() of its folder or vfs_stat() said of path
  * (e->name NULL), at once, without the network; FALSE when nothing did */
