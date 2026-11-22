@@ -1,6 +1,7 @@
 /* Explorer panel header: view switcher buttons (files, bookmarks, notes, remote) and per-view action toolbars. */
 #include "chrome/sidebar.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "explorer/bookmarks.h"
@@ -710,11 +711,13 @@ gboolean sidebar_header_update(AppData* app) {
     set_active(h->files_hidden_btn, app->show_hidden);
 
     if (app->base_dir != NULL) {
-        gchar* base = g_path_get_basename(app->base_dir);
+        gchar* base = remote_path_display_name(app, app->base_dir);
         gchar* upper = g_utf8_strup(base, -1);
         gchar* section = g_strdup_printf("▾ %s", upper);
         gtk_label_set_text(GTK_LABEL(h->section), section);
-        gtk_widget_set_tooltip_text(h->section, app->base_dir);
+        gchar* shown = remote_path_display(app, app->base_dir);
+        gtk_widget_set_tooltip_text(h->section, shown);
+        g_free(shown);
         g_free(section);
         g_free(upper);
         g_free(base);

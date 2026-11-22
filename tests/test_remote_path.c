@@ -97,6 +97,36 @@ static void test_connected_machines(void) {
     g_assert_false(remote_path_locate(app, "/mnt/off/a", &t, &remote, &machine)); /* not connected */
     g_assert_null(remote);
 
+    /* Names and parents, as the previews and menus show them */
+    const struct {
+        const gchar *path, *name, *parent;
+    } names[] = {
+        { MOUNT, "srv.example", "" },             /* the machine's folder: the machine */
+        { MOUNT "/", "srv.example", "" },
+        { MOUNT "/a", "a", "srv.example:/data" },
+        { MOUNT "/a/b.txt", "b.txt", "srv.example:/data/a" },
+        { "/mnt/off/a", "a", NULL },              /* not connected */
+        { "/tmp/x", "x", NULL },
+    };
+    for (guint i = 0; i < G_N_ELEMENTS(names); i++) {
+        gchar* name = remote_path_display_name(app, names[i].path);
+        gchar* parent = remote_path_display_parent(app, names[i].path);
+        g_assert_cmpstr(name, ==, names[i].name);
+        g_assert_cmpstr(parent, ==, names[i].parent);
+        g_free(name);
+        g_free(parent);
+    }
+    g_free(on->remote_path);
+    on->remote_path = g_strdup("/");
+    gchar* parent = remote_path_display_parent(app, MOUNT "/etc");
+    g_assert_cmpstr(parent, ==, "srv.example:/");
+    g_free(parent);
+    g_free(on->remote_path);
+    on->remote_path = g_strdup("~");
+    parent = remote_path_display_parent(app, MOUNT "/a");
+    g_assert_cmpstr(parent, ==, "srv.example:~");
+    g_free(parent);
+
     g_assert_false(remote_path_active(app, &t, &machine)); /* no workspace machine */
     app->current_remote_id = g_strdup("rem_1");
     g_assert_true(remote_path_active(app, &t, &machine));

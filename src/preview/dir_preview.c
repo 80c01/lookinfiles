@@ -12,6 +12,7 @@
 #include "mail/mail_dir.h"
 #include "preview/preview_doc_view.h"
 #include "markup/markdown.h"
+#include "core/remote_path.h"
 #include "org/orgmode.h"
 #include "preview/preview_cache.h"
 #include "theme/icons.h"
@@ -528,10 +529,17 @@ static void render_job(AppData* app, const DirPreviewJob* job) {
     gtk_text_buffer_get_start_iter(buffer, &it);
 
     text_insert_glyph(buffer, &it, "folder", "dir_title");
-    gchar* title = g_strdup_printf("%s\n", job->name);
+    gchar* where = remote_path_display_parent(job->app, job->full);
+    gboolean machine_root = where != NULL && where[0] == '\0'; /* titled with the machine's name */
+    g_free(where);
+    gchar* name = machine_root ? remote_path_display_name(job->app, job->full) : g_strdup(job->name);
+    gchar* title = g_strdup_printf("%s\n", name);
+    g_free(name);
     insert_tagged(buffer, &it, title, "dir_title", NULL);
     g_free(title);
-    gchar* path = g_filename_display_name(job->full);
+    gchar* shown = remote_path_display(job->app, job->full); /* machine:path, not the mount */
+    gchar* path = g_filename_display_name(shown);
+    g_free(shown);
     gchar* path_line = g_strconcat(path, "\n", NULL);
     insert_tagged(buffer, &it, path_line, "dir_dim", NULL);
     g_free(path_line);

@@ -8,6 +8,7 @@
 #include "preview/preview_location.h"
 #include "preview/dir_summary.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
 #include "core/file_types.h"
@@ -653,7 +654,9 @@ void update_status_bar(AppData* app) {
     gboolean has_encoding = FALSE;
     if (has_sel) {
         gtk_label_set_text(GTK_LABEL(b->selection), name);
-        gtk_widget_set_tooltip_text(b->selection, full);
+        gchar* tip = remote_path_display(app, full); /* machine:path, not the mount */
+        gtk_widget_set_tooltip_text(b->selection, tip);
+        g_free(tip);
 
         /* The previewed file's kind comes from its content; others from their name */
         gboolean previewed = (full != NULL && g_strcmp0(full, preview_state_path(app)) == 0);

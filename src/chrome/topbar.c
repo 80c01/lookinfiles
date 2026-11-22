@@ -1,6 +1,7 @@
 /* Top bar: clickable path breadcrumbs, the clock and the timers, the CPU chart (System Monitor tab), the global mode pill and the layout/sort/hidden/help toggle pills (Help: user guide on click, cheat sheet on right click). */
 #include "chrome/topbar.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
@@ -280,9 +281,9 @@ static void on_history_item_clicked(GtkButton* btn, gpointer data) {
 }
 
 /* The folder as shown in the menu: its name, then where it is (~ for home) */
-static GtkWidget* history_item_new(const gchar* path) {
+static GtkWidget* history_item_new(AppData* app, const gchar* path) {
     GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 24);
-    gchar* name = g_path_get_basename(path);
+    gchar* name = remote_path_display_name(app, path);
     GtkWidget* label = gtk_label_new(name);
     g_free(name);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
@@ -292,7 +293,8 @@ static GtkWidget* history_item_new(const gchar* path) {
     gchar* parent = g_path_get_dirname(path);
     const gchar* home = g_get_home_dir();
     gsize home_len = home != NULL ? strlen(home) : 0;
-    gchar* where = (home_len > 1 && g_str_has_prefix(parent, home) &&
+    gchar* remote_where = remote_path_display_parent(app, path); /* machine:folder */
+    gchar* where = remote_where != NULL ? remote_where : (home_len > 1 && g_str_has_prefix(parent, home) &&
                     (parent[home_len] == '\0' || parent[home_len] == '/' || parent[home_len] == '\\'))
                        ? g_strconcat("~", parent + home_len, NULL)
                        : g_strdup(parent);
@@ -307,7 +309,9 @@ static GtkWidget* history_item_new(const gchar* path) {
     GtkWidget* btn = gtk_button_new();
     gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
     gtk_button_set_child(GTK_BUTTON(btn), row);
-    gtk_widget_set_tooltip_text(btn, path);
+    gchar* shown = remote_path_display(app, path);
+    gtk_widget_set_tooltip_text(btn, shown);
+    g_free(shown);
     return btn;
 }
 
@@ -337,7 +341,7 @@ static void on_history_right_clicked(GtkGestureClick* gesture, gint n_press, gdo
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     for (guint i = 0; i < folders->len && i < HISTORY_MENU_MAX; i++) {
         const gchar* path = g_ptr_array_index(folders, i);
-        GtkWidget* item = history_item_new(path);
+        GtkWidget* item = history_item_new(app, path);
         /* A deleted folder is listed but cannot be picked */
         gtk_widget_set_sensitive(item, g_file_test(path, G_FILE_TEST_IS_DIR));
         g_object_set_data(G_OBJECT(item), "steps", GUINT_TO_POINTER(i + 1));
@@ -632,7 +636,9 @@ void update_path_label(AppData* app) {
                 gtk_widget_set_focusable(btn, FALSE);
                 gtk_widget_add_css_class(btn, is_last ? "breadcrumb-current"
                                                       : "breadcrumb-item");
-                gtk_widget_set_tooltip_text(btn, s->full_path);
+                gchar* shown = remote_path_display(app, s->full_path);
+                gtk_widget_set_tooltip_text(btn, shown);
+                g_free(shown);
                 g_object_set_data_full(G_OBJECT(btn), "target-path",
                                        g_strdup(s->full_path), g_free);
                 g_signal_connect(btn, "clicked",

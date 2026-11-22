@@ -25,6 +25,14 @@ gboolean remote_path_map_from_display(const gchar* text, const gchar* mount, con
 /* path written "<machine>:<remote path>" when it is under the mount of a
  * connected machine, else a copy of path. Caller frees. */
 gchar* remote_path_display(AppData* app, const gchar* path);
+/* The name a folder or file is shown with: its base name, or the machine's
+ * name for the folder a machine is mounted at (not "rem_1678…"). Caller
+ * frees. */
+gchar* remote_path_display_name(AppData* app, const gchar* path);
+/* Where path is, as remote_path_display() writes it ("server:~/projects"
+ * for "server:~/projects/a.txt"), "" for the folder of a machine itself,
+ * NULL when path is not on a connected machine. Caller frees. */
+gchar* remote_path_display_parent(AppData* app, const gchar* path);
 /* The local path of text written "<machine>:<remote path>" for a connected
  * machine (as remote_path_map_from_display()); FALSE when text names no
  * connected machine (a local path then). */

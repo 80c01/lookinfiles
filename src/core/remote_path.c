@@ -103,6 +103,45 @@ gchar* remote_path_display(AppData* app, const gchar* path) {
     return g_strdup(path);
 }
 
+/* The connected machine path is on, at its mount or below */
+static RemoteMachine* machine_of(AppData* app, const gchar* path, gboolean* is_root) {
+    for (GList* l = remote_machine_list(app); l != NULL && path != NULL; l = l->next) {
+        RemoteMachine* rm = l->data;
+        if (!rm->is_connected || rm->mount_point == NULL) continue;
+        gsize n = mount_len(rm->mount_point);
+        if (!under_mount(path, rm->mount_point, n)) continue;
+        const gchar* rest = path + n;
+        while (*rest == '/') rest++;
+        if (is_root != NULL) *is_root = rest[0] == '\0';
+        return rm;
+    }
+    return NULL;
+}
+
+gchar* remote_path_display_name(AppData* app, const gchar* path) {
+    if (path == NULL) return NULL;
+    gboolean root = FALSE;
+    RemoteMachine* rm = machine_of(app, path, &root);
+    if (rm != NULL && root) return g_strdup(machine_label(rm));
+    return g_path_get_basename(path);
+}
+
+gchar* remote_path_display_parent(AppData* app, const gchar* path) {
+    gboolean root = FALSE;
+    if (machine_of(app, path, &root) == NULL) return NULL;
+    if (root) return g_strdup("");
+    gchar* shown = remote_path_display(app, path);
+    gchar* slash = strrchr(shown, '/');
+    gchar* colon = strchr(shown, ':');
+    if (slash != NULL && colon != NULL && slash > colon) {
+        if (slash == colon + 1) slash++; /* "server:/etc" -> "server:/" */
+        *slash = '\0';
+    } else if (colon != NULL) {
+        colon[1] = '\0'; /* "server:~" -> "server:" */
+    }
+    return shown;
+}
+
 gboolean remote_path_locate(AppData* app, const gchar* path, SshTarget* target, gchar** remote,
                             gchar** machine) {
     if (remote != NULL) *remote = NULL;

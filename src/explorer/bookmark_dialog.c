@@ -1,6 +1,7 @@
 /* Bookmark dialogs (see bookmark_dialog.h) */
 #include "explorer/bookmark_dialog.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "explorer/bookmark_icons.h"
 #include "explorer/folder_suggest.h"
 #include "widgets/dialog.h"
@@ -250,7 +251,9 @@ gint bookmark_item_dialog(AppData* app, const BookmarkDialogSpec* spec,
             gtk_editable_set_editable(GTK_EDITABLE(target_entry), FALSE);
         } else {
             GtkWidget* cur_btn = gtk_button_new_with_label(_("Current Directory"));
-            gtk_widget_set_tooltip_text(cur_btn, app->base_dir);
+            gchar* shown = remote_path_display(app, app->base_dir);
+            gtk_widget_set_tooltip_text(cur_btn, shown);
+            g_free(shown);
             g_object_set_data_full(G_OBJECT(cur_btn), "base-dir", g_strdup(app->base_dir), g_free);
             g_signal_connect(cur_btn, "clicked", G_CALLBACK(bm_on_use_current_dir), target_entry);
             gtk_box_append(GTK_BOX(row), cur_btn);
