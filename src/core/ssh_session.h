@@ -25,7 +25,7 @@ typedef struct {
 
 typedef enum {
     SSH_ARGV_TTY = 1 << 0,    /* -t: an interactive terminal (with SSH_ARGV_NO_MUX) */
-    SSH_ARGV_MASTER = 1 << 1, /* -M -N: the master connection itself */
+    SSH_ARGV_MASTER = 1 << 1, /* -N, ControlMaster=yes: the master connection itself */
     SSH_ARGV_NO_MUX = 1 << 2, /* never through the master connection */
 } SshArgvFlags;
 
@@ -46,7 +46,7 @@ gchar* ssh_session_destination(const SshTarget* target);
 /* The ssh_config options of every connection ("Name=value": keep-alive,
  * host keys, multiplexing), for `ssh -o` or `sshfs -o`. Caller unrefs. */
 GPtrArray* ssh_session_options(const SshTarget* target, SshArgvFlags flags);
-/* ssh [-p port] [-i key] -o ... [-t | -M -N] destination: append the remote
+/* ssh [-p port] [-i key] -o ... [-t | -N] destination: append the remote
  * command (or nothing), then NULL. Through the master connection (no
  * SSH_ARGV_MASTER nor SSH_ARGV_NO_MUX, multiplexing on), ssh never asks
  * anything (BatchMode): a background command must not prompt every second.

@@ -8,7 +8,7 @@
 
 static gchar* tmp_dir;
 
-/* The fake ssh: "-M -N" creates the ControlPath socket and waits for
+/* The fake ssh: "-N" creates the ControlPath socket and waits for
  * SIGTERM; otherwise prints "<destination>|<command>|$FOO|" then its input.
  * Host "fail" fails as ssh does. */
 static const gchar* FAKE_SSH =
@@ -17,8 +17,9 @@ static const gchar* FAKE_SSH =
     "while [ $# -gt 0 ]; do\n"
     "  case \"$1\" in\n"
     "    -o) case \"$2\" in ControlPath=*) sock=\"${2#ControlPath=}\";; esac; shift 2; continue;;\n"
-    "    -M) master=1;;\n"
-    "    -N|-t) ;;\n"
+    "    -N) master=1;;\n"
+    "    -M) echo 'ControlMaster=yes and -M make it ask' >&2; exit 255;;\n"
+    "    -t) ;;\n"
     "    *) if [ -z \"$dest\" ]; then dest=\"$1\"; else cmd=\"$1\"; fi;;\n"
     "  esac\n"
     "  shift\n"
@@ -77,7 +78,7 @@ static void test_argv(void) {
 
     argv = ssh_session_argv(&t, SSH_ARGV_MASTER);
     g_assert_false(has_arg(argv, "BatchMode=yes")); /* the master may ask */
-    g_assert_true(has_arg(argv, "-M"));
+    g_assert_false(has_arg(argv, "-M")); /* -M after ControlMaster=yes means "ask" */
     g_assert_true(has_arg(argv, "-N"));
     g_assert_true(has_arg(argv, "ControlMaster=yes"));
     g_ptr_array_unref(argv);

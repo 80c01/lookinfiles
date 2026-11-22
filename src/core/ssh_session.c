@@ -174,7 +174,8 @@ GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
     }
     g_ptr_array_unref(opts);
     if (flags & SSH_ARGV_MASTER) {
-        g_ptr_array_add(argv, g_strdup("-M"));
+        /* No -M: after "-o ControlMaster=yes" it turns it into "ask", a
+         * confirmation for every command sent through the master */
         g_ptr_array_add(argv, g_strdup("-N"));
     } else if (flags & SSH_ARGV_TTY) {
         g_ptr_array_add(argv, g_strdup("-t"));
