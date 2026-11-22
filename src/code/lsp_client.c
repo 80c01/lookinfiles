@@ -260,7 +260,8 @@ LspClient* lsp_client_new_mapped(gchar** argv, const gchar* root, const gchar* m
     }
     GSubprocessLauncher* launcher = g_subprocess_launcher_new(
         G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
-    if (root != NULL) g_subprocess_launcher_set_cwd(launcher, root);
+    /* A remote machine's folder is not here (the command goes there itself) */
+    if (root != NULL && map_local == NULL) g_subprocess_launcher_set_cwd(launcher, root);
     GSubprocess* proc = g_subprocess_launcher_spawnv(launcher, (const gchar* const*)argv, error);
     g_object_unref(launcher);
     if (proc == NULL) return NULL;

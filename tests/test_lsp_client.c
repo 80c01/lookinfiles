@@ -236,6 +236,33 @@ static void test_server_dies(void) {
     g_strfreev(argv);
 }
 
+/* A server of a remote machine: its folder is not here (no chdir into it),
+ * the paths of the messages written as the machine knows them */
+static void test_mapped(void) {
+    gchar** argv = server_argv(NULL);
+    if (argv == NULL) {
+        g_test_skip("python3 is not installed");
+        return;
+    }
+    Ctx ctx = {0};
+    const gchar* here = "/lookin-no-such-mount";
+    g_autofree gchar* root = g_build_filename(here, "proj", NULL);
+    g_autofree gchar* doc = g_build_filename(root, "a.c", NULL);
+    GError* err = NULL;
+    LspClient* c = lsp_client_new_mapped(argv, root, here, g_get_tmp_dir(), on_state, &ctx, &err);
+    g_assert_no_error(err);
+    g_assert_nonnull(c);
+    gchar* params = lsp_params_position(doc, 3, 5, -1);
+    lsp_client_request(c, "textDocument/definition", params, on_definition, &ctx, count_destroy);
+    WAIT_FOR(ctx.answers == 1);
+    g_assert_cmpint(ctx.state, ==, LSP_CLIENT_READY);
+    g_assert_cmpstr(lsp_client_get_root(c), ==, root); /* as seen here */
+    lsp_client_free(c);
+    g_free(params);
+    g_free(ctx.last);
+    g_strfreev(argv);
+}
+
 static void test_missing_program(void) {
     gchar* argv[] = {"lookin-no-such-language-server", NULL};
     GError* err = NULL;
@@ -250,5 +277,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/lsp_client/requests", test_requests);
     g_test_add_func("/lsp_client/server_dies", test_server_dies);
     g_test_add_func("/lsp_client/missing_program", test_missing_program);
+    g_test_add_func("/lsp_client/mapped", test_mapped);
     return g_test_run();
 }
