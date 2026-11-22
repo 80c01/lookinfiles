@@ -155,6 +155,14 @@ Layers, from bottom to top
   of the processes and `/etc/passwd`, in `@@<name>` sections) whose output
   `sysstat_remote_parse()` gives to the `sysstat` parsers; the sample's time
   is the machine's uptime (unit-tested, the command run by the local sh).
+- `diagnostics` — what this computer or a remote machine has of the
+  libraries and programs LookinFiles uses (the Diagnostics tab): the checks
+  (built-in libraries, programs in PATH, the Python modules of the kernels,
+  GNU find, the language servers added from `lsp_config`), one shell command
+  checking them on a remote machine (`@@<name>` sections, read by
+  `diagnostics_remote_apply()`), the package manager of a system from its
+  `/etc/os-release` and the install command of what is missing
+  (unit-tested, the command run by the local sh).
 - `countdown` — the countdown of the top bar timers: wall-clock deadline
   (right across a suspend), pause, immediate restart on expiry (cycles
   counted), a stop at 0 or an overtime below 0, the text shown and when it

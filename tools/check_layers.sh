@@ -98,6 +98,7 @@ memory_trim:profile
 sysstat:
 sysstat_host:sysstat
 sysstat_remote:sysstat
+diagnostics:i18n
 proc_query:
 countdown:
 run_time:
