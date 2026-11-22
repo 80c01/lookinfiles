@@ -14,7 +14,8 @@ Commands (field "op"):
 Events (field "ev"):
   kernels        kernels (a list of {name, display_name, language})
   started        kernelspec, language_info (JSON texts), display
-  error          code ("no-jupyter", "no-kernel", "start", "command"), message
+  error          code ("no-jupyter", "no-jupyter-venv" with the virtual
+                 environment as message, "no-kernel", "start", "command"), message
   status         state ("starting", "busy", "idle", "dead")
   execute_input  id, count
   output         id, json (an nbformat output object, as JSON text)
@@ -277,10 +278,16 @@ def list_kernels():
 
 
 def main():
+    # A virtual environment found without Jupyter (src/jupyter/ipynb_python.h):
+    # where to install it; not passed on to the kernel
+    venv = os.environ.pop("LOOKIN_IPYNB_VENV", "")
     try:
         from jupyter_client import KernelManager
     except ImportError:
-        emit("error", code="no-jupyter", message="jupyter_client is not installed")
+        if venv:
+            emit("error", code="no-jupyter-venv", message=venv)
+        else:
+            emit("error", code="no-jupyter", message="jupyter_client is not installed")
         return 1
     if "--list" in sys.argv[1:]:
         return list_kernels()

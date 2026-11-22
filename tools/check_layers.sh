@@ -158,6 +158,7 @@ man_view:preview_doc,i18n
 notebook:json_view,i18n
 ipynb_doc:json_view,notebook,i18n
 ipynb_kernel:json_view
+ipynb_python:
 ipynb_outline:ipynb_doc,code_outline_tree,code_symbol
 zip_xml:zip_reader
 spreadsheet:zip_reader,zip_xml,preview_doc,i18n

@@ -78,11 +78,18 @@ cellule Markdown nouvelle ou vide reste en source.
   l’exécute avec toutes les cellules suivantes. Les cellules s’exécutent dans le noyau Jupyter du notebook,
   démarré à la première exécution dans le dossier du notebook et arrêté
   avec l’onglet : Python 3 avec `jupyter_client` et le noyau (`ipykernel`
-  pour Python) doivent être installés. Un notebook d’une machine distante
+  pour Python) doivent être installés. L’environnement virtuel du projet
+  du notebook sert sans avoir à l’activer : le premier dossier `.venv`,
+  `venv` ou `env` trouvé du dossier du notebook jusqu’au haut de son dépôt
+  Git (ou votre dossier personnel) exécute le noyau quand Jupyter y est
+  installé (`pip install ipykernel` dedans), comme s’il était activé :
+  `!pip` et les commandes des cellules sont aussi celles de
+  l’environnement. Un notebook d’une machine distante
   connectée s’exécute sur cette machine (par SSH, dans son dossier là-bas ;
-  la barre d’état indique `sur <machine>`) : Python et Jupyter doivent alors
-  y être installés, dans le `PATH` d’une commande SSH non interactive, et le
-  menu liste les noyaux de cette machine. Le bouton du noyau dans la barre
+  la barre d’état indique `sur <machine>`) : son environnement virtuel
+  là-bas sert de la même façon ; sans lui, Python et Jupyter doivent y être
+  installés, dans le `PATH` d’une commande SSH non interactive. Le menu
+  liste les noyaux du Python utilisé. Le bouton du noyau dans la barre
   porte le nom du noyau du notebook, la barre d’état sous les cellules son
   état ; son menu liste les noyaux installés : en choisir un
   arrête le noyau en cours, l’enregistre dans le notebook et le démarre.

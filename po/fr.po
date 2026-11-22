@@ -13001,6 +13001,24 @@ msgstr "Exécuter les cellules demande Python 3 sur %s"
 msgid "Running cells needs Jupyter on %s: pip install jupyter_client ipykernel"
 msgstr "Exécuter les cellules demande Jupyter sur %s : pip install jupyter_client ipykernel"
 
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid ""
+"Running cells needs Jupyter in the virtual environment %1$s on %2$s: pip "
+"install ipykernel"
+msgstr ""
+"Exécuter les cellules demande Jupyter dans l’environnement virtuel %1$s sur "
+"%2$s : pip install ipykernel"
+
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid ""
+"Running cells needs Jupyter in the virtual environment %s: pip install "
+"ipykernel"
+msgstr ""
+"Exécuter les cellules demande Jupyter dans l’environnement virtuel %s : pip "
+"install ipykernel"
+
 #: src/sysmon/sysmon_tab.c
 msgid "no Linux /proc there"
 msgstr "pas de /proc Linux là-bas"

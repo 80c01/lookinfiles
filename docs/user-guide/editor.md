@@ -69,10 +69,18 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   below. The cells run in the notebook's Jupyter kernel, started at the first
   run in the notebook's folder and stopped with the tab: Python 3 with
   `jupyter_client` and the kernel (`ipykernel` for Python) must be
-  installed. A notebook of a connected remote machine runs on that machine
-  (over SSH, in its folder there; the status bar says `on <machine>`): Python
-  and Jupyter must then be installed there, in the `PATH` of a
-  non-interactive SSH command, and the menu lists that machine's kernels.
+  installed. A virtual environment of the notebook's project is used
+  without activating it: the first `.venv`, `venv` or `env` folder found
+  from the notebook's folder up to the top of its Git repository (or your
+  home folder) runs the kernel when Jupyter is installed in it
+  (`pip install ipykernel` there), as if activated, so `!pip` and the
+  commands of the cells are those of the environment too. A notebook of a
+  connected remote machine runs on that machine
+  (over SSH, in its folder there; the status bar says `on <machine>`): its
+  virtual environment there is used the same way; without one, Python
+  and Jupyter must be installed there, in the `PATH` of a
+  non-interactive SSH command. The menu lists the kernels of the Python
+  used.
   The kernel's button in the bar shows the notebook's kernel,
   the status bar under the cells its state; its menu lists
   the installed kernels: choosing one stops the kernel running, records it

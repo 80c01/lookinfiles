@@ -236,11 +236,20 @@ Layers, from bottom to top
   queue, events as `IpynbKernelCallbacks` (state, started, failed, cell
   input / output / clear / done, input requests); the end of the bridge's
   stdin stops the kernel. `ipynb_kernel_list()` runs the bridge once with
-  `--list` for the installed kernelspecs (`IpynbKernelSpec`);
-  `ipynb_kernel_remote_command()` is the line that runs the bridge on a
-  remote machine over ssh (python3 or python found there, else a
-  `no-python` error event). Tested with
+  `--list` for the installed kernelspecs (`IpynbKernelSpec`); both take
+  the bridge's environment (`envp`). Tested with
   `tests/fixtures/fake_ipynb_bridge.py`.
+- `ipynb_python` — the Python that runs the bridge of a notebook: the one
+  of its virtual environment (`.venv`, `venv` or `env` with a
+  `pyvenv.cfg`, from the notebook's folder up to the top of its
+  repository, home or the root: `ipynb_python_find_venv()`) when it has
+  `jupyter_client`, run as `activate` would (`VIRTUAL_ENV`, its `bin`
+  first in `PATH`: `ipynb_python_venv_environ()`), else python3 or python
+  of the `PATH` (`ipynb_python_local()`); a virtual environment without
+  Jupyter goes to the bridge in `LOOKIN_IPYNB_VENV` for its
+  `no-jupyter-venv` error. `ipynb_python_remote_command()` is the same
+  search as a POSIX shell line, run on a remote machine over ssh (else a
+  `no-python` error event).
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.

@@ -84,7 +84,7 @@ static void test_execute(void) {
     Run r = { g_string_new(NULL), NULL, IPYNB_KERNEL_OFF, 0, FALSE };
     r.kernel = ipynb_kernel_new(&CALLBACKS, &r);
     g_assert_cmpint(ipynb_kernel_get_state(r.kernel), ==, IPYNB_KERNEL_OFF);
-    g_assert_true(ipynb_kernel_start(r.kernel, FAKE, "fake", ".", NULL));
+    g_assert_true(ipynb_kernel_start(r.kernel, FAKE, NULL, "fake", ".", NULL));
     g_assert_cmpint(r.state, ==, IPYNB_KERNEL_STARTING);
     /* Queued before the kernel runs: sent in order */
     ipynb_kernel_execute(r.kernel, 7, "print(\"é\\t\")\nx");
@@ -120,7 +120,7 @@ static void test_failures(void) {
     Run r = { g_string_new(NULL), NULL, IPYNB_KERNEL_OFF, 0, FALSE };
     r.kernel = ipynb_kernel_new(&CALLBACKS, &r);
     /* A kernel that is not installed */
-    g_assert_true(ipynb_kernel_start(r.kernel, FAKE, "missing", NULL, NULL));
+    g_assert_true(ipynb_kernel_start(r.kernel, FAKE, NULL, "missing", NULL, NULL));
     g_assert_true(wait_for(&r, has_failed));
     g_assert_cmpstr(r.log->str, ==, "failed no-kernel No such kernel named missing\n");
     g_assert_cmpint(r.state, ==, IPYNB_KERNEL_OFF);
@@ -130,7 +130,7 @@ static void test_failures(void) {
     static const gchar* const NONE[] = { "/nonexistent/python3", "-c", "", NULL };
     IpynbKernel* k = ipynb_kernel_new(NULL, NULL);
     GError* error = NULL;
-    g_assert_false(ipynb_kernel_start(k, NONE, NULL, NULL, &error));
+    g_assert_false(ipynb_kernel_start(k, NONE, NULL, NULL, NULL, &error));
     g_assert_nonnull(error);
     g_clear_error(&error);
     ipynb_kernel_free(k);
@@ -138,7 +138,7 @@ static void test_failures(void) {
     /* Freed while running: no callback after, the bridge stops */
     Run q = { g_string_new(NULL), NULL, IPYNB_KERNEL_OFF, 0, FALSE };
     q.kernel = ipynb_kernel_new(&CALLBACKS, &q);
-    g_assert_true(ipynb_kernel_start(q.kernel, FAKE, NULL, NULL, NULL));
+    g_assert_true(ipynb_kernel_start(q.kernel, FAKE, NULL, NULL, NULL, NULL));
     ipynb_kernel_execute(q.kernel, 1, "x");
     ipynb_kernel_free(q.kernel);
     for (gint i = 0; i < 200; i++) {
@@ -186,7 +186,7 @@ static gboolean wait_listed(Listing* l) {
 
 static void test_list(void) {
     Listing l = { g_string_new(NULL), FALSE };
-    ipynb_kernel_list(FAKE, NULL, on_listed, &l);
+    ipynb_kernel_list(FAKE, NULL, NULL, on_listed, &l);
     g_assert_true(wait_listed(&l));
     g_assert_cmpstr(l.log->str, ==,
                     "{\"display_name\": \"Fake\", \"language\": \"python\", \"name\": \"fake\"} {\"name\": \"python\"}\n"
@@ -201,10 +201,10 @@ static void test_list(void) {
     static const gchar* const NONE[] = { "/nonexistent/python3", "-c", "", NULL };
     g_string_truncate(l.log, 0);
     l.done = FALSE;
-    ipynb_kernel_list(SILENT, NULL, on_listed, &l);
+    ipynb_kernel_list(SILENT, NULL, NULL, on_listed, &l);
     g_assert_true(wait_listed(&l));
     l.done = FALSE;
-    ipynb_kernel_list(NONE, NULL, on_listed, &l);
+    ipynb_kernel_list(NONE, NULL, NULL, on_listed, &l);
     g_assert_false(l.done); /* in the main loop */
     g_assert_true(wait_listed(&l));
     g_assert_cmpstr(l.log->str, ==, "failed exited\nfailed start\n");
@@ -212,8 +212,8 @@ static void test_list(void) {
     /* Cancelled: never called */
     GCancellable* cancel = g_cancellable_new();
     l.done = FALSE;
-    ipynb_kernel_list(FAKE, cancel, on_listed, &l);
-    ipynb_kernel_list(NONE, cancel, on_listed, &l);
+    ipynb_kernel_list(FAKE, NULL, cancel, on_listed, &l);
+    ipynb_kernel_list(NONE, NULL, cancel, on_listed, &l);
     g_cancellable_cancel(cancel);
     for (gint i = 0; i < 300; i++) {
         g_main_context_iteration(NULL, FALSE);
@@ -224,32 +224,10 @@ static void test_list(void) {
     g_string_free(l.log, TRUE);
 }
 
-/* The remote line run by a local sh: the script gets the arguments that
- * follow; without Python, a no-python error event */
-static void test_remote_command(void) {
-    gchar* line = ipynb_kernel_remote_command("import sys\nprint('it''s', sys.argv[1:])\n");
-    gchar* cmd = g_strconcat(line, " --list", NULL);
-    const gchar* argv[] = { "/bin/sh", "-c", cmd, NULL };
-    gchar* out = NULL;
-    gint status = -1;
-    g_assert_true(g_spawn_sync(NULL, (gchar**)argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &out, NULL, &status, NULL));
-    g_assert_cmpint(status, ==, 0);
-    g_assert_cmpstr(out, ==, "its ['--list']\n");
-    g_free(out);
-
-    const gchar* env[] = { "PATH=/nonexistent", NULL };
-    g_assert_true(g_spawn_sync(NULL, (gchar**)argv, (gchar**)env, 0, NULL, NULL, &out, NULL, &status, NULL));
-    g_assert_nonnull(strstr(out, "\"code\": \"no-python\""));
-    g_free(out);
-    g_free(cmd);
-    g_free(line);
-}
-
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ipynb_kernel/execute", test_execute);
     g_test_add_func("/ipynb_kernel/failures", test_failures);
     g_test_add_func("/ipynb_kernel/list", test_list);
-    g_test_add_func("/ipynb_kernel/remote_command", test_remote_command);
     return g_test_run();
 }

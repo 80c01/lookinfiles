@@ -24,7 +24,8 @@ typedef struct {
     /* Running: its kernelspec and language_info (JSON objects) and name */
     void (*started)(const gchar* kernelspec, const gchar* language_info, const gchar* display, gpointer data);
     /* Could not start or went away; code: "no-python", "no-jupyter",
-     * "no-kernel", "start", "exited", "command" */
+     * "no-jupyter-venv" (message: the virtual environment found without
+     * it, see ipynb_python.h), "no-kernel", "start", "exited", "command" */
     void (*failed)(const gchar* code, const gchar* message, gpointer data);
     void (*execute_input)(guint cell, gint count, gpointer data);
     /* An nbformat output object (JSON) of the cell */
@@ -44,11 +45,12 @@ IpynbKernel* ipynb_kernel_new(const IpynbKernelCallbacks* callbacks, gpointer da
 void ipynb_kernel_free(IpynbKernel* kernel);
 
 /* Run the bridge (argv: the program and its arguments, e.g. python3 -c
- * <script>) and start the kernel named kernel_name ("" or NULL: the
- * default one) in directory cwd. FALSE with error set when the bridge
- * cannot be run; a kernel that cannot start is reported to failed(). */
-gboolean ipynb_kernel_start(IpynbKernel* kernel, const gchar* const* argv, const gchar* kernel_name,
-                            const gchar* cwd, GError** error);
+ * <script>; envp its environment, NULL: this one) and start the kernel
+ * named kernel_name ("" or NULL: the default one) in directory cwd. FALSE
+ * with error set when the bridge cannot be run; a kernel that cannot start
+ * is reported to failed(). */
+gboolean ipynb_kernel_start(IpynbKernel* kernel, const gchar* const* argv, const gchar* const* envp,
+                            const gchar* kernel_name, const gchar* cwd, GError** error);
 IpynbKernelState ipynb_kernel_get_state(const IpynbKernel* kernel);
 
 /* Queue the code of cell (a key the callbacks give back) to run */
@@ -57,12 +59,6 @@ void ipynb_kernel_input(IpynbKernel* kernel, const gchar* value);
 void ipynb_kernel_interrupt(IpynbKernel* kernel);
 /* Restart the kernel: the cells waiting are done() "aborted" */
 void ipynb_kernel_restart(IpynbKernel* kernel);
-
-/* The line for a remote POSIX shell (ssh) running the bridge script with
- * python3, else python: the arguments that follow on the ssh command line go
- * to the script (--list). Without Python it prints an "error" event of code
- * "no-python" and exits. Caller frees. */
-gchar* ipynb_kernel_remote_command(const gchar* script);
 
 /* --- The installed kernels --- */
 
@@ -81,11 +77,12 @@ gchar* ipynb_kernel_spec_language_info(const IpynbKernelSpec* spec);
 
 /* Done listing: specs (IpynbKernelSpec*, sorted by display name; owned by
  * the callee, free with g_ptr_array_unref()) or NULL, with code as in
- * failed() ("no-jupyter", "command", "start") and message */
+ * failed() ("no-jupyter", "no-jupyter-venv", "command", "start") and message */
 typedef void (*IpynbKernelListFunc)(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data);
-/* Run the bridge (argv as for ipynb_kernel_start(), "--list" added) to
+/* Run the bridge (argv and envp as for ipynb_kernel_start(), "--list" added) to
  * list the installed kernels, then call done in the main loop; not called
  * once cancel is cancelled */
-void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKernelListFunc done, gpointer data);
+void ipynb_kernel_list(const gchar* const* argv, const gchar* const* envp, GCancellable* cancel,
+                       IpynbKernelListFunc done, gpointer data);
 
 #endif /* IPYNB_KERNEL_H */

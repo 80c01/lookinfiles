@@ -257,10 +257,20 @@ static void on_line(GObject* source, GAsyncResult* res, gpointer data) {
     g_data_input_stream_read_line_async(k->out, G_PRIORITY_DEFAULT, k->cancel, on_line, k);
 }
 
-gboolean ipynb_kernel_start(IpynbKernel* k, const gchar* const* argv, const gchar* kernel_name,
-                            const gchar* cwd, GError** error) {
+/* The bridge run with its pipes, in environment envp (NULL: this one) */
+static GSubprocess* spawn_bridge(const gchar* const* argv, const gchar* const* envp, GError** error) {
+    GSubprocessLauncher* launcher =
+        g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE);
+    if (envp != NULL) g_subprocess_launcher_set_environ(launcher, (gchar**)envp);
+    GSubprocess* proc = g_subprocess_launcher_spawnv(launcher, argv, error);
+    g_object_unref(launcher);
+    return proc;
+}
+
+gboolean ipynb_kernel_start(IpynbKernel* k, const gchar* const* argv, const gchar* const* envp,
+                            const gchar* kernel_name, const gchar* cwd, GError** error) {
     if (k->proc != NULL) return TRUE;
-    k->proc = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE, error);
+    k->proc = spawn_bridge(argv, envp, error);
     if (k->proc == NULL) return FALSE;
     k->in = g_object_ref(g_subprocess_get_stdin_pipe(k->proc));
     k->out = g_data_input_stream_new(g_subprocess_get_stdout_pipe(k->proc));
@@ -387,7 +397,8 @@ static gboolean on_list_failed(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKernelListFunc done, gpointer data) {
+void ipynb_kernel_list(const gchar* const* argv, const gchar* const* envp, GCancellable* cancel,
+                       IpynbKernelListFunc done, gpointer data) {
     ListCall* call = g_new0(ListCall, 1);
     call->done = done;
     call->data = data;
@@ -396,9 +407,7 @@ void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKern
     for (const gchar* const* a = argv; *a != NULL; a++) g_ptr_array_add(args, (gpointer)*a);
     g_ptr_array_add(args, (gpointer)"--list");
     g_ptr_array_add(args, NULL);
-    GSubprocess* proc = g_subprocess_newv((const gchar* const*)args->pdata,
-                                          G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE,
-                                          &call->error);
+    GSubprocess* proc = spawn_bridge((const gchar* const*)args->pdata, envp, &call->error);
     g_ptr_array_unref(args);
     if (proc == NULL) {
         g_idle_add(on_list_failed, call); /* in the main loop, as when it runs */
@@ -406,14 +415,4 @@ void ipynb_kernel_list(const gchar* const* argv, GCancellable* cancel, IpynbKern
     }
     g_subprocess_communicate_utf8_async(proc, NULL, cancel, on_listed, call);
     g_object_unref(proc);
-}
-
-gchar* ipynb_kernel_remote_command(const gchar* script) {
-    gchar* quoted = g_shell_quote(script != NULL ? script : "");
-    gchar* line = g_strconcat(
-        "p=$(command -v python3 || command -v python) || "
-        "{ echo '{\"ev\": \"error\", \"code\": \"no-python\", \"message\": \"python3 not found\"}'; exit 127; }; "
-        "exec \"$p\" -c ", quoted, NULL);
-    g_free(quoted);
-    return line;
 }
