@@ -215,10 +215,62 @@ static void on_master_missing(const SshTarget* t, gpointer data) {
 }
 
 void remote_session_open_master(RemoteMachine* rm) {
-    if (rm != NULL && rm->id != NULL) open_master(rm, TRUE);
+    /* Without multiplexing there is no master: the files' session opens
+     * again by itself (vfs.h) */
+    if (rm != NULL && rm->id != NULL && ssh_session_can_multiplex()) open_master(rm, TRUE);
 }
 
-gboolean remote_session_connect(AppData* app, RemoteMachine* rm, gchar** error_text) {
+/* Without multiplexing: the SFTP session opened by a worker (it logs in,
+ * the password dialog shown by the main loop, which runs meanwhile) */
+typedef struct {
+    gchar* path;
+    gchar* error; /* NULL: connected */
+    gboolean done;
+    GMainLoop* loop;
+} Probe;
+
+static void probe_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancel) {
+    (void)task;
+    (void)source;
+    (void)cancel;
+    Probe* p = data;
+    VfsEntry e;
+    GError* err = NULL;
+    if (!vfs_stat(p->path, &e, NULL, &err)) {
+        /* The server's answer about the folder (missing...) still says it is connected */
+        if (vfs_error_is_connection(err)) p->error = g_strdup(err->message);
+        g_error_free(err);
+    }
+}
+
+static void on_probe_done(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    (void)res;
+    Probe* p = data;
+    p->done = TRUE;
+    g_main_loop_quit(p->loop);
+}
+
+/* The files of rm at mount_dir over a session of their own; TRUE when it
+ * opened, else FALSE with *error_text */
+static gboolean connect_files(RemoteMachine* rm, const gchar* mount_dir, gchar** error_text) {
+    SshTarget t = remote_machine_target(rm);
+    vfs_mount(mount_dir, &t, rm->remote_path);
+    Probe p = { .path = g_strdup(mount_dir), .loop = g_main_loop_new(NULL, FALSE) };
+    GTask* task = g_task_new(NULL, NULL, on_probe_done, &p);
+    g_task_set_task_data(task, &p, NULL);
+    g_task_run_in_thread(task, probe_thread);
+    g_object_unref(task);
+    while (!p.done) g_main_loop_run(p.loop); /* the vfs call is bounded */
+    g_main_loop_unref(p.loop);
+    g_free(p.path);
+    if (p.error == NULL) return TRUE;
+    vfs_unmount(mount_dir);
+    *error_text = p.error;
+    return FALSE;
+}
+
+gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mount_dir, gchar** error_text) {
     *error_text = NULL;
     if (rm == NULL || rm->id == NULL) return FALSE;
     if (connecting == NULL) connecting = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -229,16 +281,24 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, gchar** error_t
     app_notice(app, notice, FALSE);
     g_free(notice);
 
-    MasterEntry* e = open_master(rm, TRUE);
-    if (e->starting) {
-        GMainLoop* loop = g_main_loop_new(NULL, FALSE);
-        g_ptr_array_add(e->waiters, loop);
-        g_main_loop_run(loop);
-        g_main_loop_unref(loop);
+    gboolean ok;
+    if (ssh_session_can_multiplex()) {
+        MasterEntry* e = open_master(rm, TRUE);
+        if (e->starting) {
+            GMainLoop* loop = g_main_loop_new(NULL, FALSE);
+            g_ptr_array_add(e->waiters, loop);
+            g_main_loop_run(loop);
+            g_main_loop_unref(loop);
+        }
+        e = masters != NULL ? g_hash_table_lookup(masters, id) : NULL; /* gone if the application quit */
+        ok = e != NULL && ssh_master_is_up(e->master);
+        if (!ok) *error_text = g_strdup(e != NULL && e->error != NULL ? e->error : "");
+    } else {
+        /* No master to share (Windows): a check of its own would ask for the
+         * password once more, and the main thread must never wait for a
+         * login (vfs.h), so the files' session is the connection */
+        ok = connect_files(rm, mount_dir, error_text);
     }
-    e = masters != NULL ? g_hash_table_lookup(masters, id) : NULL; /* gone if the application quit */
-    gboolean ok = e != NULL && ssh_master_is_up(e->master);
-    if (!ok) *error_text = g_strdup(e != NULL && e->error != NULL ? e->error : "");
     if (ok && remote_find_by_id(app, id) == NULL) ok = FALSE; /* deleted while waiting */
     app_notice(app, NULL, FALSE);
     g_hash_table_remove(connecting, id);

@@ -288,6 +288,10 @@ gboolean sftp_client_is_open(const SftpClient* c) {
     return c != NULL && c->error == NULL;
 }
 
+gboolean sftp_client_is_ready(const SftpClient* c) {
+    return sftp_client_is_open(c) && c->ready;
+}
+
 const GError* sftp_client_error(const SftpClient* c) {
     return c != NULL ? c->error : NULL;
 }

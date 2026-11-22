@@ -36,6 +36,8 @@ SftpClient* sftp_client_spawn(const SshTarget* target, GError** error);
 void sftp_client_free(SftpClient* client);
 /* FALSE once the connection is gone (sftp_client_error() says why) */
 gboolean sftp_client_is_open(const SftpClient* client);
+/* Open and past the hello: ssh logged in, the server answered */
+gboolean sftp_client_is_ready(const SftpClient* client);
 /* Why the connection closed (NULL while open) */
 const GError* sftp_client_error(const SftpClient* client);
 /* Whether the server announced an extension ("posix-rename@openssh.com");

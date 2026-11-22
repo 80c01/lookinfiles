@@ -13102,6 +13102,9 @@ msgstr "Lecture des statistiques de %s…"
 msgid "the SSH connection to the machine is not open"
 msgstr "la connexion SSH à la machine n’est pas ouverte"
 
+msgid "the SSH connection to the machine is being opened"
+msgstr "la connexion SSH à la machine est en cours d’ouverture"
+
 #: src/core/sftp_proto.c
 msgid "the remote operation failed"
 msgstr "l’opération distante a échoué"

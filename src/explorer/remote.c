@@ -636,7 +636,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
      * then read over SFTP through it (vfs.h), seen at mount_dir */
     gchar* id = g_strdup(rm->id);
     gchar* error_text = NULL;
-    gboolean connected = remote_session_connect(app, rm, &error_text);
+    gboolean connected = remote_session_connect(app, rm, mount_dir, &error_text);
     rm = remote_find_by_id(app, id); /* the interface ran meanwhile: rm may be gone */
     g_free(id);
     if (!connected || rm == NULL) {

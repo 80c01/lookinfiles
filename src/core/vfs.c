@@ -237,6 +237,7 @@ typedef struct {
     guint32 mode;       /* write, mkdir */
     gboolean replace;   /* rename */
     gint op;            /* the plain operations: OP_* */
+    gboolean no_login;  /* asked by the main thread without multiplexing */
     GError* error;
     guint waiting; /* link targets being looked at */
 } Job;
@@ -269,8 +270,11 @@ static void job_done(Job* j, GError* error) {
 }
 
 /* On the thread: the machine's client, connected the first time or after
- * the connection was lost */
-static SftpClient* mount_client(Mount* m, GError** error) {
+ * the connection was lost. Without multiplexing (Windows) a new session
+ * logs in by itself, through a password dialog of the main thread: a call
+ * the main thread waits for (no_login) then fails at once, the session
+ * opening meanwhile for the next calls. */
+static SftpClient* mount_client(Mount* m, gboolean no_login, GError** error) {
     if (m->closed) {
         g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED, _("the machine is disconnected"));
         return NULL;
@@ -279,6 +283,11 @@ static SftpClient* mount_client(Mount* m, GError** error) {
     if (m->client == NULL) {
         SshTarget t = mount_target(m);
         m->client = sftp_client_spawn(&t, error);
+    }
+    if (m->client != NULL && no_login && !sftp_client_is_ready(m->client)) {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED,
+                            _("the SSH connection to the machine is being opened"));
+        return NULL;
     }
     return m->client;
 }
@@ -297,6 +306,7 @@ static Job* job_new(const gchar* path, GError** error) {
     j->refs = 1;
     j->m = m;
     j->remote = vfs_remote_path(m->root, rel);
+    j->no_login = !ssh_session_can_multiplex() && g_main_context_is_owner(g_main_context_default());
     g_mutex_init(&j->mu);
     g_cond_init(&j->cond);
     g_free(rel);
@@ -395,7 +405,7 @@ static void on_listed(GObject* src, GAsyncResult* res, gpointer data) {
 static gboolean run_list(gpointer data) {
     Job* j = data;
     GError* error = NULL;
-    SftpClient* c = mount_client(j->m, &error);
+    SftpClient* c = mount_client(j->m, j->no_login, &error);
     if (c == NULL) {
         job_done(j, error);
     } else {
@@ -559,7 +569,7 @@ static void on_stat(GObject* src, GAsyncResult* res, gpointer data) {
 static gboolean run_stat(gpointer data) {
     Job* j = data;
     GError* error = NULL;
-    SftpClient* c = mount_client(j->m, &error);
+    SftpClient* c = mount_client(j->m, j->no_login, &error);
     if (c == NULL) {
         job_done(j, error);
     } else {
@@ -594,7 +604,7 @@ static void on_read(GObject* src, GAsyncResult* res, gpointer data) {
 static gboolean run_read(gpointer data) {
     Job* j = data;
     GError* error = NULL;
-    SftpClient* c = mount_client(j->m, &error);
+    SftpClient* c = mount_client(j->m, j->no_login, &error);
     if (c == NULL) {
         job_done(j, error);
     } else {
@@ -649,7 +659,7 @@ static void on_plain(GObject* src, GAsyncResult* res, gpointer data) {
 static gboolean run_plain(gpointer data) {
     Job* j = data;
     GError* error = NULL;
-    SftpClient* c = mount_client(j->m, &error);
+    SftpClient* c = mount_client(j->m, j->no_login, &error);
     if (c == NULL) {
         job_done(j, error);
         return G_SOURCE_REMOVE;

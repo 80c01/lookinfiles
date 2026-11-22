@@ -14,11 +14,13 @@ void remote_session_init(AppData* app, const gchar* argv0);
 /* Close every master connection; at exit */
 void remote_session_shutdown(void);
 
-/* Open the master connection of rm (asking for a password if needed). The
- * interface stays live meanwhile (nested main loop, as app_dialog_run()).
- * TRUE when connected; else FALSE with *error_text (what ssh said; caller
- * frees) or, when rm is already being connected, NULL. */
-gboolean remote_session_connect(AppData* app, RemoteMachine* rm, gchar** error_text);
+/* Open the master connection of rm (asking for a password if needed);
+ * without multiplexing (Windows), the SFTP session of its files at
+ * mount_dir instead. The interface stays live meanwhile (nested main loop,
+ * as app_dialog_run()). TRUE when connected; else FALSE with *error_text
+ * (what ssh said; caller frees) or, when rm is already being connected,
+ * NULL. */
+gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mount_dir, gchar** error_text);
 /* Open the master connection of rm in the background unless it is open (it
  * may have dropped) */
 void remote_session_open_master(RemoteMachine* rm);
