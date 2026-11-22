@@ -46,6 +46,19 @@ installation.
 | `Ctrl+W` | Fermer l’onglet Diagnostics (`Ctrl+W c` en mode Vim) |
 | Clic du milieu sur l’onglet | Le fermer |
 
+## Machines distantes
+
+Quand vous avez des [machines distantes](remote.md), une liste dans
+l’en-tête choisit la machine vérifiée : **Cet ordinateur** ou l’une d’elles
+(la machine de l’espace de travail vient d’abord). Une machine distante
+doit être connectée ; ses vérifications sont celles dont LookinFiles a
+besoin là-bas : Python et les modules du noyau pour ses notebooks, `git`
+pour l’onglet Git, `grep` pour la recherche dans les fichiers, GNU `find`
+(Linux) pour la Recherche approfondie, l’Espace disque et l’onglet Git, et
+les serveurs de langage. Les commandes d’installation sont celles du
+système de cette machine : lancez-les là-bas, dans un terminal connecté à
+elle.
+
 ## Notebooks et environnements virtuels
 
 La vérification de Python utilise le `python3` du `PATH`. Un notebook dont

@@ -1202,7 +1202,9 @@ Layers, from bottom to top
   `diagnostics` checks of this computer, with the language servers of
   `lsp_config` (those of the languages of the folder shown first, the others
   folded), run in a worker thread, in a `GtkListView` of section titles and
-  checks; a missing check shows its install command and a Copy button.
+  checks; a missing check shows its install command and a Copy button. A
+  dropdown checks a connected remote machine instead
+  (`diagnostics_remote_command()` sent by `ssh_exec_async()`).
 - `disk_usage_tab` — the Disk Usage tab in the preview notebook (one per
   workspace, kept like the System Monitor), opened on a folder from the
   explorer (`Shift+S`, context menu): the tree read by `disk_scan` in a

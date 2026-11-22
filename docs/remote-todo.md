@@ -32,7 +32,8 @@ lists what does not, or not fully, to come back to later.
     handled;
   - Git LFS objects are not copied.
 - **GNU find**: Deep Search, Disk Usage and the copy of `.git` use
-  `find -printf`, so they work on Linux machines, not on macOS or BSD ones.
+  `find -printf`, so they work on Linux machines, not on macOS or BSD ones
+  (the Diagnostics tab says whether a machine's `find` is GNU find).
 - **Waits on the interface thread**: a few calls still wait for the
   network there (`vfs_file_test()` while navigating, `vfs_remote_absolute()`
   when the first language server of a machine starts): short freezes on a

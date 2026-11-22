@@ -41,6 +41,17 @@ something.
 | `Ctrl+W` | Close the Diagnostics tab (`Ctrl+W c` in Vim mode) |
 | Middle click on the tab | Close it |
 
+## Remote machines
+
+When you have [remote machines](remote.md), a list in the header chooses
+the machine checked: **This computer** or one of them (the machine of the
+workspace comes first). A remote machine must be connected; its checks are
+those LookinFiles needs there: Python and the kernel modules for its
+notebooks, `git` for the Git tab, `grep` for Search in Files, GNU `find`
+(Linux) for Deep Search, Disk Usage and the Git tab, and the language
+servers. The install commands are those of that machine's system: run them
+there, in a terminal connected to it.
+
 ## Notebooks and virtual environments
 
 The Python check uses the `python3` of `PATH`. A notebook whose folder has

@@ -13446,6 +13446,28 @@ msgstr "Ouvrir l’onglet Diagnostics : ce qui manque sur cet ordinateur et comm
 msgid "Close the Diagnostics tab"
 msgstr "Fermer l’onglet Diagnostics"
 
+#: src/chrome/diagnostics_tab.c
+msgid "no reply"
+msgstr "aucune réponse"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "Cannot check %1$s: %2$s"
+msgstr "Impossible de vérifier %1$s : %2$s"
+
+#: src/chrome/diagnostics_tab.c
+msgid "unknown system"
+msgstr "système inconnu"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "%s is not connected: connect to it in the remote view, then Check Again"
+msgstr "%s n’est pas connectée : connectez-la dans la vue des machines distantes, puis Vérifier à nouveau"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Machine to Check"
+msgstr "Machine à vérifier"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

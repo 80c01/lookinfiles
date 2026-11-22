@@ -8,7 +8,11 @@
  * manager), with a Copy button. Sections: the libraries built in (installed
  * then built again), the programs, the language servers (those of the
  * languages of the folder shown first, the others folded). The checks run
- * in a worker thread; Check Again runs them again. Opened from the + menu
+ * in a worker thread; Check Again runs them again. A dropdown of the header
+ * (shown when there are remote machines) checks a remote machine instead:
+ * one command over its master connection (ssh_exec_async()), its install
+ * commands for its own system; it must be connected. The workspace's
+ * machine is checked first. Opened from the + menu
  * of the tab bars and the user guide's lookinfiles:diagnostics links. The
  * close button, a middle click on the tab, Ctrl+W (Vim Ctrl+W c) close it.
  * Each workspace has its own tab. */

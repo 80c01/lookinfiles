@@ -1,12 +1,17 @@
 /* The Diagnostics tab: what is missing on this computer (see diagnostics_tab.h) */
 #include "chrome/diagnostics_tab.h"
+
+#include <string.h>
+
 #include "code/code_symbol.h"
 #include "code/lsp_config.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
 #include "core/diagnostics.h"
 #include "core/i18n.h"
+#include "core/ssh_session.h"
 #include "core/vfs.h"
+#include "explorer/remote_store.h"
 #include "git/git_tab.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
@@ -59,6 +64,10 @@ typedef struct {
     GtkWidget* page;   /* the notebook page (app->diagnostics_page) */
     GtkWidget* label;  /* tab label (owned ref: kept while the page is detached) */
     GtkWidget* info;   /* header: the system and its package manager */
+    GtkWidget* machines; /* GtkDropDown: this computer, then the remote machines */
+    GPtrArray* machine_ids; /* RemoteMachine ids of the dropdown after its first entry */
+    gchar* machine_id; /* the machine checked, NULL: this computer */
+    GCancellable* cancel; /* cancelled with the tab */
     GtkWidget* list;   /* GtkListView */
     GListStore* store; /* DiagRow */
     GPtrArray* items;  /* DiagItem of the last checks, or NULL */
@@ -440,7 +449,8 @@ static void show_info(DiagTab* st, const gchar* os_name) {
             missing++;
         }
     }
-    GString* s = g_string_new(os_name != NULL ? os_name : _("This computer"));
+    GString* s = g_string_new(os_name != NULL ? os_name : st->machine_id == NULL ? _("This computer")
+                                                                              : _("unknown system"));
     const gchar* manager = family_name(st->family);
     if (manager != NULL) g_string_append_printf(s, " · %s", manager);
     g_string_append(s, " · ");
@@ -453,27 +463,113 @@ static void show_info(DiagTab* st, const gchar* os_name) {
     g_string_free(s, TRUE);
 }
 
+/* Show the results of the checks (the tab takes items and relevant) */
+static void show_results(DiagTab* st, GPtrArray* items, GHashTable* relevant, DiagFamily family,
+                         const gchar* os_name) {
+    st->busy = FALSE;
+    g_list_store_remove_all(st->store); /* the rows point into the old items */
+    if (st->items != NULL) g_ptr_array_unref(st->items);
+    st->items = items;
+    if (st->relevant != NULL) g_hash_table_unref(st->relevant);
+    st->relevant = relevant;
+    st->family = family;
+    fill_store(st);
+    show_info(st, os_name);
+}
+
 static void on_checked(GObject* source, GAsyncResult* res, gpointer data) {
     (void)source;
     (void)data;
     CheckJob* job = g_task_get_task_data(G_TASK(res));
     DiagTab* st = g_object_get_data(G_OBJECT(job->page), PAGE_KEY);
     if (st == NULL || job->generation != st->generation) return;
-    st->busy = FALSE;
-    g_list_store_remove_all(st->store); /* the rows point into the old items */
-    if (st->items != NULL) g_ptr_array_unref(st->items);
-    st->items = g_steal_pointer(&job->items);
-    if (st->relevant != NULL) g_hash_table_unref(st->relevant);
-    st->relevant = g_steal_pointer(&job->relevant);
-    st->family = job->family;
-    fill_store(st);
-    show_info(st, job->os_name);
+    show_results(st, g_steal_pointer(&job->items), g_steal_pointer(&job->relevant), job->family, job->os_name);
+}
+
+/* --- Checks of a remote machine: one command over its master connection --- */
+
+typedef struct {
+    GtkWidget* page; /* owned ref */
+    guint generation;
+    GPtrArray* items;
+    gchar* name;     /* the machine's name */
+} RemoteJob;
+
+static void remote_job_free(RemoteJob* job) {
+    g_clear_object(&job->page);
+    if (job->items != NULL) g_ptr_array_unref(job->items);
+    g_free(job->name);
+    g_free(job);
+}
+
+static void on_remote_checked(gint status, const gchar* out, const gchar* err, const GError* error, gpointer data) {
+    (void)status;
+    RemoteJob* job = data;
+    DiagTab* st = g_object_get_data(G_OBJECT(job->page), PAGE_KEY);
+    if (st == NULL || job->generation != st->generation || g_cancellable_is_cancelled(st->cancel)) {
+        remote_job_free(job);
+        return;
+    }
+    if (out == NULL || strstr(out, "@@end") == NULL) {
+        st->busy = FALSE;
+        gchar* why = g_strstrip(g_strdup(error != NULL ? error->message
+                                         : err != NULL && err[0] != '\0' ? err
+                                                                          : _("no reply")));
+        gchar* text = g_strdup_printf(_("Cannot check %1$s: %2$s"), job->name, why);
+        gtk_label_set_text(GTK_LABEL(st->info), text);
+        g_free(text);
+        g_free(why);
+        remote_job_free(job);
+        return;
+    }
+    gchar* os_release = NULL;
+    diagnostics_remote_apply(job->items, out, &os_release);
+    gchar* os_name = diagnostics_os_name(os_release);
+    gchar* shown = g_strdup_printf("%s · %s", job->name, os_name != NULL ? os_name : _("unknown system"));
+    show_results(st, g_steal_pointer(&job->items), NULL, diagnostics_family(os_release), shown);
+    g_free(shown);
+    g_free(os_name);
+    g_free(os_release);
+    remote_job_free(job);
+}
+
+/* Check rm: the items with the language servers, the command sent */
+static void run_remote_checks(DiagTab* st, RemoteMachine* rm) {
+    const gchar* name = rm->name != NULL && rm->name[0] != '\0' ? rm->name : rm->host;
+    if (!rm->is_connected) {
+        st->busy = FALSE;
+        show_results(st, NULL, NULL, DIAG_FAMILY_UNKNOWN, NULL);
+        gchar* text = g_strdup_printf(_("%s is not connected: connect to it in the remote view, then Check Again"),
+                                      name);
+        gtk_label_set_text(GTK_LABEL(st->info), text);
+        g_free(text);
+        return;
+    }
+    RemoteJob* job = g_new0(RemoteJob, 1);
+    job->page = g_object_ref(st->page);
+    job->generation = st->generation;
+    job->name = g_strdup(name);
+    job->items = diagnostics_items(TRUE);
+    gchar* dir = app_config_dir();
+    gchar* ini = g_build_filename(dir, "lsp.ini", NULL);
+    add_lang_servers(job->items, ini);
+    g_free(ini);
+    g_free(dir);
+    gchar* command = diagnostics_remote_command(job->items);
+    SshTarget target = remote_machine_target(rm);
+    ssh_exec_async(&target, command, NULL, st->cancel, on_remote_checked, job);
+    g_free(command);
 }
 
 static void run_checks(DiagTab* st) {
     st->generation++;
     st->busy = TRUE;
     gtk_label_set_text(GTK_LABEL(st->info), _("Checking…"));
+    RemoteMachine* rm = st->machine_id != NULL ? remote_find_by_id(st->app, st->machine_id) : NULL;
+    if (rm != NULL) {
+        run_remote_checks(st, rm);
+        return;
+    }
     CheckJob* job = g_new0(CheckJob, 1);
     job->page = g_object_ref(st->page);
     job->generation = st->generation;
@@ -490,10 +586,46 @@ static void run_checks(DiagTab* st) {
     g_object_unref(task);
 }
 
+static void fill_machines(DiagTab* st);
+
 static void on_refresh_clicked(GtkButton* button, gpointer data) {
     (void)button;
     DiagTab* st = data;
-    if (!st->busy) run_checks(st);
+    fill_machines(st);
+    if (!st->busy || st->machine_id != NULL) run_checks(st); /* a reply that does not come is dropped */
+}
+
+static void on_machine_selected(GObject* dropdown, GParamSpec* pspec, gpointer data) {
+    (void)pspec;
+    DiagTab* st = data;
+    guint i = gtk_drop_down_get_selected(GTK_DROP_DOWN(dropdown));
+    const gchar* id = i > 0 && i - 1 < st->machine_ids->len ? g_ptr_array_index(st->machine_ids, i - 1) : NULL;
+    if (g_strcmp0(id, st->machine_id) == 0) return;
+    g_free(st->machine_id);
+    st->machine_id = g_strdup(id);
+    run_checks(st);
+}
+
+/* The machines of the dropdown again (the list may have changed); the one
+ * checked stays selected, or this computer when it is gone */
+static void fill_machines(DiagTab* st) {
+    GtkStringList* names = gtk_string_list_new(NULL);
+    gtk_string_list_append(names, _("This computer"));
+    g_ptr_array_set_size(st->machine_ids, 0);
+    guint selected = 0;
+    for (GList* l = remote_machine_list(st->app); l != NULL; l = l->next) {
+        RemoteMachine* rm = l->data;
+        gtk_string_list_append(names, rm->name != NULL && rm->name[0] != '\0' ? rm->name : rm->host);
+        g_ptr_array_add(st->machine_ids, g_strdup(rm->id));
+        if (g_strcmp0(rm->id, st->machine_id) == 0) selected = st->machine_ids->len;
+    }
+    if (selected == 0) g_clear_pointer(&st->machine_id, g_free);
+    g_signal_handlers_block_by_func(st->machines, on_machine_selected, st);
+    gtk_drop_down_set_model(GTK_DROP_DOWN(st->machines), G_LIST_MODEL(names));
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(st->machines), selected);
+    g_signal_handlers_unblock_by_func(st->machines, on_machine_selected, st);
+    gtk_widget_set_visible(st->machines, st->machine_ids->len > 0);
+    g_object_unref(names);
 }
 
 /* --- The page --- */
@@ -505,6 +637,10 @@ static void tab_free(gpointer data) {
     if (st->items != NULL) g_ptr_array_unref(st->items);
     if (st->relevant != NULL) g_hash_table_unref(st->relevant);
     g_free(st->select_id);
+    g_free(st->machine_id);
+    g_ptr_array_unref(st->machine_ids);
+    g_cancellable_cancel(st->cancel);
+    g_clear_object(&st->cancel);
     g_clear_object(&st->label);
     g_free(st);
 }
@@ -573,6 +709,10 @@ static DiagTab* ensure_page(AppData* app) {
     st = g_new0(DiagTab, 1);
     st->app = app;
     st->store = g_list_store_new(diag_row_get_type());
+    st->machine_ids = g_ptr_array_new_with_free_func(g_free);
+    st->cancel = g_cancellable_new();
+    RemoteMachine* active = remote_get_active_machine(app);
+    if (active != NULL) st->machine_id = g_strdup(active->id);
 
     GtkWidget* page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_add_css_class(page, "diagnostics");
@@ -590,6 +730,12 @@ static DiagTab* ensure_page(AppData* app) {
     gtk_label_set_ellipsize(GTK_LABEL(st->info), PANGO_ELLIPSIZE_END);
     gtk_widget_set_hexpand(st->info, TRUE);
     gtk_box_append(GTK_BOX(bar), st->info);
+    st->machines = gtk_drop_down_new(NULL, NULL);
+    gtk_widget_set_tooltip_text(st->machines, _("Machine to Check"));
+    gtk_widget_set_valign(st->machines, GTK_ALIGN_CENTER);
+    g_signal_connect(st->machines, "notify::selected", G_CALLBACK(on_machine_selected), st);
+    gtk_box_append(GTK_BOX(bar), st->machines);
+    fill_machines(st);
     GtkWidget* refresh = icon_button_new("view-refresh", _("Check Again"));
     g_signal_connect(refresh, "clicked", G_CALLBACK(on_refresh_clicked), st);
     gtk_box_append(GTK_BOX(bar), refresh);
