@@ -1023,11 +1023,23 @@ static IpynbTab* tab_new(AppData* app, const gchar* name, const gchar* path, con
 /* The notebook at path, or NULL when the tab cannot edit it (too large,
  * not a notebook, nbformat 3); an empty file is a new notebook */
 static IpynbDoc* load(const gchar* path) {
-    GStatBuf st;
-    if (g_stat(path, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size > MAX_NOTEBOOK_BYTES) return NULL;
     gchar* text = NULL;
     gsize len = 0;
-    if (!g_file_get_contents(path, &text, &len, NULL)) return NULL;
+    if (vfs_is_remote(path)) {
+        /* Over SFTP (the local folder of a machine stays empty) */
+        guint64 size = 0;
+        GBytes* bytes = vfs_read(path, MAX_NOTEBOOK_BYTES + 1, &size, NULL, NULL);
+        if (bytes == NULL) return NULL;
+        if (size > MAX_NOTEBOOK_BYTES || g_bytes_get_size(bytes) > MAX_NOTEBOOK_BYTES) {
+            g_bytes_unref(bytes);
+            return NULL;
+        }
+        text = g_bytes_unref_to_data(bytes, &len);
+    } else {
+        GStatBuf st;
+        if (g_stat(path, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size > MAX_NOTEBOOK_BYTES) return NULL;
+        if (!g_file_get_contents(path, &text, &len, NULL)) return NULL;
+    }
     gsize blank = 0;
     while (blank < len && g_ascii_isspace(text[blank])) blank++;
     IpynbDoc* doc = blank == len ? ipynb_doc_new() : ipynb_doc_parse(text, len, NULL);
