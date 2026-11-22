@@ -311,6 +311,7 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
         job->scan = NULL;
         git_space_free(dt->git);
         dt->git = g_steal_pointer(&job->git);
+        if (dt->git != NULL) dt->git->top_shown = remote_path_display(dt->app, dt->git->top); /* not the local folder */
         dt->scan_mode = job->filter != NULL ? job->mode : GIT_FILTER_NONE;
         dt->elapsed = g_get_monotonic_time() - dt->started;
         DiskNode* node = disk_scan_find(dt->scan, path);
@@ -327,6 +328,7 @@ static void on_scan_done(GObject* source, GAsyncResult* res, gpointer data) {
     job->scan = NULL;
     git_space_free(dt->git);
     dt->git = g_steal_pointer(&job->git);
+    if (dt->git != NULL) dt->git->top_shown = remote_path_display(dt->app, dt->git->top);
     dt->scan_mode = job->filter != NULL ? job->mode : GIT_FILTER_NONE;
     dt->elapsed = g_get_monotonic_time() - dt->started;
     show_summary(dt);

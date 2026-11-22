@@ -22,6 +22,8 @@ typedef struct {
 
 typedef struct {
     gchar* top;          /* top of the work tree */
+    gchar* top_shown;    /* top as shown (machine:path on a remote machine),
+                            set by the caller; NULL: top */
     gboolean inside;     /* the folder scanned is below the top (the history
                             and what lies beside the folder are left out) */
     DiskTally tracked;   /* files of the index */

@@ -367,7 +367,7 @@ static void show_git(DuStats* ds, const GitSpace* git, const DiskStats* st) {
     gint row = 0;
     if (git->inside) {
         /* TRANSLATORS: the top of the git work tree holding the folder analysed */
-        fact(g, row++, _("Repository"), g_strdup(git->top));
+        fact(g, row++, _("Repository"), g_strdup(git->top_shown != NULL ? git->top_shown : git->top));
     }
     /* TRANSLATORS: files of the git index */
     git_row(ds, g, row++, _("Tracked"), GIT_FILTER_REPO, &git->tracked, st->size);

@@ -46,6 +46,7 @@ static GArray* entries_new(void) {
 void git_space_free(GitSpace* space) {
     if (space == NULL) return;
     g_free(space->top);
+    g_free(space->top_shown);
     g_array_unref(space->ignored_top);
     g_array_unref(space->tracked_top);
     g_free(space);
