@@ -99,7 +99,10 @@ static void on_remote_synced(GObject* source, GAsyncResult* res, gpointer data) 
 /* Show the repository of dir, a remote machine's folder: its .git copied
  * first (only what changed after the first time) */
 static void update_remote(GitTab* g, const gchar* dir, gboolean reload) {
-    if (!reload && g_strcmp0(g->remote_dir, dir) == 0) return; /* the same: read again on reload only */
+    if (!reload && g_strcmp0(g->remote_dir, dir) == 0) { /* the same: the history read again on reload only */
+        if (g->remote_top != NULL) git_changes_set_root(g->changes, g->remote_top); /* the changes, each time */
+        return;
+    }
     g_free(g->remote_dir);
     g->remote_dir = g_strdup(dir);
     RemoteSync* r = g_new0(RemoteSync, 1);
@@ -112,21 +115,14 @@ static void update_remote(GitTab* g, const gchar* dir, gboolean reload) {
     g_object_unref(task);
 }
 
-/* The views on the repository at root (NULL: none); a copy of a remote
- * machine's .git has no work tree here: no Changes */
+/* The views on the repository at root (NULL: none); for a remote machine,
+ * root is the copy of its .git (git_mirror.h) */
 static void set_views(GitTab* g, const gchar* root, gboolean reload) {
-    gboolean copy = g->remote_dir != NULL;
     g_free(g->current_root);
     g->current_root = g_strdup(root);
-    gtk_widget_set_sensitive(g->buttons[GIT_VIEW_CHANGES], !copy);
-    gtk_widget_set_tooltip_text(g->buttons[GIT_VIEW_CHANGES],
-                                copy ? _("The changes are not available on a remote machine yet")
-                                     : _("Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)"));
-    if (copy && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_CHANGES]))) {
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_HISTORY]), TRUE);
-    }
-    /* Files may have changed with each update: the Changes view reads again */
-    git_changes_set_root(g->changes, copy ? NULL : root);
+    /* Files may have changed with each update: the Changes view reads again
+     * (on a remote machine, the work tree there: git run on it) */
+    git_changes_set_root(g->changes, g->remote_dir != NULL ? (root != NULL ? g->remote_top : NULL) : root);
     git_history_set_root(g->history, root, reload);
     git_stats_view_set_root(g->stats, root, reload);
     git_repo_view_set_root(g->repo, root, reload);

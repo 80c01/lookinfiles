@@ -97,7 +97,7 @@ Les machines ajoutées à la main sont enregistrées dans
 ## Pas encore disponible sur une machine distante
 
 Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
-locaux : la vue Modifications de l’onglet Git, les serveurs de langage (complétion, diagnostics) et
+locaux : les serveurs de langage (complétion, diagnostics) et
 la compilation LaTeX. L’ouverture d’un fichier avec une autre application
 n’est pas disponible non plus : « Ouvrir avec l’application par défaut » le
 dit dans la barre d’état ; les autres restent éteintes.
@@ -139,7 +139,9 @@ arrive en un seul flux `tar` lancé sur la machine (un gros historique prend
 un moment) ; ensuite, seuls les fichiers nouveaux ou modifiés (les
 références, l’index, les nouveaux paquets) à chaque relecture du dépôt par
 l’onglet. La copie est seulement lue, jamais écrite. La vue Modifications
-n’est pas encore disponible sur une machine distante.
+lance `git status` et `git diff` sur la machine (les nombres de lignes avec
+`git diff --numstat`), et « Comparer avec HEAD » lit la dernière version
+validée du fichier dans la copie.
 
 ## Recherche dans les fichiers et Aller au fichier
 

@@ -621,6 +621,10 @@ Layers, from bottom to top
   (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
   lines, the matches counted, the first one kept (the deep search); or
   given lines (`text_matcher_search_text()`).
+- `git_worktree_remote` — the Changes view on a remote machine: the
+  changes as `git_worktree` lists them from `git status` and `git diff
+  --numstat` run there, the patch of a file from `git diff` (unit-tested:
+  the reading of the output).
 - `git_mirror` — local read-only copies of the `.git` of remote
   repositories for the Git tab's views (libgit2 reads local files only):
   the files of `.git` listed there (`find`), the new or changed ones copied

@@ -87,8 +87,7 @@ with sshfs are unmounted at start-up. Machines added by hand are saved in
 
 ## Not available on a remote machine yet
 
-These run on this computer and need local files: the Changes view of the
-Git tab, the language servers (completion, diagnostics) and LaTeX builds. Opening a file
+These run on this computer and need local files: the language servers (completion, diagnostics) and LaTeX builds. Opening a file
 with another application is not available either: Open With Default App
 says so in the status bar; the others stay off.
 
@@ -126,7 +125,9 @@ copy of the repository's `.git` folder kept in
 over in one `tar` stream run on the machine (a large history takes a while);
 after that, only the files new or changed (the refs, the index, new packs)
 each time the tab reads the repository again. The copy is only read, never
-written. The Changes view is not available on a remote machine yet.
+written. The Changes view runs `git status` and `git diff` on the machine
+(the line counts with `git diff --numstat`), and Compare with HEAD reads
+the file's last committed version from the copy.
 
 ## Search in files and Go to File
 

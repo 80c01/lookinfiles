@@ -1,5 +1,7 @@
 /* The Changes view of the Git tab (see git_changes.h) */
 #include "git/git_changes.h"
+#include "core/vfs.h"
+#include "git/git_worktree_remote.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "theme/text_style.h"
@@ -8,6 +10,21 @@
 #include "git/git_worktree.h"
 #include "widgets/focus_route.h"
 #include "widgets/panels.h"
+
+
+/* The work tree of a remote machine: git run there (git_worktree_remote.h) */
+static GPtrArray* read_changes(const gchar* root, guint max, GCancellable* cancel, gboolean* more) {
+    return vfs_is_remote(root) ? git_remote_read_changes(root, max, cancel, more)
+                               : git_read_changes(root, max, cancel, more);
+}
+
+static gint count_changes(const gchar* root, GCancellable* cancel) {
+    return vfs_is_remote(root) ? git_remote_count_changes(root, cancel) : git_count_changes(root, cancel);
+}
+
+static gchar* change_patch(const gchar* root, const gchar* path, GitChangeGroup group) {
+    return vfs_is_remote(root) ? git_remote_change_patch(root, path, group) : git_change_patch(root, path, group);
+}
 
 /* Files listed at most: a huge untracked folder is not read file by file */
 #define GIT_CHANGES_MAX 2000
@@ -138,9 +155,9 @@ static void read_task_free(gpointer data) {
 static void read_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)source;
     ReadTask* td = data;
-    td->changes = git_read_changes(td->root, GIT_CHANGES_MAX, cancellable, &td->more);
+    td->changes = read_changes(td->root, GIT_CHANGES_MAX, cancellable, &td->more);
     /* The list is cut: the button still says how many there are */
-    td->total = td->changes == NULL ? -1 : td->more ? git_count_changes(td->root, cancellable) : (gint)td->changes->len;
+    td->total = td->changes == NULL ? -1 : td->more ? count_changes(td->root, cancellable) : (gint)td->changes->len;
     if (g_task_return_error_if_cancelled(task)) return;
     g_task_return_boolean(task, TRUE);
 }
@@ -164,7 +181,7 @@ static void patch_thread(GTask* task, gpointer source, gpointer data, GCancellab
     (void)source;
     (void)cancellable;
     PatchTask* td = data;
-    gchar* text = git_change_patch(td->root, td->path, td->group);
+    gchar* text = change_patch(td->root, td->path, td->group);
     if (g_task_return_error_if_cancelled(task)) {
         g_free(text);
         return;
@@ -368,7 +385,7 @@ static void count_task_free(gpointer data) {
 static void count_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)source;
     CountTask* td = data;
-    td->count = git_count_changes(td->root, cancellable);
+    td->count = count_changes(td->root, cancellable);
     if (g_task_return_error_if_cancelled(task)) return;
     g_task_return_boolean(task, TRUE);
 }
