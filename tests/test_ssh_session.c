@@ -205,6 +205,23 @@ static void test_exec(void) {
     g_assert_nonnull(strstr(r.err, "Permission denied"));
     g_free(r.out);
     g_free(r.err);
+
+    /* The same, waiting (worker threads): stdin closed at once */
+    gint status = -2;
+    GBytes* out = NULL;
+    GError* error = NULL;
+    g_assert_true(ssh_exec_sync(&t, "ls", NULL, &status, &out, &error));
+    g_assert_no_error(error);
+    g_assert_cmpint(status, ==, 0);
+    gsize n = 0;
+    const gchar* data = g_bytes_get_data(out, &n);
+    g_assert_cmpmem(data, n, "me@srv|ls||", 11); /* no input */
+    g_bytes_unref(out);
+    g_assert_false(ssh_exec_sync(&bad, "true", NULL, &status, &out, &error));
+    g_assert_nonnull(strstr(error->message, "Permission denied"));
+    g_assert_null(out);
+    g_clear_error(&error);
+
     g_remove(sock);
     g_remove(bad_sock);
     g_free(sock);

@@ -485,7 +485,9 @@ gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GCancellable* c
     g_ptr_array_unref(argv);
     if (p == NULL) return FALSE;
     GBytes* err = NULL;
-    gboolean ok = g_subprocess_communicate(p, NULL, cancel, out, &err, error);
+    GBytes* in = g_bytes_new(NULL, 0); /* stdin closed at once (a pipe needs its bytes, even none) */
+    gboolean ok = g_subprocess_communicate(p, in, cancel, out, &err, error);
+    g_bytes_unref(in);
     if (ok) {
         *status = g_subprocess_get_if_exited(p) ? g_subprocess_get_exit_status(p) : -1;
         if (*status == 255 || *status < 0) { /* ssh itself failed */
