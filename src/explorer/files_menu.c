@@ -6,6 +6,8 @@
 #include "core/app_events.h"
 #include "core/path_copy.h"
 #include "core/remote_path.h"
+#include "git/git_state.h"
+#include "core/vfs.h"
 #include "explorer/bookmarks.h"
 #include "preview/browser.h"
 #include "editor/editor.h"
@@ -20,6 +22,8 @@
 #include "search/deep_search_tab.h"
 #include "preview/diff_tab.h"
 #include "git/git_tab.h"
+
+#include <string.h>
 
 typedef enum {
     FM_OPEN,
@@ -188,6 +192,14 @@ static void copy_items(GtkWidget* box, GtkWidget* popover, AppData* app, const g
     menu_item(box, popover, app, _("Copy Path"), NULL, FM_COPY_PATH);
 }
 
+/* path is in the repository of a remote machine's folder shown (its root
+ * read by the explorer's git status there: no .git to look at here) */
+static gboolean in_remote_repository(AppData* app, const gchar* path) {
+    const gchar* root = git_state_root(app->git_state);
+    gsize n = root != NULL ? strlen(root) : 0;
+    return n > 0 && vfs_is_remote(path) && strncmp(path, root, n) == 0 && (path[n] == '\0' || path[n] == '/');
+}
+
 static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, ExplorerRow* row) {
     gboolean is_dir = explorer_row_is(row, "dir");
     menu_item(box, popover, app, _("Open"), "Enter", FM_OPEN);
@@ -233,7 +245,7 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
             }
         }
     }
-    if (path_copy_has_relative(row->path)) {
+    if (path_copy_has_relative(row->path) || in_remote_repository(app, row->path)) {
         menu_separator(box);
         menu_item(box, popover, app, _("Git History"), NULL, FM_GIT_HISTORY);
     }
