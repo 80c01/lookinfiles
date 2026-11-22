@@ -370,6 +370,11 @@ static void test_write_ops(void) {
     g_free(sock);
 }
 
+static gpointer copy_movie(gpointer data) {
+    (void)data;
+    return vfs_cache_copy("/virtual/c/movie.mkv", G_MAXUINT64, NULL, NULL);
+}
+
 static void test_cache(void) {
     gchar* sock = fake_master();
     if (sock == NULL) {
@@ -435,6 +440,20 @@ static void test_cache(void) {
     g_assert_cmpmem(back, back_len, big, big_len);
     g_free(back);
     g_free(lbig);
+
+    /* Two workers copying the same changed file at once: one copy, whole */
+    g_assert_true(g_file_set_contents(rbig, big, (gssize)big_len - 7, NULL));
+    GThread* t1 = g_thread_new("copy1", copy_movie, NULL);
+    GThread* t2 = g_thread_new("copy2", copy_movie, NULL);
+    gchar* l1 = g_thread_join(t1);
+    gchar* l2 = g_thread_join(t2);
+    g_assert_nonnull(l1);
+    g_assert_cmpstr(l1, ==, l2);
+    g_assert_true(g_file_get_contents(l1, &back, &back_len, NULL));
+    g_assert_cmpmem(back, back_len, big, big_len - 7);
+    g_free(back);
+    g_free(l1);
+    g_free(l2);
     g_free(big);
     g_unlink(rbig);
     g_free(rbig);

@@ -19,6 +19,39 @@ gchar* vfs_cache_dir(void) {
 }
 
 /* <cache>/<sha1 of path, 16 digits>: one folder per remote file */
+/* The copy folders being made or checked: one copy of a file at a time
+ * (two workers copying the same picture would write the same .part) */
+static GMutex busy_lock;
+static GCond busy_cond;
+static GHashTable* busy_dirs;
+
+static void busy_enter(const gchar* dir) {
+    g_mutex_lock(&busy_lock);
+    if (busy_dirs == NULL) busy_dirs = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    while (g_hash_table_contains(busy_dirs, dir)) g_cond_wait(&busy_cond, &busy_lock);
+    g_hash_table_add(busy_dirs, g_strdup(dir));
+    g_mutex_unlock(&busy_lock);
+}
+
+static void busy_leave(const gchar* dir) {
+    g_mutex_lock(&busy_lock);
+    g_hash_table_remove(busy_dirs, dir);
+    g_cond_broadcast(&busy_cond);
+    g_mutex_unlock(&busy_lock);
+}
+
+static gboolean busy_now(const gchar* dir) {
+    g_mutex_lock(&busy_lock);
+    gboolean busy = busy_dirs != NULL && g_hash_table_contains(busy_dirs, dir);
+    g_mutex_unlock(&busy_lock);
+    return busy;
+}
+
+static gboolean local_size_is(const gchar* local, gint64 size) {
+    GStatBuf st;
+    return g_stat(local, &st) == 0 && S_ISREG(st.st_mode) && (gint64)st.st_size == size;
+}
+
 static gchar* copy_dir(const gchar* path) {
     gchar* sum = g_compute_checksum_for_string(G_CHECKSUM_SHA1, path, -1);
     sum[16] = '\0';
@@ -80,9 +113,10 @@ gchar* vfs_cache_copy(const gchar* path, guint64 max_bytes, GCancellable* cancel
     gchar* stamp = g_strdup_printf("%" G_GINT64_FORMAT " %" G_GINT64_FORMAT, e.size, e.mtime);
     g_free(name);
 
+    busy_enter(dir);
     gchar* old = NULL;
     gboolean fresh = g_file_get_contents(stamp_path, &old, NULL, NULL) && g_strcmp0(old, stamp) == 0 &&
-                     g_file_test(local, G_FILE_TEST_IS_REGULAR);
+                     local_size_is(local, e.size); /* a copy cut short is made again */
     g_free(old);
     if (fresh) {
         g_file_set_contents(stamp_path, stamp, -1, NULL); /* its date: recently used, trimmed last */
@@ -97,6 +131,7 @@ gchar* vfs_cache_copy(const gchar* path, guint64 max_bytes, GCancellable* cancel
         }
         if (!ok) g_clear_pointer(&local, g_free);
     }
+    busy_leave(dir);
     g_free(stamp);
     g_free(stamp_path);
     g_free(dir);
@@ -169,6 +204,7 @@ guint vfs_cache_trim(guint64 max_bytes) {
     guint removed = 0;
     for (guint i = 0; i < copies->len && total > max_bytes; i++) {
         Copy* c = copies->pdata[i];
+        if (busy_now(c->dir)) continue; /* being made: kept */
         remove_copy(c->dir);
         total -= c->bytes;
         removed++;
