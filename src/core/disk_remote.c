@@ -32,9 +32,15 @@ static mode_t mode_of(gchar type) {
     switch (type) {
     case 'f': return S_IFREG;
     case 'd': return S_IFDIR;
+#ifdef S_IFLNK
     case 'l': return S_IFLNK;
+#else
+    case 'l': return S_IFREG; /* no symlinks in GStatBuf (Windows) */
+#endif
     case 'p': return S_IFIFO;
+#ifdef S_IFSOCK
     case 's': return S_IFSOCK;
+#endif
     case 'b': return S_IFBLK;
     default: return S_IFCHR;
     }
@@ -59,11 +65,17 @@ gboolean disk_remote_listing_add(DiskRemoteListing* l, const gchar* record, cons
     }
     if (*p == '\0') return FALSE;
     st.st_size = (goffset)v[0];
+#ifdef G_OS_UNIX
     st.st_blocks = (blkcnt_t)v[1];
+#endif
     st.st_mtime = (time_t)v[2];
     st.st_dev = (dev_t)v[3];
     st.st_ino = (ino_t)v[4];
+#ifdef G_OS_UNIX
     st.st_nlink = (nlink_t)v[5];
+#else
+    st.st_nlink = (short)MIN(v[5], (guint64)G_MAXSHORT);
+#endif
     if (rel_out != NULL) *rel_out = p;
     if (strcmp(p, ".") == 0) {
         l->root = st;
