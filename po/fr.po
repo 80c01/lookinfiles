@@ -13260,6 +13260,192 @@ msgstr ""
 msgid "Cannot open the SSH connection to %s: %s"
 msgstr "Impossible d’ouvrir la connexion SSH à %s : %s"
 
+#: src/chrome/diagnostics_tab.c
+msgid "Checking…"
+msgstr "Vérification…"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Not in this build: install the package below, then build again"
+msgstr "Absent de cette compilation : installez le paquet ci-dessous, puis recompilez"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Not in this build"
+msgstr "Absent de cette compilation"
+
+#: src/chrome/diagnostics_tab.c
+msgid ""
+"Python cannot import jupyter_client and ipykernel (a project's virtual "
+"environment needs them too)"
+msgstr ""
+"Python ne peut pas importer jupyter_client et ipykernel (l’environnement "
+"virtuel d’un projet en a besoin aussi)"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "Not found: %s"
+msgstr "Introuvable : %s"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "Not found: %s (no install command known for this system)"
+msgstr "Introuvable : %s (aucune commande d’installation connue pour ce système)"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "Copied: %s"
+msgstr "Copié : %s"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Copy"
+msgstr "Copier"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Copy the Install Command"
+msgstr "Copier la commande d’installation"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Built In"
+msgstr "Intégré"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Language Servers"
+msgstr "Serveurs de langage"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Hide the other languages"
+msgstr "Masquer les autres langages"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "Show %u other language"
+msgid_plural "Show %u other languages"
+msgstr[0] "Afficher %u autre langage"
+msgstr[1] "Afficher %u autres langages"
+
+#: src/chrome/diagnostics_tab.c
+msgid "This computer"
+msgstr "Cet ordinateur"
+
+#: src/chrome/diagnostics_tab.c
+msgid "nothing missing"
+msgstr "rien ne manque"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "%u missing"
+msgid_plural "%u missing"
+msgstr[0] "%u manquant"
+msgstr[1] "%u manquants"
+
+#: src/chrome/diagnostics_tab.c src/chrome/new_tab_menu.c
+msgid "Diagnostics"
+msgstr "Diagnostics"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Check Again"
+msgstr "Vérifier à nouveau"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Close Diagnostics"
+msgstr "Fermer les diagnostics"
+
+#: src/core/diagnostics.c
+msgid "Embedded terminal"
+msgstr "Terminal intégré"
+
+#: src/core/diagnostics.c
+msgid "Syntax highlighting in the editor"
+msgstr "Coloration syntaxique dans l’éditeur"
+
+#: src/core/diagnostics.c
+msgid "PDF preview"
+msgstr "Aperçu PDF"
+
+#: src/core/diagnostics.c
+msgid "Database preview"
+msgstr "Aperçu des bases de données"
+
+#: src/core/diagnostics.c
+msgid "7z, RAR, xz, zstd and ISO archives"
+msgstr "Archives 7z, RAR, xz, zstd et ISO"
+
+#: src/core/diagnostics.c
+msgid "Zstandard pages of Parquet files"
+msgstr "Pages Zstandard des fichiers Parquet"
+
+#: src/core/diagnostics.c
+msgid "Fast JPEG photo preview"
+msgstr "Aperçu rapide des photos JPEG"
+
+#: src/core/diagnostics.c
+msgid "Browser tabs"
+msgstr "Onglets de navigateur"
+
+#: src/core/diagnostics.c
+msgid "Audio and subtitle tracks of videos"
+msgstr "Pistes audio et sous-titres des vidéos"
+
+#: src/core/diagnostics.c
+msgid "Code outline and Go to Definition without a language server"
+msgstr "Plan du code et aller à la définition sans serveur de langage"
+
+#: src/core/diagnostics.c
+msgid "LaTeX builds"
+msgstr "Compilation LaTeX"
+
+#: src/core/diagnostics.c
+msgid "PostScript and EPS preview"
+msgstr "Aperçu PostScript et EPS"
+
+#: src/core/diagnostics.c
+msgid "DVI preview"
+msgstr "Aperçu DVI"
+
+#: src/core/diagnostics.c
+msgid "Remote machines"
+msgstr "Machines distantes"
+
+#: src/core/diagnostics.c
+msgid "Python for Jupyter notebooks"
+msgstr "Python pour les notebooks Jupyter"
+
+#: src/core/diagnostics.c
+msgid "Running notebook cells (jupyter_client, ipykernel)"
+msgstr "Exécution des cellules des notebooks (jupyter_client, ipykernel)"
+
+#: src/core/diagnostics.c
+msgid "Git tab and Git badges"
+msgstr "Onglet Git et badges Git"
+
+#: src/core/diagnostics.c
+msgid "Search in files"
+msgstr "Recherche dans les fichiers"
+
+#: src/core/diagnostics.c
+msgid "Deep Search, Disk Usage and the Git tab (GNU find)"
+msgstr "Recherche approfondie, Espace disque et l’onglet Git (GNU find)"
+
+#: src/core/diagnostics.c
+msgid "built in"
+msgstr "intégré"
+
+#: src/chrome/help.c
+msgid "Diagnostics tab"
+msgstr "Onglet Diagnostics"
+
+#: src/chrome/help.c
+msgctxt "key"
+msgid "+ menu of the tab bars"
+msgstr "Menu + des barres d’onglets"
+
+#: src/chrome/help.c
+msgid "Open the Diagnostics tab: what this computer is missing and how to install it"
+msgstr "Ouvrir l’onglet Diagnostics : ce qui manque sur cet ordinateur et comment l’installer"
+
+#: src/chrome/help.c
+msgid "Close the Diagnostics tab"
+msgstr "Fermer l’onglet Diagnostics"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

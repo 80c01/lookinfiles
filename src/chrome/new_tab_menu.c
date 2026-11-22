@@ -1,5 +1,6 @@
 /* The + button of the tab bars and its menu of new tabs (see new_tab_menu.h) */
 #include "chrome/new_tab_menu.h"
+#include "chrome/diagnostics_tab.h"
 #include "chrome/launcher_tab.h"
 #include "core/i18n.h"
 #include "editor/editor.h"
@@ -12,7 +13,8 @@
 typedef enum {
     NEW_TAB_APPLICATION,
     NEW_TAB_EDITOR,
-    NEW_TAB_TERMINAL
+    NEW_TAB_TERMINAL,
+    NEW_TAB_DIAGNOSTICS
 } NewTabKind;
 
 static void open_new_tab(AppData* app, GtkNotebook* nb, NewTabKind kind) {
@@ -28,6 +30,9 @@ static void open_new_tab(AppData* app, GtkNotebook* nb, NewTabKind kind) {
 #ifdef HAVE_VTE
         gtk_widget_grab_focus(terminal_add_tab(app, nb));
 #endif
+        break;
+    case NEW_TAB_DIAGNOSTICS:
+        diagnostics_tab_show(app, NULL);
         break;
     }
 }
@@ -80,6 +85,7 @@ static void on_plus_clicked(GtkButton* button, gpointer data) {
     menu_item(box, app, nb, _("Applications"), NEW_TAB_APPLICATION, TRUE, NULL);
     menu_item(box, app, nb, _("Editor"), NEW_TAB_EDITOR, TRUE, NULL);
     menu_item(box, app, nb, _("Terminal"), NEW_TAB_TERMINAL, has_terminal, _("Needs VTE for GTK 4"));
+    menu_item(box, app, nb, _("Diagnostics"), NEW_TAB_DIAGNOSTICS, TRUE, NULL);
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect_swapped(popover, "closed", G_CALLBACK(gtk_widget_unparent), popover);
     gtk_popover_popup(GTK_POPOVER(popover));

@@ -2,6 +2,10 @@
 
 ## Une fonction manque
 
+L’onglet [Diagnostics](diagnostics.md) (**+** → **Diagnostics**) liste ce
+qui manque sur cet ordinateur, avec la commande qui installe chaque
+élément pour votre système.
+
 Certaines fonctions ont besoin d’une bibliothèque facultative à la
 compilation. Installez-la, puis relancez `make` :
 
@@ -14,11 +18,10 @@ compilation. Installez-la, puis relancez `make` :
 | Les fichiers 7z, RAR, xz, zstd, ISO ou RPM ne sont pas listés | `libarchive-dev` |
 | Les colonnes Parquet indiquent « la compression ZSTD n’est pas prise en charge » | `libzstd-dev` |
 
-Un programme sert à l’exécution, sans recompiler :
-
-| Symptôme | À installer |
-|---|---|
-| Les machines distantes ne se connectent pas (« sshfs requis ») | `sshfs` |
+Des programmes servent à l’exécution, sans recompiler : le client OpenSSH
+(`ssh`) pour les machines distantes, Universal Ctags, LaTeX, Ghostscript,
+Python avec `jupyter_client` et `ipykernel`, les serveurs de langage.
+L’onglet Diagnostics les vérifie tous.
 
 ## « cannot open display »
 

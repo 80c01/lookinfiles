@@ -31,6 +31,7 @@
 #include "chrome/help_guide.h"
 #include "chrome/launcher_tab.h"
 #include "sysmon/sysmon_tab.h"
+#include "chrome/diagnostics_tab.h"
 #include "diskuse/disk_usage_tab.h"
 #include "preview/browser.h"
 #include "canvas/canvas_view.h"
@@ -472,6 +473,7 @@ void workspace_switch(AppData* app, gint idx) {
             help_guide_workspace_hidden(app, &app->workspaces[app->current_ws]);
             launcher_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             sysmon_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
+            diagnostics_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             disk_usage_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             deep_search_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             code_problems_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -506,6 +508,7 @@ void workspace_switch(AppData* app, gint idx) {
         project_search_workspace_shown(app, ws);
         help_guide_workspace_shown(app, ws);
         sysmon_tab_workspace_shown(app, ws);
+        diagnostics_tab_workspace_shown(app, ws);
         disk_usage_tab_workspace_shown(app, ws);
         deep_search_tab_workspace_shown(app, ws);
         code_problems_workspace_shown(app, ws);
@@ -783,6 +786,7 @@ void workspace_remove(AppData* app, gint idx) {
     project_search_workspace_removed(app, rm);
     help_guide_workspace_removed(app, rm);
     sysmon_tab_workspace_removed(app, rm);
+    diagnostics_tab_workspace_removed(app, rm);
     disk_usage_tab_workspace_removed(app, rm);
     deep_search_tab_workspace_removed(app, rm);
     code_problems_workspace_removed(app, rm);

@@ -58,6 +58,8 @@ la [référence du clavier](../keyboard.md) (en anglais).
 
 **Aide**
 
+- [Diagnostics](diagnostics.md) : ce qui manque sur cet ordinateur, et
+  comment l’installer.
 - [Dépannage](troubleshooting.md) : fonctions manquantes, problèmes
   courants.
 

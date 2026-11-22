@@ -50,6 +50,8 @@ of the current mode. The complete list of keys is in the
 
 **Help**
 
+- [Diagnostics](diagnostics.md): what is missing on this computer, and
+  how to install it.
 - [Troubleshooting](troubleshooting.md): missing features, common problems.
 
 ## Reading this guide in LookinFiles

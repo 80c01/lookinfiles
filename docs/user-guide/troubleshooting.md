@@ -2,6 +2,10 @@
 
 ## A feature is missing
 
+The [Diagnostics](diagnostics.md) tab (**+** → **Diagnostics**) lists what
+this computer is missing, with the command that installs each piece for
+your system.
+
 Some features need an optional library at build time. Install it, then
 run `make` again:
 
@@ -14,11 +18,10 @@ run `make` again:
 | 7z, RAR, xz, zstd, ISO or RPM files are not listed | `libarchive-dev` |
 | Parquet columns say "ZSTD compression is not supported" | `libzstd-dev` |
 
-One program is used at run time, without rebuilding:
-
-| Symptom | Install |
-|---|---|
-| Remote machines do not connect ("sshfs Required") | `sshfs` |
+Programs are used at run time, without rebuilding: the OpenSSH client
+(`ssh`) for remote machines, Universal Ctags, LaTeX, Ghostscript, Python
+with `jupyter_client` and `ipykernel`, the language servers. The
+Diagnostics tab checks every one of them.
 
 ## "cannot open display"
 

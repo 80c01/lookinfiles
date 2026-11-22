@@ -250,6 +250,13 @@ mode move in the process list)
 | `Ctrl+F` (Notepad), `/` (Vim), `C-s` (Emacs), or a click in the field above the list | Filter the processes: only those whose name, user or PID hold every word typed (any case) and that meet every condition: `cpu>10` (also `cpu>10%`), `mem>100M` (`K`, `M`, `G`, `T`; no unit: MB), `threads>=50`, with `>`, `>=`, `<`, `<=` (a process stays shown for three readings once its values no longer match, and as long as it is selected; the title gives how many match); `Enter` / `Down` go back to the list with the filter kept, `Esc` (Emacs: also `C-g`) empties the field, again goes back to the list |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the System Monitor tab (also its cross) |
 
+**Diagnostics tab** (what this computer is missing and how to install it;
+opened from the **+** menu of the tab bars)
+
+| Key | Action |
+|---|---|
+| `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Diagnostics tab (also its cross) |
+
 **Git tab** (the uncommitted changes and the history of the repository of
 the current folder; the navigation keys of the global mode move in the lists)
 
