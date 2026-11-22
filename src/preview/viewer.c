@@ -465,6 +465,10 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         input.text = td->utf8_text;
         input.text_len = text_len;
         input.text_truncated = td->preview;
+        if (preview_format_reads_file(&input)) {
+            td->local = preview_source_local(td->full, FALSE, cancellable); /* remote: a copy to open */
+            input.path = td->local != NULL ? td->local : td->full;
+        }
         td->doc = preview_format_build(&input, cancellable, NULL);
     }
     /* Rendered documents are parsed here: the UI thread only puts them in the view */

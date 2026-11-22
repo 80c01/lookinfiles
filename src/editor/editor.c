@@ -631,7 +631,7 @@ EditorTab* editor_open_at(AppData* app, const gchar* path, gint line, gint index
     if (tab != NULL) {
         editor_open_file(app, tab->name, tab->path);
     } else {
-        if (!g_file_test(path, G_FILE_TEST_IS_REGULAR)) return NULL;
+        if (!vfs_file_test(path, G_FILE_TEST_IS_REGULAR)) return NULL;
         gchar* name = g_path_get_basename(path);
         editor_open_file(app, name, path);
         g_free(name);

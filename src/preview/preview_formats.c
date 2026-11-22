@@ -1095,6 +1095,12 @@ gboolean preview_format_has_raw_builder(FileKind kind) {
     return data_tree_builder_for(kind) != NULL || kind == FILE_KIND_DOCUMENT || kind == FILE_KIND_OLE;
 }
 
+gboolean preview_format_reads_file(const PreviewInput* in) {
+    gboolean cut = in->text == NULL || in->text_truncated;
+    return in->kind == FILE_KIND_MAIL ||
+           (cut && (in->kind == FILE_KIND_LOG || in->kind == FILE_KIND_RTF || in->kind == FILE_KIND_NOTEBOOK));
+}
+
 PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancellable,
                                  GError** error) {
     PreviewBuildFunc build = builder_for(input->kind);

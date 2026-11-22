@@ -96,8 +96,10 @@ Les machines ajoutées à la main sont enregistrées dans
 Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
 locaux : Git (pas de badges ni d’onglet Git), la recherche dans les
 fichiers, Deep Search, Aller au fichier, l’occupation disque, les serveurs
-de langage (complétion, diagnostics) et la compilation LaTeX. Les fonctions
-de recherche le disent dans la barre d’état ; les autres restent éteintes.
+de langage (complétion, diagnostics) et la compilation LaTeX. L’ouverture
+d’un fichier avec une autre application n’est pas disponible non plus. Les
+fonctions de recherche et l’ouverture avec l’application par défaut le
+disent dans la barre d’état ; les autres restent éteintes.
 
 ## Vitesse
 

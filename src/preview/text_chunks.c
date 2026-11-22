@@ -8,6 +8,7 @@
 #include "widgets/diff_gutter.h"
 #include "widgets/color_column.h"
 #include "core/text_encoding.h"
+#include "core/vfs.h"
 #include "preview/preview_full.h"
 
 typedef struct TextChunks {
@@ -53,18 +54,35 @@ static void chunk_task_free(gpointer data) {
     g_free(t);
 }
 
+/* Up to PREVIEW_BYTES bytes of path from offset on (over SFTP for a remote
+ * machine's file); NULL when it cannot be read */
+static gchar* read_chunk(const gchar* path, gint64 offset, GCancellable* cancel, gsize* n) {
+    *n = 0;
+    if (vfs_is_remote(path)) {
+        GBytes* bytes = vfs_read_range(path, (guint64)offset, PREVIEW_BYTES, NULL, cancel, NULL);
+        if (bytes == NULL) return NULL;
+        gchar* buf = g_malloc(PREVIEW_BYTES + 1);
+        *n = MIN(g_bytes_get_size(bytes), (gsize)PREVIEW_BYTES);
+        memcpy(buf, g_bytes_get_data(bytes, NULL), *n);
+        g_bytes_unref(bytes);
+        return buf;
+    }
+    FILE* fp = g_fopen(path, "rb");
+    if (fp == NULL) return NULL;
+    gchar* buf = g_malloc(PREVIEW_BYTES + 1);
+    if (fseeko(fp, offset, SEEK_SET) == 0) {
+        *n = fread(buf, 1, PREVIEW_BYTES, fp);
+    }
+    fclose(fp);
+    return buf;
+}
+
 static void chunk_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)source;
-    (void)cancellable;
     ChunkTask* t = data;
-    FILE* fp = g_fopen(t->path, "rb");
-    if (fp != NULL) {
-        gchar* buf = g_malloc(PREVIEW_BYTES + 1);
-        gsize n = 0;
-        if (fseeko(fp, t->offset, SEEK_SET) == 0) {
-            n = fread(buf, 1, PREVIEW_BYTES, fp);
-        }
-        fclose(fp);
+    gsize n = 0;
+    gchar* buf = read_chunk(t->path, t->offset, cancellable, &n);
+    if (buf != NULL) {
         /* Skip the rest of a character cut by the previous chunk, and end
          * at the last line break so lines are not split */
         gsize start = 0;

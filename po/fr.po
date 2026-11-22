@@ -13083,6 +13083,10 @@ msgstr "Deep Search n’est pas encore disponible sur une machine distante"
 msgid "Search in files is not available on a remote machine yet"
 msgstr "La recherche dans les fichiers n’est pas encore disponible sur une machine distante"
 
+#: src/explorer/files_menu.c
+msgid "Opening with another application is not available on a remote machine yet"
+msgstr "L’ouverture avec une autre application n’est pas encore disponible sur une machine distante"
+
 #: src/search/quick_open.c
 msgid "Go to File is not available on a remote machine yet"
 msgstr "Aller au fichier n’est pas encore disponible sur une machine distante"

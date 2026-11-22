@@ -87,8 +87,9 @@ with sshfs are unmounted at start-up. Machines added by hand are saved in
 
 These run on this computer and need local files: Git (no badges, no Git
 tab), the search in files, Deep Search, Go to File, Disk Usage, the language
-servers (completion, diagnostics) and LaTeX builds. The search features say
-so in the status bar; the others stay off.
+servers (completion, diagnostics) and LaTeX builds. Opening a file with
+another application is not available either. The search features and Open
+With Default App say so in the status bar; the others stay off.
 
 ## Speed
 

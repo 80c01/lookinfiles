@@ -5,6 +5,7 @@
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "core/path_copy.h"
+#include "core/remote_path.h"
 #include "explorer/bookmarks.h"
 #include "preview/browser.h"
 #include "editor/editor.h"
@@ -64,6 +65,9 @@ static void on_launch_done(GObject* source, GAsyncResult* res, gpointer data) {
 }
 
 static void open_default_app(AppData* app, const gchar* path) {
+    if (remote_path_refuse(app, path, _("Opening with another application is not available on a remote machine yet"))) {
+        return;
+    }
     GFile* file = g_file_new_for_path(path);
     GtkFileLauncher* launcher = gtk_file_launcher_new(file);
     gtk_file_launcher_launch(launcher, app->window, NULL, on_launch_done, app);

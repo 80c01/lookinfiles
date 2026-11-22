@@ -48,6 +48,11 @@ gboolean preview_format_has_builder(FileKind kind);
  * file's text: JSON shows a tree, and its indented text as raw view */
 gboolean preview_format_has_raw_builder(FileKind kind);
 
+/* TRUE if the builder of in's kind opens in->path even with the text
+ * (raw bytes of a mail, the end of a cut log, notebook or RTF): a remote
+ * machine's file then needs a local copy (preview_source_local()) */
+gboolean preview_format_reads_file(const PreviewInput* in);
+
 /* Build the preview of a file. NULL with error set when the content cannot
  * be shown this way (G_IO_ERROR_NOT_SUPPORTED: no builder for the kind). */
 PreviewDoc* preview_format_build(const PreviewInput* input, GCancellable* cancellable,

@@ -6,6 +6,7 @@
 #include "core/file_types.h"
 #include "core/i18n.h"
 #include "core/text_encoding.h"
+#include "core/vfs.h"
 #include "editor/editor.h"
 #include "git/git_utils.h"
 #include "theme/icons.h"
@@ -362,25 +363,43 @@ static void diff_task_data_free(gpointer data) {
     g_free(td);
 }
 
-static gchar* read_text_file(const gchar* path, gsize* out_len, gchar** err_out) {
+/* The bytes of path, NUL-terminated (over SFTP for a remote machine's
+ * file); NULL when it cannot be read or is larger than DIFF_MAX_BYTES
+ * (*too_large then) */
+static gchar* load_bytes(const gchar* path, gsize* len, gboolean* too_large) {
+    *too_large = FALSE;
+    if (vfs_is_remote(path)) {
+        guint64 size = 0;
+        GBytes* bytes = vfs_read(path, DIFF_MAX_BYTES + 1, &size, NULL, NULL);
+        if (bytes == NULL) return NULL;
+        gsize n = g_bytes_get_size(bytes);
+        *too_large = size > DIFF_MAX_BYTES || n > DIFF_MAX_BYTES;
+        gchar* raw = NULL;
+        if (!*too_large) {
+            raw = g_malloc(n + 1);
+            memcpy(raw, g_bytes_get_data(bytes, NULL), n);
+            raw[n] = '\0';
+        }
+        g_bytes_unref(bytes);
+        *len = n;
+        return raw;
+    }
     GStatBuf st;
-    if (g_stat(path, &st) != 0) {
-        gchar* base = g_path_get_basename(path);
-        *err_out = g_strdup_printf(_("Cannot read %s"), base);
-        g_free(base);
-        return NULL;
-    }
-    if (st.st_size > DIFF_MAX_BYTES) {
-        gchar* base = g_path_get_basename(path);
-        *err_out = g_strdup_printf(_("%s is too large to compare"), base);
-        g_free(base);
-        return NULL;
-    }
+    if (g_stat(path, &st) != 0) return NULL;
+    *too_large = st.st_size > DIFF_MAX_BYTES;
     gchar* raw = NULL;
+    if (*too_large || !g_file_get_contents(path, &raw, len, NULL)) return NULL;
+    return raw;
+}
+
+static gchar* read_text_file(const gchar* path, gsize* out_len, gchar** err_out) {
     gsize len = 0;
-    if (!g_file_get_contents(path, &raw, &len, NULL)) {
+    gboolean too_large = FALSE;
+    gchar* raw = load_bytes(path, &len, &too_large);
+    if (raw == NULL) {
         gchar* base = g_path_get_basename(path);
-        *err_out = g_strdup_printf(_("Cannot read %s"), base);
+        *err_out = too_large ? g_strdup_printf(_("%s is too large to compare"), base)
+                             : g_strdup_printf(_("Cannot read %s"), base);
         g_free(base);
         return NULL;
     }
