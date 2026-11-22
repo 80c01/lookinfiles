@@ -1,4 +1,5 @@
 #include "preview/viewer.h"
+#include "preview/preview_source.h"
 #include "core/profile.h"
 #include "core/memory_trim.h"
 #include "preview/preview_state.h"
@@ -342,27 +343,25 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     }
 
     td->kind = file_kind_from_name(td->name);
-    td->has_stamp = file_stamp_read(td->full, &td->stamp);
+    td->has_stamp = preview_source_stamp(td->full, &td->stamp); /* over SFTP for a remote file */
     td->fsize = td->has_stamp ? td->stamp.size : -1;
     if (td->has_stamp && td->has_cached && file_stamp_equal(&td->stamp, &td->cached_stamp)) {
         td->unchanged = TRUE;
         g_task_return_boolean(task, TRUE);
         return;
     }
-    FILE* fp = (td->fsize >= 0) ? g_fopen(td->full, "rb") : NULL;
+    td->preview = (td->fsize > PREVIEW_THRESHOLD) && !td->whole;
+    PreviewSource* fp = (td->fsize >= 0) ? preview_source_open(td->full, td->preview, cancellable) : NULL;
     if (fp == NULL) {
         td->error_msg = g_strdup_printf(_("[ Cannot read: %s ]"), td->name);
         g_task_return_boolean(task, TRUE);
         return;
     }
 
-    td->preview = (td->fsize > PREVIEW_THRESHOLD) && !td->whole;
     gsize cap = td->preview ? PREVIEW_BYTES : (gsize)td->fsize + 1;
-    if (cap < FILE_SNIFF_BYTES) {
-        cap = FILE_SNIFF_BYTES;
-    }
+    cap = MAX(cap, FILE_SNIFF_BYTES);
     gchar* contents = g_malloc(cap + 1);
-    gsize len = fread(contents, 1, FILE_SNIFF_BYTES, fp);
+    gsize len = preview_source_read(fp, contents, FILE_SNIFF_BYTES);
     td->kind = file_kind_detect(td->name, (const guchar*)contents, len);
     gboolean structured = preview_format_has_builder(td->kind) &&
                           (!td->render_raw || preview_format_has_raw_builder(td->kind));
@@ -373,7 +372,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     };
 
     if (file_kind_is_media(td->kind)) {
-        fclose(fp);
+        preview_source_close(fp);
         g_free(contents);
         g_task_return_boolean(task, TRUE);
         return;
@@ -393,7 +392,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
                 contents = g_realloc(contents, PREVIEW_BYTES + 1);
             }
             while (len < PREVIEW_BYTES && !g_cancellable_is_cancelled(cancellable)) {
-                gsize n = fread(contents + len, 1, PREVIEW_BYTES - len, fp);
+                gsize n = preview_source_read(fp, contents + len, PREVIEW_BYTES - len);
                 if (n == 0) {
                     break;
                 }
@@ -403,7 +402,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
                                               len, err != NULL ? err->message : NULL);
         }
         g_clear_error(&err);
-        fclose(fp);
+        preview_source_close(fp);
         g_free(contents);
         if (g_task_return_error_if_cancelled(task)) {
             return;
@@ -421,7 +420,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
             cap *= 2;
             contents = g_realloc(contents, cap + 1);
         }
-        gsize n = fread(contents + len, 1, cap - len, fp);
+        gsize n = preview_source_read(fp, contents + len, cap - len);
         if (n == 0) {
             break;
         }
@@ -430,7 +429,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     contents[len] = '\0';
     td->content_type = g_content_type_guess(td->name, (const guchar*)contents,
                                             MIN(len, FILE_SNIFF_BYTES), NULL);
-    fclose(fp);
+    preview_source_close(fp);
 
     if (g_task_return_error_if_cancelled(task)) {
         g_free(contents);

@@ -45,4 +45,17 @@ void vfs_entry_free(gpointer entry);
  * connection; TIMED_OUT, CANCELLED; CONNECTION_CLOSED. */
 GPtrArray* vfs_list(const gchar* path, GCancellable* cancel, GError** error);
 
+/* What path is (links followed; e->name NULL): FALSE with error as
+ * vfs_list() */
+gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError** error);
+
+/* The first max bytes of the remote file at path (G_MAXUINT64: all of it);
+ * *size (may be NULL) gets the file's size. NULL with error as vfs_list(). */
+GBytes* vfs_read(const gchar* path, guint64 max, guint64* size, GCancellable* cancel, GError** error);
+
+/* Whether error says the SFTP session could not serve the call (no master
+ * connection, lost, no answer) rather than the server's answer about the
+ * file: a caller may then read the sshfs mount instead */
+gboolean vfs_error_is_connection(const GError* error);
+
 #endif /* VFS_H */

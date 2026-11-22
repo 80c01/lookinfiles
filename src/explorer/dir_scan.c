@@ -119,9 +119,8 @@ static gboolean read_remote(DirScanNode* node, gboolean show_hidden, GCancellabl
     GError* error = NULL;
     GPtrArray* list = vfs_list(node->dirname, cancellable, &error);
     if (list == NULL) {
-        gboolean answered = g_error_matches(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND) ||
-                            g_error_matches(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED) ||
-                            g_error_matches(error, G_IO_ERROR, G_IO_ERROR_FAILED);
+        gboolean answered = !vfs_error_is_connection(error) &&
+                            !g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
         if (answered) {
             node->unreadable = TRUE;
         } else {

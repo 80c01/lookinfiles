@@ -4,6 +4,7 @@
  * connection's socket is a plain file, so ssh_session.c takes it as open. */
 #include "core/vfs.h"
 #include "explorer/dir_scan.h"
+#include "preview/preview_source.h"
 #include "sftp_test_server.h"
 
 #include <glib/gstdio.h>
@@ -104,6 +105,31 @@ static void test_list(void) {
     g_assert_cmpuint(list->len, ==, 0);
     g_ptr_array_unref(list);
 
+    VfsEntry info;
+    g_assert_true(vfs_stat("/virtual/machine/to-sub", &info, NULL, &err));
+    g_assert_true(info.is_dir); /* followed */
+    g_assert_true(vfs_stat("/virtual/machine/file.txt", &info, NULL, &err));
+    g_assert_false(info.is_dir);
+    g_assert_cmpint(info.size, ==, 5);
+    g_assert_false(vfs_stat("/virtual/machine/nope", &info, NULL, &err));
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NOT_FOUND);
+    g_assert_false(vfs_error_is_connection(err));
+    g_clear_error(&err);
+
+    guint64 size = 0;
+    GBytes* bytes = vfs_read("/virtual/machine/file.txt", G_MAXUINT64, &size, NULL, &err);
+    g_assert_no_error(err);
+    g_assert_cmpmem(g_bytes_get_data(bytes, NULL), g_bytes_get_size(bytes), "12345", 5);
+    g_assert_cmpuint(size, ==, 5);
+    g_bytes_unref(bytes);
+    bytes = vfs_read("/virtual/machine/file.txt", 2, &size, NULL, &err);
+    g_assert_cmpmem(g_bytes_get_data(bytes, NULL), g_bytes_get_size(bytes), "12", 2);
+    g_assert_cmpuint(size, ==, 5);
+    g_bytes_unref(bytes);
+    g_assert_null(vfs_read("/virtual/machine/sub", 10, NULL, NULL, &err)); /* a folder */
+    g_assert_nonnull(err);
+    g_clear_error(&err);
+
     g_assert_null(vfs_list("/virtual/machine/missing", NULL, &err));
     g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NOT_FOUND);
     g_clear_error(&err);
@@ -118,6 +144,7 @@ static void test_list(void) {
     gint64 start = g_get_monotonic_time();
     g_assert_null(vfs_list(mount, NULL, &err));
     g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED);
+    g_assert_true(vfs_error_is_connection(err));
     g_clear_error(&err);
     g_assert_cmpint(g_get_monotonic_time() - start, <, 5 * G_USEC_PER_SEC);
 
@@ -222,6 +249,57 @@ static void test_dir_scan(void) {
     g_free(sock);
 }
 
+/* The preview's reads: over SFTP, the mount when no session can serve */
+static void test_preview_source(void) {
+    gchar* sock = fake_master();
+    if (sock == NULL) {
+        g_test_skip("no multiplexing here");
+        return;
+    }
+    gchar* remote = g_build_filename(root, "ps-remote", NULL);
+    gchar* mount = g_build_filename(root, "ps-mount", NULL);
+    g_assert_cmpint(g_mkdir(remote, 0755), ==, 0);
+    g_assert_cmpint(g_mkdir(mount, 0755), ==, 0);
+    gchar* rf = g_build_filename(remote, "f.txt", NULL);
+    gchar* mf = g_build_filename(mount, "f.txt", NULL);
+    g_assert_true(g_file_set_contents(rf, "remote text", -1, NULL));
+    g_assert_true(g_file_set_contents(mf, "mount", -1, NULL));
+    vfs_mount(mount, &TARGET, remote);
+
+    FileStamp st;
+    g_assert_true(preview_source_stamp(mf, &st));
+    g_assert_cmpint(st.size, ==, 11); /* the remote file's */
+    PreviewSource* src = preview_source_open(mf, FALSE, NULL);
+    g_assert_nonnull(src);
+    gchar buf[64];
+    gsize n = preview_source_read(src, buf, 6);
+    n += preview_source_read(src, buf + n, sizeof buf - n);
+    g_assert_cmpuint(preview_source_read(src, buf, sizeof buf), ==, 0);
+    preview_source_close(src);
+    g_assert_cmpmem(buf, n, "remote text", 11);
+    gchar* missing = g_build_filename(mount, "nope", NULL);
+    g_assert_false(preview_source_stamp(missing, &st));
+    g_assert_null(preview_source_open(missing, TRUE, NULL));
+
+    g_unlink(sock); /* no session: the mount */
+    vfs_unmount(mount);
+    vfs_mount(mount, &TARGET, remote);
+    g_assert_true(preview_source_stamp(mf, &st));
+    g_assert_cmpint(st.size, ==, 5);
+    src = preview_source_open(mf, TRUE, NULL);
+    n = preview_source_read(src, buf, sizeof buf);
+    preview_source_close(src);
+    g_assert_cmpmem(buf, n, "mount", 5);
+
+    vfs_unmount(mount);
+    g_free(missing);
+    g_free(mf);
+    g_free(rf);
+    g_free(mount);
+    g_free(remote);
+    g_free(sock);
+}
+
 int main(int argc, char** argv) {
     if (is_ssh_call(argc, argv)) return serve_stdio();
     g_test_init(&argc, &argv, NULL);
@@ -234,6 +312,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/vfs/list", test_list);
     g_test_add_func("/vfs/threads", test_threads);
     g_test_add_func("/vfs/dir_scan", test_dir_scan);
+    g_test_add_func("/vfs/preview_source", test_preview_source);
     int status = g_test_run();
     vfs_shutdown();
     const gchar* rm_argv[] = { "rm", "-rf", root, runtime, NULL };

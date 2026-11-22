@@ -228,6 +228,10 @@ typedef struct {
     GCond cond;
     gboolean done;
     GPtrArray* entries; /* list: VfsEntry */
+    VfsEntry info;      /* stat */
+    guint64 max;        /* read: bytes wanted */
+    guint64 size;       /* read: the file's size */
+    GBytes* bytes;      /* read */
     GError* error;
     guint waiting; /* link targets being looked at */
 } Job;
@@ -237,6 +241,7 @@ static void job_unref(Job* j) {
     mount_unref(j->m);
     g_free(j->remote);
     if (j->entries != NULL) g_ptr_array_unref(j->entries);
+    if (j->bytes != NULL) g_bytes_unref(j->bytes);
     g_clear_error(&j->error);
     g_mutex_clear(&j->mu);
     g_cond_clear(&j->cond);
@@ -404,4 +409,91 @@ GPtrArray* vfs_list(const gchar* path, GCancellable* cancel, GError** error) {
     }
     job_unref(j);
     return out;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Stat, read                                                                */
+/* ------------------------------------------------------------------------- */
+
+static void on_stat(GObject* src, GAsyncResult* res, gpointer data) {
+    (void)src;
+    Job* j = data;
+    SftpAttrs a;
+    GError* error = NULL;
+    if (sftp_client_stat_finish(res, &a, &error)) {
+        j->info.is_dir = sftp_attrs_is_dir(&a);
+        j->info.size = (a.flags & SFTP_ATTR_SIZE) ? (gint64)a.size : 0;
+        j->info.mtime = (a.flags & SFTP_ATTR_ACMODTIME) ? a.mtime : 0;
+    }
+    job_done(j, error);
+}
+
+static gboolean run_stat(gpointer data) {
+    Job* j = data;
+    GError* error = NULL;
+    SftpClient* c = mount_client(j->m, &error);
+    if (c == NULL) {
+        job_done(j, error);
+    } else {
+        sftp_client_stat_async(c, j->remote, TRUE, NULL, on_stat, j);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError** error) {
+    Job* j = job_new(path, error);
+    if (j == NULL) return FALSE;
+    gboolean ok = job_run(j, run_stat, cancel, error);
+    if (ok && e != NULL) {
+        g_mutex_lock(&j->mu);
+        *e = j->info;
+        e->name = NULL;
+        g_mutex_unlock(&j->mu);
+    }
+    job_unref(j);
+    return ok;
+}
+
+static void on_read(GObject* src, GAsyncResult* res, gpointer data) {
+    (void)src;
+    Job* j = data;
+    GError* error = NULL;
+    j->bytes = sftp_client_read_finish(res, &j->size, &error);
+    job_done(j, error);
+}
+
+static gboolean run_read(gpointer data) {
+    Job* j = data;
+    GError* error = NULL;
+    SftpClient* c = mount_client(j->m, &error);
+    if (c == NULL) {
+        job_done(j, error);
+    } else {
+        sftp_client_read_async(c, j->remote, j->max, NULL, on_read, j);
+    }
+    return G_SOURCE_REMOVE;
+}
+
+GBytes* vfs_read(const gchar* path, guint64 max, guint64* size, GCancellable* cancel, GError** error) {
+    if (size != NULL) *size = 0;
+    Job* j = job_new(path, error);
+    if (j == NULL) return NULL;
+    j->max = max;
+    GBytes* out = NULL;
+    if (job_run(j, run_read, cancel, error)) {
+        g_mutex_lock(&j->mu);
+        out = g_steal_pointer(&j->bytes);
+        if (size != NULL) *size = j->size;
+        g_mutex_unlock(&j->mu);
+    }
+    job_unref(j);
+    return out;
+}
+
+gboolean vfs_error_is_connection(const GError* error) {
+    return error != NULL && error->domain == G_IO_ERROR &&
+           (error->code == G_IO_ERROR_NOT_CONNECTED || error->code == G_IO_ERROR_CONNECTION_CLOSED ||
+            error->code == G_IO_ERROR_CLOSED || error->code == G_IO_ERROR_TIMED_OUT ||
+            error->code == G_IO_ERROR_BROKEN_PIPE || error->code == G_IO_ERROR_INVALID_DATA ||
+            error->code == G_IO_ERROR_NOT_SUPPORTED || error->code == G_IO_ERROR_WOULD_BLOCK);
 }

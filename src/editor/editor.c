@@ -18,6 +18,8 @@
 #include "theme/icons.h"
 #include "latex/latex_build.h"
 #include "explorer/fs_watch.h"
+#include "core/vfs.h"
+#include "editor/editor_remote.h"
 
 
 /* Show or hide the line numbers of tab (NULL: the current editor tab) */
@@ -290,6 +292,10 @@ void editor_open_text_file(AppData* app, const gchar* name, const gchar* full) {
         }
     }
 
+    if (vfs_is_remote(full)) { /* read over SFTP, off the interface thread */
+        editor_remote_open(app, name, full);
+        return;
+    }
     GStatBuf st;
     if (g_stat(full, &st) != 0) {
         gchar* msg = g_strdup_printf("[ Cannot read: %s ]", name);
@@ -314,7 +320,15 @@ void editor_open_text_file(AppData* app, const gchar* name, const gchar* full) {
         g_free(msg);
         return;
     }
+    editor_open_contents(app, name, full, contents, len);
+}
 
+void editor_open_contents(AppData* app, const gchar* name, const gchar* full, gchar* contents, gsize len) {
+    GtkNotebook* target_nb = editor_target_notebook(app);
+    if (target_nb == NULL) {
+        g_free(contents);
+        return;
+    }
     /* A text buffer takes valid UTF-8 only: binary files are not edited (an
      * empty buffer saved would erase them), other encodings are converted */
     if (!g_utf8_validate(contents, (gssize)len, NULL)) {

@@ -332,8 +332,8 @@ done
 # editor_private.h is internal to the editor tab files
 for f in $(grep -lE '#include "([a-z]+/)?editor_private.h"' $SRC_CH); do
     case "$(basename "$f")" in
-        editor.c|editor_notebooks.c|editor_tab_menu.c) ;;
-        *) echo "layering: $f includes editor_private.h (internal to editor.c, editor_notebooks.c, editor_tab_menu.c)"; status=1 ;;
+        editor.c|editor_notebooks.c|editor_tab_menu.c|editor_remote.c) ;;
+        *) echo "layering: $f includes editor_private.h (internal to editor.c, editor_notebooks.c, editor_tab_menu.c, editor_remote.c)"; status=1 ;;
     esac
 done
 

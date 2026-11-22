@@ -13,6 +13,8 @@
 #include "preview/preview_doc_view.h"
 #include "markup/markdown.h"
 #include "core/remote_path.h"
+#include "core/vfs.h"
+#include "preview/preview_source.h"
 #include "org/orgmode.h"
 #include "preview/preview_cache.h"
 #include "theme/icons.h"
@@ -20,7 +22,6 @@
 #include "diskuse/disk_usage_tab.h"
 #include "search/deep_search_tab.h"
 
-#include <stdio.h>
 
 /* Wait before reading: holding j/k through folders starts no work until the
  * selection stops on one. */
@@ -77,20 +78,54 @@ static DirSummarySort summary_sort(gint sort_mode) {
 /* First PREVIEW_BYTES of the README (never the whole file), as valid UTF-8 */
 static void read_readme(DirPreviewJob* job) {
     job->readme_path = g_build_filename(job->full, job->summary->readme, NULL);
-    FILE* f = fopen(job->readme_path, "rb");
+    PreviewSource* f = preview_source_open(job->readme_path, TRUE, NULL); /* over SFTP when remote */
     if (f == NULL) {
         g_clear_pointer(&job->readme_path, g_free);
         return;
     }
     gchar* buf = g_malloc(PREVIEW_BYTES + 1);
-    gsize len = fread(buf, 1, PREVIEW_BYTES, f);
+    gsize len = 0;
+    gsize n;
+    while (len < PREVIEW_BYTES && (n = preview_source_read(f, buf + len, PREVIEW_BYTES - len)) > 0) len += n;
     buf[len] = '\0';
-    if (fseek(f, 0, SEEK_END) == 0) {
-        job->readme_size = (gint64)ftell(f);
-    }
-    fclose(f);
+    preview_source_close(f);
+    FileStamp st;
+    job->readme_size = preview_source_stamp(job->readme_path, &st) ? st.size : (gint64)len;
     job->readme_text = g_utf8_make_valid(buf, (gssize)len);
     g_free(buf);
+}
+
+/* After the listing: the README, the git branch */
+static void finish_listing(DirPreviewJob* job, GCancellable* cancellable) {
+    dir_summary_sort(job->summary, job->sort);
+    if (job->summary->readme != NULL && !g_cancellable_is_cancelled(cancellable)) {
+        read_readme(job);
+    }
+    if (!g_cancellable_is_cancelled(cancellable)) {
+        job->branch = git_read_branch(job->full); /* reads .git/HEAD, no subprocess */
+    }
+}
+
+/* A remote machine's folder listed over SFTP (vfs.h). FALSE when it is not
+ * remote, or the SFTP session cannot serve it: the mount is read then. */
+static gboolean remote_listing(DirPreviewJob* job, GCancellable* cancellable) {
+    if (!vfs_is_remote(job->full)) return FALSE;
+    GError* error = NULL;
+    GPtrArray* list = vfs_list(job->full, cancellable, &error);
+    if (list == NULL) {
+        gboolean answered = !vfs_error_is_connection(error);
+        g_error_free(error);
+        job->unreadable = answered;
+        return answered;
+    }
+    for (guint i = 0; i < list->len; i++) {
+        const VfsEntry* e = list->pdata[i];
+        if (!job->show_hidden && e->name[0] == '.') continue;
+        if (!dir_summary_add(job->summary, e->name, e->is_dir, e->is_dir ? 0 : (guint64)e->size, e->mtime)) break;
+    }
+    g_ptr_array_unref(list);
+    finish_listing(job, cancellable);
+    return TRUE;
 }
 
 /* Worker thread: one enumeration of the directory (type, size and date come
@@ -104,6 +139,11 @@ static void job_thread(GTask* task, gpointer source_object, gpointer task_data,
     /* Mail folders: the messages, not the cur / new / tmp listing */
     job->mail = mail_dir_preview(job->full, job->name, DIR_PREVIEW_ROWS, cancellable);
     if (job->mail != NULL) {
+        if (g_task_return_error_if_cancelled(task)) return;
+        g_task_return_boolean(task, TRUE);
+        return;
+    }
+    if (remote_listing(job, cancellable)) {
         if (g_task_return_error_if_cancelled(task)) return;
         g_task_return_boolean(task, TRUE);
         return;
@@ -137,13 +177,7 @@ static void job_thread(GTask* task, gpointer source_object, gpointer task_data,
             g_object_unref(info);
         }
         g_object_unref(en);
-        dir_summary_sort(job->summary, job->sort);
-        if (job->summary->readme != NULL && !g_cancellable_is_cancelled(cancellable)) {
-            read_readme(job);
-        }
-        if (!g_cancellable_is_cancelled(cancellable)) {
-            job->branch = git_read_branch(job->full); /* reads .git/HEAD, no subprocess */
-        }
+        finish_listing(job, cancellable);
     }
 
     if (g_task_return_error_if_cancelled(task)) {

@@ -1,10 +1,14 @@
 #ifndef EDITOR_PRIVATE_H
 #define EDITOR_PRIVATE_H
 
-/* Internal header of the editor tabs: editor.c, editor_notebooks.c and
- * editor_tab_menu.c (the public API is editor.h) */
+/* Internal header of the editor tabs: editor.c, editor_notebooks.c,
+ * editor_tab_menu.c and editor_remote.c (the public API is editor.h) */
 #include "editor/editor.h"
 #include "widgets/pane_geometry.h"
+
+/* editor.c */
+/* Open a tab on contents (taken, NUL-terminated), the text read from full */
+void editor_open_contents(AppData* app, const gchar* name, const gchar* full, gchar* contents, gsize len);
 
 /* editor_notebooks.c */
 /* GTK selects the neighbour page when the current one is removed: when that

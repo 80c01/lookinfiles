@@ -90,8 +90,13 @@ Layers, from bottom to top
   `sftp_client` per machine on a thread of its own (`vfs` thread, own
   `GMainContext`). The calls (`vfs_list()`) are synchronous with a one-minute
   limit, for worker threads (`dir_scan`); links to folders are followed.
-  Unit-tested with the test program as `ssh` serving SFTP. Only listings go
-  through it so far: preview, editor and file operations still use the mount.
+  `vfs_stat()`, `vfs_read()`; `vfs_error_is_connection()` tells a session
+  that could not serve (callers then read the mount) from the server's
+  answer. Unit-tested with the test program as `ssh` serving SFTP. Through
+  it so far: listings, text and hex previews, folder previews and READMEs,
+  opening in the editor. Still on the mount: formats that open the file by
+  path (images, PDF, archives, media...), saving, file operations, the
+  editor's disk-change watch.
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -515,6 +520,10 @@ Layers, from bottom to top
   them (no master connection yet, connection lost).
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
+- `preview_source` — the bytes of a file for a preview, on a worker thread:
+  `fopen()`, or `vfs_read()` for a remote machine's file (the first
+  `PREVIEW_BYTES`, or all of it), and its stamp (`vfs_stat()`); the mount
+  when the SFTP session cannot serve. Used by `viewer` and `dir_preview`.
 - `preview_cache` — bounded most-recently-used cache of previews built,
   keyed by file and settings, with the file's stamp (size, mtime, inode).
 - `path_kind` — whether a path is a folder, a file or missing, read in a
@@ -1367,6 +1376,9 @@ Layers, from bottom to top
   (`view_passive`); `editor_find_tab()` returns the view in use. In Vim mode
   the views share one `VimEngine` (kept on the buffer by `editor_vim`),
   hosted by the focused view.
+- `editor_remote` — a remote machine's file opened in the editor: read over
+  SFTP on a worker thread (`vfs_read()`, at most `EDIT_MAX_BYTES`), then
+  `editor_open_contents()` (`editor_private.h`) opens the tab.
 - `editor_watch` — external disk-change watch for open editor buffers:
   `EditorStamp` + per-file `GFileMonitor` (debounced 150 ms, re-armed on inode
   change), also checked on `APP_EVENT_FILES_CHANGED`,
