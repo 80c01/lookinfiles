@@ -195,9 +195,7 @@ static void copy_items(GtkWidget* box, GtkWidget* popover, AppData* app, const g
 /* path is in the repository of a remote machine's folder shown (its root
  * read by the explorer's git status there: no .git to look at here) */
 static gboolean in_remote_repository(AppData* app, const gchar* path) {
-    const gchar* root = git_state_root(app->git_state);
-    gsize n = root != NULL ? strlen(root) : 0;
-    return n > 0 && vfs_is_remote(path) && strncmp(path, root, n) == 0 && (path[n] == '\0' || path[n] == '/');
+    return vfs_is_remote(path) && git_state_covers(app->git_state, path);
 }
 
 static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, ExplorerRow* row) {
@@ -240,7 +238,7 @@ static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, Ex
                 g_free(lbl);
                 g_free(base);
             }
-            if (path_copy_has_relative(row->path)) {
+            if (path_copy_has_relative(row->path) || in_remote_repository(app, row->path)) {
                 menu_item(box, popover, app, _("Compare with HEAD"), NULL, FM_COMPARE_HEAD);
             }
         }

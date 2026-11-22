@@ -72,7 +72,7 @@ file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
 git_utils:palette,i18n,git_lib
 git_remote:git_state,git_utils,ssh_session,vfs
-git_mirror:vfs,app_paths,i18n
+git_mirror:vfs,app_paths,i18n,git_remote,git_utils
 git_lib:
 git_log:git_utils,git_lib
 git_worktree:git_lib,i18n

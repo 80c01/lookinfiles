@@ -3,6 +3,8 @@
 #include "core/app_paths.h"
 #include "core/i18n.h"
 #include "core/vfs.h"
+#include "git/git_remote.h"
+#include "git/git_utils.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -283,4 +285,21 @@ gboolean git_mirror_sync(const gchar* top, GCancellable* cancel, guint* copied, 
     g_free(gitdir);
     g_free(root);
     return ok;
+}
+
+gchar* git_mirror_head_blob(const gchar* path, gsize* len, GCancellable* cancel) {
+    gchar* dir = g_path_get_dirname(path);
+    gchar* top = git_remote_top(dir, cancel);
+    g_free(dir);
+    gsize n = top != NULL ? strlen(top) : 0;
+    gchar* blob = NULL;
+    if (n > 0 && strncmp(path, top, n) == 0 && path[n] == '/' && git_mirror_sync(top, cancel, NULL, NULL)) {
+        gchar* root = git_mirror_root(top);
+        gchar* copy = g_build_filename(root, path + n + 1, NULL); /* the same file below the copy */
+        blob = git_read_head_blob(copy, len);
+        g_free(copy);
+        g_free(root);
+    }
+    g_free(top);
+    return blob;
 }

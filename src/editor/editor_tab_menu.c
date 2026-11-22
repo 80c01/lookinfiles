@@ -1,6 +1,8 @@
 /* Editor tab menus: the menu of an editor tab and of a movable page, and
  * the clicks on a tab title (see editor.h) */
 #include "editor/editor.h"
+#include "git/git_state.h"
+#include "core/vfs.h"
 #include "editor/editor_private.h"
 #include "editor/editor_remote.h"
 #include "editor/editor_swap.h"
@@ -317,7 +319,8 @@ void editor_tab_show_context_menu(AppData* app, EditorTab* tab, GtkWidget* targe
         if (gtk_text_buffer_get_modified(tab->buffer)) {
             tab_menu_item(box, popover, app, tab, _("Compare with Saved"), NULL, TAB_ACTION_COMPARE_SAVED);
         }
-        if (path_copy_has_relative(tab->path)) {
+        /* A remote machine's file: in the repository the explorer's git status read there */
+        if (path_copy_has_relative(tab->path) || (vfs_is_remote(tab->path) && git_state_covers(app->git_state, tab->path))) {
             tab_menu_item(box, popover, app, tab, _("Compare with HEAD"), NULL, TAB_ACTION_COMPARE_HEAD);
         }
         tab_menu_item(box, popover, app, tab, _("Select for Compare"), NULL, TAB_ACTION_COMPARE_SELECT);

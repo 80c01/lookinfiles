@@ -8,6 +8,7 @@
 #include "core/text_encoding.h"
 #include "core/vfs.h"
 #include "editor/editor.h"
+#include "git/git_mirror.h"
 #include "git/git_utils.h"
 #include "theme/icons.h"
 #include "theme/palette.h"
@@ -438,7 +439,9 @@ static void diff_worker(GTask* task, gpointer source, gpointer task_data, GCance
             r_text = read_text_file(td->right_path, &r_len, &td->error);
         }
     } else if (td->src_kind == DIFF_SRC_HEAD) {
-        l_text = git_read_head_blob(td->right_path, &l_len);
+        /* A remote machine's file: from the copy of its repository's .git */
+        l_text = vfs_is_remote(td->right_path) ? git_mirror_head_blob(td->right_path, &l_len, cancellable)
+                                               : git_read_head_blob(td->right_path, &l_len);
         if (l_text == NULL) {
             l_text = g_strdup("");
             l_len = 0;

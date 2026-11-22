@@ -25,6 +25,8 @@ GHashTable* git_state_badges(const GitState* state);
 const gchar* git_state_badge(const GitState* state, const gchar* path);
 /* Repository root the state was read for, NULL outside a repository */
 const gchar* git_state_root(const GitState* state);
+/* path is the repository root the state was read for, or below it */
+gboolean git_state_covers(const GitState* state, const gchar* path);
 /* Uncommitted changes (some path has a badge) */
 gboolean git_state_has_changes(const GitState* state);
 /* HEAD has an upstream branch; then commits ahead of it and behind it */

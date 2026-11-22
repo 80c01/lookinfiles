@@ -58,10 +58,21 @@ static void test_compare(void) {
     git_state_free(empty);
 }
 
+static void test_covers(void) {
+    GitState* s = git_state_new(NULL, "/m/proj", FALSE, 0, 0);
+    g_assert_true(git_state_covers(s, "/m/proj"));
+    g_assert_true(git_state_covers(s, "/m/proj/src/a.c"));
+    g_assert_false(git_state_covers(s, "/m/project"));
+    g_assert_false(git_state_covers(s, "/m"));
+    g_assert_false(git_state_covers(NULL, "/m/proj"));
+    git_state_free(s);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/git_state/null", test_null);
     g_test_add_func("/git_state/values", test_values);
     g_test_add_func("/git_state/compare", test_compare);
+    g_test_add_func("/git_state/covers", test_covers);
     return g_test_run();
 }

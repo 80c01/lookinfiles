@@ -1,6 +1,8 @@
 /* Git state of the explorer's folder (see git_state.h). */
 #include "git/git_state.h"
 
+#include <string.h>
+
 struct GitState {
     GHashTable* statuses; /* full_path -> badge markup, or NULL */
     gchar* root;
@@ -41,6 +43,12 @@ void git_state_set_branch(GitState* state, const gchar* branch) {
 
 const gchar* git_state_branch(const GitState* state) {
     return state != NULL ? state->branch : NULL;
+}
+
+gboolean git_state_covers(const GitState* state, const gchar* path) {
+    const gchar* root = git_state_root(state);
+    gsize n = root != NULL ? strlen(root) : 0;
+    return n > 0 && path != NULL && strncmp(path, root, n) == 0 && (path[n] == '\0' || path[n] == '/');
 }
 
 GHashTable* git_state_badges(const GitState* state) {

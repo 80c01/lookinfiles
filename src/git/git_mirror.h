@@ -39,4 +39,10 @@ gchar* git_mirror_root(const gchar* top);
  * files copied. FALSE with error when it could not be read. */
 gboolean git_mirror_sync(const gchar* top, GCancellable* cancel, guint* copied, GError** error);
 
+/* The content of path (a remote machine's file) in the last commit of its
+ * repository, as git_read_head_blob() gives it, read from the copy of its
+ * .git brought up to date first; NULL outside a repository or when HEAD
+ * has no such file. Caller frees. */
+gchar* git_mirror_head_blob(const gchar* path, gsize* len, GCancellable* cancel);
+
 #endif /* GIT_MIRROR_H */
