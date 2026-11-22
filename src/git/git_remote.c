@@ -183,6 +183,53 @@ GPtrArray* git_remote_parse_children(const gchar* dir, const gchar* data, gsize 
     return out;
 }
 
+gchar* git_remote_top(const gchar* dir, GCancellable* cancel) {
+    gint status = 0;
+    GBytes* out = NULL;
+    if (!vfs_exec(dir, "git rev-parse --show-prefix 2>/dev/null", NULL, cancel, &status, &out, NULL)) return NULL;
+    gsize len = 0;
+    const gchar* data = g_bytes_get_data(out, &len);
+    gchar* top = NULL;
+    if (status == 0 && data != NULL) {
+        const gchar* nl = memchr(data, '\n', len);
+        top = strip_prefix(dir, data, nl != NULL ? (gsize)(nl - data) : len);
+    }
+    g_bytes_unref(out);
+    return top;
+}
+
+gboolean git_remote_parse_files(const gchar* data, gsize len, GitKindFunc func, gpointer user_data) {
+    GHashTable* seen = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    GitFileKind kind = GIT_FILE_TRACKED;
+    gboolean go_on = TRUE, split = FALSE;
+    const gchar* end = data + len;
+    for (const gchar* p = data; go_on && p < end;) {
+        const gchar* nul = memchr(p, '\0', (gsize)(end - p));
+        if (nul == NULL) break; /* cut short */
+        const gchar* rel = p;
+        p = nul + 1;
+        if (strcmp(rel, "\001") == 0) {
+            kind = GIT_FILE_UNTRACKED;
+            split = TRUE;
+        } else if (rel[0] != '\0' && g_hash_table_add(seen, g_strdup(rel))) {
+            go_on = func(rel, kind, user_data);
+        }
+    }
+    g_hash_table_destroy(seen);
+    return go_on && split;
+}
+
+gboolean git_remote_list_files_by_kind(const gchar* top, GitKindFunc func, gpointer user_data, GCancellable* cancel) {
+    gint status = 0;
+    GBytes* out = NULL;
+    if (!vfs_exec(top, GIT_REMOTE_FILES_COMMAND, NULL, cancel, &status, &out, NULL)) return FALSE;
+    gsize len = 0;
+    const gchar* data = g_bytes_get_data(out, &len);
+    gboolean ok = status == 0 && git_remote_parse_files(data != NULL ? data : "", len, func, user_data);
+    g_bytes_unref(out);
+    return ok;
+}
+
 gchar* git_remote_branch(const gchar* dir, GCancellable* cancel) {
     gint status = 0;
     GBytes* out = NULL;

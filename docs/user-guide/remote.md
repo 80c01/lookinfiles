@@ -107,7 +107,9 @@ Disk Usage reads a remote folder with one `find` run on the machine (GNU
 date; the tree is then added up here as for a local folder (hard links
 once, other filesystems skipped when asked, exclusions). The folder being
 listed shows while `find` runs; the folders of the breakdown come at the
-end, all at once.
+end, all at once. In a repository, the Git overview (tracked, untracked,
+ignored, history) comes from `git ls-files` run on the machine, the sizes
+from what `find` listed.
 
 ## Git
 

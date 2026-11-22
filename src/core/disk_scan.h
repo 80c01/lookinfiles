@@ -9,6 +9,7 @@
  * While it runs, any thread can take a snapshot of the progress
  * (disk_scan_snapshot()). No widgets, no AppData. */
 #include <gio/gio.h>
+#include <glib/gstdio.h>
 
 /* Largest files kept per folder (the others are summed up) */
 #define DISK_SCAN_DIR_FILES 20
@@ -175,6 +176,11 @@ DiskNode* disk_scan_root(DiskScan* scan);
 const DiskStats* disk_scan_stats(const DiskScan* scan);
 /* TRUE when the scan was cancelled before the end */
 gboolean disk_scan_cancelled(const DiskScan* scan);
+
+/* What lstat() says of path (full path, below the root): for a remote
+ * machine's folder, as the scan's listing read it (no network), else
+ * g_lstat(); FALSE when unknown */
+gboolean disk_scan_lstat(const DiskScan* scan, const gchar* path, GStatBuf* st);
 
 /* The folder of the tree read at path (full path), NULL if none */
 DiskNode* disk_scan_find(DiskScan* scan, const gchar* path);

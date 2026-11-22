@@ -102,7 +102,7 @@ run_time:
 disk_scan:disk_remote,vfs
 disk_remote:
 disk_stats:disk_scan,file_types,i18n
-git_space:git_utils,disk_scan
+git_space:git_utils,disk_scan,git_remote,vfs
 git_filter:git_utils,disk_scan
 treemap_layout:
 date_bins:

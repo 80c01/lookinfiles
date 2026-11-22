@@ -6,6 +6,7 @@
  * branch and the upstream counts. Blocking: worker threads only. The
  * reading of the output is unit-tested. */
 #include "git/git_state.h"
+#include "git/git_utils.h"
 
 #include <gio/gio.h>
 
@@ -48,5 +49,22 @@ GPtrArray* git_remote_list_branches(const gchar* dir, GCancellable* cancel);
  * track it when there is none) in the repository of dir, a remote
  * machine's folder; FALSE with *error_msg (caller frees) as git said */
 gboolean git_remote_checkout(const gchar* dir, const gchar* branch, gchar** error_msg);
+
+/* The top of the work tree holding dir, a remote machine's folder (as seen
+ * here: dir less what git prints for --show-prefix); NULL outside one.
+ * Caller frees. */
+gchar* git_remote_top(const gchar* dir, GCancellable* cancel);
+
+/* The shell command printing the files of the index, a record "\001",
+ * then the untracked ones not ignored, each ended by a NUL (paths from
+ * the top) */
+#define GIT_REMOTE_FILES_COMMAND                                                                                   \
+    "git ls-files -z -c 2>/dev/null && printf '\\001\\0' && git ls-files -z -o --exclude-standard 2>/dev/null"
+/* Each file of that output, once, to func with its kind (as
+ * git_list_files_by_kind() without the ignored ones); FALSE when func
+ * stopped or the output is not one */
+gboolean git_remote_parse_files(const gchar* data, gsize len, GitKindFunc func, gpointer user_data);
+/* The same for the work tree at top, a remote machine's folder */
+gboolean git_remote_list_files_by_kind(const gchar* top, GitKindFunc func, gpointer user_data, GCancellable* cancel);
 
 #endif /* GIT_REMOTE_H */

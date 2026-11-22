@@ -1,6 +1,8 @@
 /* The room of a git work tree in a disk scan (see git_space.h) */
 #include "git/git_space.h"
 #include "git/git_utils.h"
+#include "core/vfs.h"
+#include "git/git_remote.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -108,7 +110,7 @@ static gboolean on_file(const gchar* rel, GitFileKind kind, gpointer data) {
     g_free(parent);
     gchar* full = read ? g_build_filename(c->root, r, NULL) : NULL;
     GStatBuf st;
-    if (full == NULL || disk_scan_is_excluded(c->scan, full) || g_lstat(full, &st) != 0) {
+    if (full == NULL || disk_scan_is_excluded(c->scan, full) || !disk_scan_lstat(c->scan, full, &st)) {
         g_free(full);
         g_free(r);
         return TRUE;
@@ -195,7 +197,8 @@ GitSpace* git_space_compute(DiskScan* scan, GCancellable* cancel) {
     const gchar* root = disk_scan_root_path(scan);
     if (root_node == NULL || root == NULL) return NULL;
     gchar* canon = g_canonicalize_filename(root, NULL);
-    gchar* top = find_git_root(canon);
+    gboolean remote = vfs_is_remote(canon); /* git run on the machine, the sizes from the scan's listing */
+    gchar* top = remote ? git_remote_top(canon, cancel) : find_git_root(canon);
     if (top == NULL) {
         g_free(canon);
         return NULL;
@@ -219,7 +222,9 @@ GitSpace* git_space_compute(DiskScan* scan, GCancellable* cancel) {
     c.inodes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     index_dirs(c.dirs, root_node, "");
 
-    gboolean ok = git_list_files_by_kind(top, FALSE, on_file, &c) && !g_cancellable_is_cancelled(cancel);
+    gboolean ok = (remote ? git_remote_list_files_by_kind(top, on_file, &c, cancel)
+                          : git_list_files_by_kind(top, FALSE, on_file, &c)) &&
+                  !g_cancellable_is_cancelled(cancel);
     if (ok) {
         DiskNode* git = !sp->inside ? g_hash_table_lookup(c.dirs, ".git") : NULL;
         if (git != NULL) sp->history = (DiskTally){ git->size, git->n_files };

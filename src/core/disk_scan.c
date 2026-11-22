@@ -120,6 +120,7 @@ void disk_scan_free(DiskScan* s) {
     g_string_free(s->path, TRUE);
     g_hash_table_unref(s->inodes);
     g_hash_table_unref(s->excluded);
+    disk_remote_listing_free(s->listing);
     g_mutex_clear(&s->lock);
     disk_scan_snapshot_clear(&s->progress);
     g_free(s->root_path);
@@ -589,12 +590,32 @@ void disk_scan_run(DiskScan* s, GCancellable* cancel) {
         scan_dir(s, s->root, 0, s->filter != NULL);
     }
     g_hash_table_remove_all(s->inodes);
-    g_clear_pointer(&s->listing, disk_remote_listing_free);
-    s->cancel = NULL;
+    s->cancel = NULL; /* a remote listing stays: disk_scan_lstat() */
     g_mutex_lock(&s->lock);
     g_clear_pointer(&s->progress.current, g_free);
     s->progress.done = TRUE;
     g_mutex_unlock(&s->lock);
+}
+
+gboolean disk_scan_lstat(const DiskScan* s, const gchar* path, GStatBuf* st) {
+    if (s == NULL || path == NULL) return FALSE;
+    if (s->listing == NULL) return g_lstat(path, st) == 0;
+    gsize n = strlen(s->root_path);
+    if (strncmp(path, s->root_path, n) != 0 || (path[n] != '\0' && !G_IS_DIR_SEPARATOR(path[n]))) return FALSE;
+    const gchar* rel = path + n;
+    while (G_IS_DIR_SEPARATOR(*rel)) rel++;
+    if (rel[0] == '\0') {
+        const GStatBuf* root = disk_remote_listing_root(s->listing);
+        if (root != NULL) *st = *root;
+        return root != NULL;
+    }
+    const gchar* slash = strrchr(rel, G_DIR_SEPARATOR);
+    gchar* dir = slash != NULL ? g_strndup(rel, (gsize)(slash - rel)) : g_strdup("");
+    GHashTable* entries = disk_remote_listing_dir(s->listing, dir);
+    g_free(dir);
+    const GStatBuf* found = entries != NULL ? g_hash_table_lookup(entries, slash != NULL ? slash + 1 : rel) : NULL;
+    if (found != NULL) *st = *found;
+    return found != NULL;
 }
 
 void disk_scan_snapshot(DiskScan* s, DiskScanSnapshot* out) {

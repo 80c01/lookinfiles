@@ -119,7 +119,9 @@ sa taille, ses blocs et sa date ; l’arbre est ensuite additionné ici comme
 pour un dossier local (liens physiques comptés une fois, autres systèmes de
 fichiers ignorés sur demande, exclusions). Le dossier en cours de listage
 s’affiche pendant que `find` tourne ; les dossiers de la répartition
-arrivent à la fin, tous ensemble.
+arrivent à la fin, tous ensemble. Dans un dépôt, la vue d’ensemble Git
+(suivis, non suivis, ignorés, historique) vient de `git ls-files` lancé sur
+la machine, les tailles de ce que `find` a listé.
 
 ## Git
 

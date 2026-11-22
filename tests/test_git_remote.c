@@ -82,10 +82,27 @@ static void test_children(void) {
     g_ptr_array_unref(c);
 }
 
+static gboolean collect(const gchar* rel, GitFileKind kind, gpointer data) {
+    g_string_append_printf(data, "%c:%s;", kind == GIT_FILE_TRACKED ? 'T' : 'U', rel);
+    return TRUE;
+}
+
+static void test_files(void) {
+    static const gchar out[] = "a.c\0src/b.h\0a.c\0\001\0new.txt\0nested/\0";
+    GString* got = g_string_new(NULL);
+    g_assert_true(git_remote_parse_files(out, sizeof(out) - 1, collect, got));
+    g_assert_cmpstr(got->str, ==, "T:a.c;T:src/b.h;U:new.txt;U:nested/;"); /* a conflict's sides once */
+    g_string_free(got, TRUE);
+    got = g_string_new(NULL);
+    g_assert_false(git_remote_parse_files("a.c\0", 4, collect, got)); /* no split: git did not answer */
+    g_string_free(got, TRUE);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/git_remote/parse", test_parse);
     g_test_add_func("/git_remote/branches", test_branches);
     g_test_add_func("/git_remote/children", test_children);
+    g_test_add_func("/git_remote/files", test_files);
     return g_test_run();
 }
