@@ -204,8 +204,9 @@ static void test_threads(void) {
     g_free(dir);
 }
 
-/* The explorer's listing: over SFTP while the master is open, else from
- * the mount (here a local folder with other files) */
+/* The explorer's listing: over SFTP while the master is open, else
+ * unreadable, never the local folder the machine is seen at (here with
+ * other files) */
 static void test_dir_scan(void) {
     gchar* sock = fake_master();
     if (sock == NULL) {
@@ -242,12 +243,11 @@ static void test_dir_scan(void) {
     g_assert_true(node->unreadable);
     dir_scan_node_free(node);
 
-    g_unlink(sock); /* no master (and a new connection): the mount is read */
+    g_unlink(sock); /* no master (and a new connection): unreadable, never the local folder */
     vfs_unmount(mount);
     vfs_mount(mount, &TARGET, remote);
     node = dir_scan_read(mount, FALSE, DIR_SCAN_SORT_NAME, NULL, NULL);
-    g_assert_cmpuint(node->entries->len, ==, 1);
-    g_assert_cmpstr(g_array_index(node->entries, DirScanEntry, 0).name, ==, "on-the-mount");
+    g_assert_true(node->unreadable);
     dir_scan_node_free(node);
 
     vfs_unmount(mount);
@@ -259,7 +259,7 @@ static void test_dir_scan(void) {
     g_free(sock);
 }
 
-/* The preview's reads: over SFTP, the mount when no session can serve */
+/* The preview's reads: over SFTP, nothing when no session can serve */
 static void test_preview_source(void) {
     gchar* sock = fake_master();
     if (sock == NULL) {
@@ -291,15 +291,11 @@ static void test_preview_source(void) {
     g_assert_false(preview_source_stamp(missing, &st));
     g_assert_null(preview_source_open(missing, TRUE, NULL));
 
-    g_unlink(sock); /* no session: the mount */
+    g_unlink(sock); /* no session: nothing, never the local file */
     vfs_unmount(mount);
     vfs_mount(mount, &TARGET, remote);
-    g_assert_true(preview_source_stamp(mf, &st));
-    g_assert_cmpint(st.size, ==, 5);
-    src = preview_source_open(mf, TRUE, NULL);
-    n = preview_source_read(src, buf, sizeof buf);
-    preview_source_close(src);
-    g_assert_cmpmem(buf, n, "mount", 5);
+    g_assert_false(preview_source_stamp(mf, &st));
+    g_assert_null(preview_source_open(mf, TRUE, NULL));
 
     vfs_unmount(mount);
     g_free(missing);

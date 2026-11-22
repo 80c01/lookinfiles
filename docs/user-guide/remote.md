@@ -1,15 +1,15 @@
 # Remote machines
 
-The remote view browses the files of SSH machines as if they were local:
-LookinFiles mounts them with SSHFS, so the explorer, the preview, the
-editor and the search all work on them. Open it with `Ctrl+Shift+R` (again
+The remote view browses the files of SSH machines: LookinFiles reads and
+writes them over SFTP through one SSH connection per machine, so the
+explorer, the preview and the editor work on them, with nothing to mount.
+Open it with `Ctrl+Shift+R` (again
 to go back to the files) or the server button at the top of the explorer.
 
 ## Requirements
 
-- `sshfs` installed (`sudo apt install sshfs`; Fedora `fuse-sshfs`). Without
-  it, connecting explains how to install it.
-- The OpenSSH client (`ssh`). A password or a key passphrase, when ssh needs
+- The OpenSSH client (`ssh`), and the SFTP subsystem on the machine (the
+  default of OpenSSH servers). A password or a key passphrase, when ssh needs
   one, is asked in a dialog of LookinFiles; an SSH key with `ssh-agent`
   spares you the question.
 
@@ -36,8 +36,8 @@ by default). **Save & Connect** connects right away.
 | `F5` | Read `~/.ssh/config` again |
 
 The folders of a connected machine are listed over SFTP, through the SSH
-connection already open (no new login), rather than through the mount; text
-files are previewed and opened in the editor the same way. A slow network
+connection already open (no new login); text files are previewed and opened
+in the editor the same way. A slow network
 makes the listing or the file wait, not the whole window. Saving, new files
 and folders, renames and deletes go over SFTP too. A remote machine has no
 trash: deleting a file or a folder there (after a confirmation that says
@@ -66,27 +66,31 @@ Jupyter notebooks of the machine run their kernel on the machine itself
 connection opened when connecting.
 
 Paths on the machine are written as on the machine, `name:path`: the
-**New File** and **New Folder** dialogs show `server:~/projects` (not the
-local mount point), and so do the notebook **Save** dialog, the Emacs
+**New File** and **New Folder** dialogs show `server:~/projects`, and so do the notebook **Save** dialog, the Emacs
 `C-x C-w` prompt and the tab tooltips. Type paths the same way (`server:~/a`,
 or `server:docs` from the **Remote Directory**); paths outside the remote
 directory are refused.
 
-Connecting opens a connection for the commands run on the machine (Jupyter
-kernels; OpenSSH multiplexing, not on Windows), kept until you disconnect or
-quit; the files and the SSH terminals have connections of their own. A
-password typed when connecting serves the files' connection too; a terminal
-that needs one asks in the terminal.
+Connecting opens one connection (OpenSSH multiplexing, not on Windows),
+kept until you disconnect or quit: the files, the Jupyter kernels and the
+System Monitor all go through it, so a password is asked once. The SSH
+terminals have connections of their own; one that needs a password asks in
+the terminal.
 
-Machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
-(usually `/run/user/1000/…`; without `$XDG_RUNTIME_DIR`,
-`/tmp/lookinfiles-<uid>/remotes/`), a private folder that cache cleaners and
-backups leave alone. If LookinFiles stops without disconnecting (a crash), the
-next start unmounts what it left mounted; nothing on the machine is touched.
-Machines added by hand are saved in `~/.config/lookinfiles/remotes.xml`.
+Inside LookinFiles a machine's files are seen under an empty private folder
+of `$XDG_RUNTIME_DIR/lookinfiles/remotes/` (usually `/run/user/1000/…`),
+never shown: nothing is mounted there. Mounts that earlier versions made
+with sshfs are unmounted at start-up. Machines added by hand are saved in
+`~/.config/lookinfiles/remotes.xml`.
+
+## Not available on a remote machine yet
+
+These run on this computer and need local files: Git (no badges, no Git
+tab), the search in files, Deep Search, Go to File, Disk Usage, the language
+servers (completion, diagnostics) and LaTeX builds. The search features say
+so in the status bar; the others stay off.
 
 ## Speed
 
 Every file read goes over the network, so large folders and previews of
-big files are slower than on a local disk. Git badges and the search in
-files work, but read the repository and the files through the mount.
+big files are slower than on a local disk.

@@ -54,11 +54,11 @@ else
     printf '  %-34s no   -> apt install gettext  (msgfmt)\n' "Translations"
 fi
 echo "Run time (not needed to build):"
-for tool in sshfs; do
+for tool in ssh; do
     if command -v "$tool" >/dev/null 2>&1; then
-        printf '  %-34s yes\n' "$tool"
+        printf '  %-34s yes  (remote machines)\n' "$tool"
     else
-        printf '  %-34s no   -> apt install %s\n' "$tool" "$tool"
+        printf '  %-34s no   -> apt install openssh-client  (remote machines)\n' "$tool"
     fi
 done
 [ $status -ne 0 ] && echo "A required library is missing: the build cannot succeed."

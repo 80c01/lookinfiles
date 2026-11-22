@@ -2,9 +2,8 @@
 #define PREVIEW_SOURCE_H
 
 /* The bytes of a file for a preview, read on a worker thread: from the
- * disk, or over SFTP for the file of a remote machine (vfs.h), from the
- * sshfs mount when the SFTP session cannot serve it. No AppData, no
- * widgets. */
+ * disk, or over SFTP for the file of a remote machine (vfs.h). No AppData,
+ * no widgets. */
 #include "preview/preview_cache.h"
 
 #include <gio/gio.h>
@@ -25,7 +24,7 @@ void preview_source_close(PreviewSource* src);
 /* For what opens a file by its path (images, PDF, archives, documents; a
  * player: player): a local copy of a remote machine's file (vfs_cache.h,
  * up to 64 MB, 512 MB for a player), NULL when path is not remote or cannot
- * be copied (path itself is then read: the mount). Caller frees. */
+ * be copied (then nothing can be shown). Caller frees. */
 gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel);
 
 #endif /* PREVIEW_SOURCE_H */

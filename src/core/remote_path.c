@@ -2,6 +2,8 @@
  * remote_path.h). */
 #include "core/remote_path.h"
 #include "explorer/remote_store.h"
+#include "core/app_events.h"
+#include "core/vfs.h"
 
 #include <string.h>
 
@@ -181,4 +183,10 @@ gboolean remote_path_parse(AppData* app, const gchar* text, gchar** out_local) {
         }
     }
     return FALSE;
+}
+
+gboolean remote_path_refuse(AppData* app, const gchar* path, const gchar* message) {
+    if (path == NULL || !vfs_is_remote(path)) return FALSE;
+    app_notice(app, message, FALSE);
+    return TRUE;
 }

@@ -11443,8 +11443,8 @@ msgid "Unknown"
 msgstr "Inconnue"
 
 #: src/preview/preview_summary.c:91
-msgid "Connected (Mounted via SSHFS)"
-msgstr "Connectée (montée via SSHFS)"
+msgid "Connected (files over SFTP)"
+msgstr "Connectée (fichiers en SFTP)"
 
 #: src/preview/preview_summary.c:91
 msgid "Disconnected"
@@ -13070,6 +13070,32 @@ msgstr "ce n’est pas un dossier d’une machine distante"
 #: src/core/vfs.c
 msgid "the remote machine does not answer"
 msgstr "la machine distante ne répond pas"
+
+#: src/diskuse/disk_usage_tab.c
+msgid "Disk Usage is not available on a remote machine yet"
+msgstr "L’occupation disque n’est pas encore disponible sur une machine distante"
+
+#: src/search/deep_search_tab.c
+msgid "Deep Search is not available on a remote machine yet"
+msgstr "Deep Search n’est pas encore disponible sur une machine distante"
+
+#: src/search/project_search.c
+msgid "Search in files is not available on a remote machine yet"
+msgstr "La recherche dans les fichiers n’est pas encore disponible sur une machine distante"
+
+#: src/search/quick_open.c
+msgid "Go to File is not available on a remote machine yet"
+msgstr "Aller au fichier n’est pas encore disponible sur une machine distante"
+
+#: src/explorer/remote.c
+msgid ""
+"Could not create a private folder for the machine. Check that "
+"$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other "
+"users."
+msgstr ""
+"Impossible de créer un dossier privé pour la machine. Vérifiez que "
+"$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et est fermé "
+"aux autres utilisateurs."
 
 #: src/core/vfs_cache.c
 msgid "a folder, not a file"

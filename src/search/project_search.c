@@ -1,5 +1,6 @@
 /* Search in files (see project_search.h) */
 #include "search/project_search.h"
+#include "core/remote_path.h"
 #include "core/i18n.h"
 #include "code/code_index.h"
 #include "code/code_refs.h"
@@ -501,6 +502,7 @@ static gboolean can_prompt(AppData* app) {
 
 void project_search_show(AppData* app) {
     if (!can_prompt(app) || app->base_dir == NULL) return;
+    if (remote_path_refuse(app, app->base_dir, _("Search in files is not available on a remote machine yet"))) return;
     show_prompt(app, code_index_project_root(app->base_dir), NULL);
 }
 

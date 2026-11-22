@@ -107,16 +107,15 @@ static void finish_listing(DirPreviewJob* job, GCancellable* cancellable) {
 }
 
 /* A remote machine's folder listed over SFTP (vfs.h). FALSE when it is not
- * remote, or the SFTP session cannot serve it: the mount is read then. */
+ * remote. */
 static gboolean remote_listing(DirPreviewJob* job, GCancellable* cancellable) {
     if (!vfs_is_remote(job->full)) return FALSE;
     GError* error = NULL;
     GPtrArray* list = vfs_list(job->full, cancellable, &error);
     if (list == NULL) {
-        gboolean answered = !vfs_error_is_connection(error);
         g_error_free(error);
-        job->unreadable = answered;
-        return answered;
+        job->unreadable = TRUE; /* never the empty local folder it is seen at */
+        return TRUE;
     }
     for (guint i = 0; i < list->len; i++) {
         const VfsEntry* e = list->pdata[i];

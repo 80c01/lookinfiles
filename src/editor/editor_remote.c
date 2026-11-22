@@ -3,7 +3,6 @@
 #include "editor/editor_private.h"
 #include "core/vfs.h"
 
-#include <glib/gstdio.h>
 #include <string.h>
 
 typedef struct {
@@ -37,10 +36,6 @@ static void read_thread(GTask* task, gpointer source, gpointer data, GCancellabl
         ro->contents[n] = '\0';
         ro->len = n;
         g_bytes_unref(bytes);
-    } else if (vfs_error_is_connection(error)) { /* the mount, as a local file */
-        GStatBuf st;
-        if (g_stat(ro->full, &st) == 0) ro->size = (guint64)st.st_size;
-        ro->failed = ro->size > EDIT_MAX_BYTES || !g_file_get_contents(ro->full, &ro->contents, &ro->len, NULL);
     } else {
         ro->failed = TRUE;
     }
@@ -88,11 +83,8 @@ gboolean editor_remote_get_contents(const gchar* path, gchar** contents, gsize* 
             g_bytes_unref(bytes);
             return TRUE;
         }
-        if (!vfs_error_is_connection(err)) {
-            g_propagate_error(error, err);
-            return FALSE;
-        }
-        g_error_free(err);
+        g_propagate_error(error, err);
+        return FALSE;
     }
     return g_file_get_contents(path, contents, len, error);
 }

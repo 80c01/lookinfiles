@@ -25,6 +25,9 @@ gboolean remote_path_map_from_display(const gchar* text, const gchar* mount, con
 /* path written "<machine>:<remote path>" when it is under the mount of a
  * connected machine, else a copy of path. Caller frees. */
 gchar* remote_path_display(AppData* app, const gchar* path);
+/* TRUE (with message in the status bar) when path is on a remote machine,
+ * for the features that only work on local files so far */
+gboolean remote_path_refuse(AppData* app, const gchar* path, const gchar* message);
 /* The name a folder or file is shown with: its base name, or the machine's
  * name for the folder a machine is mounted at (not "rem_1678…"). Caller
  * frees. */

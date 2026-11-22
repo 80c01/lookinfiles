@@ -6,10 +6,10 @@
  * known_hosts work as in a shell. Every ssh run builds its command line with
  * ssh_session_argv(); where OpenSSH can multiplex (not on Windows) a master
  * connection (ssh_master_start()) is opened once per machine and the remote
- * commands (ssh_exec_async(), kernels) go through it without authenticating
- * again. Never an interactive terminal nor sshfs (SSH_ARGV_NO_MUX): one
- * session can stall the master (it writes to tty clients with blocking
- * writes), and the interface waits on sshfs synchronously. Programs started here get the variables set with
+ * commands (ssh_exec_async(), kernels, SFTP sessions) go through it without
+ * authenticating again. Never an interactive terminal (SSH_ARGV_NO_MUX): it
+ * could stall the master (which writes to tty clients with blocking
+ * writes). Programs started here get the variables set with
  * ssh_session_set_env() (the password prompt, ssh_askpass.h), have no
  * controlling terminal, and die with the application (Linux). GIO only, no
  * widgets; unit-tested with a fake ssh program. */
@@ -45,7 +45,7 @@ void ssh_session_on_master_missing(SshMasterMissingFunc func, gpointer data);
 /* "user@host", or "host" without user. Caller frees. */
 gchar* ssh_session_destination(const SshTarget* target);
 /* The ssh_config options of every connection ("Name=value": keep-alive,
- * host keys, multiplexing), for `ssh -o` or `sshfs -o`. Caller unrefs. */
+ * host keys, multiplexing), for `ssh -o`. Caller unrefs. */
 GPtrArray* ssh_session_options(const SshTarget* target, SshArgvFlags flags);
 /* ssh [-p port] [-i key] -o ... [-t | -N] destination: append the remote
  * command (or nothing), then NULL. Through the master connection (no
@@ -54,8 +54,8 @@ GPtrArray* ssh_session_options(const SshTarget* target, SshArgvFlags flags);
  * Caller unrefs. */
 GPtrArray* ssh_session_argv(const SshTarget* target, SshArgvFlags flags);
 /* A launcher with the variables of ssh_session_set_env(), no controlling
- * terminal and death with the application, for any program that runs ssh
- * (sshfs). Caller unrefs. */
+ * terminal and death with the application, for any program that runs ssh.
+ * Caller unrefs. */
 GSubprocessLauncher* ssh_session_launcher(GSubprocessFlags flags);
 
 /* Whether a master connection is used (OpenSSH multiplexing: not on

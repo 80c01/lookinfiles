@@ -88,7 +88,7 @@ GPtrArray* preview_summary_remote_lines(const RemoteMachine* rm) {
     g_free(title);
 
     add_line(lines, PREVIEW_SUMMARY_FIELD, _("Status"),
-             rm->is_connected ? _("Connected (Mounted via SSHFS)") : _("Disconnected"));
+             rm->is_connected ? _("Connected (files over SFTP)") : _("Disconnected"));
     add_line(lines, PREVIEW_SUMMARY_FIELD, _("Host"), rm->host ? rm->host : _("(none)"));
     add_line(lines, PREVIEW_SUMMARY_FIELD, _("User"),
              (rm->user && *rm->user) ? rm->user : _("(default)"));
@@ -98,9 +98,6 @@ GPtrArray* preview_summary_remote_lines(const RemoteMachine* rm) {
     add_line(lines, PREVIEW_SUMMARY_FIELD, _("Remote Path"), rm->remote_path ? rm->remote_path : "~");
     if (rm->identity_file && *rm->identity_file) {
         add_line(lines, PREVIEW_SUMMARY_FIELD, _("Identity Key"), rm->identity_file);
-    }
-    if (rm->is_connected && rm->mount_point) {
-        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Mount Point"), rm->mount_point);
     }
     add_line(lines, PREVIEW_SUMMARY_FIELD, _("Source"),
              rm->from_ssh_config ? _("Auto-discovered from ~/.ssh/config") : _("Configured manually"));

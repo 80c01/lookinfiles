@@ -47,19 +47,17 @@ Layers, from bottom to top
 - `app_paths` — application name (`APP_NAME`), config, cache and runtime directories
   (`app_config_dir()`, `app_cache_dir()`, `app_runtime_dir()`: never hard-code the
   directory name; the runtime one is private, 0700, and never under the cache).
-- `remote_mounts` — sshfs mount points of the remote machines
-  (`app_runtime_dir()/remotes/<id>`, never under `~/.cache`, where a cache cleaner
-  would recurse into a forgotten mount), owner files, `/proc/self/mounts`
-  parsing, unmount, and the startup cleanup of the mounts a crashed session left
-  (`remote_mounts_cleanup_stale()`, called by `main.c`).
+- `remote_mounts` — the folder a remote machine's files are seen at
+  (`app_runtime_dir()/remotes/<id>`, empty: nothing is mounted there; never
+  under `~/.cache`), and the startup cleanup of the sshfs mounts earlier
+  versions made (owner files, `/proc/self/mounts` parsing, unmount:
+  `remote_mounts_cleanup_stale()`, called by `main.c`).
 - `ssh_session` — every ssh run goes through the OpenSSH client with the
-  command line of `ssh_session_argv()` (`ssh_session_options()` for `sshfs
-  -o`): keep-alive, `accept-new` host keys and, except on Windows, a master
+  command line of `ssh_session_argv()` (`ssh_session_options()`): keep-alive, `accept-new` host keys and, except on Windows, a master
   connection per machine (`ssh_master_start()`, socket
   `app_runtime_dir()/ssh/<pid>-<hash>`) that later ssh runs reuse without a
-  new login (remote commands and kernels; never a terminal nor sshfs: a
-  stalled master must not freeze the interface, which reads the mount
-  synchronously). Those commands run in `BatchMode` (never a prompt); without
+  new login (SFTP sessions, remote commands, kernels; never a terminal,
+  whose blocking writes could stall the master). Those commands run in `BatchMode` (never a prompt); without
   an open master `ssh_exec_async()` fails at once rather than log in every
   second, and `ssh_session_on_master_missing()` lets `remote_session` open it
   in the background, once (not again after a refusal until the next
@@ -84,15 +82,16 @@ Layers, from bottom to top
   old mode; in place through a link or in a folder that takes no new file.
   Unit-tested against a small POSIX SFTP server in the test (short reads,
   lost connection, cancel; `tests/sftp_test_server.h`).
-- `vfs` — the files of connected machines without the mount: the folder a
-  machine is connected at (`vfs_mount()`, by `remote_session`: its sshfs
-  mount point for now, shown as `machine:path`) is read over SFTP, one
+- `vfs` — the files of connected machines: the folder a machine is seen at
+  (`vfs_mount()`, by `remote_session`: `remote_mounts_dir()`, an empty local
+  folder, shown as `machine:path`) is read over SFTP, one
   `sftp_client` per machine on a thread of its own (`vfs` thread, own
   `GMainContext`). The calls (`vfs_list()`) are synchronous with a one-minute
   limit, for worker threads (`dir_scan`); links to folders are followed.
-  `vfs_stat()`, `vfs_read()`; `vfs_error_is_connection()` tells a session
-  that could not serve (callers then read the mount) from the server's
-  answer. Writes: `vfs_write()`, `vfs_mkdir()` (`_with_parents()`),
+  `vfs_stat()`, `vfs_read()` (`_range()`); `vfs_error_is_connection()`
+  tells a session that could not serve from the server's answer. Nothing
+  falls back to the local folder (it is empty): a remote file that cannot
+  be reached is unreadable. Writes: `vfs_write()`, `vfs_mkdir()` (`_with_parents()`),
   `vfs_remove()`, `vfs_delete_tree()` (never the machine's folder itself),
   `vfs_rename()`; the user's writes wait on the main thread (bounded).
   `vfs_file_test()` is `g_file_test()` over SFTP, for the navigation's
@@ -539,14 +538,12 @@ Layers, from bottom to top
   same on its own worker (`dir_scan_read_async()`, used when a folder is
   expanded); the folders "expand all" opens (`dir_scan_collect_expand_all()`).
   A remote machine's folders (`vfs_is_remote()`) are listed over SFTP
-  (`vfs_list()`), from the sshfs mount when the SFTP session cannot serve
-  them (no master connection yet, connection lost).
+  (`vfs_list()`), unreadable when the SFTP session cannot serve them.
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
 - `preview_source` — the bytes of a file for a preview, on a worker thread:
   `fopen()`, or `vfs_read()` for a remote machine's file (the first
-  `PREVIEW_BYTES`, or all of it), and its stamp (`vfs_stat()`); the mount
-  when the SFTP session cannot serve. Used by `viewer` and `dir_preview`.
+  `PREVIEW_BYTES`, or all of it), and its stamp (`vfs_stat()`). Used by `viewer` and `dir_preview`.
   `preview_source_local()`: a remote file's local copy (`vfs_cache`, up to
   64 MB, 512 MB for video and audio, 1 GB of copies kept) for the images,
   PDFs, players and structured previews that open a path.
@@ -865,9 +862,11 @@ Layers, from bottom to top
 - `remote_store` — `RemoteMachine` list and `RemoteFolder`s, `remotes.xml`, `~/.ssh/config`
   discovery, lookups (unit-tested).
 - `remote_path` — paths of a connected machine written as the user knows
-  them, `<machine>:<remote path>`, instead of the local mount point: shown
-  by `remote_path_display()`, read back by `remote_path_parse()`
-  (unit-tested).
+  them, `<machine>:<remote path>`, instead of the local folder they are seen
+  at: shown by `remote_path_display()`, read back by `remote_path_parse()`
+  (unit-tested); `remote_path_refuse()` says in the status bar that a
+  feature working on local files only (Disk Usage, Deep Search, search in
+  files, Go to File) is not available on a remote machine yet.
 - `preview_summary` — summaries shown in the preview for rows without
   file content (remote machine, notebook, bookmark folder, trash, Canvas
   note) as typed lines (title, fields, headings, items, keys), and their
@@ -991,9 +990,10 @@ Layers, from bottom to top
   `vfs_delete_tree()`: no trash there, not undone); `file_moves_exists()`.
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
-  `remote_store`; the master connection, password dialogs, sshfs mount
-  (on a connection of its own) and SFTP listings (`vfs_mount()`) in
-  `remote_session`, through `ssh_session`). The notes view is `notes.c` (rows, selection, keys, menu),
+  `remote_store`; the master connection (`remote_session_connect()`),
+  password dialogs and SFTP files (`vfs_mount()`) in `remote_session`,
+  through `ssh_session`; no sshfs). Git, the language servers and LaTeX
+  builds stay off for a remote machine's files (they run here). The notes view is `notes.c` (rows, selection, keys, menu),
   `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`;
   `notes_new_canvas()` makes and opens a Canvas note without a dialog (the
   **+** button of `new_tab_menu`). `notes_search` is the `SearchArea` of
@@ -1078,7 +1078,7 @@ Layers, from bottom to top
   `ipynb_run.c` runs the cells (it shares `ipynb_tab_private.h` with
   `ipynb_tab.c` and `ipynb_save.c`): an `ipynb_kernel` started at the first run, the bridge
   script from the GResource (run over ssh, through the master connection, for
-  a notebook of a mounted remote machine: `remote_path_locate()`), outputs added to the `IpynbDoc` by cell key
+  a notebook of a connected remote machine: `remote_path_locate()`), outputs added to the `IpynbDoc` by cell key
   and drawn once per main loop turn (`ipynb_tab_refresh_cell()`: the other
   cells and the source are left alone), the input row, interrupt, restart,
   the kernel menu (labelled with the notebook's kernel;
@@ -1559,7 +1559,7 @@ Layers, from bottom to top
   pane below, `terminal_open()` with a working directory); ssh into the
   active remote machine (`ssh_session_argv()` with `SSH_ARGV_NO_MUX`: never
   through the master connection, which writes to tty clients with blocking
-  writes and would stall the sshfs mount behind an unread terminal); the shell is `$SHELL` (on Windows PowerShell 7,
+  writes and would stall the SFTP sessions behind an unread terminal); the shell is `$SHELL` (on Windows PowerShell 7,
   Windows PowerShell, then `%COMSPEC%`); `Ctrl+Shift+C` / `Ctrl+Shift+V`
   copy the selection / paste. Terminal tabs also go into the editor and preview
   notebooks (`tab_drop_set_accept()` on both sides); `editor_remove_page()`

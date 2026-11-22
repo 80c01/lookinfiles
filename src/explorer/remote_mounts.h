@@ -1,12 +1,13 @@
 #ifndef REMOTE_MOUNTS_H
 #define REMOTE_MOUNTS_H
 
-/* Where remote machines are mounted with sshfs, and the cleanup of mounts a
- * crashed session left behind. Mounts live in the runtime directory
- * (app_runtime_dir()/remotes/<id>), never under ~/.cache: a cache cleaner
- * that recursed into a forgotten mount would delete the remote files.
- * Each mount has an owner file (<mount>.owner, the pid of the instance that
- * mounted it) so a starting instance leaves the mounts of a running one. */
+/* The folder a remote machine's files are seen at (app_runtime_dir()/
+ * remotes/<id>: empty, their files are read over SFTP, vfs.h), and the
+ * cleanup of the sshfs mounts that earlier versions made there (never under
+ * ~/.cache: a cache cleaner that recursed into a forgotten mount would
+ * delete the remote files). Such a mount has an owner file (<mount>.owner,
+ * the pid of the instance that mounted it) so a starting instance leaves
+ * the mounts of a running one. */
 #include <glib.h>
 
 /* app_runtime_dir()/remotes, created; NULL when there is no private runtime

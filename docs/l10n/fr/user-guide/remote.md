@@ -1,16 +1,16 @@
 # Machines distantes
 
-La vue distante parcourt les fichiers de machines SSH comme s’ils étaient
-locaux : LookinFiles les monte avec SSHFS, et l’explorateur, l’aperçu,
-l’éditeur et la recherche marchent tous dessus. Ouvrez-la avec
+La vue distante parcourt les fichiers de machines SSH : LookinFiles les lit
+et les écrit en SFTP par une connexion SSH par machine, si bien que
+l’explorateur, l’aperçu et l’éditeur marchent dessus, sans rien monter.
+Ouvrez-la avec
 `Ctrl+Shift+R` (à nouveau pour revenir aux fichiers) ou le bouton serveur
 en haut de l’explorateur.
 
 ## Prérequis
 
-- `sshfs` installé (`sudo apt install sshfs` ; Fedora `fuse-sshfs`). Sans
-  lui, la connexion explique comment l’installer.
-- Le client OpenSSH (`ssh`). Un mot de passe ou la phrase de passe d’une
+- Le client OpenSSH (`ssh`), et le sous-système SFTP sur la machine (celui
+  des serveurs OpenSSH par défaut). Un mot de passe ou la phrase de passe d’une
   clé, quand ssh en a besoin, est demandé dans un dialogue de LookinFiles ;
   une clé SSH avec `ssh-agent` évite la question.
 
@@ -38,9 +38,8 @@ connecter** se connecte tout de suite.
 | `F5` | Relire `~/.ssh/config` |
 
 Les dossiers d’une machine connectée sont listés en SFTP, par la connexion
-SSH déjà ouverte (sans nouvelle authentification), plutôt qu’à travers le
-montage ; les fichiers texte sont prévisualisés et ouverts dans l’éditeur de
-la même façon. Un réseau lent fait attendre le listage ou le fichier, pas
+SSH déjà ouverte (sans nouvelle authentification) ; les fichiers texte sont
+prévisualisés et ouverts dans l’éditeur de la même façon. Un réseau lent fait attendre le listage ou le fichier, pas
 toute la fenêtre. L’enregistrement, les nouveaux fichiers et dossiers, les
 renommages et les suppressions passent aussi en SFTP. Une machine distante
 n’a pas de corbeille : y supprimer un fichier ou un dossier (après une
@@ -72,30 +71,35 @@ tous deux par la liaison ouverte en se connectant.
 
 Les chemins de la machine s’écrivent comme sur la machine, `nom:chemin` :
 les dialogues **Nouveau fichier** et **Nouveau dossier** affichent
-`serveur:~/projets` (et non le point de montage local), de même que le
+`serveur:~/projets`, de même que le
 dialogue **Enregistrer** des notebooks, l’invite `C-x C-w` d’Emacs et les
 infobulles des onglets. Tapez les chemins de la même façon (`serveur:~/a`,
 ou `serveur:docs` depuis le **Dossier distant**) ; un chemin hors du
 dossier distant est refusé.
 
-La connexion ouvre une liaison pour les commandes exécutées sur la machine
-(noyaux Jupyter ; multiplexage OpenSSH, pas sous Windows), gardée jusqu’à la
-déconnexion ou la fermeture ; les fichiers et les terminaux SSH ont leurs
-propres connexions. Un mot de passe tapé en se connectant sert aussi à la
-connexion des fichiers ; un terminal qui en a besoin le demande dans le
+La connexion ouvre une liaison (multiplexage OpenSSH, pas sous Windows),
+gardée jusqu’à la déconnexion ou la fermeture : les fichiers, les noyaux
+Jupyter et le Moniteur système passent tous par elle, si bien qu’un mot de
+passe n’est demandé qu’une fois. Les terminaux SSH ont leurs propres
+connexions ; un terminal qui a besoin d’un mot de passe le demande dans le
 terminal.
 
-Les machines sont montées sous `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
-(en général `/run/user/1000/…` ; sans `$XDG_RUNTIME_DIR`,
-`/tmp/lookinfiles-<uid>/remotes/`), un dossier privé que les nettoyeurs de
-cache et les sauvegardes laissent de côté. Si LookinFiles s’arrête sans se
-déconnecter (un plantage), le démarrage suivant démonte ce qui était resté
-monté ; rien n’est touché sur la machine. Les machines ajoutées à la main
-sont enregistrées dans `~/.config/lookinfiles/remotes.xml`.
+Dans LookinFiles, les fichiers d’une machine sont vus sous un dossier privé
+vide de `$XDG_RUNTIME_DIR/lookinfiles/remotes/` (en général
+`/run/user/1000/…`), jamais affiché : rien n’y est monté. Les montages que
+les versions précédentes faisaient avec sshfs sont démontés au démarrage.
+Les machines ajoutées à la main sont enregistrées dans
+`~/.config/lookinfiles/remotes.xml`.
+
+## Pas encore disponible sur une machine distante
+
+Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
+locaux : Git (pas de badges ni d’onglet Git), la recherche dans les
+fichiers, Deep Search, Aller au fichier, l’occupation disque, les serveurs
+de langage (complétion, diagnostics) et la compilation LaTeX. Les fonctions
+de recherche le disent dans la barre d’état ; les autres restent éteintes.
 
 ## Vitesse
 
 Chaque lecture de fichier passe par le réseau : les grands dossiers et les
-aperçus de gros fichiers sont plus lents que sur un disque local. Les
-badges git et la recherche dans les fichiers marchent, mais lisent le dépôt
-et les fichiers à travers le montage.
+aperçus de gros fichiers sont plus lents que sur un disque local.

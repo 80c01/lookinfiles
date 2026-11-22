@@ -2,8 +2,8 @@
  * keeps pointing to the file (the target is written), the file keeps its
  * permissions (scripts stay executable), and a read-only file is not
  * replaced. The write is atomic (temporary file renamed over the target).
- * A remote machine's file is written over SFTP (vfs.h; the sshfs mount when
- * the SFTP session cannot serve). No AppData, no widgets. */
+ * A remote machine's file is written over SFTP (vfs.h). No AppData, no
+ * widgets. */
 #ifndef FILE_SAVE_H
 #define FILE_SAVE_H
 

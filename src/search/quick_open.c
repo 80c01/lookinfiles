@@ -1,5 +1,6 @@
 /* Quick open of a project file (see quick_open.h) */
 #include "search/quick_open.h"
+#include "core/remote_path.h"
 #include "core/vfs.h"
 #include "core/app_events.h"
 #include "code/code_index.h"
@@ -419,6 +420,7 @@ void quick_open_show(AppData* app) {
     if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window)) {
         return;
     }
+    if (remote_path_refuse(app, app->base_dir, _("Go to File is not available on a remote machine yet"))) return;
     gchar* root = code_index_project_root(app->base_dir);
     gchar* root_name = g_path_get_basename(root);
     gchar* title = g_strdup_printf(_("Go to File in %s"), root_name);

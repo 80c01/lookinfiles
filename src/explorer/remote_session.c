@@ -1,5 +1,5 @@
 /* The connection to remote machines: master SSH connections, ssh prompts
- * as dialogs, sshfs mounts through the master (see remote_session.h). */
+ * as dialogs, files over SFTP through the master (see remote_session.h). */
 #include "explorer/remote_session.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
@@ -8,7 +8,6 @@
 #include "core/vfs.h"
 #include "widgets/dialog.h"
 
-#include <string.h>
 
 /* The master connection of a machine */
 typedef struct {
@@ -24,16 +23,6 @@ typedef struct {
 static AppData* session_app;
 static GHashTable* masters;    /* machine id -> MasterEntry* */
 static GHashTable* connecting; /* ids of the machines being connected */
-/* The secret typed for the master connection while connecting, given once
- * more to sshfs asking the same question (its connection is its own) */
-static gchar* reuse_prompt;
-static gchar* reuse_secret;
-
-static void forget_secret(void) {
-    if (reuse_secret != NULL) memset(reuse_secret, 0, strlen(reuse_secret));
-    g_clear_pointer(&reuse_secret, g_free);
-    g_clear_pointer(&reuse_prompt, g_free);
-}
 
 /* ------------------------------------------------------------------------- */
 /* ssh prompts                                                               */
@@ -52,11 +41,6 @@ static void on_prompt_response(AppDialog* dlg, gint response, gpointer data) {
         ssh_askpass_reply(p->request, response == APP_RESPONSE_YES ? "yes" : NULL);
     } else {
         const gchar* secret = response == APP_RESPONSE_OK ? gtk_editable_get_text(GTK_EDITABLE(p->entry)) : NULL;
-        if (secret != NULL && connecting != NULL && g_hash_table_size(connecting) > 0) {
-            forget_secret();
-            reuse_prompt = g_strdup(p->prompt);
-            reuse_secret = g_strdup(secret);
-        }
         ssh_askpass_reply(p->request, secret);
         gtk_editable_set_text(GTK_EDITABLE(p->entry), ""); /* the secret is not kept */
     }
@@ -72,12 +56,6 @@ static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar*
     g_strstrip(text);
     if (kind == SSH_ASKPASS_NOTICE) {
         app_notice(app, text, FALSE);
-        g_free(text);
-        return;
-    }
-    if (kind == SSH_ASKPASS_SECRET && reuse_secret != NULL && g_strcmp0(text, reuse_prompt) == 0) {
-        ssh_askpass_reply(request, reuse_secret); /* sshfs, just after the master */
-        forget_secret();
         g_free(text);
         return;
     }
@@ -152,19 +130,12 @@ void remote_session_shutdown(void) {
     ssh_session_on_master_missing(NULL, NULL);
     g_clear_pointer(&masters, g_hash_table_destroy);
     g_clear_pointer(&connecting, g_hash_table_destroy);
-    forget_secret();
     ssh_askpass_stop();
 }
 
 /* ------------------------------------------------------------------------- */
-/* Connecting and mounting                                                   */
+/* Connecting                                                                */
 /* ------------------------------------------------------------------------- */
-
-typedef struct {
-    GMainLoop* loop;
-    gboolean ok;
-    gchar* text;
-} Wait;
 
 static void wake_waiters(MasterEntry* e) {
     for (guint i = 0; i < e->waiters->len; i++) g_main_loop_quit(e->waiters->pdata[i]);
@@ -247,77 +218,13 @@ void remote_session_open_master(RemoteMachine* rm) {
     if (rm != NULL && rm->id != NULL) open_master(rm, TRUE);
 }
 
-static void on_sshfs_done(GObject* source, GAsyncResult* res, gpointer data) {
-    Wait* w = data;
-    GBytes* err = NULL;
-    GError* error = NULL;
-    g_subprocess_communicate_finish(G_SUBPROCESS(source), res, NULL, &err, &error);
-    GSubprocess* p = G_SUBPROCESS(source);
-    w->ok = error == NULL && g_subprocess_get_if_exited(p) && g_subprocess_get_exit_status(p) == 0;
-    gsize n = 0;
-    const gchar* bytes = err != NULL ? g_bytes_get_data(err, &n) : NULL;
-    if (!w->ok) {
-        w->text = n > 0 ? g_utf8_make_valid(bytes, (gssize)n)
-                        : g_strdup(error != NULL ? error->message : _("sshfs process exited with an error."));
-        g_strstrip(w->text);
-    }
-    if (err != NULL) g_bytes_unref(err);
-    g_clear_error(&error);
-    g_main_loop_quit(w->loop);
-}
-
-/* sshfs user@host:dir mount_dir, with a connection of its own: the
- * interface waits on the mount without a timeout (file reads on the main
- * thread), so it must never wait behind a master connection that a terminal
- * or a kernel session could stall */
-static gboolean run_sshfs(const RemoteMachine* rm, const SshTarget* t, const gchar* mount_dir, gchar** error_text) {
-    GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
-    g_ptr_array_add(argv, g_strdup("sshfs"));
-    gchar* dest = ssh_session_destination(t);
-    gboolean home = rm->remote_path == NULL || rm->remote_path[0] == '\0' || g_strcmp0(rm->remote_path, "~") == 0;
-    g_ptr_array_add(argv, g_strconcat(dest, ":", home ? "" : rm->remote_path, NULL));
-    g_free(dest);
-    g_ptr_array_add(argv, g_strdup(mount_dir));
-    g_ptr_array_add(argv, g_strdup("-o"));
-    g_ptr_array_add(argv, g_strdup("reconnect,follow_symlinks,idmap=user"));
-    GPtrArray* opts = ssh_session_options(t, SSH_ARGV_NO_MUX); /* passed on to its ssh */
-    for (guint i = 0; i < opts->len; i++) {
-        g_ptr_array_add(argv, g_strdup("-o"));
-        g_ptr_array_add(argv, g_strdup(opts->pdata[i]));
-    }
-    g_ptr_array_unref(opts);
-    g_ptr_array_add(argv, NULL);
-
-    GSubprocessLauncher* l = ssh_session_launcher(G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_SILENCE |
-                                                  G_SUBPROCESS_FLAGS_STDERR_PIPE);
-    GError* error = NULL;
-    GSubprocess* p = g_subprocess_launcher_spawnv(l, (const gchar* const*)argv->pdata, &error);
-    g_object_unref(l);
-    g_ptr_array_unref(argv);
-    if (p == NULL) {
-        *error_text = g_strdup(error->message);
-        g_error_free(error);
-        return FALSE;
-    }
-    Wait w = { g_main_loop_new(NULL, FALSE), FALSE, NULL };
-    GBytes* none = g_bytes_new(NULL, 0);
-    g_subprocess_communicate_async(p, none, NULL, on_sshfs_done, &w);
-    g_bytes_unref(none);
-    g_main_loop_run(w.loop); /* sshfs returns once mounted (it goes on in the background) */
-    g_main_loop_unref(w.loop);
-    g_object_unref(p);
-    *error_text = w.text;
-    return w.ok;
-}
-
-gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* mount_dir, gchar** error_text) {
+gboolean remote_session_connect(AppData* app, RemoteMachine* rm, gchar** error_text) {
     *error_text = NULL;
     if (rm == NULL || rm->id == NULL) return FALSE;
     if (connecting == NULL) connecting = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     if (g_hash_table_contains(connecting, rm->id)) return FALSE; /* Enter pressed again meanwhile */
     gchar* id = g_strdup(rm->id); /* rm may be edited while waiting */
     g_hash_table_add(connecting, g_strdup(id));
-    SshTarget t = remote_machine_target(rm);
     gchar* notice = g_strdup_printf(_("Connecting to %s…"), (rm->name != NULL && rm->name[0] != '\0') ? rm->name : rm->host);
     app_notice(app, notice, FALSE);
     g_free(notice);
@@ -332,14 +239,7 @@ gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* moun
     e = masters != NULL ? g_hash_table_lookup(masters, id) : NULL; /* gone if the application quit */
     gboolean ok = e != NULL && ssh_master_is_up(e->master);
     if (!ok) *error_text = g_strdup(e != NULL && e->error != NULL ? e->error : "");
-    rm = ok ? remote_find_by_id(app, id) : NULL; /* deleted while waiting? */
-    if (rm != NULL) {
-        t = remote_machine_target(rm);
-        ok = run_sshfs(rm, &t, mount_dir, error_text);
-    } else {
-        ok = FALSE;
-    }
-    forget_secret();
+    if (ok && remote_find_by_id(app, id) == NULL) ok = FALSE; /* deleted while waiting */
     app_notice(app, NULL, FALSE);
     g_hash_table_remove(connecting, id);
     g_free(id);

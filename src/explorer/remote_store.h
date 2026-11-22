@@ -16,7 +16,7 @@ typedef struct {
     gint port;             /* SSH port (default 22) */
     gchar* remote_path;    /* default directory on remote (default: "~" or "/") */
     gchar* identity_file;  /* optional private key path */
-    gchar* mount_point;    /* local path where sshfs mounted it (remote_mounts_dir()) */
+    gchar* mount_point;    /* local folder its files are seen at (remote_mounts_dir(), empty) */
     gboolean is_connected; /* whether currently mounted */
     gboolean from_ssh_config; /* whether parsed from ~/.ssh/config */
     gchar* folder_id;      /* RemoteFolder id, NULL at the top level */

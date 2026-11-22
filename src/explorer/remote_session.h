@@ -2,11 +2,9 @@
 #define REMOTE_SESSION_H
 
 /* The connection to a remote machine: one master SSH connection per machine
- * (ssh_session.h) for the remote commands (kernels), and the sshfs mount on a
- * connection of its own (the interface reads the mount synchronously: it must
- * not depend on the master); the password and passphrase prompts of ssh shown
- * as dialogs (ssh_askpass.h), the one typed for the master given once more to
- * sshfs; the listings of its folders over SFTP (vfs.h). */
+ * (ssh_session.h) for its files (over SFTP, vfs.h), its remote commands
+ * (kernels, System Monitor); the password and passphrase prompts of ssh
+ * shown as dialogs (ssh_askpass.h). */
 #include "core/app_types.h"
 #include "explorer/remote_store.h"
 
@@ -16,19 +14,18 @@ void remote_session_init(AppData* app, const gchar* argv0);
 /* Close every master connection; at exit */
 void remote_session_shutdown(void);
 
-/* Open the master connection of rm (asking for a password if needed), then
- * mount its remote directory on mount_dir with sshfs. The interface stays live meanwhile
- * (nested main loop, as app_dialog_run()). TRUE when mounted; else FALSE
- * with *error_text (what ssh or sshfs said; caller frees) or, when rm is
- * already being connected, NULL. */
-gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* mount_dir, gchar** error_text);
-/* Open the master connection of rm in the background unless it is open (a
- * machine found already mounted: the commands run on it need one) */
+/* Open the master connection of rm (asking for a password if needed). The
+ * interface stays live meanwhile (nested main loop, as app_dialog_run()).
+ * TRUE when connected; else FALSE with *error_text (what ssh said; caller
+ * frees) or, when rm is already being connected, NULL. */
+gboolean remote_session_connect(AppData* app, RemoteMachine* rm, gchar** error_text);
+/* Open the master connection of rm in the background unless it is open (it
+ * may have dropped) */
 void remote_session_open_master(RemoteMachine* rm);
-/* Read the folders of rm, connected at rm->mount_point, over SFTP through
- * its master connection (vfs.h) rather than the mount */
+/* Read the files of rm, seen at rm->mount_point, over SFTP through its
+ * master connection (vfs.h) */
 void remote_session_files_open(RemoteMachine* rm);
-/* Close the SFTP session and the master connection of rm (after unmounting) */
+/* Close the SFTP session and the master connection of rm */
 void remote_session_close(RemoteMachine* rm);
 
 #endif /* REMOTE_SESSION_H */

@@ -1,5 +1,6 @@
 /* Language servers for code navigation (see code_intel.h) */
 #include "code/code_intel.h"
+#include "core/vfs.h"
 #include "code/code_lint.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
@@ -1010,6 +1011,7 @@ static void sync_state_free(gpointer p) {
 
 void code_intel_attach(AppData* app, EditorTab* tab) {
     if (app == NULL || tab == NULL || tab->buffer == NULL || tab->path == NULL) return;
+    if (vfs_is_remote(tab->path)) return; /* language servers run here: not on a remote machine's files yet */
     if (g_object_get_data(G_OBJECT(tab->buffer), SYNC_TIMER_KEY) != NULL) return;
     SyncState* ss = g_new0(SyncState, 1);
     ss->app = app;

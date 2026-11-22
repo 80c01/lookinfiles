@@ -1,5 +1,6 @@
 /* The Disk Usage tab: the room a folder takes (see disk_usage_tab.h) */
 #include "diskuse/disk_usage_tab.h"
+#include "core/remote_path.h"
 #include "diskuse/disk_usage_list.h"
 #include "diskuse/disk_usage_stats.h"
 #include "diskuse/disk_usage_views.h"
@@ -744,6 +745,7 @@ static DiskUsageTab* ensure_page(AppData* app) {
 
 void disk_usage_tab_show(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return;
+    if (remote_path_refuse(app, path, _("Disk Usage is not available on a remote machine yet"))) return;
     DiskUsageTab* dt = ensure_page(app);
     if (dt == NULL) return;
     if (g_strcmp0(dt->root, path) != 0) { /* another folder */

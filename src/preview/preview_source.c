@@ -28,9 +28,8 @@ gboolean preview_source_stamp(const gchar* path, FileStamp* stamp) {
             stamp->inode = 0;
             return TRUE;
         }
-        gboolean answered = !vfs_error_is_connection(error);
         g_error_free(error);
-        if (answered) return FALSE; /* no such file */
+        return FALSE;
     }
     return file_stamp_read(path, stamp);
 }
@@ -45,9 +44,8 @@ PreviewSource* preview_source_open(const gchar* path, gboolean head, GCancellabl
             src->mem = bytes;
             return src;
         }
-        gboolean answered = !vfs_error_is_connection(error);
         g_error_free(error);
-        if (answered) return NULL;
+        return NULL;
     }
     FILE* fp = g_fopen(path, "rb");
     if (fp == NULL) return NULL;
@@ -78,7 +76,7 @@ gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* ca
     GError* error = NULL;
     gchar* local = vfs_cache_copy(path, player ? PLAYER_COPY_MAX_BYTES : COPY_MAX_BYTES, cancel, &error);
     if (local == NULL) {
-        g_debug("no local copy of %s: %s; reading the mount", path, error->message);
+        g_debug("no local copy of %s: %s", path, error->message);
         g_error_free(error);
         return NULL;
     }

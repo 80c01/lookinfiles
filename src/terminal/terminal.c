@@ -140,8 +140,7 @@ static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
     if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
         /* A connection of its own, never the master one: the master writes to
          * the tty of its clients with blocking writes, so a terminal not read
-         * while the interface waits on the sshfs mount (through that same
-         * master) would freeze both */
+         * would stall the SFTP sessions and commands going through it */
         SshTarget t = remote_machine_target(rm);
         GPtrArray* args = ssh_session_argv(&t, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
 

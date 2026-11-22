@@ -301,7 +301,9 @@ gchar* file_action_new_file(AppData* app) {
     gchar* full_path = g_build_filename(target_dir, filename, NULL);
     if (!file_moves_exists(full_path)) {
         GBytes* none = g_bytes_new(NULL, 0);
-        if (!vfs_is_remote(full_path) || !vfs_write(full_path, none, 0644, NULL)) { /* over SFTP when remote */
+        if (vfs_is_remote(full_path)) {
+            vfs_write(full_path, none, 0644, NULL); /* over SFTP */
+        } else {
             g_file_set_contents(full_path, "", 0, NULL);
         }
         g_bytes_unref(none);
@@ -331,7 +333,9 @@ gchar* file_action_new_folder(AppData* app) {
         return NULL;
     }
     gchar* new_path = g_build_filename(target_dir, folder_name, NULL);
-    if (!vfs_is_remote(new_path) || !vfs_mkdir_with_parents(new_path, 0755, NULL)) { /* over SFTP when remote */
+    if (vfs_is_remote(new_path)) {
+        vfs_mkdir_with_parents(new_path, 0755, NULL); /* over SFTP */
+    } else {
         g_mkdir_with_parents(new_path, 0755);
     }
 

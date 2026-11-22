@@ -1,5 +1,6 @@
 /* LaTeX documents compiled when they are saved (see latex_build.h) */
 #include "latex/latex_build.h"
+#include "core/vfs.h"
 #include "latex/latex_errors.h"
 #include "latex/latex_log.h"
 #include "latex/latex_root.h"
@@ -426,6 +427,7 @@ static void start_build(AppData* app, const gchar* path) {
 
 void latex_build_saved(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL || !g_str_has_suffix(path, ".tex")) return;
+    if (vfs_is_remote(path)) return; /* the build runs here: not on a remote machine's files yet */
     start_build(app, path);
 }
 

@@ -104,7 +104,7 @@ static SessionWorkspace* capture_workspace(AppData* app, Session* s, gint i) {
  * gone, or a remote machine no longer mounted (nothing is changed) */
 static gboolean apply_workspace(AppData* app, const SessionWorkspace* sw) {
     if (sw->remote_id != NULL) {
-        /* An unmounted sshfs folder is an empty directory: mount it again first */
+        /* The machine's folder is empty while it is not connected: connect first */
         RemoteMachine* rm = remote_find_by_id(app, sw->remote_id);
         if (rm == NULL || !remote_connect_machine(app, rm)) {
             return FALSE;

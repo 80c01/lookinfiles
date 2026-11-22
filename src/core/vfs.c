@@ -679,9 +679,8 @@ gboolean vfs_file_test(const gchar* path, GFileTest test) {
             return (test & G_FILE_TEST_EXISTS) || ((test & G_FILE_TEST_IS_DIR) && e.is_dir) ||
                    ((test & G_FILE_TEST_IS_REGULAR) && !e.is_dir);
         }
-        gboolean told = !vfs_error_is_connection(err);
         g_error_free(err);
-        if (told) return FALSE;
+        return FALSE;
     }
     return g_file_test(path, test);
 }

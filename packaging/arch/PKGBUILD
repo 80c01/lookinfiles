@@ -20,7 +20,7 @@ depends=(
     'gst-plugins-base'
 )
 optdepends=(
-    'sshfs: remote folders over SSH'
+    'openssh: remote machines over SSH'
 )
 makedepends=(
     'git'

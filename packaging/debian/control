@@ -28,7 +28,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends}
 Recommends:
- sshfs
+ openssh-client
 Description: Fast, keyboard-driven GTK 4 file explorer
  LookinFiles ("look in your files") is a keyboard-driven file explorer in C with
  GTK 4, featuring a rich preview panel, text editors in Notepad, Emacs or Vim mode,

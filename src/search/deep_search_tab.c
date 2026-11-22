@@ -1,5 +1,6 @@
 /* The Deep Search tab (see deep_search_tab.h) */
 #include "search/deep_search_tab.h"
+#include "core/remote_path.h"
 #include "search/deep_search.h"
 #include "search/deep_search_charts.h"
 #include "search/deep_search_date.h"
@@ -1078,6 +1079,7 @@ static DeepSearchTab* ensure_page(AppData* app) {
 
 void deep_search_tab_show(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return;
+    if (remote_path_refuse(app, path, _("Deep Search is not available on a remote machine yet"))) return;
     DeepSearchTab* dt = ensure_page(app);
     if (dt == NULL) return;
     gtk_editable_set_text(GTK_EDITABLE(dt->folder), path);

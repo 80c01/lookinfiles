@@ -27,7 +27,7 @@ BuildRequires:  pkgconfig(gstreamer-video-1.0)
 BuildRequires:  pkgconfig(gstreamer-app-1.0)
 BuildRequires:  pkgconfig(gstreamer-tag-1.0)
 
-Recommends:     sshfs
+Recommends:     openssh-clients
 
 %description
 LookinFiles ("look in your files") is a keyboard-driven file explorer in C with

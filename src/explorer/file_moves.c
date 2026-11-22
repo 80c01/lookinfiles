@@ -68,25 +68,10 @@ gboolean file_moves_exists(const gchar* path) {
     if (vfs_is_remote(path)) {
         GError* err = NULL;
         gboolean found = vfs_stat(path, NULL, NULL, &err);
-        gboolean answered = found || !vfs_error_is_connection(err);
         g_clear_error(&err);
-        if (answered) return found || g_file_test(path, G_FILE_TEST_IS_SYMLINK); /* a dangling link too */
+        return found;
     }
     return g_file_test(path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_SYMLINK);
-}
-
-/* A remote rename over SFTP; FALSE with *done FALSE when the SFTP session
- * cannot serve it (the mount is used then) */
-static gboolean rename_remote(const gchar* from, const gchar* to, gboolean* done, GError** error) {
-    GError* err = NULL;
-    gboolean ok = vfs_rename(from, to, FALSE, &err);
-    *done = ok || !vfs_error_is_connection(err);
-    if (!ok && *done) {
-        g_propagate_error(error, err);
-    } else {
-        g_clear_error(&err);
-    }
-    return ok;
 }
 
 /* Plain move, the tabs and the expansion following */
@@ -97,9 +82,9 @@ static gboolean move_path(AppData* app, const gchar* from, const gchar* to, GErr
         g_free(name);
         return FALSE;
     }
-    gboolean done = FALSE;
-    if (vfs_is_remote(from) && !rename_remote(from, to, &done, error) && done) return FALSE;
-    if (!done && g_rename(from, to) != 0) {
+    gboolean remote = vfs_is_remote(from) || vfs_is_remote(to);
+    if (remote && !vfs_rename(from, to, FALSE, error)) return FALSE; /* over SFTP */
+    if (!remote && g_rename(from, to) != 0) {
         int saved = errno;
         g_set_error(error, G_IO_ERROR, g_io_error_from_errno(saved), "%s", g_strerror(saved));
         return FALSE;

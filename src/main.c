@@ -820,7 +820,7 @@ int main(int argc, char** argv) {
     bookmarks_free(app);
     notes_free(app);
     remote_free(app);
-    remote_session_shutdown(); /* after the unmounts: sshfs went through the masters */
+    remote_session_shutdown(); /* after remote_free(): its SFTP sessions go through the masters */
     org_fold_free(app);
     preview_folding_free(app);
     preview_location_free(app);

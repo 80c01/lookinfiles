@@ -606,49 +606,18 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         return FALSE;
     }
 
-    /* Check if sshfs is installed */
-    if (g_find_program_in_path("sshfs") == NULL) {
-        GtkWidget* dlg = app_dialog_new(_("sshfs Required"), app->window,
-                                        _("_Close"), APP_RESPONSE_OK,
-                                        NULL);
-        GtkWidget* box = remote_dialog_body(dlg);
-        GtkWidget* lbl = gtk_label_new(_("To browse and edit remote files, 'sshfs' is required.\n\n"
-                                       "Please install it:\n"
-                                       "  Ubuntu / Debian: sudo apt install sshfs\n"
-                                       "  Fedora: sudo dnf install fuse-sshfs\n"
-                                       "  Arch: sudo pacman -S sshfs\n\n"
-                                       "You can still open an SSH terminal session using the terminal button."));
-        gtk_label_set_wrap(GTK_LABEL(lbl), TRUE);
-        gtk_label_set_xalign(GTK_LABEL(lbl), 0.0f);
-        gtk_box_append(GTK_BOX(box), lbl);
-        RemoteDialogHelper d = { NULL, APP_RESPONSE_OK };
-        remote_run_modal(dlg, &d, NULL);
-        app_dialog_destroy(APP_DIALOG(dlg));
-        return FALSE;
-    }
-
     gchar* mount_dir = remote_mounts_dir(rm->id);
     if (mount_dir == NULL) {
         remote_show_message(app, _("Connection Failed"),
-                            _("Could not create a private folder to mount the machine in. Check that "
+                            _("Could not create a private folder for the machine. Check that "
                               "$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other users."));
         return FALSE;
     }
 
-    /* Mounted by an earlier session or another window: use it as it is */
-    if (!rm->is_connected && remote_mounts_is_mounted(mount_dir)) {
-        rm->is_connected = TRUE;
-        g_free(rm->mount_point);
-        rm->mount_point = g_strdup(mount_dir);
-        if (remote_mounts_owner(mount_dir) == 0) {
-            remote_mounts_claim(mount_dir);
-        }
-    }
-    if (rm->is_connected && rm->mount_point != NULL) remote_session_files_open(rm);
-
-    /* If already mounted and connected, simply switch to files view */
+    /* Already connected: simply switch to the files view */
     if (rm->is_connected && rm->mount_point != NULL) {
-        remote_session_open_master(rm); /* for its kernels and System Monitor: mounted earlier, maybe without */
+        remote_session_files_open(rm);
+        remote_session_open_master(rm); /* unless it is open: it may have dropped */
         g_free(app->current_remote_id);
         app->current_remote_id = g_strdup(rm->id);
         if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
@@ -663,16 +632,15 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         return TRUE;
     }
 
-    /* Master SSH connection (password asked if needed), then sshfs through it */
+    /* The master SSH connection (password asked if needed): its files are
+     * then read over SFTP through it (vfs.h), seen at mount_dir */
     gchar* id = g_strdup(rm->id);
     gchar* error_text = NULL;
-    gboolean mounted = remote_session_mount(app, rm, mount_dir, &error_text);
+    gboolean connected = remote_session_connect(app, rm, &error_text);
     rm = remote_find_by_id(app, id); /* the interface ran meanwhile: rm may be gone */
     g_free(id);
-    if (!mounted || rm == NULL) {
-        if (mounted) {
-            remote_mounts_unmount(mount_dir);
-        } else if (error_text != NULL && rm != NULL) {
+    if (!connected || rm == NULL) {
+        if (!connected && error_text != NULL && rm != NULL) {
             GtkWidget* dlg = app_dialog_new(_("Connection Failed"), app->window,
                                             _("_Close"), APP_RESPONSE_OK,
                                             NULL);
@@ -693,7 +661,6 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         return FALSE;
     }
 
-    remote_mounts_claim(mount_dir);
     rm->is_connected = TRUE;
     g_free(rm->mount_point);
     rm->mount_point = mount_dir;
@@ -708,7 +675,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
         cur->remote_id = g_strdup(rm->id);
     }
 
-    /* Switch to Files Explorer view and navigate into remote mount */
+    /* Switch to the files view, into the machine's folder */
     explorer_set_view(app, SIDEBAR_VIEW_FILES);
     reload_directory(app, rm->mount_point);
     app_emit(app, APP_EVENT_CHROME_CHANGED);

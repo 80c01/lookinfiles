@@ -17,17 +17,18 @@ gboolean editor_stamp_read(const gchar* path, EditorStamp* out) {
     }
     FileStamp st;
     if (vfs_is_remote(path)) {
-        /* The last reading over SFTP (no wait; vfs_watch.h), else the mount's,
-         * in the same terms: seconds, no inode */
+        /* The last reading over SFTP (no wait; vfs_watch.h): seconds, no
+         * inode. Unknown (no SFTP session): not valid, so nothing is taken
+         * as changed or removed meanwhile. */
         gboolean exists = FALSE;
         gint64 size = 0;
         gint64 mtime = 0;
-        if (vfs_watch_stamp(path, &exists, &size, &mtime)) {
-            st.size = size;
-            st.mtime_ns = mtime * G_GINT64_CONSTANT(1000000000);
-        } else if ((exists = file_stamp_read(path, &st))) {
-            st.mtime_ns -= st.mtime_ns % G_GINT64_CONSTANT(1000000000);
+        if (!vfs_watch_stamp(path, &exists, &size, &mtime)) {
+            if (out != NULL) out->valid = FALSE;
+            return FALSE;
         }
+        st.size = size;
+        st.mtime_ns = mtime * G_GINT64_CONSTANT(1000000000);
         st.inode = 0;
         if (!exists) {
             return FALSE;

@@ -34,7 +34,8 @@ makepkg -si
   (`make install` puts it there), opened at the first browser tab: without
   WebKitGTK installed the program still starts, browser tabs say they cannot
   load it. Every package must ship that file.
-- **Optional**: `sshfs`
+- **Optional**: the OpenSSH client (`ssh`, with its `sftp` subsystem on
+  the remote side) for remote machines; `sshfs` is no longer used.
 
 ---
 
