@@ -117,6 +117,10 @@ gboolean ipynb_save_as(IpynbTab* t);
 /* Before closing: a notebook without a file and with changes asks to save
  * them (Save As), drop them, or stay open (FALSE) */
 gboolean ipynb_save_may_close(IpynbTab* t);
+/* The margined box of an AppDialog's content area, for its widgets */
+GtkWidget* ipynb_dialog_body(GtkWidget* dlg);
+/* A wrapped label added to box */
+GtkWidget* ipynb_dialog_label(GtkWidget* box, const gchar* text);
 
 /* ipynb_run.c */
 /* Add the run buttons to the tab's bar; returns the kernel button (the

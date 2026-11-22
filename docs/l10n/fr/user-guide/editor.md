@@ -89,7 +89,12 @@ cellule Markdown nouvelle ou vide reste en source.
   la barre d’état indique `sur <machine>`) : son environnement virtuel
   là-bas sert de la même façon ; sans lui, Python et Jupyter doivent y être
   installés, dans le `PATH` d’une commande SSH non interactive. Le menu
-  liste les noyaux du Python utilisé. Le bouton du noyau dans la barre
+  liste les noyaux du Python utilisé ; sa dernière entrée, **Interpréteur
+  Python…**, fixe le Python des notebooks du dossier et de ses
+  sous-dossiers (un Python de conda ou de pyenv, un environnement virtuel
+  rangé ailleurs ; un chemin de la machine pour un notebook distant, `~/`
+  pour son dossier personnel), gardé dans `jupyter.ini` ; laissez-le vide
+  pour le retrouver comme ci-dessus. Le bouton du noyau dans la barre
   porte le nom du noyau du notebook, la barre d’état sous les cellules son
   état ; son menu liste les noyaux installés : en choisir un
   arrête le noyau en cours, l’enregistre dans le notebook et le démarre.

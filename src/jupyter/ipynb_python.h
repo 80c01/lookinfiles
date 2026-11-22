@@ -13,8 +13,10 @@
  * kernel, `!pip` and the programs the cells run are those of the
  * environment. A virtual environment without Jupyter is not used; its
  * folder goes to the bridge in IPYNB_PYTHON_VENV_VAR, so that its error
- * says where to install Jupyter ("no-jupyter-venv"). GLib only, no
- * widgets; unit-tested. */
+ * says where to install Jupyter ("no-jupyter-venv"). A Python chosen for a
+ * folder (ipynb_python_choose()) wins over all that, for the notebooks of
+ * the folder and of its subfolders; one in a virtual environment runs it
+ * active. GLib only, no widgets; unit-tested. */
 
 /* Set for the bridge to a virtual environment found without Jupyter */
 #define IPYNB_PYTHON_VENV_VAR "LOOKIN_IPYNB_VENV"
@@ -30,16 +32,33 @@ gboolean ipynb_python_venv_has_jupyter(const gchar* venv);
  * g_strfreev(). */
 gchar** ipynb_python_venv_environ(const gchar* venv, gchar** envp);
 
-/* The Python for a local notebook in folder dir (NULL when there is none)
- * and *envp the environment to run it with (NULL: this one). Caller frees
- * both. */
-gchar* ipynb_python_local(const gchar* dir, gchar*** envp);
+/* The virtual environment of a Python (venv/bin/python), or NULL. Caller frees. */
+gchar* ipynb_python_venv_of(const gchar* python);
+
+/* The Python for a local notebook in folder dir (chosen: the one chosen
+ * for it, NULL: found as above; NULL when there is none) and *envp the
+ * environment to run it with (NULL: this one). Caller frees both. */
+gchar* ipynb_python_local(const gchar* dir, const gchar* chosen, gchar*** envp);
 
 /* The line for a remote POSIX shell (ssh) running the bridge script with
- * the Python of the virtual environment of dir (a folder of the machine;
- * NULL: none looked for), else python3, else python: the arguments that
- * follow on the ssh command line go to the script (--list). Without Python
- * it prints an "error" event of code "no-python" and exits. Caller frees. */
-gchar* ipynb_python_remote_command(const gchar* script, const gchar* dir);
+ * chosen (a Python of the machine, ~/ for its home folder), else the Python
+ * of the virtual environment of dir (a folder of the machine; NULL: none
+ * looked for), else python3, else python: the arguments that follow on the
+ * ssh command line go to the script (--list). Without Python it prints an
+ * "error" event of code "no-python" and exits. Caller frees. */
+gchar* ipynb_python_remote_command(const gchar* script, const gchar* dir, const gchar* chosen);
+
+/* --- The Pythons chosen for folders ---
+ * A key file (file: jupyter.ini of the configuration folder), a group per
+ * folder (as the notebook tabs name it, a remote one too):
+ *   [/home/me/project]
+ *   python=/home/me/.pyenv/versions/3.12.4/bin/python
+ */
+
+/* The Python chosen for folder dir or its nearest parent, or NULL. Caller frees. */
+gchar* ipynb_python_chosen(const gchar* file, const gchar* dir);
+/* Choose python for folder dir (NULL or "": found again); FALSE with error
+ * set when the file cannot be written or dir cannot be a group name */
+gboolean ipynb_python_choose(const gchar* file, const gchar* dir, const gchar* python, GError** error);
 
 #endif /* IPYNB_PYTHON_H */

@@ -13019,6 +13019,61 @@ msgstr ""
 "Exécuter les cellules demande Jupyter dans l’environnement virtuel %s : pip "
 "install ipykernel"
 
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "Python: %s"
+msgstr "Python : %s"
+
+#: src/jupyter/ipynb_run.c
+msgid "Python: automatic"
+msgstr "Python : automatique"
+
+#: src/jupyter/ipynb_run.c
+msgid "Type the full path of the Python program."
+msgstr "Tapez le chemin complet du programme Python."
+
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "%s is not a program."
+msgstr "%s n’est pas un programme."
+
+#: src/jupyter/ipynb_run.c
+msgid "Python Interpreter"
+msgstr "Interpréteur Python"
+
+#: src/jupyter/ipynb_run.c
+msgid "_Use"
+msgstr "_Utiliser"
+
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "The Python that runs the notebooks of %s and of its subfolders:"
+msgstr "Le Python qui exécute les notebooks de %s et de ses sous-dossiers :"
+
+#: src/jupyter/ipynb_run.c
+msgid "Automatic"
+msgstr "Automatique"
+
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid ""
+"A path on %s (~/ for the home folder there). Empty: the virtual environment "
+"of the project (.venv, venv or env), else python3."
+msgstr ""
+"Un chemin sur %s (~/ pour le dossier personnel là-bas). Vide : "
+"l’environnement virtuel du projet (.venv, venv ou env), sinon python3."
+
+#: src/jupyter/ipynb_run.c
+msgid ""
+"Empty: the virtual environment of the project (.venv, venv or env), else "
+"python3."
+msgstr ""
+"Vide : l’environnement virtuel du projet (.venv, venv ou env), sinon python3."
+
+#: src/jupyter/ipynb_run.c
+msgid "Python Interpreter…"
+msgstr "Interpréteur Python…"
+
 #: src/sysmon/sysmon_tab.c
 msgid "no Linux /proc there"
 msgstr "pas de /proc Linux là-bas"

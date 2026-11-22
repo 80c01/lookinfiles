@@ -56,7 +56,7 @@ void ipynb_tab_mark_changed(IpynbTab* t) {
 
 /* --- A notebook without a file --- */
 
-static GtkWidget* dialog_label(GtkWidget* box, const gchar* text) {
+GtkWidget* ipynb_dialog_label(GtkWidget* box, const gchar* text) {
     GtkWidget* label = gtk_label_new(text);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_label_set_max_width_chars(GTK_LABEL(label), 60);
@@ -65,7 +65,7 @@ static GtkWidget* dialog_label(GtkWidget* box, const gchar* text) {
     return label;
 }
 
-static GtkWidget* dialog_body(GtkWidget* dlg) {
+GtkWidget* ipynb_dialog_body(GtkWidget* dlg) {
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_widget_set_margin_top(box, 14);
     gtk_widget_set_margin_bottom(box, 14);
@@ -115,7 +115,7 @@ static gboolean confirm_replace(IpynbTab* t, const gchar* path) {
     gchar* shown = remote_path_display(t->app, path);
     gchar* message = g_strdup_printf(_("%s already exists. Replace it?"), shown);
     g_free(shown);
-    dialog_label(dialog_body(dlg), message);
+    ipynb_dialog_label(ipynb_dialog_body(dlg), message);
     g_free(message);
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);
     gint response = app_dialog_run(APP_DIALOG(dlg),
@@ -151,14 +151,14 @@ gboolean ipynb_save_as(IpynbTab* t) {
         GtkWidget* dlg = app_dialog_new(_("Save Notebook"), t->app->window, _("_Cancel"), APP_RESPONSE_CANCEL,
                                         _("_Save"), APP_RESPONSE_OK, NULL);
         app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
-        GtkWidget* box = dialog_body(dlg);
-        dialog_label(box, _("File name (from the notebook's folder):"));
+        GtkWidget* box = ipynb_dialog_body(dlg);
+        ipynb_dialog_label(box, _("File name (from the notebook's folder):"));
         GtkWidget* entry = gtk_entry_new();
         gtk_editable_set_text(GTK_EDITABLE(entry), text);
         gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
         gtk_widget_set_size_request(entry, 360, -1);
         gtk_box_append(GTK_BOX(box), entry);
-        if (problem != NULL) gtk_widget_add_css_class(dialog_label(box, problem), "error");
+        if (problem != NULL) gtk_widget_add_css_class(ipynb_dialog_label(box, problem), "error");
         gint response = app_dialog_run(APP_DIALOG(dlg), entry);
         g_free(text);
         text = g_strdup(gtk_editable_get_text(GTK_EDITABLE(entry)));
@@ -208,7 +208,7 @@ gboolean ipynb_save_may_close(IpynbTab* t) {
     GtkWidget* dlg = app_dialog_new(_("Unsaved Notebook"), t->app->window, _("_Cancel"), APP_RESPONSE_CANCEL,
                                     _("Close _Without Saving"), APP_RESPONSE_NO, _("_Save…"), APP_RESPONSE_OK, NULL);
     gchar* message = g_strdup_printf(_("%s has never been saved. Save it before closing?"), t->name);
-    dialog_label(dialog_body(dlg), message);
+    ipynb_dialog_label(ipynb_dialog_body(dlg), message);
     g_free(message);
     /* Destructive choice: Enter keeps the notebook */
     app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_CANCEL);

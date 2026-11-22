@@ -80,7 +80,11 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   virtual environment there is used the same way; without one, Python
   and Jupyter must be installed there, in the `PATH` of a
   non-interactive SSH command. The menu lists the kernels of the Python
-  used.
+  used; its last entry, **Python Interpreter…**, sets the Python of the
+  notebooks of the folder and of its subfolders (a conda or pyenv one, a
+  virtual environment kept elsewhere; a path on the machine for a remote
+  notebook, `~/` for its home folder), kept in `jupyter.ini`; leave it
+  empty to find it again as above.
   The kernel's button in the bar shows the notebook's kernel,
   the status bar under the cells its state; its menu lists
   the installed kernels: choosing one stops the kernel running, records it

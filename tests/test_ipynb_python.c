@@ -112,12 +112,12 @@ static void test_local(void) {
     Tree t;
     tree_init(&t);
     gchar** envp = NULL;
-    gchar* python = ipynb_python_local(t.sub, &envp);
+    gchar* python = ipynb_python_local(t.sub, NULL, &envp);
     g_assert_null(envp); /* no virtual environment: python3 of the PATH, here */
     g_free(python);
 
     make_venv(t.venv);
-    python = ipynb_python_local(t.sub, &envp);
+    python = ipynb_python_local(t.sub, NULL, &envp);
     g_assert_nonnull(envp); /* without Jupyter: said to the bridge */
     g_assert_cmpstr(g_environ_getenv(envp, IPYNB_PYTHON_VENV_VAR), ==, t.venv);
     g_assert_cmpstr(g_environ_getenv(envp, "PATH"), ==, g_getenv("PATH")); /* not active */
@@ -125,7 +125,7 @@ static void test_local(void) {
     g_strfreev(envp);
 
     add_jupyter(t.venv);
-    python = ipynb_python_local(t.sub, &envp);
+    python = ipynb_python_local(t.sub, NULL, &envp);
     gchar* expected = ipynb_python_venv_python(t.venv);
     g_assert_cmpstr(python, ==, expected);
     g_assert_cmpstr(g_environ_getenv(envp, "VIRTUAL_ENV"), ==, t.venv);
@@ -137,8 +137,9 @@ static void test_local(void) {
 }
 
 /* The remote line run by a local sh with " --list" after it */
-static gchar* run_remote(const gchar* script, const gchar* dir, const gchar* const* env) {
-    gchar* line = ipynb_python_remote_command(script, dir);
+static gchar* run_remote_with(const gchar* script, const gchar* dir, const gchar* chosen,
+                             const gchar* const* env) {
+    gchar* line = ipynb_python_remote_command(script, dir, chosen);
     gchar* cmd = g_strconcat(line, " --list", NULL);
     const gchar* argv[] = { "/bin/sh", "-c", cmd, NULL };
     gchar* out = NULL;
@@ -148,6 +149,10 @@ static gchar* run_remote(const gchar* script, const gchar* dir, const gchar* con
     g_free(cmd);
     g_free(line);
     return out;
+}
+
+static gchar* run_remote(const gchar* script, const gchar* dir, const gchar* const* env) {
+    return run_remote_with(script, dir, NULL, env);
 }
 
 static void test_remote_command(void) {
@@ -194,8 +199,83 @@ static void test_remote_command(void) {
     out = run_remote(script, t.sub, env);
     g_assert_cmpstr(out, ==, "None ['--list']\n");
     g_free(out);
+
+    /* A Python chosen: it, whatever the folder; active when in a venv */
+    gchar* chosen = ipynb_python_venv_python(t.venv);
+    out = run_remote_with("S", NULL, chosen, env);
+    expected = g_strdup_printf("venv:%s:-c S --list\n", t.venv);
+    g_assert_cmpstr(out, ==, expected);
+    g_free(expected);
+    g_free(out);
+    g_free(chosen);
+    /* ~/ is the home folder of the machine */
+    gchar* other = g_build_filename(t.sub, "py", NULL);
+    write_file(other, "#!/bin/sh\necho \"other:$VIRTUAL_ENV:$1\"\n", 0755);
+    g_free(other);
+    out = run_remote_with("S", t.sub, "~/py", env);
+    g_assert_cmpstr(out, ==, "other::-c\n");
+    g_free(out);
+    out = run_remote_with("S", t.sub, "/missing/python", env);
+    g_assert_nonnull(strstr(out, "\"code\": \"no-python\", \"message\": \"/missing/python not found\""));
+    g_free(out);
     g_free(home);
     g_free(path);
+    tree_clear(&t);
+}
+
+static void test_local_chosen(void) {
+    Tree t;
+    tree_init(&t);
+    make_venv(t.venv); /* without Jupyter: the Python chosen wins anyway */
+    gchar* chosen = ipynb_python_venv_python(t.venv);
+    gchar** envp = NULL;
+    gchar* python = ipynb_python_local(t.root, chosen, &envp);
+    g_assert_cmpstr(python, ==, chosen);
+    g_assert_cmpstr(g_environ_getenv(envp, "VIRTUAL_ENV"), ==, t.venv);
+    g_free(python);
+    g_strfreev(envp);
+    gchar* venv = ipynb_python_venv_of(chosen);
+    g_assert_cmpstr(venv, ==, t.venv);
+    g_free(venv);
+    g_assert_null(ipynb_python_venv_of("/usr/bin/python3"));
+
+    python = ipynb_python_local(t.sub, "/usr/bin/python3", &envp);
+    g_assert_cmpstr(python, ==, "/usr/bin/python3");
+    g_assert_null(envp);
+    g_free(python);
+    python = ipynb_python_local(t.sub, "~/bin/python", &envp);
+    gchar* expected = g_build_filename(g_get_home_dir(), "bin", "python", NULL);
+    g_assert_cmpstr(python, ==, expected);
+    g_free(expected);
+    g_free(python);
+    g_strfreev(envp);
+    g_free(chosen);
+    tree_clear(&t);
+}
+
+static void test_choices(void) {
+    Tree t;
+    tree_init(&t);
+    gchar* file = g_build_filename(t.root, "config", "jupyter.ini", NULL);
+    g_assert_null(ipynb_python_chosen(file, t.sub));
+    g_assert_true(ipynb_python_choose(file, t.repo, "/opt/py/bin/python", NULL));
+    gchar* python = ipynb_python_chosen(file, t.sub); /* from its parent */
+    g_assert_cmpstr(python, ==, "/opt/py/bin/python");
+    g_free(python);
+    g_assert_null(ipynb_python_chosen(file, t.root));
+    g_assert_true(ipynb_python_choose(file, t.sub, "/other/python", NULL));
+    python = ipynb_python_chosen(file, t.sub); /* the nearest */
+    g_assert_cmpstr(python, ==, "/other/python");
+    g_free(python);
+    g_assert_true(ipynb_python_choose(file, t.sub, NULL, NULL));
+    python = ipynb_python_chosen(file, t.sub);
+    g_assert_cmpstr(python, ==, "/opt/py/bin/python");
+    g_free(python);
+    GError* error = NULL;
+    g_assert_false(ipynb_python_choose(file, "/a[b]", "/x", &error));
+    g_assert_nonnull(error);
+    g_error_free(error);
+    g_free(file);
     tree_clear(&t);
 }
 
@@ -205,5 +285,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/ipynb_python/environ", test_environ);
     g_test_add_func("/ipynb_python/local", test_local);
     g_test_add_func("/ipynb_python/remote_command", test_remote_command);
+    g_test_add_func("/ipynb_python/local_chosen", test_local_chosen);
+    g_test_add_func("/ipynb_python/choices", test_choices);
     return g_test_run();
 }

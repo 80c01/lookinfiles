@@ -249,7 +249,10 @@ Layers, from bottom to top
   Jupyter goes to the bridge in `LOOKIN_IPYNB_VENV` for its
   `no-jupyter-venv` error. `ipynb_python_remote_command()` is the same
   search as a POSIX shell line, run on a remote machine over ssh (else a
-  `no-python` error event).
+  `no-python` error event). A Python chosen for a folder
+  (`jupyter.ini`: `ipynb_python_chosen()`, the nearest folder up, and
+  `ipynb_python_choose()`) wins, active when it is a virtual
+  environment's.
 - `notebook_icons` — the icons offered for notebooks and bookmark folders
   (theme glyph names)
   and the mapping of the emoji stored by older versions.
@@ -1124,7 +1127,9 @@ Layers, from bottom to top
   cells and the source are left alone), the input row, interrupt, restart,
   the kernel menu (labelled with the notebook's kernel;
   `ipynb_kernel_list()` each time it opens; a choice sets the notebook's
-  kernelspec and starts that kernel), the kernel state in the tab's
+  kernelspec and starts that kernel; its last entry, **Python
+  Interpreter…**, asks for the Python of the folder's notebooks and
+  restarts the kernel with it), the kernel state in the tab's
   status bar and the run state in each code cell's head
   (`ipynb_run_state()`: waiting, running, ok or error, coloured
   `@fg_faint` / `@warning` / `@success` / `@error` on the prompt and the

@@ -1,6 +1,7 @@
 /* Running the cells of a Jupyter notebook tab (see ipynb_tab.h and
  * ipynb_tab_private.h) */
 #include "jupyter/ipynb_tab_private.h"
+#include "core/app_paths.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
 #include "core/ssh_session.h"
@@ -9,6 +10,7 @@
 #include "jupyter/ipynb_python.h"
 #include "core/run_time.h"
 #include "theme/icons.h"
+#include "widgets/dialog.h"
 
 #include <string.h>
 
@@ -271,6 +273,22 @@ static const IpynbKernelCallbacks CALLBACKS = { on_state, on_started, on_failed,
 
 /* --- Starting the kernel --- */
 
+/* The file of the Pythons chosen for folders (ipynb_python.h). Caller frees. */
+static gchar* choices_file(void) {
+    gchar* config = app_config_dir();
+    gchar* file = g_build_filename(config, "jupyter.ini", NULL);
+    g_free(config);
+    return file;
+}
+
+/* The Python chosen for the notebook's folder, or NULL. Caller frees. */
+static gchar* chosen_python(IpynbTab* t) {
+    gchar* file = choices_file();
+    gchar* python = ipynb_python_chosen(file, t->dir);
+    g_free(file);
+    return python;
+}
+
 /* The bridge on the machine of a notebook in a mounted remote folder: ssh
  * running it there with the Python of the notebook's virtual environment
  * or python3 (ipynb_python_remote_command()), *cwd the notebook's folder on
@@ -283,7 +301,9 @@ static gchar** remote_bridge_argv(IpynbTab* t, GBytes* script, gchar** cwd) {
     /* Through the master connection of the machine: pipes only, no tty */
     GPtrArray* args = ssh_session_argv(&target, 0);
     gchar* text = g_strndup(g_bytes_get_data(script, NULL), g_bytes_get_size(script));
-    g_ptr_array_add(args, ipynb_python_remote_command(text, remote));
+    gchar* chosen = chosen_python(t);
+    g_ptr_array_add(args, ipynb_python_remote_command(text, remote, chosen));
+    g_free(chosen);
     g_free(text);
     g_ptr_array_add(args, NULL);
     g_free(t->kernel_host);
@@ -311,7 +331,9 @@ static gchar** bridge_argv(IpynbTab* t, gchar** cwd, gchar*** envp, GError** err
         return remote;
     }
     g_clear_pointer(&t->kernel_host, g_free);
-    gchar* python = ipynb_python_local(t->dir, envp);
+    gchar* chosen = chosen_python(t);
+    gchar* python = ipynb_python_local(t->dir, chosen, envp);
+    g_free(chosen);
     if (python == NULL) {
         g_clear_pointer(envp, g_strfreev);
         g_set_error(error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT, "%s", _("Running cells needs Python 3"));
@@ -393,9 +415,114 @@ static void on_kernel_chosen(GtkButton* item, gpointer data) {
     ensure_kernel(t);
 }
 
-static void on_kernels_listed(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data) {
+/* --- Choosing the Python --- */
+
+/* The kernel stops and starts again (if it ran) with another Python */
+static void python_changed(IpynbTab* t, const gchar* python) {
+    gboolean on = t->kernel != NULL && ipynb_kernel_get_state(t->kernel) != IPYNB_KERNEL_OFF;
+    g_clear_pointer(&t->kernel, ipynb_kernel_free);
+    forget_running(t);
+    if (on) ensure_kernel(t);
+    update_kernel_label(t);
+    gchar* text = python != NULL && python[0] != '\0' ? g_strdup_printf(_("Python: %s"), python)
+                                                     : g_strdup(_("Python: automatic"));
+    ipynb_tab_set_status(t, text, FALSE);
+    g_free(text);
+}
+
+/* A problem with the Python typed (local notebooks only: no wait for the
+ * network here), or NULL. Caller frees. */
+static gchar* python_problem(IpynbTab* t, const gchar* python) {
+    if (t->kernel_host != NULL || python[0] == '\0') return NULL;
+    gchar* path = g_str_has_prefix(python, "~/") ? g_build_filename(g_get_home_dir(), python + 2, NULL)
+                                                 : g_strdup(python);
+    gchar* problem = NULL;
+    if (!g_path_is_absolute(path)) {
+        problem = g_strdup(_("Type the full path of the Python program."));
+    } else if (!g_file_test(path, G_FILE_TEST_IS_EXECUTABLE) || g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        problem = g_strdup_printf(_("%s is not a program."), python);
+    }
+    g_free(path);
+    return problem;
+}
+
+/* Ask for the Python of the notebooks of the folder */
+static void choose_python(IpynbTab* t) {
+    gchar* file = choices_file();
+    gchar* current = ipynb_python_chosen(file, t->dir);
+    gchar* folder = remote_path_display(t->app, t->dir);
+    gchar* text = g_strdup(current != NULL ? current : "");
+    gchar* problem = NULL;
+    for (;;) {
+        GtkWidget* dlg = app_dialog_new(_("Python Interpreter"), t->app->window, _("_Cancel"), APP_RESPONSE_CANCEL,
+                                        _("_Use"), APP_RESPONSE_OK, NULL);
+        app_dialog_set_default_response(APP_DIALOG(dlg), APP_RESPONSE_OK);
+        GtkWidget* box = ipynb_dialog_body(dlg);
+        gchar* intro = g_strdup_printf(_("The Python that runs the notebooks of %s and of its subfolders:"), folder);
+        ipynb_dialog_label(box, intro);
+        g_free(intro);
+        GtkWidget* entry = gtk_entry_new();
+        gtk_editable_set_text(GTK_EDITABLE(entry), text);
+        gtk_entry_set_placeholder_text(GTK_ENTRY(entry), _("Automatic"));
+        gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
+        gtk_widget_set_size_request(entry, 420, -1);
+        gtk_box_append(GTK_BOX(box), entry);
+        gchar* hint = t->kernel_host != NULL
+                          ? g_strdup_printf(_("A path on %s (~/ for the home folder there). Empty: the virtual "
+                                              "environment of the project (.venv, venv or env), else python3."),
+                                            t->kernel_host)
+                          : g_strdup(_("Empty: the virtual environment of the project (.venv, venv or env), "
+                                       "else python3."));
+        gtk_widget_add_css_class(ipynb_dialog_label(box, hint), "dim-label");
+        g_free(hint);
+        if (problem != NULL) gtk_widget_add_css_class(ipynb_dialog_label(box, problem), "error");
+        gint response = app_dialog_run(APP_DIALOG(dlg), entry);
+        g_free(text);
+        text = g_strstrip(g_strdup(gtk_editable_get_text(GTK_EDITABLE(entry))));
+        app_dialog_destroy(APP_DIALOG(dlg));
+        g_clear_pointer(&problem, g_free);
+        if (response != APP_RESPONSE_OK || t->closed) break;
+        if (g_strcmp0(text, current != NULL ? current : "") == 0) break; /* unchanged */
+        problem = python_problem(t, text);
+        if (problem != NULL) continue;
+        GError* error = NULL;
+        if (!ipynb_python_choose(file, t->dir, text, &error)) {
+            problem = g_strdup_printf(_("Not saved: %s"), error->message);
+            g_error_free(error);
+            continue;
+        }
+        python_changed(t, text);
+        break;
+    }
+    g_free(text);
+    g_free(folder);
+    g_free(current);
+    g_free(file);
+}
+
+static void on_python_item(GtkButton* item, gpointer data) {
+    (void)item;
     IpynbTab* t = data;
-    g_clear_object(&t->list_cancel);
+    gtk_menu_button_popdown(GTK_MENU_BUTTON(t->kernel_button));
+    choose_python(t);
+}
+
+/* The last entry of the kernel menu: the Python that runs the kernels */
+static void menu_add_python(IpynbTab* t) {
+    gtk_box_append(GTK_BOX(t->kernel_menu), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    GtkWidget* item = gtk_button_new_with_label(_("Python Interpreter…"));
+    gtk_widget_add_css_class(item, "flat");
+    GtkWidget* text = gtk_button_get_child(GTK_BUTTON(item));
+    if (GTK_IS_LABEL(text)) gtk_label_set_xalign(GTK_LABEL(text), 0.0f);
+    gchar* python = chosen_python(t);
+    gtk_widget_set_tooltip_text(item, python != NULL ? python : _("Automatic"));
+    g_free(python);
+    g_signal_connect(item, "clicked", G_CALLBACK(on_python_item), t);
+    gtk_box_append(GTK_BOX(t->kernel_menu), item);
+}
+
+/* The kernels listed (specs NULL: why not) fill the menu */
+static void fill_kernel_menu(IpynbTab* t, GPtrArray* specs, const gchar* code, const gchar* message) {
     if (specs == NULL) {
         gchar* text = g_strcmp0(code, "no-jupyter") == 0        ? no_jupyter_text(t, NULL)
                       : g_strcmp0(code, "no-jupyter-venv") == 0 ? no_jupyter_text(t, message)
@@ -431,6 +558,13 @@ static void on_kernels_listed(GPtrArray* specs, const gchar* code, const gchar* 
     g_ptr_array_unref(specs);
 }
 
+static void on_kernels_listed(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data) {
+    IpynbTab* t = data;
+    g_clear_object(&t->list_cancel);
+    fill_kernel_menu(t, specs, code, message);
+    menu_add_python(t);
+}
+
 /* The menu opens: list the kernels installed now */
 static void on_kernel_menu_show(GtkWidget* popover, gpointer data) {
     (void)popover;
@@ -441,6 +575,7 @@ static void on_kernel_menu_show(GtkWidget* popover, gpointer data) {
     gchar** argv = bridge_argv(t, NULL, &envp, &error);
     if (argv == NULL) {
         menu_message(t, error->message);
+        menu_add_python(t);
         g_error_free(error);
         return;
     }

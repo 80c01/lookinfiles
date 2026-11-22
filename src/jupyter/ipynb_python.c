@@ -103,8 +103,28 @@ gchar** ipynb_python_venv_environ(const gchar* venv, gchar** envp) {
     return envp;
 }
 
-gchar* ipynb_python_local(const gchar* dir, gchar*** envp) {
+gchar* ipynb_python_venv_of(const gchar* python) {
+    if (python == NULL || python[0] == '\0') return NULL;
+    gchar* bin = g_path_get_dirname(python);
+    gchar* venv = g_path_get_dirname(bin);
+    g_free(bin);
+    gchar* cfg = g_build_filename(venv, "pyvenv.cfg", NULL);
+    gboolean yes = g_file_test(cfg, G_FILE_TEST_IS_REGULAR);
+    g_free(cfg);
+    if (!yes) g_clear_pointer(&venv, g_free);
+    return venv;
+}
+
+gchar* ipynb_python_local(const gchar* dir, const gchar* chosen, gchar*** envp) {
     *envp = NULL;
+    if (chosen != NULL && chosen[0] != '\0') {
+        gchar* python = g_str_has_prefix(chosen, "~/") ? g_build_filename(g_get_home_dir(), chosen + 2, NULL)
+                                                       : g_strdup(chosen);
+        gchar* venv = ipynb_python_venv_of(python);
+        if (venv != NULL) *envp = ipynb_python_venv_environ(venv, NULL);
+        g_free(venv);
+        return python;
+    }
     gchar* venv = ipynb_python_find_venv(dir);
     if (venv != NULL && ipynb_python_venv_has_jupyter(venv)) {
         *envp = ipynb_python_venv_environ(venv, NULL);
@@ -119,13 +139,29 @@ gchar* ipynb_python_local(const gchar* dir, gchar*** envp) {
     return python;
 }
 
-gchar* ipynb_python_remote_command(const gchar* script, const gchar* dir) {
+/* The shell word for a Python chosen on a remote machine: ~/ is its home */
+static gchar* remote_word(const gchar* chosen) {
+    if (chosen == NULL || chosen[0] == '\0') return g_strdup("");
+    if (!g_str_has_prefix(chosen, "~/")) return g_shell_quote(chosen);
+    gchar* rest = g_shell_quote(chosen + 2);
+    gchar* word = g_strconcat("\"$HOME\"/", rest, NULL);
+    g_free(rest);
+    return word;
+}
+
+gchar* ipynb_python_remote_command(const gchar* script, const gchar* dir, const gchar* chosen) {
     gchar* quoted = g_shell_quote(script != NULL ? script : "");
     gchar* start = g_shell_quote(dir != NULL ? dir : "");
-    /* v: the virtual environment (as ipynb_python_find_venv()), p: its
-     * Python when it has Jupyter */
+    gchar* python = remote_word(chosen);
+    /* c: the Python chosen; else v: the virtual environment (as
+     * ipynb_python_find_venv()), p: its Python when it has Jupyter */
     gchar* line = g_strconcat(
-        "d=", start, "; v=; p=; i=0; "
+        "c=", python, "; d=", start, "; v=; p=; i=0; "
+        "if [ -n \"$c\" ]; then "
+        "[ -x \"$c\" ] || "
+        "{ printf '{\"ev\": \"error\", \"code\": \"no-python\", \"message\": \"%s not found\"}\\n' \"$c\"; exit 127; }; "
+        "p=$c; d=; e=$(dirname \"$(dirname \"$c\")\"); if [ -f \"$e/pyvenv.cfg\" ]; then v=$e; fi; "
+        "fi; "
         "while [ -n \"$d\" ] && [ $i -lt 64 ]; do "
         "for n in .venv venv env; do "
         "if [ -f \"$d/$n/pyvenv.cfg\" ] && [ -x \"$d/$n/bin/python\" ]; then v=$d/$n; break 2; fi; "
@@ -133,17 +169,66 @@ gchar* ipynb_python_remote_command(const gchar* script, const gchar* dir) {
         "if [ -e \"$d/.git\" ] || [ \"$d\" = \"$HOME\" ] || [ \"$d\" = / ]; then break; fi; "
         "d=$(dirname \"$d\"); i=$((i + 1)); "
         "done; "
-        "if [ -n \"$v\" ]; then for j in \"$v\"/lib/python*/site-packages/jupyter_client; do "
+        "if [ -n \"$v\" ] && [ -z \"$p\" ]; then for j in \"$v\"/lib/python*/site-packages/jupyter_client; do "
         "[ -d \"$j\" ] && p=$v/bin/python; done; fi; "
         "if [ -n \"$p\" ]; then "
-        "VIRTUAL_ENV=$v; PATH=$v/bin:$PATH; export VIRTUAL_ENV PATH; unset PYTHONHOME; "
+        "if [ -n \"$v\" ]; then VIRTUAL_ENV=$v; PATH=$v/bin:$PATH; export VIRTUAL_ENV PATH; unset PYTHONHOME; fi; "
         "else "
         "if [ -n \"$v\" ]; then " IPYNB_PYTHON_VENV_VAR "=$v; export " IPYNB_PYTHON_VENV_VAR "; fi; "
         "p=$(command -v python3 || command -v python) || "
         "{ echo '{\"ev\": \"error\", \"code\": \"no-python\", \"message\": \"python3 not found\"}'; exit 127; }; "
         "fi; "
         "exec \"$p\" -c ", quoted, NULL);
+    g_free(python);
     g_free(start);
     g_free(quoted);
     return line;
+}
+
+/* --- The Pythons chosen for folders --- */
+
+#define KEY_PYTHON "python"
+
+static GKeyFile* load_choices(const gchar* file) {
+    GKeyFile* kf = g_key_file_new();
+    g_key_file_load_from_file(kf, file, G_KEY_FILE_KEEP_COMMENTS, NULL); /* missing: none */
+    return kf;
+}
+
+gchar* ipynb_python_chosen(const gchar* file, const gchar* dir) {
+    if (file == NULL || dir == NULL || dir[0] == '\0') return NULL;
+    GKeyFile* kf = load_choices(file);
+    gchar* d = g_strdup(dir);
+    gchar* python = NULL;
+    for (guint level = 0; python == NULL && level < MAX_LEVELS; level++) {
+        python = g_key_file_get_string(kf, d, KEY_PYTHON, NULL);
+        if (python != NULL && python[0] == '\0') g_clear_pointer(&python, g_free);
+        gchar* up = g_path_get_dirname(d);
+        gboolean top = strcmp(up, d) == 0 || strcmp(up, ".") == 0;
+        g_free(d);
+        d = up;
+        if (top) break;
+    }
+    g_free(d);
+    g_key_file_free(kf);
+    return python;
+}
+
+gboolean ipynb_python_choose(const gchar* file, const gchar* dir, const gchar* python, GError** error) {
+    if (dir == NULL || dir[0] == '\0' || strpbrk(dir, "[]\n\r") != NULL) {
+        g_set_error(error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE, "%s", dir != NULL ? dir : "");
+        return FALSE;
+    }
+    GKeyFile* kf = load_choices(file);
+    if (python != NULL && python[0] != '\0') {
+        g_key_file_set_string(kf, dir, KEY_PYTHON, python);
+    } else {
+        g_key_file_remove_group(kf, dir, NULL);
+    }
+    gchar* folder = g_path_get_dirname(file);
+    g_mkdir_with_parents(folder, 0700);
+    g_free(folder);
+    gboolean ok = g_key_file_save_to_file(kf, file, error);
+    g_key_file_free(kf);
+    return ok;
 }
