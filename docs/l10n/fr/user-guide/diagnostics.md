@@ -2,8 +2,8 @@
 
 L’onglet **Diagnostics** liste ce que LookinFiles peut utiliser sur cet
 ordinateur et ce qui manque, avec la commande qui installe chaque élément
-manquant. Ouvrez-le depuis le bouton **+** au bout de la barre d’onglets :
-**+** → **Diagnostics**.
+manquant. [Ouvrez l’onglet Diagnostics](lookinfiles:diagnostics), ou ouvrez-le depuis
+le bouton **+** au bout de la barre d’onglets : **+** → **Diagnostics**.
 
 ## Ce qui est vérifié
 
@@ -33,6 +33,9 @@ pour le gestionnaire de paquets de ce système (`apt`, `dnf`, `pacman`,
 commande est alors celle de leur propre installateur (`pipx`, `npm`, `go`,
 `rustup`…). LookinFiles ne lance jamais une commande d’installation
 lui-même.
+
+Ailleurs dans ce guide, un lien vers l’onglet Diagnostics l’ouvre sur la
+vérification de la fonction décrite.
 
 L’en-tête nomme le système et le nombre de vérifications manquées. **Vérifier à
 nouveau** (le bouton d’actualisation) relance les vérifications après une

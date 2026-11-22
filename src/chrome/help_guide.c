@@ -8,6 +8,7 @@
 #include "widgets/focus_route.h"
 #include "games/games.h"
 #include "git/git_tab.h"
+#include "chrome/diagnostics_tab.h"
 #include "chrome/help.h"
 #include "theme/icons.h"
 #include "markup/markdown.h"
@@ -296,6 +297,9 @@ static void on_link(GtkTextView* view, const gchar* url, gpointer data) {
         break;
     case USER_GUIDE_LINK_WEB:
         browser_open(hg->app, url); /* a browser tab, or the default browser */
+        break;
+    case USER_GUIDE_LINK_APP: /* USER_GUIDE_ACTION_DIAGNOSTICS, the only one */
+        diagnostics_tab_show(hg->app, anchor);
         break;
     default: {
         gchar* msg = g_strdup_printf(_("Not in the built-in guide: %s"), page != NULL ? page : url);

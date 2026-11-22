@@ -2,8 +2,8 @@
 
 The **Diagnostics** tab lists what LookinFiles can use on this computer
 and what is missing, with the command that installs each missing piece.
-Open it from the **+** button at the right end of the tab bar:
-**+** → **Diagnostics**.
+[Open the Diagnostics tab](lookinfiles:diagnostics), or open it from the
+**+** button at the right end of the tab bar: **+** → **Diagnostics**.
 
 ## What it checks
 
@@ -28,6 +28,9 @@ shows the install command for the package manager of this system (`apt`,
 and a **Copy** button. Some programs are not packaged everywhere: the
 command is then the one of their own installer (`pipx`, `npm`, `go`,
 `rustup`...). LookinFiles never runs an install command itself.
+
+Elsewhere in this guide, a link to the Diagnostics tab opens it on the
+check of the feature described.
 
 The header names the system and how many checks are missing. **Check
 Again** (the refresh button) runs the checks again after you installed

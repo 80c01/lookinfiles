@@ -13,6 +13,7 @@ en haut de l’explorateur.
   des serveurs OpenSSH par défaut). Un mot de passe ou la phrase de passe d’une
   clé, quand ssh en a besoin, est demandé dans un dialogue de LookinFiles ;
   une clé SSH avec `ssh-agent` évite la question.
+  L’[onglet Diagnostics](lookinfiles:diagnostics#ssh) indique si `ssh` est trouvé.
 
 ## La liste des machines
 

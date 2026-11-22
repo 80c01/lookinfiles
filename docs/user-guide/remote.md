@@ -11,7 +11,8 @@ to go back to the files) or the server button at the top of the explorer.
 - The OpenSSH client (`ssh`), and the SFTP subsystem on the machine (the
   default of OpenSSH servers). A password or a key passphrase, when ssh needs
   one, is asked in a dialog of LookinFiles; an SSH key with `ssh-agent`
-  spares you the question.
+  spares you the question. The [Diagnostics tab](lookinfiles:diagnostics#ssh)
+  says whether `ssh` is found.
 
 ## The list of machines
 

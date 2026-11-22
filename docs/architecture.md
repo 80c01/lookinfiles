@@ -497,7 +497,7 @@ Layers, from bottom to top
   and the reference pages it links to, compiled as a GResource by the Makefile
   (generated list, prefix `/org/lookin/guide/`); `user_guide_read()` by page name
   (`"user-guide/editor.md"`, `"keyboard.md"`), `user_guide_title()`,
-  `user_guide_pages()`, `user_guide_resolve_link()` (page, anchor, web or outside),
+  `user_guide_pages()`, `user_guide_resolve_link()` (page, anchor, web, `lookinfiles:diagnostics#<check>` or outside),
   `user_guide_anchor()` (GitHub heading ids); translated pages from
   `docs/l10n/<lang>/` (prefix `/org/lookin/guide-l10n/`): `user_guide_read_in()`,
   `user_guide_read_localized()` (the Help tab). Its test checks every link of the
@@ -1730,7 +1730,8 @@ Layers, from bottom to top
   the Git and result pages): a `user_guide` page rendered by `markdown`,
   scrolled with the navigation keys of the global mode; links followed through
   `markdown_link` (`user_guide_resolve_link()`: guide pages and anchors, web pages
-  in a browser tab, `browser_open()`), Tab / Enter, back / forward history (Shift+H / Shift+L,
+  in a browser tab, `browser_open()`, `lookinfiles:diagnostics` links in the
+  Diagnostics tab, `diagnostics_tab_show()`), Tab / Enter, back / forward history (Shift+H / Shift+L,
   mouse buttons), a minimap (`minimap_new_for_view()`), a search field in its header
   (search key of the global mode: the `user_guide_search` results page, its links
   open pages with the words highlighted, next / previous word with the global

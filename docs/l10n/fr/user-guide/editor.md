@@ -78,7 +78,8 @@ cellule Markdown nouvelle ou vide reste en source.
   l’exécute avec toutes les cellules suivantes. Les cellules s’exécutent dans le noyau Jupyter du notebook,
   démarré à la première exécution dans le dossier du notebook et arrêté
   avec l’onglet : Python 3 avec `jupyter_client` et le noyau (`ipykernel`
-  pour Python) doivent être installés. L’environnement virtuel du projet
+  pour Python) doivent être installés
+  (l’[onglet Diagnostics](lookinfiles:diagnostics#jupyter) les vérifie). L’environnement virtuel du projet
   du notebook sert sans avoir à l’activer : le premier dossier `.venv`,
   `venv` ou `env` trouvé du dossier du notebook jusqu’au haut de son dépôt
   Git (ou votre dossier personnel) exécute le noyau quand Jupyter y est
@@ -347,6 +348,8 @@ compilation, l’endroit reste où il était dans l’aperçu.
   ligne `% !TEX program = xelatex`, sinon des paquets (`fontspec`,
   `unicode-math` et `polyglossia` demandent XeLaTeX ; `luacode` LuaLaTeX).
   Un `latexmkrc` dans le dossier du document le choisit à la place.
+  L’[onglet Diagnostics](lookinfiles:diagnostics#latex) indique lequel est
+  trouvé.
 - Un chapitre est compilé par son document principal : le fichier nommé par
   une ligne `% !TEX root = ../main.tex`, sinon le document de son dossier
   (ou du dossier au-dessus) qui l’inclut avec `\input` ou `\include`,

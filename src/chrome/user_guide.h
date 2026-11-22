@@ -34,11 +34,18 @@ gchar** user_guide_pages(void);
 typedef enum {
     USER_GUIDE_LINK_NONE = 0, /* outside the guide (a source file, a missing page) */
     USER_GUIDE_LINK_PAGE,     /* a page of the guide, maybe at an anchor */
-    USER_GUIDE_LINK_WEB       /* a web or mail address (http, https, mailto) */
+    USER_GUIDE_LINK_WEB,      /* a web or mail address (http, https, mailto) */
+    USER_GUIDE_LINK_APP       /* a part of the application: lookinfiles:<action>[#<anchor>] */
 } UserGuideLink;
 
+/* The action of lookinfiles: links that opens the Diagnostics tab
+ * (diagnostics_tab.h); its anchor is a check id ("ctags", "lsp-python") */
+#define USER_GUIDE_ACTION_DIAGNOSTICS "diagnostics"
+
 /* What href, a link written in page from, points to. PAGE: *out_page is the
- * page ("#id" alone: from itself) and *out_anchor the anchor or NULL. NONE:
+ * page ("#id" alone: from itself) and *out_anchor the anchor or NULL. APP
+ * (a known action only): *out_page is the action, *out_anchor its anchor
+ * or NULL. NONE:
  * *out_page is the path it names under docs/ when it has one ("README.md"
  * for "../../README.md" from a guide page), for a message. Out values may
  * be NULL; the caller frees them. */

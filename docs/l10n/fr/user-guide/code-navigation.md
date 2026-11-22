@@ -99,10 +99,13 @@ rust=none
 Voir [Configuration](../configuration.md#language-servers) (en anglais)
 pour la liste des serveurs recherchés. Pour C et C++, `clangd` marche mieux
 avec un `compile_commands.json` à la racine du projet.
+L’[onglet Diagnostics](lookinfiles:diagnostics) montre quels serveurs sont
+installés et comment installer les autres.
 
 ## Ctags
 
 Quand [Universal Ctags](https://ctags.io) est installé, son index est
 utilisé et tenu à jour dans `~/.cache/lookinfiles/tags/`. Il ajoute aussi
 Objective-C, PHP, Perl, Kotlin, Swift, Scala, Dart, Haskell, Elixir,
-Erlang, Julia, R et Tcl.
+Erlang, Julia, R et Tcl. L’[onglet Diagnostics](lookinfiles:diagnostics#ctags)
+indique s’il est trouvé.

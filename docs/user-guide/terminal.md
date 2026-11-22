@@ -3,7 +3,8 @@
 LookinFiles has an embedded terminal, so you can run commands without
 leaving the window. On Linux it needs the VTE library (see
 [Getting started](getting-started.md#installing)); without it, the
-terminal panel says "Terminal panel disabled" and how to enable it. On
+terminal panel says "Terminal panel disabled" and how to enable it (the
+[Diagnostics tab](lookinfiles:diagnostics#vte) gives the package). On
 Windows (10 version 1809 or later) the terminal is built in: the shell is
 PowerShell 7 when installed, else Windows PowerShell, else `cmd.exe`.
 

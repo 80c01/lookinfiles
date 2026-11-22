@@ -2,6 +2,7 @@
  * binary (docs/user-guide/ and the reference pages) and their titles.
  * Headless. */
 #include "chrome/user_guide.h"
+#include "core/diagnostics.h"
 
 #include <gio/gio.h>
 #include <string.h>
@@ -93,6 +94,24 @@ static void test_resolve_link(void) {
     /* Web */
     check_link(from, "https://ctags.io", USER_GUIDE_LINK_WEB, NULL, NULL);
     check_link(from, "mailto:a@b.c", USER_GUIDE_LINK_WEB, NULL, NULL);
+    /* The application */
+    check_link(from, "lookinfiles:diagnostics", USER_GUIDE_LINK_APP, "diagnostics", NULL);
+    check_link(from, "lookinfiles:diagnostics#ctags", USER_GUIDE_LINK_APP, "diagnostics", "ctags");
+    check_link(from, "lookinfiles:diagnostics#", USER_GUIDE_LINK_APP, "diagnostics", NULL);
+    check_link(from, "lookinfiles:nothing", USER_GUIDE_LINK_NONE, NULL, NULL);
+    check_link(from, "lookinfiles:", USER_GUIDE_LINK_NONE, NULL, NULL);
+}
+
+/* An anchor of a lookinfiles:diagnostics link names a check */
+static gboolean is_check_id(const gchar* id) {
+    if (g_str_has_prefix(id, "lsp-")) return id[4] != '\0'; /* from lsp_config, not linked here */
+    gboolean found = FALSE;
+    for (gint remote = 0; remote < 2 && !found; remote++) {
+        GPtrArray* items = diagnostics_items(remote);
+        found = diagnostics_find(items, id) != NULL;
+        g_ptr_array_unref(items);
+    }
+    return found;
 }
 
 static void test_anchor(void) {
@@ -148,6 +167,9 @@ static void test_guide_links(void) {
             if (kind == USER_GUIDE_LINK_NONE) {
                 g_error("%s: link %s leads outside the guide", pages[i], href);
             }
+            if (kind == USER_GUIDE_LINK_APP && anchor != NULL && !is_check_id(anchor)) {
+                g_error("%s: link %s: no such check", pages[i], href);
+            }
             if (kind == USER_GUIDE_LINK_PAGE && anchor != NULL) {
                 gchar* target = user_guide_read(page);
                 if (!has_anchor(target, anchor)) {
@@ -195,6 +217,9 @@ static guint check_links(const gchar* lang) {
             UserGuideLink kind = user_guide_resolve_link(pages[i], href, &page, &anchor);
             if (kind == USER_GUIDE_LINK_NONE) {
                 g_error("%s (%s): link %s leads outside the guide", pages[i], lang, href);
+            }
+            if (kind == USER_GUIDE_LINK_APP && anchor != NULL && !is_check_id(anchor)) {
+                g_error("%s (%s): link %s: no such check", pages[i], lang, href);
             }
             if (kind == USER_GUIDE_LINK_PAGE && anchor != NULL) {
                 gchar* target = user_guide_read_in(page, lang);

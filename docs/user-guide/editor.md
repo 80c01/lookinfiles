@@ -69,7 +69,8 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   below. The cells run in the notebook's Jupyter kernel, started at the first
   run in the notebook's folder and stopped with the tab: Python 3 with
   `jupyter_client` and the kernel (`ipykernel` for Python) must be
-  installed. A virtual environment of the notebook's project is used
+  installed (the [Diagnostics tab](lookinfiles:diagnostics#jupyter) checks
+  them). A virtual environment of the notebook's project is used
   without activating it: the first `.venv`, `venv` or `env` folder found
   from the notebook's folder up to the top of its Git repository (or your
   home folder) runs the kernel when Jupyter is installed in it
@@ -308,7 +309,8 @@ place stays where it was in the preview.
   `pdflatex`, `xelatex` or `lualatex` run once. The engine comes from a
   `% !TEX program = xelatex` line, else from the packages (`fontspec`,
   `unicode-math` and `polyglossia` need XeLaTeX; `luacode` LuaLaTeX). A
-  `latexmkrc` in the folder of the document chooses it instead.
+  `latexmkrc` in the folder of the document chooses it instead. The
+  [Diagnostics tab](lookinfiles:diagnostics#latex) says which one is found.
 - A chapter is compiled through its main document: the file named by a
   `% !TEX root = ../main.tex` line, else the document of its folder (or of
   the folder above) that includes it with `\input` or `\include`, else

@@ -163,6 +163,19 @@ UserGuideLink user_guide_resolve_link(const gchar* from, const gchar* href, gcha
         g_str_has_prefix(href, "mailto:")) {
         return USER_GUIDE_LINK_WEB;
     }
+    if (g_str_has_prefix(href, "lookinfiles:")) {
+        const gchar* action = href + strlen("lookinfiles:");
+        const gchar* hash = strchr(action, '#');
+        gchar* name = hash != NULL ? g_strndup(action, (gsize)(hash - action)) : g_strdup(action);
+        if (strcmp(name, USER_GUIDE_ACTION_DIAGNOSTICS) != 0) {
+            g_free(name);
+            return USER_GUIDE_LINK_NONE;
+        }
+        if (out_page != NULL) *out_page = name;
+        else g_free(name);
+        if (out_anchor != NULL && hash != NULL && hash[1] != '\0') *out_anchor = g_strdup(hash + 1);
+        return USER_GUIDE_LINK_APP;
+    }
     gchar* scheme = g_uri_parse_scheme(href);
     if (scheme != NULL) { /* file:, ftp:... */
         g_free(scheme);
