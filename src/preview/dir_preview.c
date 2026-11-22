@@ -1,5 +1,6 @@
 #include "preview/dir_preview.h"
 #include "core/profile.h"
+#include "git/git_remote.h"
 #include "git/git_state.h"
 #include "search/search.h"
 #include "core/i18n.h"
@@ -140,13 +141,18 @@ static gboolean remote_listing(DirPreviewJob* job, GCancellable* cancellable) {
         job->unreadable = TRUE; /* never the empty local folder it is seen at */
         return TRUE;
     }
+    gboolean repository = FALSE; /* holds .git: a repository's top */
     for (guint i = 0; i < list->len; i++) {
         const VfsEntry* e = list->pdata[i];
+        if (strcmp(e->name, ".git") == 0) repository = TRUE;
         if (!job->show_hidden && e->name[0] == '.') continue;
         if (!dir_summary_add(job->summary, e->name, e->is_dir, e->is_dir ? 0 : (guint64)e->size, e->mtime)) break;
     }
     g_ptr_array_unref(list);
     finish_listing(job, cancellable);
+    if (repository && job->branch == NULL && !g_cancellable_is_cancelled(cancellable)) {
+        job->branch = git_remote_branch(job->full, cancellable); /* outside the explorer's repository: asked there */
+    }
     return TRUE;
 }
 

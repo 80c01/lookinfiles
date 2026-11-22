@@ -19,9 +19,20 @@
  * dir less the prefix git printed. NULL when the output is not one. */
 GitState* git_remote_parse(const gchar* dir, const gchar* data, gsize len);
 
-/* The state of dir, a remote machine's folder: NULL outside a repository
- * or when git could not run there */
+/* The state of dir, a remote machine's folder; in no repository, the
+ * badges of the repositories directly below it (no root, no branch), as
+ * scan_git_statuses() gives them here. NULL when git could not run there. */
 GitState* git_remote_scan(const gchar* dir, GCancellable* cancel);
+
+/* The shell command printing the folders directly below the current one
+ * that hold a repository, each ended by a NUL */
+#define GIT_REMOTE_CHILDREN_COMMAND "for d in */.git; do [ -e \"$d\" ] && printf '%s\\0' \"${d%/.git}\"; done; exit 0"
+/* The paths below dir of the names that command printed (at most max) */
+GPtrArray* git_remote_parse_children(const gchar* dir, const gchar* data, gsize len, guint max);
+
+/* The branch of the repository of dir, a remote machine's folder ("HEAD"
+ * when detached); NULL outside one. Caller frees. */
+gchar* git_remote_branch(const gchar* dir, GCancellable* cancel);
 
 /* The shell command printing what git_remote_parse_branches() reads */
 #define GIT_REMOTE_BRANCHES_COMMAND "git for-each-ref --format='%(HEAD)%09%(refname)' refs/heads refs/remotes"

@@ -121,9 +121,11 @@ gboolean git_remote_checkout(const gchar* dir, const gchar* branch, gchar** erro
     return ok;
 }
 
-GitState* git_remote_scan(const gchar* dir, GCancellable* cancel) {
+/* The state of the repository dir is in; *outside: dir is in none */
+static GitState* scan_one(const gchar* dir, GCancellable* cancel, gboolean* outside) {
     gint status = 0;
     GBytes* out = NULL;
+    *outside = FALSE;
     if (!vfs_exec(dir, GIT_REMOTE_STATUS_COMMAND, NULL, cancel, &status, &out, NULL)) return NULL;
     GitState* state = NULL;
     if (status == 0) {
@@ -131,6 +133,67 @@ GitState* git_remote_scan(const gchar* dir, GCancellable* cancel) {
         const gchar* data = g_bytes_get_data(out, &len);
         if (data != NULL) state = git_remote_parse(dir, data, len);
     }
+    *outside = status == 3;
     g_bytes_unref(out);
     return state;
+}
+
+/* Repositories directly below a folder in none, scanned at most (as
+ * scan_git_statuses() looks at them) */
+#define CHILD_REPOS_MAX 50
+
+GitState* git_remote_scan(const gchar* dir, GCancellable* cancel) {
+    gboolean outside = FALSE;
+    GitState* state = scan_one(dir, cancel, &outside);
+    if (state != NULL || !outside) return state;
+    /* In no repository: the badges of the repositories just below, as here */
+    gint status = 0;
+    GBytes* out = NULL;
+    if (!vfs_exec(dir, GIT_REMOTE_CHILDREN_COMMAND, NULL, cancel, &status, &out, NULL)) return NULL;
+    gsize len = 0;
+    const gchar* data = g_bytes_get_data(out, &len);
+    GPtrArray* children = git_remote_parse_children(dir, data != NULL ? data : "", len, CHILD_REPOS_MAX);
+    g_bytes_unref(out);
+    GHashTable* all = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    for (guint i = 0; i < children->len && !g_cancellable_is_cancelled(cancel); i++) {
+        GitState* child = scan_one(children->pdata[i], cancel, &outside);
+        GHashTable* badges = git_state_badges(child);
+        if (badges != NULL) {
+            GHashTableIter it;
+            gpointer k, v;
+            g_hash_table_iter_init(&it, badges);
+            while (g_hash_table_iter_next(&it, &k, &v)) g_hash_table_replace(all, g_strdup(k), g_strdup(v));
+        }
+        git_state_free(child);
+    }
+    g_ptr_array_unref(children);
+    if (g_hash_table_size(all) == 0) g_clear_pointer(&all, g_hash_table_destroy);
+    return git_state_new(all, NULL, FALSE, 0, 0); /* no repository of its own: no branch */
+}
+
+GPtrArray* git_remote_parse_children(const gchar* dir, const gchar* data, gsize len, guint max) {
+    GPtrArray* out = g_ptr_array_new_with_free_func(g_free);
+    const gchar* end = data + len;
+    for (const gchar* p = data; p < end && out->len < max;) {
+        const gchar* nul = memchr(p, '\0', (gsize)(end - p));
+        if (nul == NULL) break;
+        if (nul > p && memchr(p, '/', (gsize)(nul - p)) == NULL) g_ptr_array_add(out, g_build_filename(dir, p, NULL));
+        p = nul + 1;
+    }
+    return out;
+}
+
+gchar* git_remote_branch(const gchar* dir, GCancellable* cancel) {
+    gint status = 0;
+    GBytes* out = NULL;
+    if (!vfs_exec(dir, "git rev-parse --abbrev-ref HEAD 2>/dev/null", NULL, cancel, &status, &out, NULL)) return NULL;
+    gchar* branch = NULL;
+    gsize len = 0;
+    const gchar* data = g_bytes_get_data(out, &len);
+    if (status == 0 && data != NULL && len > 0) {
+        branch = g_strstrip(g_strndup(data, len));
+        if (branch[0] == '\0') g_clear_pointer(&branch, g_free);
+    }
+    g_bytes_unref(out);
+    return branch;
 }

@@ -70,9 +70,22 @@ static void test_branches(void) {
     g_ptr_array_unref(b);
 }
 
+static void test_children(void) {
+    static const gchar out[] = "proj\0other repo\0bad/name\0cut";
+    GPtrArray* c = git_remote_parse_children("/m/home", out, sizeof(out) - 1, 10);
+    g_assert_cmpuint(c->len, ==, 2);
+    g_assert_cmpstr(c->pdata[0], ==, "/m/home/proj");
+    g_assert_cmpstr(c->pdata[1], ==, "/m/home/other repo");
+    g_ptr_array_unref(c);
+    c = git_remote_parse_children("/m/home", out, sizeof(out) - 1, 1);
+    g_assert_cmpuint(c->len, ==, 1);
+    g_ptr_array_unref(c);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/git_remote/parse", test_parse);
     g_test_add_func("/git_remote/branches", test_branches);
+    g_test_add_func("/git_remote/children", test_children);
     return g_test_run();
 }
