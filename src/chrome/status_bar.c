@@ -10,6 +10,7 @@
 #include "core/i18n.h"
 #include "core/remote_path.h"
 #include "core/vfs.h"
+#include "git/git_remote.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
 #include "core/file_types.h"
@@ -131,7 +132,8 @@ static void switch_branch_thread(GTask* task, gpointer source, gpointer task_dat
     (void)source;
     (void)cancellable;
     BranchSwitchData* bd = task_data;
-    bd->ok = git_checkout_branch(bd->dir, bd->branch_name, &bd->err_msg);
+    bd->ok = vfs_is_remote(bd->dir) ? git_remote_checkout(bd->dir, bd->branch_name, &bd->err_msg)
+                                    : git_checkout_branch(bd->dir, bd->branch_name, &bd->err_msg);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -216,21 +218,9 @@ static gboolean on_branches_popover_key_pressed(GtkEventControllerKey* controlle
     return FALSE;
 }
 
-static void show_git_branches_popover(AppData* app) {
-    if (app == NULL || app->status_bars == NULL || app->status_bars->branch == NULL || app->base_dir == NULL) {
-        return;
-    }
+/* The branches popover, over the branch of the status bar (takes branches) */
+static void popup_branches(AppData* app, GPtrArray* branches) {
     struct StatusBars* b = app->status_bars;
-    if (git_branches_popover != NULL) {
-        gtk_popover_popdown(GTK_POPOVER(git_branches_popover));
-        return;
-    }
-
-    GPtrArray* branches = git_list_branches(app->base_dir);
-    if (branches == NULL) {
-        return;
-    }
-
     GtkWidget* popover = gtk_popover_new();
     git_branches_popover = popover;
     gtk_widget_set_parent(popover, b->branch);
@@ -343,6 +333,60 @@ static void show_git_branches_popover(AppData* app) {
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     g_signal_connect(popover, "closed", G_CALLBACK(on_branches_popover_closed), NULL);
     gtk_popover_popup(GTK_POPOVER(popover));
+}
+
+/* A remote machine's branches, listed there (git for-each-ref) off the
+ * interface thread */
+typedef struct {
+    AppData* app;
+    gchar* dir;
+    GPtrArray* branches;
+} BranchList;
+
+static void branch_list_free(gpointer data) {
+    BranchList* bl = data;
+    g_free(bl->dir);
+    if (bl->branches != NULL) g_ptr_array_unref(bl->branches);
+    g_free(bl);
+}
+
+static void list_branches_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)task;
+    (void)source;
+    BranchList* bl = data;
+    bl->branches = git_remote_list_branches(bl->dir, cancellable);
+}
+
+static void on_branches_listed(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    (void)data;
+    BranchList* bl = g_task_get_task_data(G_TASK(res));
+    AppData* app = bl->app;
+    /* Still the folder shown, and no popover opened meanwhile */
+    if (bl->branches == NULL || git_branches_popover != NULL || g_strcmp0(app->base_dir, bl->dir) != 0) return;
+    popup_branches(app, g_steal_pointer(&bl->branches));
+}
+
+static void show_git_branches_popover(AppData* app) {
+    if (app == NULL || app->status_bars == NULL || app->status_bars->branch == NULL || app->base_dir == NULL) {
+        return;
+    }
+    if (git_branches_popover != NULL) {
+        gtk_popover_popdown(GTK_POPOVER(git_branches_popover));
+        return;
+    }
+    if (vfs_is_remote(app->base_dir)) {
+        BranchList* bl = g_new0(BranchList, 1);
+        bl->app = app;
+        bl->dir = g_strdup(app->base_dir);
+        GTask* task = g_task_new(NULL, NULL, on_branches_listed, NULL);
+        g_task_set_task_data(task, bl, branch_list_free);
+        g_task_run_in_thread(task, list_branches_thread);
+        g_object_unref(task);
+        return;
+    }
+    GPtrArray* branches = git_list_branches(app->base_dir);
+    if (branches != NULL) popup_branches(app, branches);
 }
 
 static void on_status_branch_clicked(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {

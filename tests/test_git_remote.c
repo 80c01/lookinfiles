@@ -1,5 +1,6 @@
 /* Unit tests for git_remote: the state read from `git status` run elsewhere */
 #include "git/git_remote.h"
+#include "git/git_utils.h"
 
 #include <string.h>
 
@@ -48,8 +49,30 @@ static void test_parse(void) {
     g_assert_null(git_remote_parse("/m", "a/b/c/\n\0", 8)); /* deeper than the path */
 }
 
+static void test_branches(void) {
+    static const gchar out[] = "*\trefs/heads/main\n"
+                               " \trefs/remotes/origin/HEAD\n"
+                               " \trefs/remotes/origin/main\n"
+                               " \trefs/heads/dev\n"
+                               " \trefs/tags/v1\n";
+    GPtrArray* b = git_remote_parse_branches(out, sizeof(out) - 1);
+    g_assert_cmpuint(b->len, ==, 3);
+    GitBranchInfo* i = b->pdata[0];
+    g_assert_cmpstr(i->name, ==, "dev");
+    g_assert_false(i->is_head);
+    i = b->pdata[1];
+    g_assert_cmpstr(i->name, ==, "main");
+    g_assert_true(i->is_head);
+    g_assert_false(i->is_remote);
+    i = b->pdata[2];
+    g_assert_cmpstr(i->name, ==, "origin/main");
+    g_assert_true(i->is_remote);
+    g_ptr_array_unref(b);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/git_remote/parse", test_parse);
+    g_test_add_func("/git_remote/branches", test_branches);
     return g_test_run();
 }

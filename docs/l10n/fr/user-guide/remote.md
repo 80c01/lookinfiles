@@ -110,7 +110,8 @@ Dans un dépôt de la machine, l’explorateur affiche les badges Git des
 fichiers modifiés et la barre d’état la branche, avec `*` pour les
 modifications non validées et les commits d’avance et de retard sur la
 branche amont : `git status` s’exécute sur la machine (il faut `git`) à
-chaque relecture du dossier. L’onglet Git (historique, modifications,
+chaque relecture du dossier. Un clic sur la branche liste les branches de la
+machine et passe à celle choisie (`git checkout` sur la machine). L’onglet Git (historique, modifications,
 branches) n’y est pas encore disponible.
 
 ## Recherche dans les fichiers et Aller au fichier

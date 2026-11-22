@@ -97,7 +97,9 @@ so in the status bar; the others stay off.
 In a repository on the machine, the explorer shows the Git badges of the
 changed files and the status bar the branch, with `*` for uncommitted
 changes and the commits ahead of and behind the upstream: `git status` runs
-on the machine (it needs `git`) each time the folder is read again. The Git
+on the machine (it needs `git`) each time the folder is read again. A click
+on the branch lists the branches there and switches to the one picked
+(`git checkout` on the machine). The Git
 tab (history, changes, branches) is not available there yet.
 
 ## Search in files and Go to File
