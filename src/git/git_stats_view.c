@@ -2,6 +2,7 @@
 #include "git/git_stats_view.h"
 #include "core/i18n.h"
 #include "theme/theme.h"
+#include "git/git_code_view.h"
 #include "git/git_stats.h"
 #include "git/git_stats_charts.h"
 #include "widgets/focus_route.h"
@@ -17,6 +18,7 @@ struct GitStatsView {
     GtkWidget* summary;      /* commits, authors, from when to when */
     GtkWidget* charts[3];    /* GitChartKind order */
     GtkWidget* authors;      /* GtkGrid of the authors */
+    GitCodeView* code;       /* the Languages section */
     GitStats* stats;         /* shown, or NULL */
     gchar* root;
     GCancellable* cancellable;
@@ -169,6 +171,7 @@ static void start_read(GitStatsView* v) {
 
 void git_stats_view_set_root(GitStatsView* v, const gchar* root, gboolean reload) {
     if (v == NULL) return;
+    git_code_view_set_root(v->code, root, reload);
     if (g_strcmp0(v->root, root) != 0) {
         cancel_read(v);
         g_free(v->root);
@@ -190,7 +193,9 @@ static void on_view_map(GtkWidget* widget, gpointer data) {
 }
 
 void git_stats_view_cancel(GitStatsView* v) {
-    if (v != NULL) cancel_read(v);
+    if (v == NULL) return;
+    cancel_read(v);
+    git_code_view_cancel(v->code);
 }
 
 /* With the view's widget (the charts are gone first: they borrow stats) */
@@ -234,6 +239,9 @@ GitStatsView* git_stats_view_new(AppData* app) {
     gtk_grid_set_column_spacing(GTK_GRID(v->authors), 16);
     gtk_grid_set_row_spacing(GTK_GRID(v->authors), 2);
     add_section(box, _("Authors"), v->authors);
+
+    v->code = git_code_view_new();
+    add_section(box, _("Languages"), git_code_view_widget(v->code));
 
     GtkWidget* scroll = gtk_scrolled_window_new();
     gtk_widget_set_hexpand(scroll, TRUE);

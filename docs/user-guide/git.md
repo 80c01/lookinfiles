@@ -118,10 +118,21 @@ then:
 - **By month**: a bar per month since the first commit (per year past six
   years);
 - **Authors**: their commits, their share and the months of their first and
-  last commits, most commits first (the first 20).
+  last commits, most commits first (the first 20);
+- **Languages**: the files of the last commit (`HEAD`) by language: a bar of
+  each language's share of the lines, then for each language its files,
+  lines, non-blank lines, size and share (the first 15, the others summed).
+  The language comes from the file name or extension, or from the `#!` line
+  of a script. Only the files git tracks are counted; binary files, files
+  over 8 MiB, and generated or vendored ones (lock files such as
+  `package-lock.json` or `Cargo.lock`, minified `.min.js` files, the folders
+  `node_modules/`, `vendor/`, `third_party/`, `dist/`..., and the files marked
+  `linguist-generated` or `linguist-vendored` in `.gitattributes`) are left
+  out, and the summary says how many.
 
 Each square, circle and bar gives its count in its tooltip. The whole
-history is counted when the view is shown, and again after a commit.
+history is counted when the view is shown, and again after a commit; the
+files, again only when the commit changed them.
 
 ### Repository
 

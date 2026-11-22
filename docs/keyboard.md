@@ -262,7 +262,7 @@ the current folder; the navigation keys of the global mode move in the lists)
 
 | Key | Action |
 |---|---|
-| `v` (not in the filter field) | Next view: **Changes** (the uncommitted files: staged, not staged, untracked, and the patch of the selected one), **History** (the commits), **Statistics** (commits by day, hour, month and author), **Repository** (identity, remotes, branches, configuration), **Stashes & Tags** (the stashes and the tags, and what the selected one holds) |
+| `v` (not in the filter field) | Next view: **Changes** (the uncommitted files: staged, not staged, untracked, and the patch of the selected one), **History** (the commits), **Statistics** (commits by day, hour, month and author, files by language), **Repository** (identity, remotes, branches, configuration), **Stashes & Tags** (the stashes and the tags, and what the selected one holds) |
 | `Enter` / double click on a file of **Changes** | Preview it (the Preview tab comes in front) |
 | `Enter` / click on a group of **Changes** (Staged, Changes, Untracked) or **Stashes & Tags** (Stashes, Tags) | Fold or unfold it (kept while the app runs) |
 | `Left` / `Right` (Vim: `h` / `l`; Emacs: `C-b` / `C-f`) in **Changes** and **Stashes & Tags** | Fold / unfold the selected group; on a file or an entry, `Left` goes to its group |

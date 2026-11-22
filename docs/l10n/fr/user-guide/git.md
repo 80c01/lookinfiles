@@ -125,11 +125,22 @@ puis :
 - **Par mois** : une barre par mois depuis le premier commit (par année
   au-delà de six ans) ;
 - **Auteurs** : leurs commits, leur part et les mois de leurs premier et
-  dernier commits, du plus actif au moins actif (les 20 premiers).
+  dernier commits, du plus actif au moins actif (les 20 premiers) ;
+- **Langages** : les fichiers du dernier commit (`HEAD`) par langage : une
+  barre de la part des lignes de chaque langage, puis pour chacun ses
+  fichiers, ses lignes, ses lignes non vides, sa taille et sa part (les 15
+  premiers, les autres additionnés). Le langage vient du nom ou de
+  l’extension du fichier, ou de la ligne `#!` d’un script. Seuls les
+  fichiers suivis par git sont comptés ; les fichiers binaires, ceux de plus
+  de 8 Mio, et ceux générés ou tiers (les fichiers de verrouillage comme
+  `package-lock.json` ou `Cargo.lock`, les fichiers minifiés `.min.js`, les
+  dossiers `node_modules/`, `vendor/`, `third_party/`, `dist/`…, et les
+  fichiers marqués `linguist-generated` ou `linguist-vendored` dans
+  `.gitattributes`) sont laissés de côté, et le résumé dit combien.
 
 Chaque carré, cercle et barre donne son nombre dans son infobulle. Tout
 l’historique est compté quand la vue est affichée, et de nouveau après un
-commit.
+commit ; les fichiers, de nouveau seulement si le commit les a changés.
 
 ### Dépôt
 

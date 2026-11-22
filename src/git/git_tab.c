@@ -233,8 +233,9 @@ void git_tab_init(AppData* app) {
                                                   _("Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)")));
     gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_HISTORY, _("History"),
                                                   _("The Commits, Newest First (v: Next View)")));
-    gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_STATS, _("Statistics"),
-                                                  _("Commits by Day, Hour, Month and Author (v: Next View)")));
+    gtk_box_append(GTK_BOX(switcher),
+                   view_button(g, GIT_VIEW_STATS, _("Statistics"),
+                               _("Commits by Day, Hour, Month and Author, Files by Language (v: Next View)")));
     gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_REPO, _("Repository"),
                                                   _("Identity, Remotes, Branches and Configuration (v: Next View)")));
     gtk_box_append(GTK_BOX(switcher), view_button(g, GIT_VIEW_STASH_TAGS, _("Stashes & Tags"),

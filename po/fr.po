@@ -8865,6 +8865,56 @@ msgstr "Par mois"
 msgid "Authors"
 msgstr "Auteurs"
 
+#: src/git/git_stats_view.c:240
+msgid "Languages"
+msgstr "Langages"
+
+#: src/git/git_code_view.c:102
+#, c-format
+msgid "%u other language"
+msgid_plural "%u other languages"
+msgstr[0] "%u autre langage"
+msgstr[1] "%u autres langages"
+
+#: src/git/git_code_view.c:106
+msgid "Other files"
+msgstr "Autres fichiers"
+
+#. TRANSLATORS: tooltip of a part of the languages bar: "C: 1200 lines (85.2 %)"
+#: src/git/git_code_view.c:156
+#, c-format
+msgid "%s: %s lines (%.1f %%)"
+msgstr "%s : %s lignes (%.1f %%)"
+
+#: src/git/git_code_view.c:192
+msgid "Lines"
+msgstr "Lignes"
+
+#: src/git/git_code_view.c:193
+msgid "Non-Blank"
+msgstr "Non vides"
+
+#. TRANSLATORS: summary of the Languages section: "120 files", "4000 lines", a size
+#: src/git/git_code_view.c:240
+#, c-format
+msgid "%s, %s, %s at HEAD"
+msgstr "%s, %s, %s dans HEAD"
+
+#: src/git/git_code_view.c:245
+#, c-format
+msgid "%u file left out (binary, generated, vendored or too large)"
+msgid_plural "%u files left out (binary, generated, vendored or too large)"
+msgstr[0] "%u fichier laissé de côté (binaire, généré, tiers ou trop gros)"
+msgstr[1] "%u fichiers laissés de côté (binaires, générés, tiers ou trop gros)"
+
+#: src/git/git_code_view.c:300
+msgid "The files of this repository cannot be read."
+msgstr "Les fichiers de ce dépôt ne peuvent pas être lus."
+
+#: src/git/git_code_view.c:313
+msgid "Counting the files…"
+msgstr "Comptage des fichiers…"
+
 #: src/git/git_tab.c:69
 #, c-format
 msgid "Changes (%u)"
@@ -8894,8 +8944,10 @@ msgid "Statistics"
 msgstr "Statistiques"
 
 #: src/git/git_tab.c:135
-msgid "Commits by Day, Hour, Month and Author (v: Next View)"
-msgstr "Commits par jour, heure, mois et auteur (v : vue suivante)"
+msgid "Commits by Day, Hour, Month and Author, Files by Language (v: Next View)"
+msgstr ""
+"Commits par jour, heure, mois et auteur, fichiers par langage (v : vue "
+"suivante)"
 
 #: src/git/git_tab.c:137
 msgid "Identity, Remotes, Branches and Configuration (v: Next View)"
@@ -11155,7 +11207,7 @@ msgid_plural "last %s lines"
 msgstr[0] "dernière ligne (%s)"
 msgstr[1] "%s dernières lignes"
 
-#: src/preview/preview_formats.c:499
+#: src/preview/preview_formats.c:499 src/git/git_code_view.c:236
 #, c-format
 msgid "%s line"
 msgid_plural "%s lines"

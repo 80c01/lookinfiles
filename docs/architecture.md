@@ -303,6 +303,15 @@ Layers, from bottom to top
   the author's time zone), per month and per author (`git_stats_add()`),
   and `git_stats_read()`, which walks the history from `HEAD` (worker
   thread). Unit-tested.
+- `git_code_stats` — the files of the tree of `HEAD` counted by language
+  (files, lines, non-blank lines, bytes): the language from the file name,
+  the extension, then the `#!` line (`git_code_language()`); binary files,
+  files over 8 MiB, generated and vendored ones (lock files, minified files,
+  `node_modules/`, `vendor/`..., `git_code_path_generated()`, and the
+  `linguist-generated` / `linguist-vendored` attributes, asked only when an
+  attributes file names them) left out. `git_code_stats_read()` (worker
+  thread) skips the work when the tree is the one already counted.
+  Unit-tested.
 - `git_worktree` — the uncommitted changes of a work tree through libgit2,
   worker thread only: `git_read_changes()` lists the staged (index against
   `HEAD`, renames found), unstaged and untracked files with their lines
@@ -1401,7 +1410,11 @@ Layers, from bottom to top
   when the view is on screen (again on a reload), a summary, the three
   `git_stats_charts` (GtkDrawingAreas in the palette colours: the last 53
   weeks a square per day, the punch card, the commits per month or year;
-  they borrow the view's `GitStats`) and the authors in a `GtkGrid`.
+  they borrow the view's `GitStats`) and the authors in a `GtkGrid`, then
+  `git_code_view`, the Languages section: `git_code_stats_read()` in a
+  worker when it is on screen (on a reload, again only when the tree of
+  `HEAD` changed), a summary, a bar of each language's share of the lines
+  and a `GtkGrid` table.
   `git_repo_view` is the Repository view: `git_repo_info_read()` in a worker
   each time the view comes on screen (the global config is not watched),
   the sections in `GtkGrid`s of selectable labels, a filter over the
