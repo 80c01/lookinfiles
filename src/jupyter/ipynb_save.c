@@ -2,6 +2,7 @@
  * shortly after each change; a notebook made in memory (no file yet) is
  * written once a file name is chosen (Ctrl+S, or when it is closed) */
 #include "jupyter/ipynb_tab_private.h"
+#include "core/vfs.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
@@ -175,9 +176,9 @@ gboolean ipynb_save_as(IpynbTab* t) {
             problem = g_strdup(_("Type a file name."));
         } else if (open != NULL && open != t) {
             problem = g_strdup_printf(_("%s is open in another tab."), shown);
-        } else if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
+        } else if (vfs_file_test(path, G_FILE_TEST_IS_DIR)) {
             problem = g_strdup_printf(_("%s is a folder."), shown);
-        } else if (!g_file_test(path, G_FILE_TEST_EXISTS) || confirm_replace(t, path)) {
+        } else if (!vfs_file_test(path, G_FILE_TEST_EXISTS) || confirm_replace(t, path)) {
             gchar* json = ipynb_doc_to_json(t->doc);
             GError* error = NULL;
             if (file_save_text(path, json, -1, &error)) {

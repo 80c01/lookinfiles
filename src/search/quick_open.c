@@ -1,5 +1,6 @@
 /* Quick open of a project file (see quick_open.h) */
 #include "search/quick_open.h"
+#include "core/vfs.h"
 #include "core/app_events.h"
 #include "code/code_index.h"
 #include "widgets/dialog.h"
@@ -273,7 +274,7 @@ static void choose(Picker* p, gboolean edit) {
     AppData* app = p->app;
     gboolean is_folder = p->folders != NULL && g_hash_table_contains(p->folders, rel);
     app_dialog_destroy(APP_DIALOG(p->dialog)); /* frees p, and rel */
-    if (!g_file_test(path, G_FILE_TEST_EXISTS)) {
+    if (!vfs_file_test(path, G_FILE_TEST_EXISTS)) {
         gchar* msg = g_strdup_printf(_("“%s” no longer exists"), path);
         app_notice(app, msg, FALSE);
         g_free(msg);

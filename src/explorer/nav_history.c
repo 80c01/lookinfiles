@@ -1,5 +1,6 @@
 /* Folder history and recent places (see nav_history.h) */
 #include "explorer/nav_history.h"
+#include "core/vfs.h"
 #include "code/jump_list.h"
 #include <string.h>
 
@@ -95,7 +96,7 @@ static gchar* walk(AppData* app, gboolean back) {
         const JumpLocation* loc = back ? jump_list_back(h->folders, app->base_dir, 0, 0)
                                        : jump_list_forward(h->folders);
         if (loc == NULL) return NULL;
-        if (g_strcmp0(loc->path, app->base_dir) != 0 && g_file_test(loc->path, G_FILE_TEST_IS_DIR)) {
+        if (g_strcmp0(loc->path, app->base_dir) != 0 && vfs_file_test(loc->path, G_FILE_TEST_IS_DIR)) {
             walking = TRUE;
             return g_strdup(loc->path);
         }
@@ -117,7 +118,7 @@ gchar* nav_history_go(AppData* app, gboolean back, guint steps) {
     if (back ? steps > cur : cur + steps >= jump_list_length(h->folders)) return NULL;
     guint index = back ? cur - steps : cur + steps;
     const JumpLocation* target = jump_list_nth(h->folders, index);
-    if (target == NULL || !g_file_test(target->path, G_FILE_TEST_IS_DIR)) return NULL;
+    if (target == NULL || !vfs_file_test(target->path, G_FILE_TEST_IS_DIR)) return NULL;
     const JumpLocation* loc = jump_list_go_to(h->folders, index, app->base_dir, 0, 0);
     if (loc == NULL) return NULL;
     walking = g_strcmp0(loc->path, app->base_dir) != 0;

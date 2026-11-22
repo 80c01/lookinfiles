@@ -1,4 +1,5 @@
 #include "explorer/file_list.h"
+#include "core/vfs.h"
 #include "core/profile.h"
 #include "git/git_state.h"
 #include "preview/preview_state.h"
@@ -901,7 +902,7 @@ static void start_async_dir_scan(AppData* app, const gchar* dirname,
 
 static void reload_directory_with_selection(AppData* app, const gchar* new_dir,
                                             const gchar* select_name) {
-    if (!g_file_test(new_dir, G_FILE_TEST_IS_DIR)) {
+    if (!vfs_file_test(new_dir, G_FILE_TEST_IS_DIR)) {
         return;
     }
 
@@ -966,7 +967,7 @@ void navigate_to_path(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) {
         return;
     }
-    if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
+    if (vfs_file_test(path, G_FILE_TEST_IS_DIR)) {
         reload_directory_with_selection(app, path, NULL);
         return;
     }

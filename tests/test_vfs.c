@@ -107,6 +107,14 @@ static void test_list(void) {
     g_assert_cmpuint(list->len, ==, 0);
     g_ptr_array_unref(list);
 
+    g_assert_true(vfs_file_test("/virtual/machine/sub", G_FILE_TEST_IS_DIR));
+    g_assert_true(vfs_file_test("/virtual/machine/to-sub", G_FILE_TEST_IS_DIR)); /* followed */
+    g_assert_false(vfs_file_test("/virtual/machine/file.txt", G_FILE_TEST_IS_DIR));
+    g_assert_true(vfs_file_test("/virtual/machine/file.txt", G_FILE_TEST_IS_REGULAR));
+    g_assert_true(vfs_file_test("/virtual/machine/file.txt", G_FILE_TEST_EXISTS));
+    g_assert_false(vfs_file_test("/virtual/machine/nope", G_FILE_TEST_EXISTS));
+    g_assert_true(vfs_file_test(root, G_FILE_TEST_IS_DIR)); /* a local path */
+
     VfsEntry info;
     g_assert_true(vfs_stat("/virtual/machine/to-sub", &info, NULL, &err));
     g_assert_true(info.is_dir); /* followed */

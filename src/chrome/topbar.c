@@ -2,6 +2,7 @@
 #include "chrome/topbar.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
+#include "core/vfs.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
@@ -343,7 +344,7 @@ static void on_history_right_clicked(GtkGestureClick* gesture, gint n_press, gdo
         const gchar* path = g_ptr_array_index(folders, i);
         GtkWidget* item = history_item_new(app, path);
         /* A deleted folder is listed but cannot be picked */
-        gtk_widget_set_sensitive(item, g_file_test(path, G_FILE_TEST_IS_DIR));
+        gtk_widget_set_sensitive(item, vfs_is_remote(path) || g_file_test(path, G_FILE_TEST_IS_DIR)); /* no wait per item */
         g_object_set_data(G_OBJECT(item), "steps", GUINT_TO_POINTER(i + 1));
         g_signal_connect(item, "clicked", G_CALLBACK(on_history_item_clicked), popover);
         gtk_box_append(GTK_BOX(box), item);

@@ -1,5 +1,6 @@
 #include "preview/viewer.h"
 #include "preview/preview_source.h"
+#include "core/vfs.h"
 #include "preview/preview_media.h"
 #include "core/profile.h"
 #include "core/memory_trim.h"
@@ -248,7 +249,7 @@ gboolean on_viewer_key_press(GtkEventControllerKey* controller, guint keyval,
     case GDK_KEY_e:
     case GDK_KEY_E:
         if (preview_state_path(app) != NULL && preview_state_name(app) != NULL) {
-            if (g_file_test(preview_state_path(app), G_FILE_TEST_IS_DIR)) {
+            if (vfs_file_test(preview_state_path(app), G_FILE_TEST_IS_DIR)) {
                 return FALSE;
             }
             if (file_kind_is_media(preview_state_kind(app))) {

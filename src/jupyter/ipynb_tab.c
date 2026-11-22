@@ -1,5 +1,6 @@
 /* Jupyter notebook tabs of the editor area (see ipynb_tab.h) */
 #include "jupyter/ipynb_tab.h"
+#include "core/vfs.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
 #include "editor/editor.h"
@@ -1073,7 +1074,7 @@ void ipynb_tab_new_untitled(AppData* app, GtkNotebook* nb) {
     for (guint n = 0; name == NULL; n++) {
         name = n == 0 ? g_strdup("Untitled.ipynb") : g_strdup_printf("Untitled%u.ipynb", n);
         gchar* path = g_build_filename(dir, name, NULL);
-        gboolean taken = g_file_test(path, G_FILE_TEST_EXISTS);
+        gboolean taken = vfs_file_test(path, G_FILE_TEST_EXISTS);
         for (guint i = 0; !taken && app->ipynb_pages != NULL && i < app->ipynb_pages->len; i++) {
             IpynbTab* o = ipynb_tab_of(g_ptr_array_index(app->ipynb_pages, i));
             taken = o != NULL && !o->closed && g_strcmp0(o->name, name) == 0;

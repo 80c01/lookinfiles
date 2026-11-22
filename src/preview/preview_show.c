@@ -1,5 +1,6 @@
 /* Preview of a path that is not the explorer's selection (see preview_show.h) */
 #include "preview/preview_show.h"
+#include "core/vfs.h"
 #include "core/app_events.h"
 #include "explorer/fs_watch.h"
 #include "media/audio.h"
@@ -12,7 +13,7 @@
 void preview_show_path(AppData* app, const gchar* path, gint line) {
     if (app == NULL || path == NULL || app->buffer == NULL) return;
     gchar* name = g_path_get_basename(path);
-    if (g_file_test(path, G_FILE_TEST_IS_DIR)) {
+    if (vfs_file_test(path, G_FILE_TEST_IS_DIR)) {
         /* Leave the player page before stopping it (its controls must not be
          * redrawn unallocated) */
         if (app->preview_stack != NULL) gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");

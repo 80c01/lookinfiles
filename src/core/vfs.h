@@ -72,6 +72,11 @@ gboolean vfs_delete_tree(const gchar* path, GError** error);
  * file unless replace */
 gboolean vfs_rename(const gchar* from, const gchar* to, gboolean replace, GError** error);
 
+/* g_file_test() for G_FILE_TEST_EXISTS, IS_DIR and IS_REGULAR, over SFTP
+ * for a remote machine's path (links followed; the mount when the SFTP
+ * session cannot tell); waits for the answer on the calling thread */
+gboolean vfs_file_test(const gchar* path, GFileTest test);
+
 /* Whether error says the SFTP session could not serve the call (no master
  * connection, lost, no answer) rather than the server's answer about the
  * file: a caller may then read the sshfs mount instead */

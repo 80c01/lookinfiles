@@ -662,3 +662,19 @@ gboolean vfs_rename(const gchar* from, const gchar* to, gboolean replace, GError
     j->replace = replace;
     return plain(j, error);
 }
+
+gboolean vfs_file_test(const gchar* path, GFileTest test) {
+    if (path == NULL) return FALSE;
+    if (vfs_is_remote(path)) {
+        VfsEntry e;
+        GError* err = NULL;
+        if (vfs_stat(path, &e, NULL, &err)) {
+            return (test & G_FILE_TEST_EXISTS) || ((test & G_FILE_TEST_IS_DIR) && e.is_dir) ||
+                   ((test & G_FILE_TEST_IS_REGULAR) && !e.is_dir);
+        }
+        gboolean told = !vfs_error_is_connection(err);
+        g_error_free(err);
+        if (told) return FALSE;
+    }
+    return g_file_test(path, test);
+}

@@ -129,7 +129,7 @@ static gchar* get_target_files_dir(AppData* app) {
     if (row == NULL || row->path[0] == '\0') {
         return (app && app->base_dir) ? g_strdup(app->base_dir) : g_strdup(g_get_home_dir());
     }
-    if (explorer_row_is(row, "dir") && g_file_test(row->path, G_FILE_TEST_IS_DIR)) {
+    if (explorer_row_is(row, "dir") && vfs_file_test(row->path, G_FILE_TEST_IS_DIR)) {
         return g_strdup(row->path);
     }
     return g_path_get_dirname(row->path);
@@ -192,7 +192,7 @@ static void on_create_response(AppDialog* dlg, gint response_id, gpointer user_d
         }
         if (!is_valid_name(name)) {
             mark_invalid(run->name_entry);
-        } else if (dir == NULL || !g_file_test(dir, G_FILE_TEST_IS_DIR)) {
+        } else if (dir == NULL || !vfs_file_test(dir, G_FILE_TEST_IS_DIR)) {
             mark_invalid(run->dir_entry);
         } else {
             run->name = name;
@@ -356,7 +356,7 @@ gchar* file_action_rename_selected(AppData* app) {
     gchar* old_name = g_path_get_basename(path);
     gchar* message = g_strdup_printf(_("Rename “%s” to:"), old_name);
     gchar* new_name = NULL;
-    gboolean is_dir = g_file_test(path, G_FILE_TEST_IS_DIR);
+    gboolean is_dir = vfs_file_test(path, G_FILE_TEST_IS_DIR);
     gint response = run_dialog(app->window, is_dir ? _("Rename Folder") : _("Rename File"), message,
                                old_name, !is_dir, _("_Rename"), &new_name);
     g_free(message);
@@ -398,7 +398,7 @@ gchar* file_action_trash_selected(AppData* app) {
     }
     gchar* select_path = NULL;
     gchar* name = g_path_get_basename(path);
-    gboolean is_dir = g_file_test(path, G_FILE_TEST_IS_DIR);
+    gboolean is_dir = vfs_file_test(path, G_FILE_TEST_IS_DIR);
     gboolean remote = vfs_is_remote(path); /* no trash there: deleted for good */
     gchar* message = remote ? (is_dir ? g_strdup_printf(_("Delete the folder “%s” and everything in it for good? "
                                                           "A remote machine has no trash: this cannot be undone."),

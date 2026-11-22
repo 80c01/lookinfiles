@@ -95,6 +95,9 @@ Layers, from bottom to top
   answer. Writes: `vfs_write()`, `vfs_mkdir()` (`_with_parents()`),
   `vfs_remove()`, `vfs_delete_tree()` (never the machine's folder itself),
   `vfs_rename()`; the user's writes wait on the main thread (bounded).
+  `vfs_file_test()` is `g_file_test()` over SFTP, for the navigation's
+  checks (open a folder, history, new file); `fs_watch` and the history menu
+  take a remote folder as there rather than wait for each one.
   Unit-tested with the test program as `ssh` serving SFTP. Through it so
   far: listings, text and hex previews, folder previews and READMEs, opening
   in the editor, saving, new file and folder, rename, delete, and (through

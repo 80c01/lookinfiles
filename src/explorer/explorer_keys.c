@@ -1,6 +1,7 @@
 /* Keys of the explorer panel. Navigation follows the global mode (nav_keys.h);
  * the view actions (a, d, r, o...) are the same in every mode. */
 #include "explorer/explorer_keys.h"
+#include "core/vfs.h"
 #include "preview/preview_state.h"
 #include "explorer/file_list.h"
 #include "explorer/tree_nav.h"
@@ -46,7 +47,7 @@ static gchar* selected_folder(AppData* app) {
     } else if (app->base_dir != NULL) {
         path = g_strdup(app->base_dir);
     }
-    if (path != NULL && !g_file_test(path, G_FILE_TEST_IS_DIR)) g_clear_pointer(&path, g_free);
+    if (path != NULL && !vfs_file_test(path, G_FILE_TEST_IS_DIR)) g_clear_pointer(&path, g_free);
     return path;
 }
 

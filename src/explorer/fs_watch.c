@@ -294,7 +294,7 @@ static void add_single_dir_monitor(AppData* app, const gchar* path) {
         g_hash_table_insert(w->remote_dirs, g_strdup(path), vfs_watch_new(path, on_remote_dir_changed, app));
         return;
     }
-    if (!g_file_test(path, G_FILE_TEST_IS_DIR)) {
+    if (!vfs_is_remote(path) && !g_file_test(path, G_FILE_TEST_IS_DIR)) {
         return;
     }
     GFile* f = g_file_new_for_path(path);
@@ -350,7 +350,8 @@ void sync_directory_monitors(AppData* app) {
     /* Collect all paths that should currently be monitored:
      * base_dir and all existing expanded subdirectories */
     GHashTable* needed = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-    if (app->base_dir != NULL && g_file_test(app->base_dir, G_FILE_TEST_IS_DIR)) {
+    /* A remote folder is taken as there: no wait per folder (its watch tells) */
+    if (app->base_dir != NULL && (vfs_is_remote(app->base_dir) || g_file_test(app->base_dir, G_FILE_TEST_IS_DIR))) {
         g_hash_table_add(needed, g_strdup(app->base_dir));
     }
 
@@ -360,7 +361,7 @@ void sync_directory_monitors(AppData* app) {
         g_hash_table_iter_init(&iter, app->expanded_paths);
         while (g_hash_table_iter_next(&iter, &key, &value)) {
             const gchar* p = (const gchar*)key;
-            if (g_file_test(p, G_FILE_TEST_IS_DIR)) {
+            if (vfs_is_remote(p) || g_file_test(p, G_FILE_TEST_IS_DIR)) {
                 g_hash_table_add(needed, g_strdup(p));
             } else {
                 /* Prune non-existent directory path from expanded_paths */
