@@ -1,12 +1,13 @@
 /* Search in files (see project_search.h) */
 #include "search/project_search.h"
-#include "core/remote_path.h"
+#include "core/vfs.h"
 #include "core/i18n.h"
 #include "code/code_index.h"
 #include "code/code_refs.h"
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "core/path_globs.h"
+#include "search/remote_search.h"
 #include "search/text_search.h"
 #include "core/xml_text.h"
 
@@ -62,6 +63,8 @@ typedef struct {
     const SearchArea* area; /* the notes (NULL: the project) */
     GPtrArray* refs;
     gboolean cut_files; /* TEXT_SEARCH_MAX_FILES listed */
+    gboolean cut_remote; /* a remote machine found more lines than read */
+    gchar* failed;       /* why a remote machine could not be searched */
     TextSearchStats stats;
 } Search;
 
@@ -71,6 +74,7 @@ static void search_free(gpointer data) {
     g_free(s->query);
     scope_clear(&s->scope);
     g_free(s->root);
+    g_free(s->failed);
     if (s->refs != NULL) g_ptr_array_unref(s->refs);
     g_free(s);
 }
@@ -109,6 +113,20 @@ static void search_thread(GTask* task, gpointer source, gpointer data, GCancella
     (void)source;
     Search* s = data;
     Filter f = {path_globs_new(s->scope.include), path_globs_new(s->scope.exclude)};
+    if (vfs_is_remote(s->root)) { /* grep on the machine, the matches checked here */
+        GError* error = NULL;
+        s->refs = remote_search_files(s->root, s->query, &s->opts, s->scope.ignored, keep_file, &f, cancellable,
+                                      &s->stats, &s->cut_remote, &error);
+        if (s->refs == NULL) {
+            s->refs = g_ptr_array_new_with_free_func((GDestroyNotify)code_reference_free);
+            s->failed = g_strdup(error->message);
+            g_error_free(error);
+        }
+        path_globs_free(f.include);
+        path_globs_free(f.exclude);
+        if (s->area != NULL && s->area->xml_name != NULL) only_xml_text(s->refs, s->area->xml_name);
+        return;
+    }
     GPtrArray* files = code_index_some_files(s->root, s->scope.ignored, keep_file, &f, TEXT_SEARCH_MAX_FILES,
                                              cancellable, &s->cut_files);
     path_globs_free(f.include);
@@ -127,6 +145,11 @@ static void add_note(GString* s, const gchar* note) {
 static gchar* stop_note(const Search* s) {
     GString* n = g_string_new(NULL);
     gchar* t = NULL;
+    if (s->failed != NULL) {
+        add_note(n, t = g_strdup_printf(_("the remote machine could not be searched: %s"), s->failed));
+        g_free(t);
+    }
+    if (s->cut_remote) add_note(n, _("more lines found on the remote machine than read"));
     if (s->cut_files) {
         add_note(n, t = g_strdup_printf(_("only the first %u files listed"), (guint)TEXT_SEARCH_MAX_FILES));
         g_free(t);
@@ -502,7 +525,6 @@ static gboolean can_prompt(AppData* app) {
 
 void project_search_show(AppData* app) {
     if (!can_prompt(app) || app->base_dir == NULL) return;
-    if (remote_path_refuse(app, app->base_dir, _("Search in files is not available on a remote machine yet"))) return;
     show_prompt(app, code_index_project_root(app->base_dir), NULL);
 }
 

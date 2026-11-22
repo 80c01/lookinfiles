@@ -94,6 +94,12 @@ typedef void (*SshExecFunc)(gint status, const gchar* out, const gchar* err, con
  * is asked for (ssh_session_on_master_missing()). */
 void ssh_exec_async(const SshTarget* target, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data);
+/* The same, waiting for the end (worker threads only): TRUE when it ran,
+ * with its exit status and output (bytes, NULs kept; caller unrefs);
+ * FALSE with error when it could not run (not connected, cancelled, or
+ * ssh failed: status 255, its error text) */
+gboolean ssh_exec_sync(const SshTarget* target, const gchar* command, GCancellable* cancel, gint* status,
+                       GBytes** out, GError** error);
 /* arg quoted for a POSIX remote shell. Caller frees. */
 gchar* ssh_session_quote(const gchar* arg);
 

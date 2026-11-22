@@ -244,6 +244,7 @@ web_engine_win:web_engine,web_keys,web_address,dialog,app_paths,i18n
 path_globs:
 xml_text:
 text_search:code_index,i18n
+remote_search:text_search,code_index,ssh_session,vfs
 deep_query:text_search,path_globs,file_types,i18n
 deep_search:deep_query
 deep_search_store:app_paths,deep_query,file_types,i18n

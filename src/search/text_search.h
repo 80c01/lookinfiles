@@ -83,4 +83,11 @@ gboolean text_matcher_search_file(TextMatcher* tm, const gchar* path, guint max_
                                   TextFileMatch* out);
 void text_file_match_clear(TextFileMatch* fm);
 
+/* The matches of text (len bytes of whole lines, the first one line
+ * first_line, 0-based) as CodeReference* of path appended to out, as
+ * text_search_files() finds them; FALSE once out holds
+ * TEXT_SEARCH_MAX_RESULTS */
+gboolean text_matcher_search_text(TextMatcher* tm, const gchar* path, gint first_line, const gchar* text, gsize len,
+                                  GPtrArray* out);
+
 #endif /* TEXT_SEARCH_H */

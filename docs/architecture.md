@@ -619,7 +619,13 @@ Layers, from bottom to top
   `CodeReference`s with their length, and why it stopped
   (`TextSearchStats`). Also one file at a time with no limit
   (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
-  lines, the matches counted, the first one kept (the deep search).
+  lines, the matches counted, the first one kept (the deep search); or
+  given lines (`text_matcher_search_text()`).
+- `remote_search` — search in files and Go to File on a remote machine:
+  the files listed (git ls-files, else find) and the lines that may match
+  found (grep) by commands run there through `vfs_exec()`, the matches then
+  those of `text_search` on these lines (unit-tested: the commands, the
+  reading of their output).
 - `deep_query` — the criteria of a deep search (`DeepQuery`: name or
   pattern, extensions or else a `FileFamily`, kind, sizes, dates of last change, content, folders
   excluded with `path_globs`, hidden entries, depth, one filesystem), the
@@ -865,8 +871,8 @@ Layers, from bottom to top
   them, `<machine>:<remote path>`, instead of the local folder they are seen
   at: shown by `remote_path_display()`, read back by `remote_path_parse()`
   (unit-tested); `remote_path_refuse()` says in the status bar that a
-  feature working on local files only (Disk Usage, Deep Search, search in
-  files, Go to File) is not available on a remote machine yet.
+  feature working on local files only (Disk Usage, Deep Search, Open With
+  Default App) is not available on a remote machine yet.
 - `preview_summary` — summaries shown in the preview for rows without
   file content (remote machine, notebook, bookmark folder, trash, Canvas
   note) as typed lines (title, fields, headings, items, keys), and their

@@ -2,6 +2,7 @@
 #include "search/quick_open.h"
 #include "core/remote_path.h"
 #include "core/vfs.h"
+#include "search/remote_search.h"
 #include "core/app_events.h"
 #include "code/code_index.h"
 #include "widgets/dialog.h"
@@ -149,7 +150,11 @@ static void listing_thread(GTask* task, gpointer source, gpointer data, GCancell
     (void)task;
     (void)source;
     Listing* l = data;
-    GPtrArray* abs = code_index_all_files(l->root, cancellable, &l->truncated);
+    /* A remote machine's files: listed there (git ls-files or find) */
+    GPtrArray* abs = vfs_is_remote(l->root)
+                         ? remote_search_all_files(l->root, CODE_INDEX_MAX_FILES, cancellable, &l->truncated, NULL)
+                         : code_index_all_files(l->root, cancellable, &l->truncated);
+    if (abs == NULL) abs = g_ptr_array_new_with_free_func(g_free); /* could not run: nothing to pick */
     gsize n = strlen(l->root);
     l->files = g_ptr_array_new_full(abs->len, g_free);
     for (guint i = 0; i < abs->len; i++) {
@@ -420,9 +425,8 @@ void quick_open_show(AppData* app) {
     if (app == NULL || app->window == NULL || app->base_dir == NULL || app_dialog_is_open(app->window)) {
         return;
     }
-    if (remote_path_refuse(app, app->base_dir, _("Go to File is not available on a remote machine yet"))) return;
     gchar* root = code_index_project_root(app->base_dir);
-    gchar* root_name = g_path_get_basename(root);
+    gchar* root_name = remote_path_display_name(app, root); /* the machine's name for its folder */
     gchar* title = g_strdup_printf(_("Go to File in %s"), root_name);
     Picker* p = picker_new(app, title, _("Type part of a file name or path"));
     p->root = root;

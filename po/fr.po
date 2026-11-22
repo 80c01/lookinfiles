@@ -13080,8 +13080,13 @@ msgid "Deep Search is not available on a remote machine yet"
 msgstr "Deep Search n’est pas encore disponible sur une machine distante"
 
 #: src/search/project_search.c
-msgid "Search in files is not available on a remote machine yet"
-msgstr "La recherche dans les fichiers n’est pas encore disponible sur une machine distante"
+#, c-format
+msgid "the remote machine could not be searched: %s"
+msgstr "la machine distante n’a pas pu être fouillée : %s"
+
+#: src/search/project_search.c
+msgid "more lines found on the remote machine than read"
+msgstr "plus de lignes trouvées sur la machine distante que lues"
 
 #: src/explorer/files_menu.c
 msgid "Opening with another application is not available on a remote machine yet"
@@ -13091,10 +13096,6 @@ msgstr "L’ouverture avec une autre application n’est pas encore disponible s
 #, c-format
 msgid "[ Cannot copy %1$s from the remote machine: %2$s ]"
 msgstr "[ Impossible de copier %1$s depuis la machine distante : %2$s ]"
-
-#: src/search/quick_open.c
-msgid "Go to File is not available on a remote machine yet"
-msgstr "Aller au fichier n’est pas encore disponible sur une machine distante"
 
 #: src/explorer/remote.c
 msgid ""

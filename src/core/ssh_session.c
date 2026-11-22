@@ -468,6 +468,42 @@ static void on_exec_done(GObject* source, GAsyncResult* res, gpointer data) {
     g_free(run);
 }
 
+gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GCancellable* cancel, gint* status,
+                       GBytes** out, GError** error) {
+    *out = NULL;
+    gchar* sock = ssh_session_control_path(t);
+    gboolean missing = sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS);
+    g_free(sock);
+    if (missing) { /* as ssh_exec_async(): no login of its own */
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED, _("the SSH connection to the machine is not open"));
+        return FALSE;
+    }
+    GPtrArray* argv = ssh_session_argv(t, 0);
+    g_ptr_array_add(argv, g_strdup(command != NULL ? command : "true"));
+    GSubprocess* p = spawn(argv, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                     G_SUBPROCESS_FLAGS_STDERR_PIPE, error);
+    g_ptr_array_unref(argv);
+    if (p == NULL) return FALSE;
+    GBytes* err = NULL;
+    gboolean ok = g_subprocess_communicate(p, NULL, cancel, out, &err, error);
+    if (ok) {
+        *status = g_subprocess_get_if_exited(p) ? g_subprocess_get_exit_status(p) : -1;
+        if (*status == 255 || *status < 0) { /* ssh itself failed */
+            gchar* why = failure_text(err, *status);
+            g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_FAILED, why);
+            g_free(why);
+            g_clear_pointer(out, g_bytes_unref);
+            ok = FALSE;
+        }
+    } else {
+        g_subprocess_force_exit(p);
+        g_clear_pointer(out, g_bytes_unref);
+    }
+    if (err != NULL) g_bytes_unref(err);
+    g_object_unref(p);
+    return ok;
+}
+
 void ssh_exec_async(const SshTarget* t, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data) {
     GPtrArray* argv = ssh_session_argv(t, 0); /* asks for the master when it is not open */

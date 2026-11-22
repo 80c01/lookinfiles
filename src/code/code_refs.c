@@ -1,6 +1,7 @@
 /* References of a symbol in the References tab (see code_refs.h) */
 #include "code/code_refs.h"
 #include "core/i18n.h"
+#include "core/remote_path.h"
 #include "theme/palette.h"
 #include "code/code_index.h"
 #include "code/code_intel.h"
@@ -491,7 +492,7 @@ void code_refs_show_searching(AppData* app, const gchar* query, const gchar* roo
     RefsPage* rp = ensure_page(app, &app->search_page, _("Search"));
     if (rp == NULL) return;
     g_list_store_remove_all(rp->store);
-    gchar* base = g_path_get_basename(root);
+    gchar* base = remote_path_display_name(app, root); /* a machine's name, not its folder's */
     gchar* bold = g_markup_printf_escaped("<b>%s</b>", query);
     gchar* where = g_markup_escape_text(base, -1);
     gchar* markup = markup_sentence(_("Searching for %1$s in %2$s…"), bold, where);

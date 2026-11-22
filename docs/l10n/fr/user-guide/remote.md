@@ -97,12 +97,27 @@ Les machines ajoutées à la main sont enregistrées dans
 ## Pas encore disponible sur une machine distante
 
 Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
-locaux : Git (pas de badges ni d’onglet Git), la recherche dans les
-fichiers, Deep Search, Aller au fichier, l’occupation disque, les serveurs
-de langage (complétion, diagnostics) et la compilation LaTeX. L’ouverture
-d’un fichier avec une autre application n’est pas disponible non plus. Les
-fonctions de recherche et l’ouverture avec l’application par défaut le
-disent dans la barre d’état ; les autres restent éteintes.
+locaux : Git (pas de badges ni d’onglet Git), Deep Search, l’occupation
+disque, les serveurs de langage (complétion, diagnostics) et la compilation
+LaTeX. L’ouverture d’un fichier avec une autre application n’est pas
+disponible non plus. Deep Search, l’occupation disque et l’ouverture avec
+l’application par défaut le disent dans la barre d’état ; les autres
+restent éteintes.
+
+## Recherche dans les fichiers et Aller au fichier
+
+La recherche dans les fichiers (`Ctrl+Shift+F`) et Aller au fichier
+s’exécutent sur la machine : les fichiers y sont listés (avec
+`git ls-files` dans un dépôt, sinon `find`, sans les dossiers cachés et de
+compilation, comme sur cet ordinateur), et `grep` trouve les lignes qui
+peuvent correspondre. Chaque ligne est ensuite vérifiée ici, donc les
+options (respecter la casse, mot entier, expression régulière, lettres dans
+l’ordre) donnent les mêmes résultats que pour des fichiers locaux. La
+machine a besoin de `grep`, et de `git` pour les dépôts ; une expression
+régulière utilise `grep -P` quand la machine l’a, sinon `grep -E`, qui
+connaît moins de formes (pas de `\d`, pas d’assertion avant). Au plus
+32 Mo de lignes sont lus ; l’onglet Recherche le signale s’il y en avait
+plus.
 
 ## Vitesse
 

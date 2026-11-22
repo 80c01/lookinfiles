@@ -88,10 +88,23 @@ with sshfs are unmounted at start-up. Machines added by hand are saved in
 ## Not available on a remote machine yet
 
 These run on this computer and need local files: Git (no badges, no Git
-tab), the search in files, Deep Search, Go to File, Disk Usage, the language
-servers (completion, diagnostics) and LaTeX builds. Opening a file with
-another application is not available either. The search features and Open
-With Default App say so in the status bar; the others stay off.
+tab), Deep Search, Disk Usage, the language servers (completion,
+diagnostics) and LaTeX builds. Opening a file with another application is
+not available either. Deep Search, Disk Usage and Open With Default App say
+so in the status bar; the others stay off.
+
+## Search in files and Go to File
+
+The search in files (`Ctrl+Shift+F`) and Go to File run on the machine:
+the files are listed there (with `git ls-files` in a repository, else
+`find`, leaving out hidden and build folders as on this computer), and
+`grep` finds the lines that may match. Each line is then checked here, so
+the options (match case, whole word, regular expression, letters in order)
+give the same results as for local files. The machine needs `grep`, and
+`git` for repositories; a regular expression uses `grep -P` when the
+machine has it, else `grep -E`, which knows fewer forms (no `\d`, no
+look-ahead). At most 32 MB of lines are read; the Search tab says when
+there were more.
 
 ## Speed
 

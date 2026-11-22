@@ -410,6 +410,15 @@ static gboolean search_block(Matcher* m, const gchar* path, const gchar* text, g
     return go_on;
 }
 
+gboolean text_matcher_search_text(TextMatcher* tm, const gchar* path, gint first_line, const gchar* text, gsize len,
+                                  GPtrArray* out) {
+    if (tm == NULL || text == NULL) return TRUE;
+    tm->m.max_count = 0;
+    tm->m.line_base = first_line;
+    tm->m.failed = FALSE;
+    return search_text(&tm->m, path, text, len, out);
+}
+
 gboolean text_matcher_search_file(TextMatcher* tm, const gchar* path, guint max_count, GCancellable* cancellable,
                                   TextFileMatch* out) {
     memset(out, 0, sizeof(*out));
