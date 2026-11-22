@@ -87,10 +87,10 @@ with sshfs are unmounted at start-up. Machines added by hand are saved in
 
 ## Not available on a remote machine yet
 
-These run on this computer and need local files: the Git tab, Disk Usage,
-the language servers (completion, diagnostics) and LaTeX builds. Opening a
-file with another application is not available either. Disk Usage and Open
-With Default App say so in the status bar; the others stay off.
+These run on this computer and need local files: the Git tab, the
+language servers (completion, diagnostics) and LaTeX builds. Opening a file
+with another application is not available either: Open With Default App
+says so in the status bar; the others stay off.
 
 ## Deep Search
 
@@ -99,6 +99,15 @@ lists the entries there (it needs GNU `find`, as on Linux), the criteria
 are tested here, and for a content search `grep` reads the files that pass
 the others, a few hundred at a time, each line found checked here. The
 folder field shows `machine:path`, and takes it typed so.
+
+## Disk Usage
+
+Disk Usage reads a remote folder with one `find` run on the machine (GNU
+`find`, as on Linux), which lists every entry with its size, blocks and
+date; the tree is then added up here as for a local folder (hard links
+once, other filesystems skipped when asked, exclusions). The folder being
+listed shows while `find` runs; the folders of the breakdown come at the
+end, all at once.
 
 ## Git
 

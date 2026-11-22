@@ -99,7 +99,8 @@ sysstat_remote:sysstat
 proc_query:
 countdown:
 run_time:
-disk_scan:
+disk_scan:disk_remote,vfs
+disk_remote:
 disk_stats:disk_scan,file_types,i18n
 git_space:git_utils,disk_scan
 git_filter:git_utils,disk_scan

@@ -196,7 +196,7 @@ static void show_progress(DiskUsageTab* dt) {
     set_label(dt->status, g_strdup_printf("%s · %s", counters, time));
     g_free(counters);
     g_free(time);
-    set_label(dt->current, g_strdup(snap.current != NULL ? snap.current : ""));
+    set_label(dt->current, remote_path_display(dt->app, snap.current != NULL ? snap.current : ""));
     disk_usage_list_show_progress(dt->list, dt->root, &snap);
     disk_scan_snapshot_clear(&snap);
 }
@@ -256,7 +256,9 @@ static void show_folder(DiskUsageTab* dt, DiskNode* node, const gchar* select) {
     gchar* selected = disk_usage_list_selected_name(dt->list);
     disk_usage_views_select(dt->views, selected);
     g_free(selected);
-    set_label(dt->current, disk_node_path(node));
+    gchar* node_path = disk_node_path(node);
+    set_label(dt->current, remote_path_display(dt->app, node_path)); /* machine:path, not the local folder */
+    g_free(node_path);
     sync_buttons(dt);
 }
 
@@ -372,10 +374,11 @@ static void start_scan(DiskUsageTab* dt, gboolean quiet) {
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(dt->progress), 0.0);
     gtk_widget_set_visible(dt->progress, TRUE);
     if (!dt->quiet) {
-        set_label(dt->title, g_strdup(dt->root));
-        gtk_widget_set_tooltip_text(dt->title, dt->root);
+        gchar* shown = remote_path_display(dt->app, dt->root);
+        set_label(dt->title, g_strdup(shown));
+        gtk_widget_set_tooltip_text(dt->title, shown);
         set_label(dt->status, g_strdup(_("Reading…")));
-        set_label(dt->current, g_strdup(dt->root));
+        set_label(dt->current, shown);
     }
     if (dt->timer == 0) dt->timer = g_timeout_add(TICK_MS, on_tick, dt);
     sync_buttons(dt);
@@ -745,7 +748,6 @@ static DiskUsageTab* ensure_page(AppData* app) {
 
 void disk_usage_tab_show(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL) return;
-    if (remote_path_refuse(app, path, _("Disk Usage is not available on a remote machine yet"))) return;
     DiskUsageTab* dt = ensure_page(app);
     if (dt == NULL) return;
     if (g_strcmp0(dt->root, path) != 0) { /* another folder */

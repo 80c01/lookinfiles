@@ -1,5 +1,7 @@
 /* Disk usage of a folder, read in a worker thread (see disk_scan.h) */
 #include "core/disk_scan.h"
+#include "core/disk_remote.h"
+#include "core/vfs.h"
 
 #include <errno.h>
 #include <glib/gstdio.h>
@@ -27,6 +29,7 @@ struct DiskScan {
     guint64 root_dev;
     GCancellable* cancel;   /* borrowed during disk_scan_run() */
     gboolean cancelled;
+    DiskRemoteListing* listing; /* a remote machine's tree, read instead of the disk */
 
     /* Progress, read by disk_scan_snapshot() from any thread */
     GMutex lock;
@@ -331,25 +334,39 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth, gboolean filtered
     s->progress.current = g_strdup(s->path->str);
     g_mutex_unlock(&s->lock);
 
-    GError* err = NULL;
-    GDir* dir = g_dir_open(s->path->str, 0, &err);
-    if (dir == NULL) {
-        node->unreadable = TRUE;
-        add_error(s, s->path->str, err != NULL ? err->message : "");
-        g_clear_error(&err);
-        return;
-    }
-    /* Names first, the folder closed before going down: a deep tree does
-     * not keep a descriptor per level */
+    gsize root_len = strlen(s->root_path);
     GPtrArray* names = g_ptr_array_new_with_free_func(g_free);
     const gchar* name;
-    while ((name = g_dir_read_name(dir)) != NULL) g_ptr_array_add(names, g_strdup(name));
-    g_dir_close(dir);
+    GHashTable* listed = NULL; /* a remote folder's entries: name -> GStatBuf* */
+    if (s->listing != NULL) {
+        const gchar* rel_dir = s->path->str + root_len;
+        while (G_IS_DIR_SEPARATOR(*rel_dir)) rel_dir++;
+        listed = disk_remote_listing_dir(s->listing, rel_dir);
+        GHashTableIter it;
+        gpointer key;
+        if (listed != NULL) {
+            g_hash_table_iter_init(&it, listed);
+            while (g_hash_table_iter_next(&it, &key, NULL)) g_ptr_array_add(names, g_strdup(key));
+        }
+    } else {
+        GError* err = NULL;
+        GDir* dir = g_dir_open(s->path->str, 0, &err);
+        if (dir == NULL) {
+            node->unreadable = TRUE;
+            add_error(s, s->path->str, err != NULL ? err->message : "");
+            g_clear_error(&err);
+            g_ptr_array_unref(names);
+            return;
+        }
+        /* Names first, the folder closed before going down: a deep tree does
+         * not keep a descriptor per level */
+        while ((name = g_dir_read_name(dir)) != NULL) g_ptr_array_add(names, g_strdup(name));
+        g_dir_close(dir);
+    }
     if (names->len == 0 && depth > 0) s->stats.n_empty_dirs++;
 
     gsize base = s->path->len;
     gboolean excluded = g_hash_table_size(s->excluded) > 0;
-    gsize root_len = strlen(s->root_path);
     GPtrArray* subdirs = g_ptr_array_new(); /* names borrowed from names */
     GArray* subdir_all = g_array_new(FALSE, FALSE, sizeof(gboolean)); /* read unfiltered */
     GArray* subdir_disk = g_array_new(FALSE, FALSE, sizeof(guint64)); /* their own blocks */
@@ -362,7 +379,9 @@ static void scan_dir(DiskScan* s, DiskNode* node, guint depth, gboolean filtered
             continue;
         }
         GStatBuf st;
-        if (g_lstat(s->path->str, &st) != 0) {
+        if (listed != NULL) {
+            st = *(const GStatBuf*)g_hash_table_lookup(listed, name);
+        } else if (g_lstat(s->path->str, &st) != 0) {
             add_error(s, s->path->str, g_strerror(errno));
             continue;
         }
@@ -502,13 +521,58 @@ void disk_scan_set_filter(DiskScan* s, DiskScanFilter filter, gpointer data) {
     s->filter_data = data;
 }
 
+/* A remote machine's tree, listed there by find (disk_remote.h); NULL when
+ * it could not run */
+static DiskRemoteListing* list_remote(DiskScan* s) {
+    gchar* cmd = disk_remote_command(s->one_filesystem);
+    GSubprocess* proc = vfs_spawn(s->root_path, cmd, NULL);
+    g_free(cmd);
+    if (proc == NULL) return NULL;
+    g_output_stream_close(g_subprocess_get_stdin_pipe(proc), NULL, NULL);
+    GDataInputStream* in = g_data_input_stream_new(g_subprocess_get_stdout_pipe(proc));
+    DiskRemoteListing* l = disk_remote_listing_new();
+    guint64 n = 0;
+    gchar* rec;
+    gsize len = 0;
+    while (!g_cancellable_is_cancelled(s->cancel) &&
+           (rec = g_data_input_stream_read_upto(in, "", 1, &len, s->cancel, NULL)) != NULL) {
+        g_data_input_stream_read_byte(in, NULL, NULL); /* the NUL */
+        const gchar* rel = NULL;
+        if (disk_remote_listing_add(l, rec, &rel) && (++n & 1023) == 0) {
+            /* Where find is: the progress while it lists */
+            g_mutex_lock(&s->lock);
+            g_free(s->progress.current);
+            s->progress.current = g_build_filename(s->root_path, rel, NULL);
+            g_mutex_unlock(&s->lock);
+        }
+        g_free(rec);
+    }
+    g_object_unref(in);
+    if (g_cancellable_is_cancelled(s->cancel)) {
+        g_subprocess_force_exit(proc);
+        s->cancelled = TRUE;
+    }
+    g_subprocess_wait(proc, NULL, NULL);
+    g_object_unref(proc);
+    return l;
+}
+
 void disk_scan_run(DiskScan* s, GCancellable* cancel) {
     if (s == NULL) return;
     s->cancel = cancel;
     s->stats.now = g_get_real_time() / G_USEC_PER_SEC;
     GStatBuf st;
-    /* The root itself is followed when it is a link: it is what was asked */
-    gboolean found = g_stat(s->root_path, &st) == 0;
+    gboolean found;
+    if (vfs_is_remote(s->root_path)) { /* the whole tree listed there first */
+        s->listing = list_remote(s);
+        const GStatBuf* root = disk_remote_listing_root(s->listing);
+        found = root != NULL;
+        if (found) st = *root;
+        errno = ENOENT;
+    } else {
+        /* The root itself is followed when it is a link: it is what was asked */
+        found = g_stat(s->root_path, &st) == 0;
+    }
     if (!found || !S_ISDIR(st.st_mode)) {
         s->root->unreadable = TRUE;
         add_error(s, s->root_path, g_strerror(found ? ENOTDIR : errno));
@@ -516,7 +580,7 @@ void disk_scan_run(DiskScan* s, GCancellable* cancel) {
         s->root_dev = (guint64)st.st_dev;
         s->root->disk = disk_bytes(&st);
         s->stats.disk = s->root->disk;
-        if (is_mount_point(s->root_path, &st)) {
+        if (s->listing == NULL && is_mount_point(s->root_path, &st)) {
             guint64 used = filesystem_used(s->root_path);
             g_mutex_lock(&s->lock);
             s->progress.fs_used = used;
@@ -525,6 +589,7 @@ void disk_scan_run(DiskScan* s, GCancellable* cancel) {
         scan_dir(s, s->root, 0, s->filter != NULL);
     }
     g_hash_table_remove_all(s->inodes);
+    g_clear_pointer(&s->listing, disk_remote_listing_free);
     s->cancel = NULL;
     g_mutex_lock(&s->lock);
     g_clear_pointer(&s->progress.current, g_free);

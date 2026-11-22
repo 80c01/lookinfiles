@@ -97,11 +97,10 @@ Les machines ajoutées à la main sont enregistrées dans
 ## Pas encore disponible sur une machine distante
 
 Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
-locaux : l’onglet Git, l’occupation disque, les serveurs de langage
-(complétion, diagnostics) et la compilation LaTeX. L’ouverture d’un fichier
-avec une autre application n’est pas disponible non plus. L’occupation
-disque et l’ouverture avec l’application par défaut le disent dans la barre
-d’état ; les autres restent éteintes.
+locaux : l’onglet Git, les serveurs de langage (complétion, diagnostics) et
+la compilation LaTeX. L’ouverture d’un fichier avec une autre application
+n’est pas disponible non plus : « Ouvrir avec l’application par défaut » le
+dit dans la barre d’état ; les autres restent éteintes.
 
 ## Deep Search
 
@@ -111,6 +110,16 @@ Linux), les critères sont testés ici, et pour une recherche dans le contenu
 `grep` lit les fichiers qui passent les autres critères, quelques centaines
 à la fois, chaque ligne trouvée étant vérifiée ici. Le champ du dossier
 affiche `machine:chemin`, et l’accepte tapé ainsi.
+
+## Occupation disque
+
+L’occupation disque lit un dossier distant avec un seul `find` lancé sur
+la machine (le `find` GNU, comme sous Linux), qui liste chaque entrée avec
+sa taille, ses blocs et sa date ; l’arbre est ensuite additionné ici comme
+pour un dossier local (liens physiques comptés une fois, autres systèmes de
+fichiers ignorés sur demande, exclusions). Le dossier en cours de listage
+s’affiche pendant que `find` tourne ; les dossiers de la répartition
+arrivent à la fin, tous ensemble.
 
 ## Git
 
