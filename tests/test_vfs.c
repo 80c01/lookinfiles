@@ -102,6 +102,14 @@ static void test_list(void) {
     g_assert_true(e->is_dir); /* the target's */
     g_ptr_array_unref(list);
 
+    /* What the listing said, at once */
+    VfsEntry peek = { 0 };
+    g_assert_true(vfs_peek("/virtual/machine/file.txt", &peek));
+    g_assert_null(peek.name);
+    g_assert_cmpint(peek.size, ==, 5);
+    g_assert_false(peek.is_dir);
+    g_assert_false(vfs_peek("/virtual/machine/sub/never-listed", &peek));
+
     list = vfs_list("/virtual/machine/sub", NULL, &err);
     g_assert_no_error(err);
     g_assert_cmpuint(list->len, ==, 0);

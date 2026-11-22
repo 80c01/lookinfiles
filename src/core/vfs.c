@@ -404,6 +404,34 @@ static gboolean run_list(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* What the last listings and stats said of each path (vfs_peek()) */
+#define KNOWN_MAX 50000
+static GMutex known_lock;
+static GHashTable* known;
+
+static void know(const gchar* path, const VfsEntry* e) {
+    VfsEntry* copy = g_new(VfsEntry, 1);
+    *copy = *e;
+    copy->name = NULL;
+    g_mutex_lock(&known_lock);
+    if (known == NULL) known = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    if (g_hash_table_size(known) >= KNOWN_MAX) g_hash_table_remove_all(known); /* bounded */
+    g_hash_table_replace(known, g_strdup(path), copy);
+    g_mutex_unlock(&known_lock);
+}
+
+gboolean vfs_peek(const gchar* path, VfsEntry* e) {
+    gboolean found = FALSE;
+    g_mutex_lock(&known_lock);
+    const VfsEntry* k = known != NULL && path != NULL ? g_hash_table_lookup(known, path) : NULL;
+    if (k != NULL) {
+        *e = *k;
+        found = TRUE;
+    }
+    g_mutex_unlock(&known_lock);
+    return found;
+}
+
 GPtrArray* vfs_list(const gchar* path, GCancellable* cancel, GError** error) {
     Job* j = job_new(path, error);
     if (j == NULL) return NULL;
@@ -414,6 +442,12 @@ GPtrArray* vfs_list(const gchar* path, GCancellable* cancel, GError** error) {
         g_mutex_unlock(&j->mu);
     }
     job_unref(j);
+    for (guint i = 0; out != NULL && i < out->len; i++) {
+        const VfsEntry* e = out->pdata[i];
+        gchar* full = g_build_filename(path, e->name, NULL);
+        know(full, e);
+        g_free(full);
+    }
     return out;
 }
 
@@ -455,6 +489,7 @@ gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError**
         *e = j->info;
         e->name = NULL;
         g_mutex_unlock(&j->mu);
+        know(path, e);
     }
     job_unref(j);
     return ok;

@@ -9,6 +9,7 @@
 #include "preview/dir_summary.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
+#include "core/vfs.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
 #include "core/file_types.h"
@@ -676,15 +677,27 @@ void update_status_bar(AppData* app) {
         gboolean on_disk = (g_strcmp0(type, "bookmark") != 0 && g_strcmp0(type, "bm_folder") != 0 &&
                             g_strcmp0(type, "notebook") != 0 && g_strcmp0(type, "trash") != 0 &&
                             g_strcmp0(type, "remote_folder") != 0);
-        GStatBuf st;
-        if (on_disk && full != NULL && g_stat(full, &st) == 0) {
+        gint64 fsize = 0;
+        gint64 mtime = 0;
+        gboolean known = FALSE;
+        if (on_disk && full != NULL && vfs_is_remote(full)) {
+            VfsEntry e = { 0 }; /* as last listed: never a wait for the network */
+            known = vfs_peek(full, &e);
+            fsize = e.size;
+            mtime = e.mtime;
+        } else if (on_disk && full != NULL) {
+            GStatBuf st;
+            known = g_stat(full, &st) == 0;
+            fsize = known ? (gint64)st.st_size : 0;
+            mtime = known ? (gint64)st.st_mtime : 0;
+        }
+        if (known) {
             if (!is_dir) {
-                gchar* size_str = g_format_size((guint64)st.st_size);
+                gchar* size_str = g_format_size((guint64)fsize);
                 gtk_label_set_text(GTK_LABEL(b->size), size_str);
                 g_free(size_str);
                 has_size = TRUE;
             }
-            gint64 mtime = (gint64)st.st_mtime;
             GDateTime* dt = g_date_time_new_from_unix_local(mtime);
             if (mtime > 0 && dt != NULL) {
                 gchar* age = dir_summary_format_age(mtime, g_get_real_time() / G_USEC_PER_SEC);

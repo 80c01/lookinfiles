@@ -51,6 +51,10 @@ GPtrArray* vfs_list(const gchar* path, GCancellable* cancel, GError** error);
  * vfs_list() */
 gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError** error);
 
+/* What the last vfs_list() of its folder or vfs_stat() said of path
+ * (e->name NULL), at once, without the network; FALSE when nothing did */
+gboolean vfs_peek(const gchar* path, VfsEntry* e);
+
 /* The first max bytes of the remote file at path (G_MAXUINT64: all of it);
  * *size (may be NULL) gets the file's size. NULL with error as vfs_list(). */
 GBytes* vfs_read(const gchar* path, guint64 max, guint64* size, GCancellable* cancel, GError** error);
