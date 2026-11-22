@@ -94,7 +94,9 @@ cellule Markdown nouvelle ou vide reste en source.
   sous-dossiers (un Python de conda ou de pyenv, un environnement virtuel
   rangé ailleurs ; un chemin de la machine pour un notebook distant, `~/`
   pour son dossier personnel), gardé dans `jupyter.ini` ; laissez-le vide
-  pour le retrouver comme ci-dessus. Le bouton du noyau dans la barre
+  pour le retrouver comme ci-dessus. La barre d’état nomme le Python du
+  noyau en cours après son état, `Noyau inactif (projet/.venv)` (son
+  environnement, sinon son chemin ; le chemin complet dans l’infobulle). Le bouton du noyau dans la barre
   porte le nom du noyau du notebook, la barre d’état sous les cellules son
   état ; son menu liste les noyaux installés : en choisir un
   arrête le noyau en cours, l’enregistre dans le notebook et le démarre.

@@ -13,7 +13,9 @@ Commands (field "op"):
 
 Events (field "ev"):
   kernels        kernels (a list of {name, display_name, language})
-  started        kernelspec, language_info (JSON texts), display
+  started        kernelspec, language_info (JSON texts), display, python
+                 (the Python of a Python kernel, ~ for home, or ""), env (its
+                 virtual or conda environment, e.g. "project/.venv", or "")
   error          code ("no-jupyter", "no-jupyter-venv" with the virtual
                  environment as message, "no-kernel", "start", "command"), message
   status         state ("starting", "busy", "idle", "dead")
@@ -27,6 +29,7 @@ Events (field "ev"):
 import json
 import os
 import queue
+import shutil
 import sys
 import threading
 
@@ -37,6 +40,28 @@ os.dup2(2, 1)
 sys.stdout = sys.stderr
 _LOCK = threading.Lock()
 _STOP = threading.Event()
+
+
+def kernel_python(spec):
+    """The Python that runs a Python kernel (the first word of its command,
+    found in the PATH as jupyter_client does) and the name of its virtual or
+    conda environment: ("", "") for another language"""
+    argv = list(getattr(spec, "argv", None) or [])
+    if not argv or (getattr(spec, "language", "") or "").lower() != "python":
+        return "", ""
+    exe = argv[0]
+    if not os.path.isabs(exe):
+        exe = shutil.which(exe) or exe
+    env = ""
+    root = os.path.dirname(os.path.dirname(exe))
+    if os.path.isfile(os.path.join(root, "pyvenv.cfg")) or os.path.isdir(os.path.join(root, "conda-meta")):
+        env = os.path.basename(root)
+        if env in (".venv", "venv", "env"):  # named by its project
+            env = os.path.basename(os.path.dirname(root)) + "/" + env
+    home = os.path.expanduser("~")
+    if home not in ("", "/", "~") and exe.startswith(home + os.sep):
+        exe = "~" + exe[len(home):]
+    return exe, env
 
 
 def emit(ev, **fields):
@@ -199,11 +224,15 @@ class Bridge:
         kernelspec = {"display_name": spec.display_name if spec else self.km.kernel_name,
                       "language": spec.language if spec else language_info.get("name", ""),
                       "name": self.km.kernel_name}
+        try:
+            python, env = kernel_python(spec)
+        except Exception:
+            python, env = "", ""
         for loop in (self.iopub_loop, self.shell_loop, self.stdin_loop):
             threading.Thread(target=loop, daemon=True).start()
         emit("started", kernelspec=json.dumps(kernelspec, sort_keys=True, ensure_ascii=False),
              language_info=json.dumps(language_info, sort_keys=True, ensure_ascii=False),
-             display=kernelspec["display_name"])
+             display=kernelspec["display_name"], python=python, env=env)
         emit("status", state="idle")
 
     def wait_restarted(self):

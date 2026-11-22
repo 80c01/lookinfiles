@@ -19,11 +19,12 @@ static void on_state(IpynbKernelState state, gpointer data) {
     r->state = state;
 }
 
-static void on_started(const gchar* spec, const gchar* info, const gchar* display, gpointer data) {
+static void on_started(const gchar* spec, const gchar* info, const gchar* display, const gchar* python,
+                       const gchar* env, gpointer data) {
     Run* r = data;
     g_assert_nonnull(strstr(spec, "\"name\": \"fake\""));
     g_assert_nonnull(strstr(info, "\".py\""));
-    g_string_append_printf(r->log, "started %s\n", display);
+    g_string_append_printf(r->log, "started %s %s %s\n", display, python, env);
 }
 
 static void on_failed(const gchar* code, const gchar* message, gpointer data) {
@@ -92,7 +93,7 @@ static void test_execute(void) {
     ipynb_kernel_execute(r.kernel, 9, "ask");
     g_assert_true(wait_for(&r, three_done));
     g_assert_cmpstr(r.log->str, ==,
-                    "started Fake\n"
+                    "started Fake ~/p/.venv/bin/python p/.venv\n"
                     "input 7 1\n"
                     "clear 7 1\n"
                     "output 7 {\"name\": \"stdout\", \"output_type\": \"stream\", \"text\": \"print(\\\"\\u00e9\\\\t\\\")\\nx\\n\"}\n"

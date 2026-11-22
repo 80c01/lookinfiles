@@ -191,7 +191,13 @@ static void handle_event(IpynbKernel* k, const gchar* line, gsize len) {
         gchar* spec = member_string(v, "kernelspec");
         gchar* info = member_string(v, "language_info");
         gchar* display = member_string(v, "display");
-        if (!k->freed && k->cb.started != NULL) k->cb.started(spec, info, display, k->data);
+        gchar* python = member_string(v, "python");
+        gchar* env = member_string(v, "env");
+        if (!k->freed && k->cb.started != NULL) {
+            k->cb.started(spec, info, display, python != NULL ? python : "", env != NULL ? env : "", k->data);
+        }
+        g_free(python);
+        g_free(env);
         g_free(spec);
         g_free(info);
         g_free(display);

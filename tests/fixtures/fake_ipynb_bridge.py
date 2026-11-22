@@ -36,7 +36,8 @@ for line in sys.stdin:
             continue
         emit("status", state="starting")
         emit("started", kernelspec=json.dumps({"display_name": "Fake", "language": "python", "name": "fake"}),
-             language_info=json.dumps({"name": "python", "file_extension": ".py"}), display="Fake")
+             language_info=json.dumps({"name": "python", "file_extension": ".py"}), display="Fake",
+             python="~/p/.venv/bin/python", env="p/.venv")
         emit("status", state="idle")
     elif op == "execute":
         cell, code = cmd["id"], cmd["code"]

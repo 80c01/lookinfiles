@@ -21,8 +21,11 @@ typedef enum {
 
 typedef struct {
     void (*state_changed)(IpynbKernelState state, gpointer data);
-    /* Running: its kernelspec and language_info (JSON objects) and name */
-    void (*started)(const gchar* kernelspec, const gchar* language_info, const gchar* display, gpointer data);
+    /* Running: its kernelspec and language_info (JSON objects), name, the
+     * Python that runs it ("" when not a Python kernel; ~ for the home
+     * folder) and its virtual or conda environment ("project/.venv", or "") */
+    void (*started)(const gchar* kernelspec, const gchar* language_info, const gchar* display,
+                    const gchar* python, const gchar* env, gpointer data);
     /* Could not start or went away; code: "no-python", "no-jupyter",
      * "no-jupyter-venv" (message: the virtual environment found without
      * it, see ipynb_python.h), "no-kernel", "start", "exited", "command" */

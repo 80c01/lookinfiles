@@ -1130,7 +1130,8 @@ Layers, from bottom to top
   kernelspec and starts that kernel; its last entry, **Python
   Interpreter…**, asks for the Python of the folder's notebooks and
   restarts the kernel with it), the kernel state in the tab's
-  status bar and the run state in each code cell's head
+  status bar with the Python of the kernel (its environment, else its
+  path: `python` / `env` of the bridge's `started` event) and the run state in each code cell's head
   (`ipynb_run_state()`: waiting, running, ok or error, coloured
   `@fg_faint` / `@warning` / `@success` / `@error` on the prompt and the
   run time; the time from the kernel's `execute_input` to the end of the

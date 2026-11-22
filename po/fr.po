@@ -13024,6 +13024,12 @@ msgstr ""
 msgid "Python: %s"
 msgstr "Python : %s"
 
+#. TRANSLATORS: the kernel state and its Python, e.g. "Kernel idle (project/.venv)"
+#: src/jupyter/ipynb_run.c
+#, c-format
+msgid "%1$s (%2$s)"
+msgstr "%1$s (%2$s)"
+
 #: src/jupyter/ipynb_run.c
 msgid "Python: automatic"
 msgstr "Python : automatique"

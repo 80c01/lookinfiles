@@ -84,7 +84,9 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   notebooks of the folder and of its subfolders (a conda or pyenv one, a
   virtual environment kept elsewhere; a path on the machine for a remote
   notebook, `~/` for its home folder), kept in `jupyter.ini`; leave it
-  empty to find it again as above.
+  empty to find it again as above. The status bar names the Python of
+  the running kernel after its state, `Kernel idle (project/.venv)` (its
+  environment, else its path; the full path in the tooltip).
   The kernel's button in the bar shows the notebook's kernel,
   the status bar under the cells its state; its menu lists
   the installed kernels: choosing one stops the kernel running, records it

@@ -102,14 +102,22 @@ static void update_kernel_label(IpynbTab* t) {
                       : state == IPYNB_KERNEL_DEAD     ? _("Kernel died")
                       : ipynb_doc_kernel(t->doc) != NULL ? _("Kernel not started")
                                                          : _("No kernel");
-    if (t->kernel_host != NULL && state != IPYNB_KERNEL_OFF) {
-        gchar* where = g_strdup_printf(_("%1$s on %2$s"), text, t->kernel_host);
-        gtk_label_set_text(GTK_LABEL(t->kernel_state), where);
-        g_free(where);
-    } else {
-        gtk_label_set_text(GTK_LABEL(t->kernel_state), text);
-    }
     gboolean on = state != IPYNB_KERNEL_OFF;
+    gchar* where = t->kernel_host != NULL && on ? g_strdup_printf(_("%1$s on %2$s"), text, t->kernel_host)
+                                                : g_strdup(text);
+    /* The Python that runs it: its environment, else its path */
+    const gchar* python = on && t->kernel_python != NULL ? t->kernel_python : "";
+    const gchar* which = on && t->kernel_env != NULL && t->kernel_env[0] != '\0' ? t->kernel_env : python;
+    if (which[0] != '\0') {
+        /* TRANSLATORS: the kernel state and its Python, e.g. "Kernel idle (project/.venv)" */
+        gchar* shown = g_strdup_printf(_("%1$s (%2$s)"), where, which);
+        gtk_label_set_text(GTK_LABEL(t->kernel_state), shown);
+        g_free(shown);
+    } else {
+        gtk_label_set_text(GTK_LABEL(t->kernel_state), where);
+    }
+    gtk_widget_set_tooltip_text(t->kernel_state, python[0] != '\0' ? python : NULL);
+    g_free(where);
     gtk_widget_set_sensitive(t->interrupt_button, on && state != IPYNB_KERNEL_DEAD);
     gtk_widget_set_sensitive(t->restart_button, on);
 }
@@ -157,9 +165,15 @@ static void on_state(IpynbKernelState state, gpointer data) {
     if (state == IPYNB_KERNEL_DEAD || state == IPYNB_KERNEL_OFF) forget_running(t);
 }
 
-static void on_started(const gchar* kernelspec, const gchar* language_info, const gchar* display, gpointer data) {
+static void on_started(const gchar* kernelspec, const gchar* language_info, const gchar* display,
+                       const gchar* python, const gchar* env, gpointer data) {
     (void)display;
     IpynbTab* t = data;
+    g_free(t->kernel_python);
+    t->kernel_python = g_strdup(python);
+    g_free(t->kernel_env);
+    t->kernel_env = g_strdup(env);
+    update_kernel_label(t);
     if (ipynb_doc_set_kernel_info(t->doc, kernelspec, language_info)) {
         ipynb_tab_mark_changed(t);
         ipynb_tab_update_info(t);
@@ -352,6 +366,9 @@ static gchar** bridge_argv(IpynbTab* t, gchar** cwd, gchar*** envp, GError** err
 static gboolean ensure_kernel(IpynbTab* t) {
     if (t->kernel != NULL && ipynb_kernel_get_state(t->kernel) != IPYNB_KERNEL_OFF) return TRUE;
     g_clear_pointer(&t->kernel, ipynb_kernel_free);
+    /* Its Python: told when it runs */
+    g_clear_pointer(&t->kernel_python, g_free);
+    g_clear_pointer(&t->kernel_env, g_free);
     GError* error = NULL;
     gchar* cwd = NULL;
     gchar** envp = NULL;

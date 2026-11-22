@@ -60,6 +60,8 @@ typedef struct {
     /* Running cells (ipynb_run.c) */
     IpynbKernel* kernel;     /* NULL until a cell runs */
     gchar* kernel_host;      /* the remote machine it runs on (over ssh), NULL: here */
+    gchar* kernel_python;    /* the Python of the kernel last started ("": not Python) */
+    gchar* kernel_env;       /* its virtual or conda environment ("": none) */
     GtkWidget* kernel_button; /* the notebook's kernel; its menu chooses the kernel */
     GtkWidget* kernel_state;  /* the kernel's state (status bar) */
     GtkWidget* kernel_menu;   /* the box of that menu */

@@ -911,6 +911,8 @@ static void tab_free(gpointer data) {
     g_free(t->name);
     g_free(t->dir);
     g_free(t->kernel_host);
+    g_free(t->kernel_python);
+    g_free(t->kernel_env);
     g_free(t);
 }
 
