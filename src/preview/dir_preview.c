@@ -436,6 +436,8 @@ static void cache_job(DirPreviewJob* job) {
     job->branch = NULL;
     job->readme_path = NULL;
     job->readme_text = NULL;
+    job->readme_md = NULL;
+    job->readme_lines = NULL;
     gsize bytes = sizeof(DirPreviewJob) + kept->summary->entries->len * (sizeof(DirSummaryEntry) + 24) +
                   (kept->readme_text != NULL ? strlen(kept->readme_text) : 0);
     gchar* key = dir_cache_key(kept);
