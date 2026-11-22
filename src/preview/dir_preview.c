@@ -124,7 +124,7 @@ static void finish_listing(DirPreviewJob* job, GCancellable* cancellable) {
     if (job->summary->readme != NULL && !g_cancellable_is_cancelled(cancellable)) {
         read_readme(job);
     }
-    if (!g_cancellable_is_cancelled(cancellable)) {
+    if (!g_cancellable_is_cancelled(cancellable) && !vfs_is_remote(job->full)) { /* remote: set with the job */
         job->branch = git_read_branch(job->full); /* reads .git/HEAD, no subprocess */
     }
 }
@@ -679,6 +679,11 @@ void dir_preview_show(AppData* app, const gchar* name, const gchar* full) {
     job->show_hidden = app->show_hidden;
     job->sort = summary_sort(app->sort_mode);
     job->start_us = profile_start();
+    const gchar* root = git_state_root(app->git_state);
+    if (root != NULL && vfs_is_remote(full) &&
+        (strcmp(full, root) == 0 || (g_str_has_prefix(full, root) && full[strlen(root)] == '/'))) {
+        job->branch = g_strdup(git_state_branch(app->git_state)); /* read by the explorer's git status there */
+    }
 
     gchar* key = dir_cache_key(job);
     DirPreviewJob* cached = preview_cache_lookup(dir_cache(), key, NULL);
