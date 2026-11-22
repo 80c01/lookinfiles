@@ -107,13 +107,24 @@ void terminal_refresh_theme(void) {
 /* Async spawn callback: report failures. VTE already watches the child (and
  * hangs it up when the terminal was closed meanwhile: term is then NULL); the
  * error belongs to VTE. */
+#define TYPED_KEY "lookin-term-typed"     /* text to type once the shell runs */
+#define SPAWNED_KEY "lookin-term-spawned" /* the shell was started */
+
 static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
                             gpointer data) {
-    (void)term;
     (void)pid;
     (void)data;
     if (error != NULL) {
         g_printerr("[ Cannot start terminal shell: %s ]\n", error->message);
+        return;
+    }
+    if (term == NULL) return;
+    /* VTE gives the terminal its pty only now: text fed before is dropped */
+    g_object_set_data(G_OBJECT(term), SPAWNED_KEY, GINT_TO_POINTER(1));
+    const gchar* typed = g_object_get_data(G_OBJECT(term), TYPED_KEY);
+    if (typed != NULL) {
+        vte_terminal_feed_child(term, typed, -1);
+        g_object_set_data(G_OBJECT(term), TYPED_KEY, NULL);
     }
 }
 
@@ -893,8 +904,14 @@ static GtkWidget* open_terminal(AppData* app, gboolean new_row, const gchar* cwd
 void terminal_open_typed(AppData* app, const gchar* text) {
 #ifdef HAVE_VTE
     GtkWidget* vte = open_terminal(app, FALSE, NULL);
-    /* Read by the shell once it runs (the pty keeps it meanwhile) */
-    if (vte != NULL && text != NULL) vte_terminal_feed_child(VTE_TERMINAL(vte), text, -1);
+    if (vte == NULL || text == NULL) return;
+    /* Typed once the shell runs (on_spawn_result()), at once if it already
+     * does (the built-in terminal starts it synchronously) */
+    if (g_object_get_data(G_OBJECT(vte), SPAWNED_KEY) != NULL) {
+        vte_terminal_feed_child(VTE_TERMINAL(vte), text, -1);
+    } else {
+        g_object_set_data_full(G_OBJECT(vte), TYPED_KEY, g_strdup(text), g_free);
+    }
 #else
     (void)app;
     (void)text;
