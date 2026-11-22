@@ -252,7 +252,13 @@ void git_tab_init(AppData* app) {
     GtkWidget* tab_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_hexpand(tab_box, TRUE);
     gtk_widget_set_vexpand(tab_box, TRUE);
-    gtk_box_append(GTK_BOX(tab_box), switcher);
+    /* The buttons scroll sideways in a narrow panel instead of widening it */
+    GtkWidget* switcher_scroll = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(switcher_scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+    gtk_scrolled_window_set_propagate_natural_width(GTK_SCROLLED_WINDOW(switcher_scroll), TRUE);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(switcher_scroll), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(switcher_scroll), switcher);
+    gtk_box_append(GTK_BOX(tab_box), switcher_scroll);
     gtk_box_append(GTK_BOX(tab_box), g->stack);
     g->page = tab_box;
     GtkEventController* keys = gtk_event_controller_key_new();
