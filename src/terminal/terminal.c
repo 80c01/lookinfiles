@@ -657,7 +657,7 @@ GtkWidget* term_new_pane(AppData* app, const gchar* cwd) {
 
 /* A new terminal: a tab of the target notebook, or (new_row) a notebook of
  * its own below it */
-static void term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd) {
+static GtkWidget* term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd) {
     GtkWidget* vte = term_new_pane(app, cwd);
     GtkNotebook* target = term_target_notebook(app);
     if (target == NULL || new_row) {
@@ -679,6 +679,7 @@ static void term_spawn_pane_in(AppData* app, gboolean new_row, const gchar* cwd)
     if (new_row) {
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
+    return vte;
 }
 
 void term_spawn_pane(AppData* app, gboolean new_row) {
@@ -867,9 +868,9 @@ void on_vte_realize(GtkWidget* term, gpointer data) {
 #endif /* HAVE_VTE */
 
 
-void terminal_open(AppData* app, gboolean new_row, const gchar* cwd) {
+/* The panel shown with a new terminal (its shell in cwd); returns it */
 #ifdef HAVE_VTE
-    /* Each pane gets its own shell */
+static GtkWidget* open_terminal(AppData* app, gboolean new_row, const gchar* cwd) {
     gboolean was_term_vis = gtk_widget_get_visible(app->term_scroll);
     if (!was_term_vis) {
         app_layout_begin(app);
@@ -880,11 +881,29 @@ void terminal_open(AppData* app, gboolean new_row, const gchar* cwd) {
     if (!was_term_vis) {
         gtk_widget_set_visible(app->term_scroll, TRUE);
     }
-    term_spawn_pane_in(app, new_row, cwd);
+    GtkWidget* vte = term_spawn_pane_in(app, new_row, cwd);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     if (!was_term_vis) {
         app_emit(app, APP_EVENT_LAYOUT_REBUILT);
     }
+    return vte;
+}
+#endif
+
+void terminal_open_typed(AppData* app, const gchar* text) {
+#ifdef HAVE_VTE
+    GtkWidget* vte = open_terminal(app, FALSE, NULL);
+    /* Read by the shell once it runs (the pty keeps it meanwhile) */
+    if (vte != NULL && text != NULL) vte_terminal_feed_child(VTE_TERMINAL(vte), text, -1);
+#else
+    (void)app;
+    (void)text;
+#endif
+}
+
+void terminal_open(AppData* app, gboolean new_row, const gchar* cwd) {
+#ifdef HAVE_VTE
+    open_terminal(app, new_row, cwd);
 #else
     (void)new_row;
     (void)cwd;

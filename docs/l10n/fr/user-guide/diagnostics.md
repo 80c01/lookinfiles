@@ -29,7 +29,11 @@ Une vérification réussie montre ce qui a été trouvé (le chemin du
 programme) ; une vérification manquée montre la commande d’installation
 pour le gestionnaire de paquets de ce système (`apt`, `dnf`, `pacman`,
 `zypper`, `apk` ou Homebrew, lu dans `/etc/os-release`) et un bouton
-**Copier**. Certains programmes ne sont pas empaquetés partout : la
+**Copier**. **Ouvrir dans le terminal** ouvre un onglet de terminal avec la
+commande tapée à son invite, sans la lancer : relisez-la, puis appuyez sur
+`Entrée` (elle peut demander votre mot de passe, par `sudo`). Pour une
+machine distante vérifiée depuis un espace de travail de cet ordinateur, la
+ligne tapée est `ssh -t <machine> '<commande>'`. Certains programmes ne sont pas empaquetés partout : la
 commande est alors celle de leur propre installateur (`pipx`, `npm`, `go`,
 `rustup`…). LookinFiles ne lance jamais une commande d’installation
 lui-même.

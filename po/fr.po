@@ -13468,6 +13468,18 @@ msgstr "%s n’est pas connectée : connectez-la dans la vue des machines distan
 msgid "Machine to Check"
 msgstr "Machine à vérifier"
 
+#: src/chrome/diagnostics_tab.c
+msgid "Open in Terminal"
+msgstr "Ouvrir dans le terminal"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Type the Install Command in a New Terminal (Not Run)"
+msgstr "Taper la commande d’installation dans un nouveau terminal (sans la lancer)"
+
+#: src/chrome/diagnostics_tab.c
+msgid "The terminals of this workspace open on another machine"
+msgstr "Les terminaux de cet espace de travail s’ouvrent sur une autre machine"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

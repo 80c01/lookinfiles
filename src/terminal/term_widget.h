@@ -50,6 +50,8 @@ void vte_terminal_set_font(VteTerminal* terminal, const PangoFontDescription* fo
 /* The selection to the clipboard; the clipboard to the shell */
 void vte_terminal_copy_clipboard_format(VteTerminal* terminal, VteFormat format);
 void vte_terminal_paste_clipboard(VteTerminal* terminal);
+/* Text written to the shell as if typed (len -1: up to the NUL) */
+void vte_terminal_feed_child(VteTerminal* terminal, const char* text, gssize length);
 
 /* VTE_PROPERTY_ID_XTERM_TITLE: the title the shell set, NULL if none */
 const char* vte_terminal_get_termprop_string_by_id(VteTerminal* terminal, int prop, gsize* size);

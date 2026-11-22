@@ -1204,7 +1204,10 @@ Layers, from bottom to top
   folded), run in a worker thread, in a `GtkListView` of section titles and
   checks; a missing check shows its install command and a Copy button. A
   dropdown checks a connected remote machine instead
-  (`diagnostics_remote_command()` sent by `ssh_exec_async()`).
+  (`diagnostics_remote_command()` sent by `ssh_exec_async()`). Open in
+  Terminal types the command in a new terminal (`terminal_open_typed()`),
+  through `ssh -t` for a remote machine the workspace's terminals do not
+  open on.
 - `disk_usage_tab` — the Disk Usage tab in the preview notebook (one per
   workspace, kept like the System Monitor), opened on a folder from the
   explorer (`Shift+S`, context menu): the tree read by `disk_scan` in a

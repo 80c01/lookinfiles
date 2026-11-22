@@ -13,6 +13,7 @@
 #include "core/vfs.h"
 #include "explorer/remote_store.h"
 #include "git/git_tab.h"
+#include "terminal/terminal.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
 #include "widgets/focus_route.h"
@@ -140,6 +141,42 @@ static void on_copy_clicked(GtkButton* button, gpointer data) {
     g_free(text);
 }
 
+/* What to type in a new terminal of the workspace to run command on the
+ * machine checked: the command itself when the terminals open there, an ssh
+ * line from this computer; NULL when the terminals open on another machine */
+static gchar* typed_command(DiagTab* st, const gchar* command) {
+    RemoteMachine* active = remote_get_active_machine(st->app);
+    if (g_strcmp0(active != NULL ? active->id : NULL, st->machine_id) == 0) return g_strdup(command);
+    if (active != NULL) return NULL;
+    RemoteMachine* rm = remote_find_by_id(st->app, st->machine_id);
+    if (rm == NULL) return NULL;
+    SshTarget target = remote_machine_target(rm);
+    GString* s = g_string_new("ssh -t");
+    if (target.port > 0 && target.port != 22) g_string_append_printf(s, " -p %d", target.port);
+    if (target.identity_file != NULL && target.identity_file[0] != '\0') {
+        gchar* q = g_shell_quote(target.identity_file);
+        g_string_append_printf(s, " -i %s", q);
+        g_free(q);
+    }
+    gchar* dest = ssh_session_destination(&target);
+    gchar* q_dest = g_shell_quote(dest);
+    gchar* q_command = g_shell_quote(command);
+    g_string_append_printf(s, " %s %s", q_dest, q_command);
+    g_free(q_command);
+    g_free(q_dest);
+    g_free(dest);
+    return g_string_free(s, FALSE);
+}
+
+static void on_terminal_clicked(GtkButton* button, gpointer data) {
+    DiagTab* st = data;
+    DiagRow* row = g_object_get_data(G_OBJECT(button), ROW_KEY);
+    if (row == NULL || row->command == NULL) return;
+    gchar* text = typed_command(st, row->command);
+    if (text != NULL) terminal_open_typed(st->app, text);
+    g_free(text);
+}
+
 static void fill_store(DiagTab* st);
 
 static void on_more_clicked(GtkButton* button, gpointer data) {
@@ -189,6 +226,11 @@ static void on_setup(GtkSignalListItemFactory* factory, GtkListItem* li, gpointe
     gtk_widget_set_valign(copy, GTK_ALIGN_CENTER);
     g_signal_connect(copy, "clicked", G_CALLBACK(on_copy_clicked), st);
     gtk_box_append(GTK_BOX(box), copy);
+    GtkWidget* term = gtk_button_new_with_label(_("Open in Terminal"));
+    gtk_widget_set_valign(term, GTK_ALIGN_CENTER);
+    g_signal_connect(term, "clicked", G_CALLBACK(on_terminal_clicked), st);
+    gtk_box_append(GTK_BOX(box), term);
+    g_object_set_data(G_OBJECT(box), "terminal", term);
     GtkWidget* more = gtk_button_new_with_label("");
     gtk_button_set_has_frame(GTK_BUTTON(more), FALSE);
     g_signal_connect(more, "clicked", G_CALLBACK(on_more_clicked), st);
@@ -203,7 +245,6 @@ static void on_setup(GtkSignalListItemFactory* factory, GtkListItem* li, gpointe
 
 static void on_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer data) {
     (void)factory;
-    (void)data;
     DiagRow* row = gtk_list_item_get_item(li);
     GtkWidget* box = gtk_list_item_get_child(li);
     GtkWidget* icon_wait = g_object_get_data(G_OBJECT(box), "view-more");
@@ -213,6 +254,7 @@ static void on_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer
     GtkWidget* detail = g_object_get_data(G_OBJECT(box), "detail");
     GtkWidget* command = g_object_get_data(G_OBJECT(box), "command");
     GtkWidget* copy = g_object_get_data(G_OBJECT(box), "copy");
+    GtkWidget* term = g_object_get_data(G_OBJECT(box), "terminal");
     GtkWidget* more = g_object_get_data(G_OBJECT(box), "more");
     gboolean is_item = row->kind == ROW_ITEM;
     gtk_list_item_set_selectable(li, is_item);
@@ -227,6 +269,19 @@ static void on_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer
     gtk_widget_set_visible(command, is_item && row->command != NULL);
     gtk_widget_set_visible(copy, is_item && row->command != NULL);
     g_object_set_data(G_OBJECT(copy), ROW_KEY, row);
+#ifdef HAVE_VTE
+    gtk_widget_set_visible(term, is_item && row->command != NULL);
+#else
+    gtk_widget_set_visible(term, FALSE);
+#endif
+    g_object_set_data(G_OBJECT(term), ROW_KEY, row);
+    if (is_item && row->command != NULL) {
+        gchar* typed = typed_command(data, row->command);
+        gtk_widget_set_sensitive(term, typed != NULL);
+        gtk_widget_set_tooltip_text(term, typed != NULL ? _("Type the Install Command in a New Terminal (Not Run)")
+                                                        : _("The terminals of this workspace open on another machine"));
+        g_free(typed);
+    }
     gtk_widget_remove_css_class(feature, "diag-section");
     gtk_widget_remove_css_class(feature, "diag-feature");
     if (row->kind == ROW_HEADER) {

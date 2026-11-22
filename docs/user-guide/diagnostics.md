@@ -25,7 +25,11 @@ and what is missing, with the command that installs each missing piece.
 A check that passes shows what was found (the program's path); a missing one
 shows the install command for the package manager of this system (`apt`,
 `dnf`, `pacman`, `zypper`, `apk` or Homebrew, read from `/etc/os-release`)
-and a **Copy** button. Some programs are not packaged everywhere: the
+and a **Copy** button. **Open in Terminal** opens a terminal tab with the
+command typed at its prompt, not run: read it, then press `Enter` (it may
+ask for your password, through `sudo`). For a remote machine checked from a
+workspace of this computer, the line typed is `ssh -t <machine> '<command>'`.
+Some programs are not packaged everywhere: the
 command is then the one of their own installer (`pipx`, `npm`, `go`,
 `rustup`...). LookinFiles never runs an install command itself.
 

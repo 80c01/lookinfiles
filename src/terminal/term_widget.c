@@ -857,6 +857,10 @@ void vte_terminal_paste_clipboard(VteTerminal* t) {
     paste_from(t, gtk_widget_get_clipboard(GTK_WIDGET(t)));
 }
 
+void vte_terminal_feed_child(VteTerminal* t, const char* text, gssize length) {
+    if (text != NULL) send(t, text, length);
+}
+
 const char* vte_terminal_get_termprop_string_by_id(VteTerminal* t, int prop, gsize* size) {
     const gchar* title = prop == VTE_PROPERTY_ID_XTERM_TITLE ? vt_screen_title(t->screen) : NULL;
     if (title == NULL || title[0] == '\0') {
