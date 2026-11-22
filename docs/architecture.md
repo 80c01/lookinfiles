@@ -621,6 +621,11 @@ Layers, from bottom to top
   (`TextMatcher`, `text_matcher_search_file()`): read by blocks of whole
   lines, the matches counted, the first one kept (the deep search); or
   given lines (`text_matcher_search_text()`).
+- `git_mirror` — local read-only copies of the `.git` of remote
+  repositories for the Git tab's views (libgit2 reads local files only):
+  the files of `.git` listed there (`find`), the new or changed ones copied
+  in one ustar stream (`tar` there, read here), the gone ones removed
+  (unit-tested: the listing, the tar reading, a copy libgit2 reads).
 - `git_remote` — Git on a remote machine: `git status --porcelain -z
   --branch` run there through `vfs_exec()` read as a `GitState` (badges by
   `git_parse_porcelain()` of `git_utils`, branch, upstream counts;

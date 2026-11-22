@@ -5,11 +5,16 @@
 #include "theme/theme.h"
 #include "git/git_changes.h"
 #include "git/git_history.h"
+#include "git/git_mirror.h"
+#include "git/git_remote.h"
+#include "core/vfs.h"
 #include "git/git_repo_view.h"
 #include "git/git_stash_view.h"
 #include "git/git_stats_view.h"
 #include "git/git_utils.h"
 #include "widgets/focus_route.h"
+
+#include <string.h>
 
 /* The views of the Git tab, in the order of their buttons */
 typedef enum { GIT_VIEW_CHANGES, GIT_VIEW_HISTORY, GIT_VIEW_STATS, GIT_VIEW_REPO, GIT_VIEW_STASH_TAGS, GIT_VIEW_COUNT } GitView;
@@ -31,7 +36,102 @@ struct GitTab {
     GitRepoView* repo;          /* the Repository view (freed with its widget) */
     GitStashView* stash_tags;   /* the Stashes & Tags view (freed with its widget) */
     gchar* current_root;        /* repository shown, or NULL */
+    gchar* remote_dir;          /* a remote machine's folder shown (its .git copied), or NULL */
+    gchar* remote_top;          /* the top of its work tree (as seen here), or NULL */
+    guint remote_serial;        /* the last sync asked: older ones are dropped */
 };
+
+static void set_views(GitTab* g, const gchar* root, gboolean reload);
+
+/* A remote machine's repository: its top found and its .git copied
+ * (git_mirror.h) off the interface thread */
+typedef struct {
+    AppData* app;
+    guint serial;
+    gchar* dir;
+    gchar* top;    /* found by the worker */
+    gchar* mirror; /* the copy, once synced */
+    guint copied;
+    gchar* error;
+} RemoteSync;
+
+static void remote_sync_free(gpointer data) {
+    RemoteSync* r = data;
+    g_free(r->dir);
+    g_free(r->top);
+    g_free(r->mirror);
+    g_free(r->error);
+    g_free(r);
+}
+
+static void remote_sync_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancel) {
+    (void)task;
+    (void)source;
+    RemoteSync* r = data;
+    r->top = git_remote_top(r->dir, cancel);
+    if (r->top == NULL) return; /* in no repository */
+    GError* error = NULL;
+    if (git_mirror_sync(r->top, cancel, &r->copied, &error)) {
+        r->mirror = git_mirror_root(r->top);
+    } else {
+        r->error = g_strdup(error->message);
+        g_error_free(error);
+    }
+}
+
+static void on_remote_synced(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    (void)data;
+    RemoteSync* r = g_task_get_task_data(G_TASK(res));
+    GitTab* g = r->app->git;
+    if (g == NULL || r->serial != g->remote_serial) return; /* another folder since */
+    if (r->error != NULL) {
+        gchar* msg = g_strdup_printf(_("The Git history of the machine could not be read: %s"), r->error);
+        app_notice(r->app, msg, FALSE);
+        g_free(msg);
+    }
+    g_free(g->remote_top);
+    g->remote_top = g_strdup(r->mirror != NULL ? r->top : NULL);
+    gtk_widget_set_visible(g->page, r->mirror != NULL);
+    set_views(g, r->mirror, TRUE);
+}
+
+/* Show the repository of dir, a remote machine's folder: its .git copied
+ * first (only what changed after the first time) */
+static void update_remote(GitTab* g, const gchar* dir, gboolean reload) {
+    if (!reload && g_strcmp0(g->remote_dir, dir) == 0) return; /* the same: read again on reload only */
+    g_free(g->remote_dir);
+    g->remote_dir = g_strdup(dir);
+    RemoteSync* r = g_new0(RemoteSync, 1);
+    r->app = g->app;
+    r->serial = ++g->remote_serial;
+    r->dir = g_strdup(dir);
+    GTask* task = g_task_new(NULL, NULL, on_remote_synced, NULL);
+    g_task_set_task_data(task, r, remote_sync_free);
+    g_task_run_in_thread(task, remote_sync_thread);
+    g_object_unref(task);
+}
+
+/* The views on the repository at root (NULL: none); a copy of a remote
+ * machine's .git has no work tree here: no Changes */
+static void set_views(GitTab* g, const gchar* root, gboolean reload) {
+    gboolean copy = g->remote_dir != NULL;
+    g_free(g->current_root);
+    g->current_root = g_strdup(root);
+    gtk_widget_set_sensitive(g->buttons[GIT_VIEW_CHANGES], !copy);
+    gtk_widget_set_tooltip_text(g->buttons[GIT_VIEW_CHANGES],
+                                copy ? _("The changes are not available on a remote machine yet")
+                                     : _("Uncommitted Changes: Staged, Not Staged, Untracked (v: Next View)"));
+    if (copy && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_CHANGES]))) {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g->buttons[GIT_VIEW_HISTORY]), TRUE);
+    }
+    /* Files may have changed with each update: the Changes view reads again */
+    git_changes_set_root(g->changes, copy ? NULL : root);
+    git_history_set_root(g->history, root, reload);
+    git_stats_view_set_root(g->stats, root, reload);
+    git_repo_view_set_root(g->repo, root, reload);
+    git_stash_view_set_root(g->stash_tags, root);
+}
 
 /* Show the repository holding dir; reload: read it again even when the
  * repository is the same */
@@ -46,16 +146,17 @@ static void update_root(AppData* app, const gchar* dir, gboolean reload) {
         return;
     }
 
+    if (dir != NULL && vfs_is_remote(dir)) {
+        update_remote(g, dir, reload);
+        return;
+    }
+    g_clear_pointer(&g->remote_dir, g_free);
+    g_clear_pointer(&g->remote_top, g_free);
+    g->remote_serial++; /* a remote sync running is for another folder */
     gchar* root = find_git_root(dir);
     gtk_widget_set_visible(g->page, root != NULL);
-    g_free(g->current_root);
-    g->current_root = root;
-    /* Files may have changed with each update: the Changes view reads again */
-    git_changes_set_root(g->changes, root);
-    git_history_set_root(g->history, root, reload);
-    git_stats_view_set_root(g->stats, root, reload);
-    git_repo_view_set_root(g->repo, root, reload);
-    git_stash_view_set_root(g->stash_tags, root);
+    set_views(g, root, reload);
+    g_free(root);
 }
 
 void git_tab_reload(AppData* app) {
@@ -183,6 +284,18 @@ void git_tab_show_history(AppData* app, const gchar* path) {
     GitTab* g = app != NULL ? app->git : NULL;
     if (g == NULL || path == NULL) return;
     gchar* full = g_canonicalize_filename(path, NULL);
+    if (g->remote_dir != NULL) { /* a remote machine's repository: its path below the top shown */
+        gsize n = g->remote_top != NULL ? strlen(g->remote_top) : 0;
+        if (n == 0 || !gtk_widget_get_visible(g->page) || strncmp(full, g->remote_top, n) != 0 ||
+            (full[n] != '\0' && full[n] != '/')) {
+            app_notice(app, _("Not in the repository of the current folder"), FALSE);
+        } else {
+            git_history_set_path(g->history, full[n] == '/' ? full + n + 1 : NULL);
+            show_view(g, GIT_VIEW_HISTORY);
+        }
+        g_free(full);
+        return;
+    }
     gchar* start = g_file_test(full, G_FILE_TEST_IS_DIR) ? g_strdup(full) : g_path_get_dirname(full);
     gchar* root = find_git_root(start);
     gchar* rel = git_relative_path(full);
@@ -214,5 +327,7 @@ void git_tab_cleanup(AppData* app) {
     git_repo_view_cancel(g->repo);
     git_stash_view_cancel(g->stash_tags);
     g_free(g->current_root);
+    g_free(g->remote_dir);
+    g_free(g->remote_top);
     g_clear_pointer(&app->git, g_free);
 }

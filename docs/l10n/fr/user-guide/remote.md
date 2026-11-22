@@ -97,7 +97,7 @@ Les machines ajoutées à la main sont enregistrées dans
 ## Pas encore disponible sur une machine distante
 
 Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
-locaux : l’onglet Git, les serveurs de langage (complétion, diagnostics) et
+locaux : la vue Modifications de l’onglet Git, les serveurs de langage (complétion, diagnostics) et
 la compilation LaTeX. L’ouverture d’un fichier avec une autre application
 n’est pas disponible non plus : « Ouvrir avec l’application par défaut » le
 dit dans la barre d’état ; les autres restent éteintes.
@@ -130,8 +130,16 @@ fichiers modifiés et la barre d’état la branche, avec `*` pour les
 modifications non validées et les commits d’avance et de retard sur la
 branche amont : `git status` s’exécute sur la machine (il faut `git`) à
 chaque relecture du dossier. Un clic sur la branche liste les branches de la
-machine et passe à celle choisie (`git checkout` sur la machine). L’onglet Git (historique, modifications,
-branches) n’y est pas encore disponible.
+machine et passe à celle choisie (`git checkout` sur la machine).
+
+L’onglet Git affiche l’historique, les statistiques, le dépôt et les remises
+et étiquettes à partir d’une copie du dossier `.git` du dépôt gardée dans
+`~/.cache/lookinfiles/git-mirrors` : la première fois, tout le dossier
+arrive en un seul flux `tar` lancé sur la machine (un gros historique prend
+un moment) ; ensuite, seuls les fichiers nouveaux ou modifiés (les
+références, l’index, les nouveaux paquets) à chaque relecture du dépôt par
+l’onglet. La copie est seulement lue, jamais écrite. La vue Modifications
+n’est pas encore disponible sur une machine distante.
 
 ## Recherche dans les fichiers et Aller au fichier
 

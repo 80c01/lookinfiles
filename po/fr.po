@@ -13071,6 +13071,27 @@ msgstr "ce n’est pas un dossier d’une machine distante"
 msgid "the remote machine does not answer"
 msgstr "la machine distante ne répond pas"
 
+#: src/git/git_tab.c
+#, c-format
+msgid "The Git history of the machine could not be read: %s"
+msgstr "L’historique Git de la machine n’a pas pu être lu : %s"
+
+#: src/git/git_tab.c
+msgid "The changes are not available on a remote machine yet"
+msgstr "Les modifications ne sont pas encore disponibles sur une machine distante"
+
+#: src/git/git_mirror.c
+msgid "the copy of the repository was cut short"
+msgstr "la copie du dépôt a été interrompue"
+
+#: src/git/git_mirror.c
+msgid "the copy of the repository cannot be written"
+msgstr "la copie du dépôt ne peut pas être écrite"
+
+#: src/git/git_mirror.c
+msgid "no Git repository there"
+msgstr "aucun dépôt Git à cet endroit"
+
 #: src/search/project_search.c
 #, c-format
 msgid "the remote machine could not be searched: %s"
