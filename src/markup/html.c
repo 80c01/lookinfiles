@@ -802,9 +802,11 @@ static void handle_html_tag(HtmlRenderContext* ctx, const gchar* tag, const gcha
                     } else if (ctx->doc_dir != NULL) {
                         img_path = g_build_filename(ctx->doc_dir, src, NULL);
                     }
-                    if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
-                        pix = pixbuf_from_file(img_path, max_width);
+                    gchar* local = image_file_local(img_path); /* a copy for a remote machine's file */
+                    if (local != NULL) {
+                        pix = pixbuf_from_file(local, max_width);
                     }
+                    g_free(local);
                     g_free(img_path);
                 }
 

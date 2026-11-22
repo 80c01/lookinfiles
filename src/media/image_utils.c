@@ -56,6 +56,18 @@ GdkPixbuf* pixbuf_from_data_uri(const gchar* uri, gint max_width) {
     return pix;
 }
 
+static ImageFileFunc image_file_func;
+
+void image_file_set_func(ImageFileFunc func) {
+    image_file_func = func;
+}
+
+gchar* image_file_local(const gchar* path) {
+    if (path == NULL) return NULL;
+    if (image_file_func != NULL) return image_file_func(path);
+    return g_file_test(path, G_FILE_TEST_IS_REGULAR) ? g_strdup(path) : NULL;
+}
+
 GdkPixbuf* pixbuf_from_file(const gchar* path, gint max_width) {
     gint w = 0;
     gint h = 0;

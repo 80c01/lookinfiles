@@ -12,10 +12,14 @@
 #include "mail/mail_dir.h"
 #include "preview/preview_doc_view.h"
 #include "markup/markdown.h"
+#include "markup/markdown_parse.h"
+#include "markup/md_out.h"
+#include "markup/md_show.h"
 #include "core/remote_path.h"
 #include "core/vfs.h"
 #include "preview/preview_source.h"
 #include "org/orgmode.h"
+#include "org/org_render.h"
 #include "preview/preview_cache.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
@@ -45,6 +49,8 @@ typedef struct {
     gchar* readme_path;    /* README shown under the table, NULL if none */
     gchar* readme_text;    /* its first PREVIEW_BYTES, valid UTF-8 */
     gint64 readme_size;
+    MdOut* readme_md;      /* a Markdown or Org README, parsed by the worker (its pictures read there) */
+    GPtrArray* readme_lines; /* an Org README's line maps */
     PreviewDoc* mail;      /* Maildir / MH folder: its message table instead */
     gboolean cached_shown; /* the cached overview was shown at the selection */
     gint64 start_us;       /* profile_start() at the selection */
@@ -62,6 +68,8 @@ static void job_free(gpointer data) {
     g_free(job->branch);
     g_free(job->readme_path);
     g_free(job->readme_text);
+    g_clear_pointer(&job->readme_md, md_out_free);
+    g_clear_pointer(&job->readme_lines, g_ptr_array_unref);
     preview_doc_free(job->mail);
     g_free(job);
 }
@@ -93,6 +101,21 @@ static void read_readme(DirPreviewJob* job) {
     job->readme_size = preview_source_stamp(job->readme_path, &st) ? st.size : (gint64)len;
     job->readme_text = g_utf8_make_valid(buf, (gssize)len);
     g_free(buf);
+    /* Parsed here: the pictures of a remote machine's README are copied off
+     * the interface thread */
+    gboolean truncated = job->readme_size > PREVIEW_BYTES;
+    switch (file_kind_from_name(job->summary->readme)) {
+    case FILE_KIND_MARKDOWN:
+        job->readme_md = markdown_parse(job->readme_text, job->readme_path, truncated, job->summary->readme,
+                                        job->readme_size, TRUE);
+        break;
+    case FILE_KIND_ORG:
+        job->readme_md = org_render_parse(job->readme_text, job->readme_path, truncated, job->summary->readme,
+                                          job->readme_size, NULL, ORG_GLOBAL_SHOW_ALL, &job->readme_lines);
+        break;
+    default:
+        break;
+    }
 }
 
 /* After the listing: the README, the git branch */
@@ -358,16 +381,14 @@ static void render_readme(AppData* app, const DirPreviewJob* job) {
         return;
     }
     gboolean truncated = job->readme_size > PREVIEW_BYTES;
-    switch (file_kind_from_name(job->summary->readme)) {
+    /* Not parsed: shown as plain text */
+    switch (job->readme_md != NULL ? file_kind_from_name(job->summary->readme) : FILE_KIND_TEXT) {
     case FILE_KIND_MARKDOWN:
         ensure_markdown_tags(buffer);
-        render_markdown_to_buffer(buffer, GTK_TEXT_VIEW(app->text_view), job->readme_text,
-                                  job->readme_path, truncated, job->summary->readme, job->readme_size);
+        md_out_show(buffer, GTK_TEXT_VIEW(app->text_view), job->readme_md);
         break;
     case FILE_KIND_ORG:
-        ensure_orgmode_tags(buffer);
-        render_orgmode_to_buffer(buffer, GTK_TEXT_VIEW(app->text_view), job->readme_text, job->readme_path, truncated,
-                                 job->summary->readme, job->readme_size, NULL, ORG_GLOBAL_SHOW_ALL);
+        orgmode_show(buffer, GTK_TEXT_VIEW(app->text_view), job->readme_md, job->readme_lines);
         break;
     default: {
         gtk_text_buffer_set_text(buffer, "", 0);

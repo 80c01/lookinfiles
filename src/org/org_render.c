@@ -43,10 +43,12 @@ static void append_image_link(MdOut* out, const gchar* target, const gchar* labe
         img_path = g_build_filename(doc_dir, target, NULL);
     }
     GdkPixbuf* pix = NULL;
-    if (img_path != NULL && g_file_test(img_path, G_FILE_TEST_EXISTS)) {
+    gchar* local = image_file_local(img_path); /* a copy for a remote machine's file */
+    if (local != NULL) {
         /* Natural size, shrunk to the view width */
-        pix = pixbuf_from_file(img_path, FIT_IMAGE_MAX_WIDTH);
+        pix = pixbuf_from_file(local, FIT_IMAGE_MAX_WIDTH);
     }
+    g_free(local);
     g_free(img_path);
     if (pix != NULL) {
         md_out_add_image(out, G_OBJECT(pix));

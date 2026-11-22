@@ -16,6 +16,15 @@ GdkPixbuf* pixbuf_from_bytes(const guchar* data, gsize len, gint max_width);
  * URI is not a base64 image */
 GdkPixbuf* pixbuf_from_data_uri(const gchar* uri, gint max_width);
 
+/* The local file to decode for the picture file a document names at path,
+ * NULL when there is none: path itself when it is a regular file, unless
+ * a function was set (image_file_set_func(): a copy of a remote machine's
+ * file). Caller frees. */
+gchar* image_file_local(const gchar* path);
+/* What image_file_local() asks (NULL: the plain test); set once at start */
+typedef gchar* (*ImageFileFunc)(const gchar* path);
+void image_file_set_func(ImageFileFunc func);
+
 /* Image file scaled down to max_width pixels (0: full size), never scaled
  * up; NULL if it cannot be read */
 GdkPixbuf* pixbuf_from_file(const gchar* path, gint max_width);

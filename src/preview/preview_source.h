@@ -27,4 +27,10 @@ void preview_source_close(PreviewSource* src);
  * be copied (then nothing can be shown). Caller frees. */
 gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel);
 
+/* For image_file_set_func() (image_utils.h): the file to decode for a
+ * picture of a document; a remote machine's picture is copied (up to
+ * 16 MB) off the main thread only, and none on it (never a wait for the
+ * network there). Caller frees. */
+gchar* preview_source_image_file(const gchar* path);
+
 #endif /* PREVIEW_SOURCE_H */

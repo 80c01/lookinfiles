@@ -33,11 +33,12 @@ static gchar* image_path(const gchar* url, const gchar* doc_dir) {
         gchar* path = g_path_is_absolute(plain) ? g_strdup(plain)
                       : doc_dir != NULL         ? g_build_filename(doc_dir, plain, NULL)
                                                 : NULL;
-        if (path != NULL && g_file_test(path, G_FILE_TEST_IS_REGULAR)) {
-            g_free(plain);
-            return path;
-        }
+        gchar* local = image_file_local(path); /* a copy for a remote machine's file */
         g_free(path);
+        if (local != NULL) {
+            g_free(plain);
+            return local;
+        }
         plain[strcspn(plain, "?#")] = '\0';
         gchar* unescaped = g_uri_unescape_string(plain, NULL);
         if (unescaped == NULL) break;

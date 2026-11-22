@@ -47,7 +47,9 @@ Images, PDFs, archives, documents, videos and sounds are copied over SFTP
 into the cache folder (`~/.cache/lookinfiles/remote-files`) to be previewed,
 once per version of the file (up to 64 MB each, 512 MB for a video or a
 sound, 1 GB in all, the oldest removed first). A large video takes the time
-of its copy before it plays.
+of its copy before it plays. The pictures of a Markdown, HTML or Org
+preview (a README's screenshots) are copied the same way, up to 16 MB each;
+those of a notebook's Markdown cells are not shown yet.
 
 A file of a remote machine open in the editor is checked for changes made
 on the machine every 3 seconds, over SFTP: the editor then reacts as for a

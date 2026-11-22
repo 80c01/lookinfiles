@@ -50,6 +50,9 @@ dans le dossier de cache (`~/.cache/lookinfiles/remote-files`) pour être
 prévisualisés, une fois par version du fichier (64 Mo au plus chacun,
 512 Mo pour une vidéo ou un son, 1 Go en tout, les plus anciens retirés
 d’abord). Une grande vidéo prend le temps de sa copie avant de démarrer.
+Les images d’un aperçu Markdown, HTML ou Org (les captures d’un README)
+sont copiées de la même façon, jusqu’à 16 Mo chacune ; celles des cellules
+Markdown d’un notebook ne s’affichent pas encore.
 
 Un fichier d’une machine distante ouvert dans l’éditeur est vérifié toutes
 les 3 secondes, en SFTP, pour les modifications faites sur la machine :

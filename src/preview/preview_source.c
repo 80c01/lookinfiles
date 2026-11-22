@@ -71,6 +71,17 @@ void preview_source_close(PreviewSource* src) {
     g_free(src);
 }
 
+#define IMAGE_COPY_MAX_BYTES (16 * 1024 * 1024)
+
+gchar* preview_source_image_file(const gchar* path) {
+    if (path == NULL) return NULL;
+    if (!vfs_is_remote(path)) return g_file_test(path, G_FILE_TEST_IS_REGULAR) ? g_strdup(path) : NULL;
+    if (g_main_context_is_owner(g_main_context_default())) return NULL;
+    gchar* local = vfs_cache_copy(path, IMAGE_COPY_MAX_BYTES, NULL, NULL);
+    if (local != NULL) vfs_cache_trim(CACHE_MAX_BYTES);
+    return local;
+}
+
 gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel) {
     if (path == NULL || !vfs_is_remote(path)) return NULL;
     GError* error = NULL;

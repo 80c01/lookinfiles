@@ -1,3 +1,5 @@
+#include "media/image_utils.h"
+#include "preview/preview_source.h"
 #include "core/app_paths.h"
 #include "core/i18n.h"
 #include "core/profile.h"
@@ -637,6 +639,7 @@ int main(int argc, char** argv) {
     git_tab_init(app);
     profile_mark("media and git");
     editor_set_open_hook(ipynb_tab_open); /* Jupyter notebooks: a tab of their own */
+    image_file_set_func(preview_source_image_file); /* pictures of remote documents: copies */
     editor_session_set_page_hook(video_tab_open_in); /* videos: restored as Video tabs */
     g_signal_connect(notebook, "switch-page",
                      G_CALLBACK(on_editor_switch_page_changed), app);
