@@ -64,6 +64,7 @@ ssh_session:app_paths,i18n
 ssh_askpass:ssh_session
 sftp_proto:i18n
 sftp_client:sftp_proto,ssh_session,i18n
+vfs:sftp_client,sftp_proto,ssh_session,i18n
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
@@ -103,7 +104,7 @@ treemap_layout:
 date_bins:
 sunburst_layout:
 dir_summary:file_types,text_encoding,i18n
-dir_scan:file_types
+dir_scan:file_types,vfs
 file_save:
 editor_stamp:preview_cache
 hex_dump:

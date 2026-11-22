@@ -159,10 +159,36 @@ GPtrArray* ssh_session_options(const SshTarget* t, SshArgvFlags flags) {
     return opts;
 }
 
+typedef struct {
+    gchar* host;
+    gchar* user;
+    gint port;
+    gchar* identity;
+} MissingCall;
+
+/* On the main thread: the application opens the master */
+static gboolean call_missing(gpointer data) {
+    MissingCall* m = data;
+    SshTarget t = { .host = m->host, .user = m->user, .port = m->port, .identity_file = m->identity };
+    if (missing_func != NULL) missing_func(&t, missing_data);
+    g_free(m->host);
+    g_free(m->user);
+    g_free(m->identity);
+    g_free(m);
+    return G_SOURCE_REMOVE;
+}
+
 GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
     if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX)) && missing_func != NULL) {
         gchar* sock = ssh_session_control_path(t);
-        if (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS)) missing_func(t, missing_data);
+        if (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS)) {
+            MissingCall* m = g_new0(MissingCall, 1);
+            m->host = g_strdup(t->host);
+            m->user = g_strdup(t->user);
+            m->port = t->port;
+            m->identity = g_strdup(t->identity_file);
+            g_main_context_invoke(NULL, call_missing, m); /* at once on the main thread, else queued there */
+        }
         g_free(sock);
     }
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);

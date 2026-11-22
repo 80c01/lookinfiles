@@ -1,6 +1,7 @@
 /* Directory listings for the explorer tree (see dir_scan.h) */
 #include "explorer/dir_scan.h"
 #include "core/file_types.h"
+#include "core/vfs.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -79,31 +80,24 @@ void dir_scan_node_free(DirScanNode* node) {
     g_free(node);
 }
 
-DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSort sort,
-                           GHashTable* expanded, GCancellable* cancellable) {
-    DirScanNode* node = g_new0(DirScanNode, 1);
-    /* Canonical once here: an entry's path is then dirname/name as it is */
-    node->dirname = g_canonicalize_filename(dirname, NULL);
-    dirname = node->dirname;
-
-    GDir* dir = g_dir_open(dirname, 0, NULL);
+/* The entries of node->dirname read from the disk (or the mount); FALSE
+ * when cancelled */
+static gboolean read_local(DirScanNode* node, gboolean show_hidden, GCancellable* cancellable) {
+    GDir* dir = g_dir_open(node->dirname, 0, NULL);
     if (dir == NULL) {
         node->unreadable = TRUE;
-        return node;
+        return TRUE;
     }
-
-    node->entries = g_array_new(FALSE, FALSE, sizeof(DirScanEntry));
-    node->children = g_ptr_array_new();
     const gchar* name;
     while ((name = g_dir_read_name(dir)) != NULL) {
         if (g_cancellable_is_cancelled(cancellable)) {
             g_dir_close(dir);
-            return node;
+            return FALSE;
         }
         if (!show_hidden && name[0] == '.') {
             continue;
         }
-        gchar* full = g_build_filename(dirname, name, NULL);
+        gchar* full = g_build_filename(node->dirname, name, NULL);
         GStatBuf st;
         gboolean ok = (g_stat(full, &st) == 0);
         DirScanEntry e = {
@@ -116,6 +110,62 @@ DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSo
         g_array_append_val(node->entries, e);
     }
     g_dir_close(dir);
+    return TRUE;
+}
+
+/* The entries of a remote folder over SFTP (vfs.h). FALSE when the SFTP
+ * connection cannot serve them (not open, lost): the mount is read then. */
+static gboolean read_remote(DirScanNode* node, gboolean show_hidden, GCancellable* cancellable) {
+    GError* error = NULL;
+    GPtrArray* list = vfs_list(node->dirname, cancellable, &error);
+    if (list == NULL) {
+        gboolean answered = g_error_matches(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND) ||
+                            g_error_matches(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED) ||
+                            g_error_matches(error, G_IO_ERROR, G_IO_ERROR_FAILED);
+        if (answered) {
+            node->unreadable = TRUE;
+        } else {
+            g_debug("SFTP listing of %s: %s; reading the mount", node->dirname, error->message);
+        }
+        g_error_free(error);
+        return answered;
+    }
+    for (guint i = 0; i < list->len; i++) {
+        const VfsEntry* v = list->pdata[i];
+        if (!show_hidden && v->name[0] == '.') {
+            continue;
+        }
+        DirScanEntry e = {
+            .name = g_strdup(v->name),
+            .is_dir = v->is_dir,
+            .mtime = v->mtime,
+            .size = v->is_dir ? 0 : v->size,
+        };
+        g_array_append_val(node->entries, e);
+    }
+    g_ptr_array_unref(list);
+    return TRUE;
+}
+
+DirScanNode* dir_scan_read(const gchar* dirname, gboolean show_hidden, DirScanSort sort,
+                           GHashTable* expanded, GCancellable* cancellable) {
+    DirScanNode* node = g_new0(DirScanNode, 1);
+    /* Canonical once here: an entry's path is then dirname/name as it is */
+    node->dirname = g_canonicalize_filename(dirname, NULL);
+    dirname = node->dirname;
+
+    node->entries = g_array_new(FALSE, FALSE, sizeof(DirScanEntry));
+    node->children = g_ptr_array_new();
+    gboolean read = FALSE;
+    if (vfs_is_remote(dirname)) read = read_remote(node, show_hidden, cancellable);
+    if (!read && !node->unreadable && !read_local(node, show_hidden, cancellable)) {
+        return node; /* cancelled: partial */
+    }
+    if (node->unreadable) {
+        g_clear_pointer(&node->entries, g_array_unref);
+        g_clear_pointer(&node->children, g_ptr_array_unref);
+        return node;
+    }
 
     /* Keys made once: a comparison is then a strcmp (no collation per call) */
     for (guint i = 0; i < node->entries->len; i++) {
@@ -218,10 +268,25 @@ void dir_scan_collect_expand_all(const gchar* base, gboolean show_hidden, guint 
     guint rows = 0;
     gchar* dirname;
     while ((dirname = g_queue_pop_head(&queue)) != NULL) {
-        GDir* dir = (rows < max_rows && !g_cancellable_is_cancelled(cancellable))
-                        ? g_dir_open(dirname, 0, NULL)
-                        : NULL;
-        if (dir != NULL) {
+        gboolean go = rows < max_rows && !g_cancellable_is_cancelled(cancellable);
+        GPtrArray* remote = go && vfs_is_remote(dirname) ? vfs_list(dirname, cancellable, NULL) : NULL;
+        GDir* dir = go && remote == NULL ? g_dir_open(dirname, 0, NULL) : NULL;
+        if (remote != NULL) {
+            if (rows > 0) {
+                g_hash_table_add(out, g_strdup(dirname));
+            }
+            for (guint i = 0; i < remote->len; i++) {
+                const VfsEntry* v = remote->pdata[i];
+                if (!show_hidden && v->name[0] == '.') {
+                    continue;
+                }
+                rows++;
+                if (v->is_dir && !v->is_link) {
+                    g_queue_push_tail(&queue, g_build_filename(dirname, v->name, NULL));
+                }
+            }
+            g_ptr_array_unref(remote);
+        } else if (dir != NULL) {
             if (rows > 0) {
                 g_hash_table_add(out, g_strdup(dirname)); /* not the base folder */
             }

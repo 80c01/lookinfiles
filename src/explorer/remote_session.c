@@ -5,6 +5,7 @@
 #include "core/i18n.h"
 #include "core/ssh_askpass.h"
 #include "core/ssh_session.h"
+#include "core/vfs.h"
 #include "widgets/dialog.h"
 
 #include <string.h>
@@ -147,6 +148,7 @@ void remote_session_init(AppData* app, const gchar* argv0) {
 }
 
 void remote_session_shutdown(void) {
+    vfs_shutdown(); /* its SFTP sessions went through the masters */
     ssh_session_on_master_missing(NULL, NULL);
     g_clear_pointer(&masters, g_hash_table_destroy);
     g_clear_pointer(&connecting, g_hash_table_destroy);
@@ -345,5 +347,12 @@ gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* moun
 }
 
 void remote_session_close(RemoteMachine* rm) {
+    if (rm != NULL && rm->mount_point != NULL) vfs_unmount(rm->mount_point);
     if (masters != NULL && rm != NULL && rm->id != NULL) g_hash_table_remove(masters, rm->id);
+}
+
+void remote_session_files_open(RemoteMachine* rm) {
+    if (rm == NULL || rm->mount_point == NULL || rm->host == NULL) return;
+    SshTarget t = remote_machine_target(rm);
+    vfs_mount(rm->mount_point, &t, rm->remote_path);
 }

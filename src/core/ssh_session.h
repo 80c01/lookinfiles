@@ -37,7 +37,8 @@ void ssh_session_set_env(const gchar* name, const gchar* value);
 /* Called by ssh_session_argv() when a command line goes through the master
  * connection of target (multiplexing on) but that master is not open: the
  * application opens it (that command, in BatchMode, asks nothing and fails
- * if it cannot log in on its own) */
+ * if it cannot log in on its own). Always on the main thread: from another
+ * thread, the call is queued to the default main context. */
 typedef void (*SshMasterMissingFunc)(const SshTarget* target, gpointer data);
 void ssh_session_on_master_missing(SshMasterMissingFunc func, gpointer data);
 

@@ -63,7 +63,8 @@ Layers, from bottom to top
   an open master `ssh_exec_async()` fails at once rather than log in every
   second, and `ssh_session_on_master_missing()` lets `remote_session` open it
   in the background, once (not again after a refusal until the next
-  connect); `ssh_exec_async()` runs a remote command. Programs started there
+  connect; the hook always runs on the main thread); `ssh_exec_async()` runs
+  a remote command. Programs started there
   get `ssh_session_set_env()` variables, no controlling terminal, and die
   with the application on Linux (unit-tested with a fake ssh).
 - `ssh_askpass` — ssh password and passphrase prompts: ssh runs this program
@@ -82,8 +83,15 @@ Layers, from bottom to top
   renames it over (`posix-rename@openssh.com` when announced), keeping the
   old mode; in place through a link or in a folder that takes no new file.
   Unit-tested against a small POSIX SFTP server in the test (short reads,
-  lost connection, cancel). Not used by the interface yet: the explorer
-  still goes through the sshfs mount.
+  lost connection, cancel; `tests/sftp_test_server.h`).
+- `vfs` — the files of connected machines without the mount: the folder a
+  machine is connected at (`vfs_mount()`, by `remote_session`: its sshfs
+  mount point for now, shown as `machine:path`) is read over SFTP, one
+  `sftp_client` per machine on a thread of its own (`vfs` thread, own
+  `GMainContext`). The calls (`vfs_list()`) are synchronous with a one-minute
+  limit, for worker threads (`dir_scan`); links to folders are followed.
+  Unit-tested with the test program as `ssh` serving SFTP. Only listings go
+  through it so far: preview, editor and file operations still use the mount.
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -502,6 +510,9 @@ Layers, from bottom to top
   levels of its expanded folders, sorted on keys made once per entry; the
   same on its own worker (`dir_scan_read_async()`, used when a folder is
   expanded); the folders "expand all" opens (`dir_scan_collect_expand_all()`).
+  A remote machine's folders (`vfs_is_remote()`) are listed over SFTP
+  (`vfs_list()`), from the sshfs mount when the SFTP session cannot serve
+  them (no master connection yet, connection lost).
 - `dir_summary` — one directory level for the directory preview: entries
   (name, type, size, date), totals, sorting, relative dates, column padding.
 - `preview_cache` — bounded most-recently-used cache of previews built,
@@ -940,8 +951,9 @@ Layers, from bottom to top
   after the `app_notice()` message).
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
-  `remote_store`; the master connection, password dialogs and sshfs mount
-  (on a connection of its own) in `remote_session`, through `ssh_session`). The notes view is `notes.c` (rows, selection, keys, menu),
+  `remote_store`; the master connection, password dialogs, sshfs mount
+  (on a connection of its own) and SFTP listings (`vfs_mount()`) in
+  `remote_session`, through `ssh_session`). The notes view is `notes.c` (rows, selection, keys, menu),
   `notes_dialogs.c` and `notes_actions.c`, sharing `notes_private.h`;
   `notes_new_canvas()` makes and opens a Canvas note without a dialog (the
   **+** button of `new_tab_menu`). `notes_search` is the `SearchArea` of

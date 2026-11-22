@@ -6,7 +6,7 @@
  * connection of its own (the interface reads the mount synchronously: it must
  * not depend on the master); the password and passphrase prompts of ssh shown
  * as dialogs (ssh_askpass.h), the one typed for the master given once more to
- * sshfs. */
+ * sshfs; the listings of its folders over SFTP (vfs.h). */
 #include "core/app_types.h"
 #include "explorer/remote_store.h"
 
@@ -25,7 +25,10 @@ gboolean remote_session_mount(AppData* app, RemoteMachine* rm, const gchar* moun
 /* Open the master connection of rm in the background unless it is open (a
  * machine found already mounted: the commands run on it need one) */
 void remote_session_open_master(RemoteMachine* rm);
-/* Close the master connection of rm (after unmounting) */
+/* Read the folders of rm, connected at rm->mount_point, over SFTP through
+ * its master connection (vfs.h) rather than the mount */
+void remote_session_files_open(RemoteMachine* rm);
+/* Close the SFTP session and the master connection of rm (after unmounting) */
 void remote_session_close(RemoteMachine* rm);
 
 #endif /* REMOTE_SESSION_H */

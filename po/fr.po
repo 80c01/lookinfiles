@@ -13059,6 +13059,18 @@ msgstr "la machine distante parle une version de SFTP trop ancienne"
 msgid "the file is too large to read"
 msgstr "le fichier est trop volumineux pour être lu"
 
+#: src/core/vfs.c
+msgid "the machine is disconnected"
+msgstr "la machine est déconnectée"
+
+#: src/core/vfs.c
+msgid "not a folder of a remote machine"
+msgstr "ce n’est pas un dossier d’une machine distante"
+
+#: src/core/vfs.c
+msgid "the remote machine does not answer"
+msgstr "la machine distante ne répond pas"
+
 #: src/explorer/remote_session.c
 #, c-format
 msgid "Cannot open the SSH connection to %s: %s"

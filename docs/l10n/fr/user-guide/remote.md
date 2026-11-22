@@ -37,6 +37,10 @@ connecter** se connecte tout de suite.
 | `d` ou `Delete` | La supprimer de la liste |
 | `F5` | Relire `~/.ssh/config` |
 
+Les dossiers d’une machine connectée sont listés en SFTP, par la connexion
+SSH déjà ouverte (sans nouvelle authentification), plutôt qu’à travers le
+montage : un réseau lent fait attendre le listage, pas toute la fenêtre.
+
 Pendant que vous parcourez une machine connectée, le fil d’Ariane commence
 par une icône de serveur et le nom de la machine, et le bouton **Terminal**
 de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell

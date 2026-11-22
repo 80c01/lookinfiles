@@ -644,6 +644,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
             remote_mounts_claim(mount_dir);
         }
     }
+    if (rm->is_connected && rm->mount_point != NULL) remote_session_files_open(rm);
 
     /* If already mounted and connected, simply switch to files view */
     if (rm->is_connected && rm->mount_point != NULL) {
@@ -696,6 +697,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     rm->is_connected = TRUE;
     g_free(rm->mount_point);
     rm->mount_point = mount_dir;
+    remote_session_files_open(rm);
 
     g_free(app->current_remote_id);
     app->current_remote_id = g_strdup(rm->id);

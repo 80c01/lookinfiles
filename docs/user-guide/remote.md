@@ -35,6 +35,10 @@ by default). **Save & Connect** connects right away.
 | `d` or `Delete` | Delete it from the list |
 | `F5` | Read `~/.ssh/config` again |
 
+The folders of a connected machine are listed over SFTP, through the SSH
+connection already open (no new login), rather than through the mount: a
+slow network makes the listing wait, not the whole window.
+
 While you browse a connected machine, the breadcrumbs start with a server icon and
 the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.

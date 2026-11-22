@@ -1,6 +1,8 @@
 /* Directory listings for the explorer tree, read off the UI thread: one level
  * sorted like the tree (folders first, then by name, date, size or
- * extension), and the levels of the folders shown expanded below it.
+ * extension), and the levels of the folders shown expanded below it. The
+ * folders of a remote machine (vfs_is_remote()) are read over SFTP, or from
+ * the sshfs mount when the SFTP connection cannot serve them.
  * No AppData, no widgets. */
 #ifndef DIR_SCAN_H
 #define DIR_SCAN_H

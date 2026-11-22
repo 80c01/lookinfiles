@@ -23,6 +23,7 @@ struct SftpClient {
     GOutputStream* out;
     GSubprocess* proc; /* ssh, or NULL */
     GCancellable* io;
+    GMainContext* context;  /* where the client was made: its callbacks run there */
     gboolean ready;         /* the server's VERSION came */
     GError* error;          /* set once the connection is gone */
     GHashTable* extensions; /* name -> data */
@@ -49,6 +50,7 @@ static void client_unref(SftpClient* c) {
     g_clear_object(&c->out);
     g_clear_object(&c->proc);
     g_clear_object(&c->io);
+    g_main_context_unref(c->context);
     g_clear_error(&c->error);
     g_hash_table_unref(c->extensions);
     g_hash_table_unref(c->pending);
@@ -236,6 +238,7 @@ SftpClient* sftp_client_new(GInputStream* in, GOutputStream* out) {
     c->in = g_object_ref(in);
     c->out = g_object_ref(out);
     c->io = g_cancellable_new();
+    c->context = g_main_context_ref_thread_default();
     c->extensions = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     c->pending = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
     c->next_id = 1;
@@ -328,7 +331,10 @@ static void request_send(SftpClient* c, GByteArray* b, guint32 id, ReplyFunc fun
         f->c = client_ref(c);
         f->func = func;
         f->data = data;
-        g_idle_add(on_fail_later, f);
+        GSource* idle = g_idle_source_new();
+        g_source_set_callback(idle, on_fail_later, f, NULL);
+        g_source_attach(idle, c->context);
+        g_source_unref(idle);
         return;
     }
     Pending* p = g_new(Pending, 1);
