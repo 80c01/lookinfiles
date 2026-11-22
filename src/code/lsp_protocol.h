@@ -31,6 +31,11 @@ void lsp_json_append_string(GString* out, const gchar* s);
 /* file:// URI of an absolute path, and back (NULL when not a file URI) */
 gchar* lsp_path_to_uri(const gchar* path);
 gchar* lsp_uri_to_path(const gchar* uri);
+/* text (len bytes, a message) with the folder from written to instead, in
+ * the URIs and the plain paths (a server on a remote machine sees its own
+ * paths): from is replaced where it ends a path or goes on with '/'.
+ * *out_len (may be NULL) gets the new length. Caller frees. */
+gchar* lsp_map_paths(const gchar* text, gsize len, const gchar* from, const gchar* to, gsize* out_len);
 
 /* LSP languageId of a file ("c", "cpp", "python", "typescriptreact"...) */
 const gchar* lsp_language_id(const gchar* path);
@@ -42,6 +47,7 @@ gchar* lsp_notification(const gchar* method, const gchar* params_json);
 gchar* lsp_reply(const gchar* id_json, const gchar* result_json);
 
 /* Parameters (JSON objects, caller frees) */
+/* pid 0: "processId" null (a server on another machine) */
 gchar* lsp_params_initialize(gint pid, const gchar* root_path);
 gchar* lsp_params_did_open(const gchar* path, const gchar* language_id, gint version, const gchar* text);
 gchar* lsp_params_did_change(const gchar* path, gint version, const gchar* text);

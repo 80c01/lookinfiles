@@ -36,6 +36,11 @@ typedef void (*LspNotifyFunc)(LspClient* client, const LspMessage* msg, gpointer
  * with error when the program cannot be started. */
 LspClient* lsp_client_new(gchar** argv, const gchar* root, LspStateFunc on_state, gpointer data,
                           GError** error);
+/* The same for a server running on a remote machine (argv runs it there,
+ * through ssh): the paths below map_local in the messages sent are written
+ * below map_remote, its path there, and back in the messages received */
+LspClient* lsp_client_new_mapped(gchar** argv, const gchar* root, const gchar* map_local, const gchar* map_remote,
+                                 LspStateFunc on_state, gpointer data, GError** error);
 /* Shut the server down (shutdown, exit, then killed after a delay) and free
  * the client; pending answers are dropped without calling their functions */
 void lsp_client_free(LspClient* client);

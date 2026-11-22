@@ -13084,6 +13084,10 @@ msgstr "la copie du dépôt a été interrompue"
 msgid "the copy of the repository cannot be written"
 msgstr "la copie du dépôt ne peut pas être écrite"
 
+#: src/core/vfs.c
+msgid "the folder of the machine cannot be found"
+msgstr "le dossier de la machine est introuvable"
+
 #: src/git/git_mirror.c
 msgid "no Git repository there"
 msgstr "aucun dépôt Git à cet endroit"

@@ -349,6 +349,31 @@ static void test_rename(void) {
     lsp_message_free(m);
 }
 
+static void test_map_paths(void) {
+    const gchar* msg = "{\"rootPath\":\"/run/m\",\"uri\":\"file:///run/m/a%20b.c\",\"other\":\"/run/mx/c\","
+                       "\"u2\":\"file:///run/m\"}";
+    gsize len = 0;
+    gchar* out = lsp_map_paths(msg, strlen(msg), "/run/m", "/home/me", &len);
+    g_assert_cmpstr(out, ==, "{\"rootPath\":\"/home/me\",\"uri\":\"file:///home/me/a%20b.c\",\"other\":\"/run/mx/c\","
+                             "\"u2\":\"file:///home/me\"}");
+    g_assert_cmpuint(len, ==, strlen(out));
+    gchar* back = lsp_map_paths(out, len, "/home/me", "/run/m", NULL);
+    g_assert_cmpstr(back, ==, msg);
+    g_free(back);
+    g_free(out);
+    /* A folder whose URI is percent-encoded */
+    out = lsp_map_paths("\"file:///home/me/x\"", 19, "/home/me", "/srv/my dir", NULL);
+    g_assert_cmpstr(out, ==, "\"file:///srv/my%20dir/x\"");
+    g_free(out);
+
+    gchar* init = lsp_params_initialize(0, "/home/me");
+    g_assert_nonnull(strstr(init, "\"processId\":null,"));
+    g_free(init);
+    init = lsp_params_initialize(42, "/home/me");
+    g_assert_nonnull(strstr(init, "\"processId\":42,"));
+    g_free(init);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/lsp_protocol/framing", test_framing);
@@ -363,5 +388,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/lsp_protocol/diagnostics", test_diagnostics);
     g_test_add_func("/lsp_protocol/completions", test_completions);
     g_test_add_func("/lsp_protocol/rename", test_rename);
+    g_test_add_func("/lsp_protocol/map_paths", test_map_paths);
     return g_test_run();
 }

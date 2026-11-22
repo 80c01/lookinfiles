@@ -74,6 +74,25 @@ static gchar* configured(const gchar* config_path, const gchar* key) {
     return value;
 }
 
+gchar** lsp_config_command_lines(CodeLang lang, const gchar* config_path) {
+    const ServerDefaults* d = defaults_of(lang);
+    if (d == NULL) return NULL;
+    gchar* line = configured(config_path, d->key);
+    if (line == NULL && code_lang_family(lang) == CODE_LANG_C && lang != CODE_LANG_C) {
+        line = configured(config_path, "c");
+    }
+    if (line != NULL) {
+        gchar** lines = NULL;
+        if (line[0] != '\0') {
+            lines = g_new0(gchar*, 2);
+            lines[0] = g_steal_pointer(&line);
+        }
+        g_free(line);
+        return lines;
+    }
+    return g_strdupv((gchar**)d->defaults);
+}
+
 gchar** lsp_config_command(CodeLang lang, const gchar* config_path) {
     const ServerDefaults* d = defaults_of(lang);
     if (d == NULL) return NULL;
@@ -91,4 +110,40 @@ gchar** lsp_config_command(CodeLang lang, const gchar* config_path) {
         if (argv != NULL) return argv;
     }
     return NULL;
+}
+
+/* arg quoted for a POSIX shell */
+static gchar* quoted(const gchar* arg) {
+    GString* s = g_string_new("'");
+    for (const gchar* p = arg; *p != '\0'; p++) {
+        if (*p == '\'') {
+            g_string_append(s, "'\\''");
+        } else {
+            g_string_append_c(s, *p);
+        }
+    }
+    g_string_append_c(s, '\'');
+    return g_string_free(s, FALSE);
+}
+
+gchar* lsp_config_launch_script(gchar** lines) {
+    GString* s = g_string_new(NULL);
+    for (gsize i = 0; lines != NULL && lines[i] != NULL; i++) {
+        gchar** argv = NULL;
+        if (!g_shell_parse_argv(lines[i], NULL, &argv, NULL)) continue;
+        GString* cmd = g_string_new(NULL);
+        for (gsize j = 0; argv[j] != NULL; j++) {
+            gchar* q = quoted(argv[j]);
+            if (j > 0) g_string_append_c(cmd, ' ');
+            g_string_append(cmd, q);
+            g_free(q);
+        }
+        gchar* prog = quoted(argv[0]);
+        g_string_append_printf(s, "if command -v %s >/dev/null 2>&1; then exec %s; fi; ", prog, cmd->str);
+        g_free(prog);
+        g_string_free(cmd, TRUE);
+        g_strfreev(argv);
+    }
+    g_string_append(s, "exit 127");
+    return g_string_free(s, FALSE);
 }

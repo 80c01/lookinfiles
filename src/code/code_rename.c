@@ -1,5 +1,6 @@
 /* Multi-file symbol rename via LSP (see code_rename.h) */
 #include "code/code_rename.h"
+#include "core/vfs.h"
 #include "code/code_intel.h"
 #include "code/code_symbol.h"
 #include "code/lsp_edit.h"
@@ -174,7 +175,7 @@ static void disk_rename_worker(GTask* task, gpointer src, gpointer task_data, GC
         LspFileEdits* fe = g_ptr_array_index(j->disk_files, i);
         gchar* content = NULL;
         gsize len = 0;
-        if (!g_file_get_contents(fe->path, &content, &len, NULL)) {
+        if (!vfs_file_get_contents(fe->path, 64 * 1024 * 1024, &content, &len, NULL)) {
             j->disk_failed++;
             continue;
         }

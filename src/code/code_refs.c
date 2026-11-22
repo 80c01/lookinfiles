@@ -1,5 +1,6 @@
 /* References of a symbol in the References tab (see code_refs.h) */
 #include "code/code_refs.h"
+#include "core/vfs.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
 #include "theme/palette.h"
@@ -772,7 +773,7 @@ static void on_server_refs(AppData* app, EditorTab* tab, GPtrArray* locations, g
             gchar** lines = g_hash_table_lookup(file_lines, r->path);
             if (lines == NULL) {
                 gchar* data_text = NULL;
-                g_file_get_contents(r->path, &data_text, NULL, NULL);
+                vfs_file_get_contents(r->path, 64 * 1024 * 1024, &data_text, NULL, NULL); /* over SFTP for a remote file */
                 lines = g_strsplit(data_text != NULL ? data_text : "", "\n", -1);
                 g_free(data_text);
                 g_hash_table_insert(file_lines, g_strdup(r->path), lines);

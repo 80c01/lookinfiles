@@ -96,11 +96,22 @@ Les machines ajoutées à la main sont enregistrées dans
 
 ## Pas encore disponible sur une machine distante
 
-Ces fonctions s’exécutent sur cet ordinateur et ont besoin de fichiers
-locaux : les serveurs de langage (complétion, diagnostics) et
-la compilation LaTeX. L’ouverture d’un fichier avec une autre application
-n’est pas disponible non plus : « Ouvrir avec l’application par défaut » le
-dit dans la barre d’état ; les autres restent éteintes.
+La compilation LaTeX s’exécute sur cet ordinateur et a besoin de fichiers
+locaux : elle reste éteinte pour les fichiers d’une machine distante.
+L’ouverture d’un fichier avec une autre application n’est pas disponible
+non plus : « Ouvrir avec l’application par défaut » le dit dans la barre
+d’état.
+
+## Serveurs de langage
+
+Les serveurs de langage (complétion, diagnostics, aller à la définition,
+renommage) s’exécutent sur la machine, dans le projet : le premier serveur
+de la liste du langage (ou celui choisi dans `lsp.ini`) installé sur la
+machine est lancé par ssh dans un shell de connexion, pour que les
+programmes de `~/.local/bin` et autres soient trouvés. Les chemins de ce
+qui lui est dit et de ce qu’il répond sont écrits comme la machine les
+connaît. Rien n’est installé sur la machine : un langage sans serveur
+là-bas n’a simplement pas de diagnostics.
 
 ## Deep Search
 

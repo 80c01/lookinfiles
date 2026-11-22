@@ -26,4 +26,14 @@ const gchar* lsp_config_key(CodeLang lang);
  * config_path may be NULL or missing. */
 gchar** lsp_config_command(CodeLang lang, const gchar* config_path);
 
+/* The command lines that may serve lang, installed or not (a remote
+ * machine looks for them itself): the configured one, else the defaults,
+ * best first; NULL when none (or "none" configured). g_strfreev(). */
+gchar** lsp_config_command_lines(CodeLang lang, const gchar* config_path);
+
+/* A shell script running the first of lines whose program is installed
+ * (`command -v`), in place of the shell (exec); exit status 127 when none
+ * is. Caller frees. */
+gchar* lsp_config_launch_script(gchar** lines);
+
 #endif /* LSP_CONFIG_H */

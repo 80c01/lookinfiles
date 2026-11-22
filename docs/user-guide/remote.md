@@ -87,9 +87,19 @@ with sshfs are unmounted at start-up. Machines added by hand are saved in
 
 ## Not available on a remote machine yet
 
-These run on this computer and need local files: the language servers (completion, diagnostics) and LaTeX builds. Opening a file
-with another application is not available either: Open With Default App
-says so in the status bar; the others stay off.
+LaTeX builds run on this computer and need local files: they stay off for a
+remote machine's files. Opening a file with another application is not
+available either: Open With Default App says so in the status bar.
+
+## Language servers
+
+The language servers (completion, diagnostics, go to definition, rename)
+run on the machine, in the project there: the first server of the
+language's list (or the one set in `lsp.ini`) installed on the machine is
+started through ssh in a login shell, so the programs of `~/.local/bin` and
+the like are found. The paths in what is said to it and what it answers
+are written as the machine knows them. Nothing is installed on the machine:
+a language without a server there just has no diagnostics.
 
 ## Deep Search
 

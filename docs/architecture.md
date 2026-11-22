@@ -754,7 +754,11 @@ Layers, from bottom to top
   main context (`LspClient`: queued until initialized, server requests
   answered, full-text document sync; never free it from its own callbacks),
   and server commands (defaults + `lsp.ini`). `tests/fixtures/fake_lsp.py`
-  is a fake server for the client tests.
+  is a fake server for the client tests. On a remote machine the server
+  runs there (`lsp_client_new_mapped()`: through ssh, `vfs_command_argv()`,
+  the first of `lsp_config_command_lines()` installed there), the paths of
+  the messages mapped between the machine's folder here and its path there
+  (`lsp_map_paths()`).
 - `explorer_row` — `ExplorerRow`, one row of the explorer tree (type, name,
   label, path, badge, children `GListStore`). Read fields directly, change them
   with the setters (they emit `"changed"` so the row redraws). A row that can

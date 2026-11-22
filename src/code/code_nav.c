@@ -1,5 +1,6 @@
 /* Code navigation in editor tabs (see code_nav.h) */
 #include "code/code_nav.h"
+#include "core/vfs.h"
 #include "preview/preview_state.h"
 #include "core/app_paths.h"
 #include "code/code_index.h"
@@ -226,7 +227,7 @@ static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancella
         gchar* owned = NULL;
         gsize len = 0;
         if (text != NULL) len = strlen(text);
-        else if (g_file_get_contents(best->path, &owned, &len, NULL)) text = owned;
+        else if (vfs_file_get_contents(best->path, 64 * 1024 * 1024, &owned, &len, NULL)) text = owned;
         if (text != NULL) {
             CodeLang lang = code_lang_from_name(best->path);
             lk->doc = code_scan_doc_comment(text, len, lang != CODE_LANG_NONE ? lang : lk->lang, best->symbol->line);

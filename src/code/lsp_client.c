@@ -42,6 +42,8 @@ struct LspClient {
     GQueue* writes;        /* framed messages to write (GBytes*) */
     gboolean writing;
     GHashTable* documents; /* path -> Document* */
+    gchar* map_local;      /* a server on a remote machine: the folder seen here */
+    gchar* map_remote;     /* and the same folder there, written in the messages */
 };
 
 static void pending_free(gpointer p) {
@@ -96,6 +98,11 @@ static void write_next(LspClient* c) {
 
 /* Frame and write a complete message (taken) */
 static void send_now(LspClient* c, gchar* body) {
+    if (c->map_local != NULL) { /* the paths as the remote machine knows them */
+        gchar* mapped = lsp_map_paths(body, strlen(body), c->map_local, c->map_remote, NULL);
+        g_free(body);
+        body = mapped;
+    }
     gsize len = 0;
     gchar* framed = lsp_frame(body, &len);
     g_free(body);
@@ -208,6 +215,11 @@ static void on_read(GObject* source, GAsyncResult* res, gpointer data) {
     gchar* body;
     gsize body_len = 0;
     while (c->state != LSP_CLIENT_FAILED && (body = lsp_reader_next(c->reader, &body_len)) != NULL) {
+        if (c->map_local != NULL) { /* the remote machine's paths as seen here */
+            gchar* mapped = lsp_map_paths(body, body_len, c->map_remote, c->map_local, &body_len);
+            g_free(body);
+            body = mapped;
+        }
         LspMessage* msg = lsp_message_parse(body, body_len);
         if (msg != NULL) {
             handle(c, msg);
@@ -237,6 +249,11 @@ static gint64 add_pending(LspClient* c, LspResponseFunc func, gpointer data, GDe
 
 LspClient* lsp_client_new(gchar** argv, const gchar* root, LspStateFunc on_state, gpointer data,
                           GError** error) {
+    return lsp_client_new_mapped(argv, root, NULL, NULL, on_state, data, error);
+}
+
+LspClient* lsp_client_new_mapped(gchar** argv, const gchar* root, const gchar* map_local, const gchar* map_remote,
+                                 LspStateFunc on_state, gpointer data, GError** error) {
     if (argv == NULL || argv[0] == NULL) {
         g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "No server command");
         return NULL;
@@ -263,8 +280,13 @@ LspClient* lsp_client_new(gchar** argv, const gchar* root, LspStateFunc on_state
     c->queued = g_queue_new();
     c->writes = g_queue_new();
     c->documents = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, document_free);
+    if (map_local != NULL && map_remote != NULL) {
+        c->map_local = g_strdup(map_local);
+        c->map_remote = g_strdup(map_remote);
+    }
 
-    gchar* params = lsp_params_initialize((gint)getpid(), root != NULL ? root : "/");
+    /* No pid for a server on another machine: it is not one of its processes */
+    gchar* params = lsp_params_initialize(c->map_local != NULL ? 0 : (gint)getpid(), root != NULL ? root : "/");
     gint64 id = add_pending(c, on_initialized, NULL, NULL);
     send_now(c, lsp_request(id, "initialize", params));
     g_free(params);
@@ -317,6 +339,8 @@ void lsp_client_free(LspClient* client) {
     g_object_unref(c->cancellable);
     g_free(c->root);
     g_free(c->program);
+    g_free(c->map_local);
+    g_free(c->map_remote);
     g_free(c);
 }
 

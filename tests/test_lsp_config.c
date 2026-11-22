@@ -51,10 +51,26 @@ static void test_defaults(void) {
     }
 }
 
+static void test_remote_lines(void) {
+    gchar** lines = lsp_config_command_lines(CODE_LANG_PYTHON, NULL);
+    g_assert_nonnull(lines);
+    g_assert_cmpstr(lines[0], ==, "pylsp");
+    g_assert_cmpstr(lines[1], ==, "pyright-langserver --stdio");
+    gchar* script = lsp_config_launch_script(lines);
+    g_assert_true(g_str_has_prefix(script, "if command -v 'pylsp' >/dev/null 2>&1; then exec 'pylsp'; fi; "
+                                           "if command -v 'pyright-langserver' >/dev/null 2>&1; then exec "
+                                           "'pyright-langserver' '--stdio'; fi; "));
+    g_assert_true(g_str_has_suffix(script, "exit 127"));
+    g_free(script);
+    g_strfreev(lines);
+    g_assert_null(lsp_config_command_lines(CODE_LANG_NONE, NULL));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/lsp_config/keys", test_keys);
     g_test_add_func("/lsp_config/config_file", test_config_file);
     g_test_add_func("/lsp_config/defaults", test_defaults);
+    g_test_add_func("/lsp_config/remote_lines", test_remote_lines);
     return g_test_run();
 }

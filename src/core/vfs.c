@@ -441,6 +441,42 @@ gboolean vfs_exec(const gchar* path, const gchar* command, GBytes* input, GCance
     return ok;
 }
 
+gchar* vfs_mount_of(const gchar* path) {
+    g_mutex_lock(&lock);
+    Mount* m = find_mount(path, NULL);
+    g_mutex_unlock(&lock);
+    if (m == NULL) return NULL;
+    gchar* local = g_strdup(m->local);
+    mount_unref(m);
+    return local;
+}
+
+gchar* vfs_remote_absolute(const gchar* path, GCancellable* cancel, GError** error) {
+    gint status = 0;
+    GBytes* out = NULL;
+    if (!vfs_exec(path, "pwd -P", NULL, cancel, &status, &out, error)) return NULL;
+    gsize len = 0;
+    const gchar* data = g_bytes_get_data(out, &len);
+    gchar* abs = status == 0 && data != NULL ? g_strstrip(g_strndup(data, len)) : NULL;
+    g_bytes_unref(out);
+    if (abs == NULL || abs[0] != '/') {
+        g_free(abs);
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("the folder of the machine cannot be found"));
+        return NULL;
+    }
+    return abs;
+}
+
+GPtrArray* vfs_command_argv(const gchar* path, const gchar* command, GError** error) {
+    Job* j = job_new(path, error);
+    if (j == NULL) return NULL;
+    SshTarget t = mount_target(j->m);
+    GPtrArray* argv = ssh_session_argv(&t, 0);
+    g_ptr_array_add(argv, command_in(j, command));
+    job_unref(j);
+    return argv;
+}
+
 GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error) {
     Job* j = job_new(path, error);
     if (j == NULL) return NULL;
@@ -450,6 +486,26 @@ GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error) 
     g_free(line);
     job_unref(j);
     return p;
+}
+
+gboolean vfs_file_get_contents(const gchar* path, guint64 max, gchar** contents, gsize* len, GError** error) {
+    if (!vfs_is_remote(path)) return g_file_get_contents(path, contents, len, error);
+    guint64 size = 0;
+    GBytes* bytes = vfs_read(path, max + 1, &size, NULL, error);
+    if (bytes == NULL) return FALSE;
+    gsize n = 0;
+    const gchar* data = g_bytes_get_data(bytes, &n);
+    if (n > max || size > max) {
+        g_bytes_unref(bytes);
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NO_SPACE, _("the file is too large to copy"));
+        return FALSE;
+    }
+    *contents = g_malloc(n + 1);
+    if (n > 0) memcpy(*contents, data, n);
+    (*contents)[n] = '\0';
+    if (len != NULL) *len = n;
+    g_bytes_unref(bytes);
+    return TRUE;
 }
 
 gboolean vfs_peek(const gchar* path, VfsEntry* e) {

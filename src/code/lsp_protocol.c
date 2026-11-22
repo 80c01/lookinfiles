@@ -166,9 +166,50 @@ static void append_uri(GString* s, const gchar* path) {
     g_free(uri);
 }
 
+/* Replace in text each from that ends there or goes on with a path ('/',
+ * a closing quote, an escape) by to */
+static void replace_prefix(GString* text, const gchar* from, const gchar* to) {
+    gsize fl = strlen(from), tl = strlen(to);
+    if (fl == 0) return;
+    for (gsize at = 0; at + fl <= text->len;) {
+        gchar* hit = g_strstr_len(text->str + at, (gssize)(text->len - at), from);
+        if (hit == NULL) break;
+        gsize pos = (gsize)(hit - text->str);
+        gchar next = pos + fl < text->len ? text->str[pos + fl] : '\0';
+        if (next == '/' || next == '"' || next == '\\' || next == '\0') {
+            g_string_erase(text, (gssize)pos, (gssize)fl);
+            g_string_insert_len(text, (gssize)pos, to, (gssize)tl);
+            at = pos + tl;
+        } else {
+            at = pos + 1;
+        }
+    }
+}
+
+gchar* lsp_map_paths(const gchar* text, gsize len, const gchar* from, const gchar* to, gsize* out_len) {
+    GString* s = g_string_new_len(text, (gssize)len);
+    if (from != NULL && to != NULL) {
+        /* The URIs first (percent-encoded), then the plain paths ("rootPath") */
+        gchar* from_uri = lsp_path_to_uri(from);
+        gchar* to_uri = lsp_path_to_uri(to);
+        if (from_uri != NULL && to_uri != NULL) replace_prefix(s, from_uri, to_uri);
+        g_free(from_uri);
+        g_free(to_uri);
+        replace_prefix(s, from, to);
+    }
+    if (out_len != NULL) *out_len = s->len;
+    return g_string_free(s, FALSE);
+}
+
 gchar* lsp_params_initialize(gint pid, const gchar* root_path) {
     GString* s = g_string_new(NULL);
-    g_string_append_printf(s, "{\"processId\":%d,\"clientInfo\":{\"name\":\"LookinFiles\"},\"rootPath\":", pid);
+    /* No pid (0): a server on another machine, where it means nothing */
+    if (pid > 0) {
+        g_string_append_printf(s, "{\"processId\":%d,", pid);
+    } else {
+        g_string_append(s, "{\"processId\":null,");
+    }
+    g_string_append(s, "\"clientInfo\":{\"name\":\"LookinFiles\"},\"rootPath\":");
     lsp_json_append_string(s, root_path);
     g_string_append(s, ",\"rootUri\":");
     append_uri(s, root_path);

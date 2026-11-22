@@ -10,6 +10,8 @@
 #include "editor/editor.h"
 #include "code/lsp_client.h"
 #include "code/lsp_config.h"
+#include "core/ssh_session.h"
+#include "git/git_state.h"
 #include <string.h>
 
 #define RESTART_DELAY_US (60 * G_USEC_PER_SEC)
@@ -26,6 +28,8 @@ typedef struct CodeIntel {
     GHashTable* servers;   /* "root\ncommand" -> Server* */
     GHashTable* commands;  /* CodeLang (as pointer) -> gchar** argv, or a NULL value: none */
     GHashTable* diagnostics; /* canonical path -> GPtrArray of LspDiagnostic (byte columns) */
+    GHashTable* remote_commands; /* CodeLang -> gchar** command lines tried on a remote machine, or NULL */
+    GHashTable* remote_roots;    /* a machine's folder seen here -> its absolute path there */
 } CodeIntel;
 
 static void on_server_notify(LspClient* client, const LspMessage* msg, gpointer data);
@@ -62,6 +66,8 @@ static CodeIntel* intel_of(AppData* app) {
         ci->servers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, server_free);
         ci->commands = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)g_strfreev);
         ci->diagnostics = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_ptr_array_unref);
+        ci->remote_commands = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)g_strfreev);
+        ci->remote_roots = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
         app->code_intel = ci;
     }
     return app->code_intel;
@@ -86,6 +92,36 @@ static gchar** command_of(CodeIntel* ci, CodeLang lang) {
     return argv;
 }
 
+/* Server command lines of a language for a remote machine, which looks for
+ * the programs itself (looked up once per session) */
+static gchar** remote_command_of(CodeIntel* ci, CodeLang lang) {
+    gpointer key = GINT_TO_POINTER(lang);
+    gpointer value = NULL;
+    if (g_hash_table_lookup_extended(ci->remote_commands, key, NULL, &value)) return value;
+    gchar* dir = app_config_dir();
+    gchar* ini = g_build_filename(dir, "lsp.ini", NULL);
+    gchar** lines = lsp_config_command_lines(lang, ini);
+    g_free(ini);
+    g_free(dir);
+    g_hash_table_insert(ci->remote_commands, key, lines);
+    return lines;
+}
+
+/* The commands of tab's language: argv here, the command lines to try on a remote machine */
+static gchar** commands_for(CodeIntel* ci, EditorTab* tab) {
+    CodeLang lang = tab_lang(tab);
+    if (lang == CODE_LANG_NONE) return NULL;
+    return vfs_is_remote(tab->path) ? remote_command_of(ci, lang) : command_of(ci, lang);
+}
+
+/* The project of a remote machine's file: the repository the explorer read
+ * there (git status), else its folder */
+static gchar* remote_project_root(EditorTab* tab) {
+    const GitState* git = tab->app != NULL ? tab->app->git_state : NULL;
+    if (git_state_covers(git, tab->path)) return g_strdup(git_state_root(git));
+    return g_path_get_dirname(tab->path);
+}
+
 static gboolean tab_alive(AppData* app, EditorTab* tab) {
     return tab != NULL && g_list_find(app->editors, tab) != NULL;
 }
@@ -99,11 +135,9 @@ static void on_server_state(LspClient* client, LspClientState state, gpointer da
 
 /* Server key of a tab: "root\ncommand" (caller frees), NULL without server */
 static gchar* server_key(CodeIntel* ci, EditorTab* tab, gchar*** argv_out, gchar** root_out) {
-    CodeLang lang = tab_lang(tab);
-    if (lang == CODE_LANG_NONE) return NULL;
-    gchar** argv = command_of(ci, lang);
+    gchar** argv = commands_for(ci, tab);
     if (argv == NULL) return NULL;
-    gchar* root = code_index_project_root(tab->path);
+    gchar* root = vfs_is_remote(tab->path) ? remote_project_root(tab) : code_index_project_root(tab->path);
     if (root == NULL) return NULL;
     gchar* cmd = g_strjoinv(" ", argv);
     gchar* key = g_strdup_printf("%s\n%s", root, cmd);
@@ -112,6 +146,40 @@ static gchar* server_key(CodeIntel* ci, EditorTab* tab, gchar*** argv_out, gchar
     if (root_out != NULL) *root_out = root;
     else g_free(root);
     return key;
+}
+
+/* A server on a remote machine for the project at root: the first of the
+ * command lines installed there, run through ssh in a login shell (its
+ * PATH: ~/.local/bin...), the paths of the messages mapped between the
+ * machine's folder here and there. NULL when it cannot start. */
+static LspClient* start_remote(CodeIntel* ci, gchar** lines, const gchar* root, AppData* app) {
+    gchar* mount = vfs_mount_of(root);
+    if (mount == NULL) return NULL;
+    const gchar* there = g_hash_table_lookup(ci->remote_roots, mount);
+    if (there == NULL) {
+        gchar* abs = vfs_remote_absolute(mount, NULL, NULL); /* one round trip, once per machine */
+        if (abs == NULL) {
+            g_free(mount);
+            return NULL;
+        }
+        g_hash_table_insert(ci->remote_roots, g_strdup(mount), abs);
+        there = abs;
+    }
+    gchar* script = lsp_config_launch_script(lines);
+    gchar* q = ssh_session_quote(script);
+    gchar* command = g_strdup_printf("exec \"${SHELL:-/bin/sh}\" -lc %s", q);
+    GPtrArray* argv = vfs_command_argv(root, command, NULL);
+    LspClient* client = NULL;
+    if (argv != NULL) {
+        g_ptr_array_add(argv, NULL);
+        client = lsp_client_new_mapped((gchar**)argv->pdata, root, mount, there, on_server_state, app, NULL);
+        g_ptr_array_unref(argv);
+    }
+    g_free(command);
+    g_free(q);
+    g_free(script);
+    g_free(mount);
+    return client;
 }
 
 /* The server of a tab, started when needed (start); NULL when none runs */
@@ -134,11 +202,14 @@ static Server* server_for(AppData* app, EditorTab* tab, gboolean start) {
         s = NULL;
     }
     if (s == NULL && start) {
-        LspClient* client = lsp_client_new(argv, root, on_server_state, app, NULL);
+        LspClient* client = vfs_is_remote(root) ? start_remote(ci, argv, root, app)
+                                                : lsp_client_new(argv, root, on_server_state, app, NULL);
         lsp_client_set_notify_func(client, on_server_notify, app);
         s = g_new0(Server, 1);
         s->client = client;
-        s->name = g_path_get_basename(argv[0]);
+        gchar** words = vfs_is_remote(root) ? g_strsplit(argv[0], " ", 2) : NULL; /* a remote command line */
+        s->name = g_path_get_basename(words != NULL ? words[0] : argv[0]);
+        g_strfreev(words);
         if (client == NULL) s->failed_at = g_get_monotonic_time();
         g_hash_table_insert(ci->servers, g_strdup(key), s);
         app_emit(app, APP_EVENT_STATUS_CHANGED);
@@ -556,6 +627,8 @@ void code_intel_shutdown(AppData* app) {
     g_hash_table_destroy(ci->servers);
     g_hash_table_destroy(ci->commands);
     g_hash_table_destroy(ci->diagnostics);
+    g_hash_table_destroy(ci->remote_commands);
+    g_hash_table_destroy(ci->remote_roots);
     g_free(ci);
     app->code_intel = NULL;
 }
@@ -1011,7 +1084,6 @@ static void sync_state_free(gpointer p) {
 
 void code_intel_attach(AppData* app, EditorTab* tab) {
     if (app == NULL || tab == NULL || tab->buffer == NULL || tab->path == NULL) return;
-    if (vfs_is_remote(tab->path)) return; /* language servers run here: not on a remote machine's files yet */
     if (g_object_get_data(G_OBJECT(tab->buffer), SYNC_TIMER_KEY) != NULL) return;
     SyncState* ss = g_new0(SyncState, 1);
     ss->app = app;
@@ -1025,7 +1097,7 @@ void code_intel_attach(AppData* app, EditorTab* tab) {
     }
     g_free(canon);
     /* Start LSP server if configured, else run built-in JSON/TOML/YAML/XML checker */
-    if ((tab_lang(tab) != CODE_LANG_NONE && command_of(intel_of(app), tab_lang(tab)) != NULL) ||
+    if (commands_for(intel_of(app), tab) != NULL ||
         code_lint_source_name(tab->path) != NULL) {
         schedule_sync(ss, 50);
     }

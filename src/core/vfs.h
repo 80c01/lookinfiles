@@ -57,6 +57,17 @@ gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError**
  * with error when it could not run, or when path is not remote. */
 gboolean vfs_exec(const gchar* path, const gchar* command, GBytes* input, GCancellable* cancel, gint* status,
                   GBytes** out, GError** error);
+/* The local folder of the machine path is on (the mount of vfs_mount()),
+ * NULL when path is not remote. Caller frees. */
+gchar* vfs_mount_of(const gchar* path);
+/* The absolute path on the machine of the folder path (links resolved, as
+ * the programs there see it), NULL with error (worker threads, or a short
+ * wait). Caller frees. */
+gchar* vfs_remote_absolute(const gchar* path, GCancellable* cancel, GError** error);
+/* The ssh command line running command in the remote folder of path,
+ * through the master (ssh_session_argv()), for a process kept running
+ * here (g_ptr_array_unref; not NULL-terminated) */
+GPtrArray* vfs_command_argv(const gchar* path, const gchar* command, GError** error);
 /* The same started, its output read as it comes (ssh_spawn()) */
 GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error);
 
@@ -67,6 +78,11 @@ gboolean vfs_peek(const gchar* path, VfsEntry* e);
 /* The first max bytes of the remote file at path (G_MAXUINT64: all of it);
  * *size (may be NULL) gets the file's size. NULL with error as vfs_list(). */
 GBytes* vfs_read(const gchar* path, guint64 max, guint64* size, GCancellable* cancel, GError** error);
+
+/* The whole content of path, NUL-terminated, as g_file_get_contents():
+ * over SFTP for a remote machine's file (at most max bytes: larger fails),
+ * else from the disk */
+gboolean vfs_file_get_contents(const gchar* path, guint64 max, gchar** contents, gsize* len, GError** error);
 
 /* Write contents to the remote file at path, safely (sftp_client_write_async():
  * a temporary file renamed over it, the old mode kept; a new file gets
