@@ -9434,8 +9434,12 @@ msgstr ""
 "main.tex »)"
 
 #: src/latex/latex_build.c:371
-msgid "No LaTeX compiler found: install latexmk (TeX Live) or Tectonic"
+msgid ""
+"No LaTeX compiler found: install latexmk (TeX Live) or Tectonic (the "
+"Diagnostics tab of the + menu gives the command)"
 msgstr ""
+"Aucun compilateur LaTeX trouvé : installez latexmk (TeX Live) ou Tectonic "
+"(l’onglet Diagnostics du menu + donne la commande)"
 "Aucun compilateur LaTeX trouvé : installez latexmk (TeX Live) ou Tectonic"
 
 #: src/latex/latex_build.c:378
@@ -11752,8 +11756,8 @@ msgstr "impossible de lire %s"
 
 #: src/preview/ps_convert.c:170
 #, c-format
-msgid "%s is not installed"
-msgstr "%s n’est pas installé"
+msgid "%s is not installed (the Diagnostics tab of the + menu gives the command)"
+msgstr "%s n’est pas installé (l’onglet Diagnostics du menu + donne la commande)"
 
 #: src/preview/ps_convert.c:228
 msgid "cannot store the converted file"

@@ -369,7 +369,7 @@ static void on_build_done(GObject* source, GAsyncResult* result, gpointer data) 
     } else if (job->program == NULL) {
         if (!st->told_missing) {
             st->told_missing = TRUE;
-            app_notice(app, _("No LaTeX compiler found: install latexmk (TeX Live) or Tectonic"), FALSE);
+            app_notice(app, _("No LaTeX compiler found: install latexmk (TeX Live) or Tectonic (the Diagnostics tab of the + menu gives the command)"), FALSE);
         }
     } else {
         latex_errors_show(app, job->root, job->msgs, job->program);

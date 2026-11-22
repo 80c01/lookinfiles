@@ -167,7 +167,7 @@ gchar* ps_convert_to_pdf(const gchar* path, PsSource source, gint last_page,
     gchar* gs = g_find_program_in_path("gs");
     gchar* dvips = source == PS_SOURCE_DVI ? g_find_program_in_path("dvips") : NULL;
     if (gs == NULL || (source == PS_SOURCE_DVI && dvips == NULL)) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("%s is not installed"),
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("%s is not installed (the Diagnostics tab of the + menu gives the command)"),
                     gs == NULL ? "ghostscript (gs)" : "dvips");
         g_free(gs);
         g_free(dvips);
