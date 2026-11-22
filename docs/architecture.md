@@ -51,7 +51,8 @@ Layers, from bottom to top
   (`app_runtime_dir()/remotes/<id>`, empty: nothing is mounted there; never
   under `~/.cache`), and the startup cleanup of the sshfs mounts earlier
   versions made (owner files, `/proc/self/mounts` parsing, unmount:
-  `remote_mounts_cleanup_stale()`, called by `main.c`).
+  `remote_mounts_cleanup_stale()`, called by `main.c`). What remote
+  machines do not do yet: [remote-todo.md](remote-todo.md).
 - `ssh_session` — every ssh run goes through the OpenSSH client with the
   command line of `ssh_session_argv()` (`ssh_session_options()`): keep-alive, `accept-new` host keys and, except on Windows, a master
   connection per machine (`ssh_master_start()`, socket

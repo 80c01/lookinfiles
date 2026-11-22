@@ -25,6 +25,8 @@ More detail, read when the task touches it:
   servers, theme format.
 - [docs/translations.md](docs/translations.md): marking strings, adding a
   language.
+- [docs/remote-todo.md](docs/remote-todo.md): what remote machines do not
+  do yet (LaTeX, Open With Default App) and their known limits.
 
 ## Build and test
 
