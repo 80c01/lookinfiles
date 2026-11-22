@@ -16,8 +16,8 @@ struct FsWatch {
     GFileMonitor* file_monitor;      /* file shown in the preview */
     VfsWatch* remote_file;           /* the same for a remote file */
     GFileMonitor* git_monitor;       /* .git directory of base_dir */
-    GFileMonitor* git_heads_monitor; /* .git/refs/heads (local branches) */
-    GFileMonitor* git_tags_monitor;  /* .git/refs/tags (tags) */
+    GPtrArray* git_ref_monitors;     /* .git/refs, refs/heads, refs/tags, refs/remotes/<name> */
+    gboolean git_refs_stale;         /* a refs folder appeared: re-arm git_ref_monitors */
     gchar* git_monitored_path;       /* the .git directory git_monitor watches */
     gboolean dir_dirty;              /* pending directory event */
     gboolean git_dirty;              /* pending git status update */
@@ -43,10 +43,16 @@ static void cancel_monitor(GFileMonitor** monitor) {
     }
 }
 
+static void arm_git_ref_monitors(AppData* app, struct FsWatch* w);
+
 static gboolean deferred_refresh(gpointer data) {
     AppData* app = (AppData*)data;
     struct FsWatch* w = watch_get(app);
     w->refresh_source = 0;
+    if (w->git_refs_stale) {
+        w->git_refs_stale = FALSE;
+        arm_git_ref_monitors(app, w);
+    }
 
     gboolean dir_changed = w->dir_dirty;
     gboolean git_changed = w->git_dirty;
@@ -187,7 +193,7 @@ static void on_file_changed(GFileMonitor* monitor, GFile* file, GFile* other_fil
 
 static void on_git_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_file,
                                GFileMonitorEvent event_type, gpointer data) {
-    (void)monitor; (void)other_file; (void)event_type;
+    (void)monitor; (void)other_file;
     AppData* app = (AppData*)data;
     if (app == NULL) {
         return;
@@ -201,6 +207,14 @@ static void on_git_dir_changed(GFileMonitor* monitor, GFile* file, GFile* other_
                 return;
             }
             g_free(name);
+        }
+        /* A new remote (first push or fetch) or refs folder: watch it too */
+        if (event_type == G_FILE_MONITOR_EVENT_CREATED || event_type == G_FILE_MONITOR_EVENT_MOVED_IN) {
+            gchar* path = g_file_get_path(file);
+            if (path != NULL && strstr(path, "/refs") != NULL && g_file_test(path, G_FILE_TEST_IS_DIR)) {
+                watch_get(app)->git_refs_stale = TRUE;
+            }
+            g_free(path);
         }
     }
     watch_get(app)->git_dirty = TRUE;
@@ -226,10 +240,50 @@ static GFileMonitor* watch_git_subdir(AppData* app, const gchar* git_dir, const 
     return mon;
 }
 
+static void cancel_ref_monitor(gpointer data) {
+    GFileMonitor* mon = data;
+    g_file_monitor_cancel(mon);
+    g_object_unref(mon);
+}
+
+static void add_git_ref_monitor(AppData* app, struct FsWatch* w, const gchar* git_dir, const gchar* sub) {
+    GFileMonitor* mon = watch_git_subdir(app, git_dir, sub);
+    if (mon != NULL) {
+        g_ptr_array_add(w->git_ref_monitors, mon);
+    }
+}
+
+/* A push only rewrites refs/remotes/<remote>/<branch>, a fetch too: watch every
+ * remote's folder, not only the local branches and tags. */
+static void arm_git_ref_monitors(AppData* app, struct FsWatch* w) {
+    g_clear_pointer(&w->git_ref_monitors, g_ptr_array_unref);
+    if (w->git_monitored_path == NULL) {
+        return;
+    }
+    w->git_ref_monitors = g_ptr_array_new_with_free_func(cancel_ref_monitor);
+    const gchar* git_dir = w->git_monitored_path;
+    add_git_ref_monitor(app, w, git_dir, "refs");
+    add_git_ref_monitor(app, w, git_dir, "refs/heads");
+    add_git_ref_monitor(app, w, git_dir, "refs/tags");
+    add_git_ref_monitor(app, w, git_dir, "refs/remotes");
+    gchar* remotes = g_build_filename(git_dir, "refs", "remotes", NULL);
+    GDir* dir = g_dir_open(remotes, 0, NULL);
+    if (dir != NULL) {
+        const gchar* name;
+        while ((name = g_dir_read_name(dir)) != NULL) {
+            gchar* sub = g_build_filename("refs", "remotes", name, NULL);
+            add_git_ref_monitor(app, w, git_dir, sub);
+            g_free(sub);
+        }
+        g_dir_close(dir);
+    }
+    g_free(remotes);
+}
+
 static void stop_git_monitor(struct FsWatch* w) {
     cancel_monitor(&w->git_monitor);
-    cancel_monitor(&w->git_heads_monitor);
-    cancel_monitor(&w->git_tags_monitor);
+    g_clear_pointer(&w->git_ref_monitors, g_ptr_array_unref);
+    w->git_refs_stale = FALSE;
     g_free(w->git_monitored_path);
     w->git_monitored_path = NULL;
 }
@@ -265,8 +319,7 @@ static void sync_git_monitor(AppData* app) {
         g_signal_connect(w->git_monitor, "changed", G_CALLBACK(on_git_dir_changed), app);
     }
     g_object_unref(gf);
-    w->git_heads_monitor = watch_git_subdir(app, git_dir, "refs/heads");
-    w->git_tags_monitor = watch_git_subdir(app, git_dir, "refs/tags");
+    arm_git_ref_monitors(app, w);
 }
 
 /* A remote folder's date changed: an entry came, went or was renamed */
