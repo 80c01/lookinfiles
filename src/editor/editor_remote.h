@@ -8,4 +8,9 @@
 
 void editor_remote_open(AppData* app, const gchar* name, const gchar* full);
 
+/* g_file_get_contents() of path, over SFTP for a remote machine's file (the
+ * mount when the SFTP session cannot serve); waits for it (reload, compare:
+ * asked for by the user or after a change was seen) */
+gboolean editor_remote_get_contents(const gchar* path, gchar** contents, gsize* len, GError** error);
+
 #endif /* EDITOR_REMOTE_H */

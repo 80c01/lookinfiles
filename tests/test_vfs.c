@@ -6,6 +6,7 @@
 #include "explorer/dir_scan.h"
 #include "preview/preview_source.h"
 #include "core/vfs_cache.h"
+#include "core/vfs_watch.h"
 #include "sftp_test_server.h"
 
 #include <glib/gstdio.h>
@@ -435,6 +436,76 @@ static void test_cache(void) {
     g_free(sock);
 }
 
+static guint watch_calls;
+
+static void on_watch_changed(gpointer data) {
+    (void)data;
+    watch_calls++;
+}
+
+/* Run the main loop until *calls reaches n (10 s at most) */
+static void wait_calls(guint* calls, guint n) {
+    gint64 end = g_get_monotonic_time() + 10 * G_USEC_PER_SEC;
+    while (*calls < n && g_get_monotonic_time() < end) g_main_context_iteration(NULL, FALSE);
+}
+
+static void test_watch(void) {
+    gchar* sock = fake_master();
+    if (sock == NULL) {
+        g_test_skip("no multiplexing here");
+        return;
+    }
+    gchar* remote = g_build_filename(root, "wa-remote", NULL);
+    g_assert_cmpint(g_mkdir(remote, 0755), ==, 0);
+    gchar* rf = g_build_filename(remote, "f", NULL);
+    g_assert_true(g_file_set_contents(rf, "one", -1, NULL));
+    vfs_mount("/virtual/wa", &TARGET, remote);
+
+    gboolean exists = FALSE;
+    gint64 size = 0;
+    gint64 mtime = 0;
+    g_assert_true(vfs_watch_stamp("/virtual/wa/f", &exists, &size, &mtime));
+    g_assert_true(exists);
+    g_assert_cmpint(size, ==, 3);
+
+    watch_calls = 0;
+    VfsWatch* w = vfs_watch_new("/virtual/wa/f", on_watch_changed, NULL);
+    for (gint i = 0; i < 50; i++) g_main_context_iteration(NULL, FALSE); /* the first reading */
+    g_usleep(300 * 1000);
+    for (gint i = 0; i < 50; i++) g_main_context_iteration(NULL, FALSE);
+    g_assert_cmpuint(watch_calls, ==, 0); /* unchanged */
+
+    g_assert_true(g_file_set_contents(rf, "three", -1, NULL));
+    vfs_watch_poll(w);
+    wait_calls(&watch_calls, 1);
+    g_assert_cmpuint(watch_calls, ==, 1);
+    g_assert_true(vfs_watch_stamp("/virtual/wa/f", &exists, &size, NULL)); /* the watch's reading */
+    g_assert_cmpint(size, ==, 5);
+
+    g_assert_cmpint(g_unlink(rf), ==, 0); /* removed: a change too */
+    vfs_watch_poll(w);
+    wait_calls(&watch_calls, 2);
+    g_assert_cmpuint(watch_calls, ==, 2);
+    g_assert_true(vfs_watch_stamp("/virtual/wa/f", &exists, NULL, NULL));
+    g_assert_false(exists);
+
+    /* Without a watch: the last reading until forgotten */
+    vfs_watch_free(w);
+    g_assert_true(g_file_set_contents(rf, "back again", -1, NULL));
+    g_assert_true(vfs_watch_stamp("/virtual/wa/f", &exists, NULL, NULL));
+    g_assert_false(exists);
+    vfs_watch_forget("/virtual/wa/f");
+    g_assert_true(vfs_watch_stamp("/virtual/wa/f", &exists, &size, NULL));
+    g_assert_true(exists);
+    g_assert_cmpint(size, ==, 10);
+    g_assert_cmpuint(watch_calls, ==, 2); /* freed: no call */
+
+    vfs_unmount("/virtual/wa");
+    g_free(rf);
+    g_free(remote);
+    g_free(sock);
+}
+
 int main(int argc, char** argv) {
     if (is_ssh_call(argc, argv)) return serve_stdio();
     g_test_init(&argc, &argv, NULL);
@@ -451,6 +522,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/vfs/preview_source", test_preview_source);
     g_test_add_func("/vfs/write_ops", test_write_ops);
     g_test_add_func("/vfs/cache", test_cache);
+    g_test_add_func("/vfs/watch", test_watch);
     int status = g_test_run();
     vfs_shutdown();
     const gchar* rm_argv[] = { "rm", "-rf", root, runtime, NULL };

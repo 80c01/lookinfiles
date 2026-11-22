@@ -48,6 +48,10 @@ folder (`~/.cache/lookinfiles/remote-files`) to be previewed, once per
 version of the file (up to 64 MB each, 512 MB in all, the oldest removed
 first). Videos and sounds still play through the mount.
 
+A file of a remote machine open in the editor is checked for changes made
+on the machine every 3 seconds, over SFTP: the editor then reacts as for a
+local file (reload, warning or banner, depending on its mode).
+
 While you browse a connected machine, the breadcrumbs start with a server icon and
 the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.

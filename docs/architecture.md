@@ -98,8 +98,9 @@ Layers, from bottom to top
   Unit-tested with the test program as `ssh` serving SFTP. Through it so
   far: listings, text and hex previews, folder previews and READMEs, opening
   in the editor, saving, new file and folder, rename, delete, and (through
-  `vfs_cache`) the previews that open a file by path. Still on the mount:
-  video and audio, the editor's disk-change watch, copy and drag and drop.
+  `vfs_cache`) the previews that open a file by path, and the editor's
+  disk-change watch (`vfs_watch`). Still on the mount: video and audio, copy
+  and drag and drop.
 - `vfs_cache` — local copies of remote files for the readers that open a
   path (image decoders, poppler, archive and database readers):
   `vfs_cache_copy()` reads the file over SFTP once into
@@ -107,6 +108,12 @@ Layers, from bottom to top
   the extension) and uses it again while the remote size and date stay the
   same; `vfs_cache_trim()` removes the least recently used copies past a
   total size (unit-tested).
+- `vfs_watch` — changes of remote files, which no file monitor sees: a
+  `VfsWatch` reads a file's stamp over SFTP every `VFS_WATCH_SECONDS` on a
+  worker thread and calls back on the main thread when it changed; the last
+  stamp read of each path is kept (`vfs_watch_stamp()`, no wait;
+  `vfs_watch_forget()` before recording one). Used by `editor_stamp` and
+  `editor_watch` (unit-tested).
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -1396,7 +1403,8 @@ Layers, from bottom to top
   hosted by the focused view.
 - `editor_remote` — a remote machine's file opened in the editor: read over
   SFTP on a worker thread (`vfs_read()`, at most `EDIT_MAX_BYTES`), then
-  `editor_open_contents()` (`editor_private.h`) opens the tab.
+  `editor_open_contents()` (`editor_private.h`) opens the tab;
+  `editor_remote_get_contents()` re-reads a file (reload, compare) over SFTP.
 - `editor_watch` — external disk-change watch for open editor buffers:
   `EditorStamp` + per-file `GFileMonitor` (debounced 150 ms, re-armed on inode
   change), also checked on `APP_EVENT_FILES_CHANGED`,

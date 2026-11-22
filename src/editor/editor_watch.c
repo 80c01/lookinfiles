@@ -2,6 +2,9 @@
  * (see editor_watch.h). */
 #include "editor/editor_watch.h"
 #include "editor/editor_stamp.h"
+#include "editor/editor_remote.h"
+#include "core/vfs.h"
+#include "core/vfs_watch.h"
 #include "core/app_events.h"
 #include "core/file_types.h"
 #include "core/i18n.h"
@@ -30,6 +33,7 @@ typedef struct {
     EditorStamp notified_stamp; /* last disk metadata already reported to Vim/Emacs */
     gchar* monitored_path;    /* path currently monitored by monitor */
     GFileMonitor* monitor;    /* per-file monitor (catches unexpanded folders) */
+    VfsWatch* remote;         /* a remote machine's file: polled over SFTP instead */
     gboolean conflict;        /* disk differs from stamp */
     gboolean removed;         /* file missing on disk */
     gboolean reloading;       /* TRUE during programmatic reload */
@@ -55,6 +59,7 @@ static struct EditorWatch* watch_state(AppData* app) {
 }
 
 static void cancel_monitor(BufferWatch* bw) {
+    g_clear_pointer(&bw->remote, vfs_watch_free);
     if (bw->monitor != NULL) {
         g_file_monitor_cancel(bw->monitor);
         g_object_unref(bw->monitor);
@@ -127,9 +132,19 @@ static void on_file_monitor_changed(GFileMonitor* monitor, GFile* file, GFile* o
     }
 }
 
+static void on_remote_changed(gpointer data) {
+    BufferWatch* bw = data;
+    if (bw->app != NULL) schedule_check(bw->app);
+}
+
 static void rearm_monitor(BufferWatch* bw, const gchar* path) {
     cancel_monitor(bw);
     if (path == NULL || path[0] == '\0') return;
+    if (vfs_is_remote(path)) { /* no file monitor sees a remote change */
+        bw->remote = vfs_watch_new(path, on_remote_changed, bw);
+        bw->monitored_path = g_strdup(path);
+        return;
+    }
     GFile* file = g_file_new_for_path(path);
     GFileMonitor* mon = g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, NULL);
     g_object_unref(file);
@@ -180,7 +195,7 @@ static void on_banner_compare_clicked(GtkButton* button, gpointer data) {
     EditorTab* tab = wb->tab;
     gchar* disk = NULL;
     gsize dlen = 0;
-    if (!g_file_get_contents(tab->path, &disk, &dlen, NULL)) return;
+    if (!editor_remote_get_contents(tab->path, &disk, &dlen, NULL)) return;
     if (!g_utf8_validate(disk, (gssize)dlen, NULL)) {
         gchar* utf8 = text_encoding_to_utf8(disk, dlen, NULL);
         g_free(disk);
@@ -334,7 +349,7 @@ static gboolean disk_matches_buffer(EditorTab* tab, const EditorStamp* cur) {
     }
     gchar* disk = NULL;
     gsize disk_len = 0;
-    if (!g_file_get_contents(tab->path, &disk, &disk_len, NULL)) {
+    if (!editor_remote_get_contents(tab->path, &disk, &disk_len, NULL)) {
         return FALSE;
     }
     GtkTextIter s, e;
@@ -361,8 +376,9 @@ void editor_watch_record(EditorTab* tab) {
     }
     BufferWatch* bw = buffer_watch_ensure(tab->app, tab->buffer);
     EditorStamp cur;
+    vfs_watch_forget(tab->path); /* a remote file: read now, not the reading before a save */
     editor_stamp_read(tab->path, &cur);
-    gboolean need_rearm = (bw->monitor == NULL ||
+    gboolean need_rearm = ((bw->monitor == NULL && bw->remote == NULL) ||
                            g_strcmp0(bw->monitored_path, tab->path) != 0 ||
                            cur.file.inode != bw->stamp.file.inode);
     bw->stamp = cur;
@@ -440,7 +456,7 @@ gboolean editor_watch_reload_tab(AppData* app, EditorTab* tab, gboolean show_not
     gchar* contents = NULL;
     gsize len = 0;
     GError* gerr = NULL;
-    if (!g_file_get_contents(tab->path, &contents, &len, &gerr)) {
+    if (!editor_remote_get_contents(tab->path, &contents, &len, &gerr)) {
         if (error_out != NULL) {
             *error_out = g_strdup_printf(_("Cannot read %s: %s"), name,
                                          gerr != NULL ? gerr->message : _("error"));

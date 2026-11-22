@@ -2,6 +2,7 @@
  * the clicks on a tab title (see editor.h) */
 #include "editor/editor.h"
 #include "editor/editor_private.h"
+#include "editor/editor_remote.h"
 #include "editor/editor_swap.h"
 #include "editor/editor_modes.h"
 #include "editor/editor_tagbar.h"
@@ -84,7 +85,7 @@ static void on_tab_menu_action(GtkWidget* widget, gpointer data) {
         if (tab->path != NULL && tab->buffer != NULL) {
             gchar* disk = NULL;
             gsize dlen = 0;
-            if (g_file_get_contents(tab->path, &disk, &dlen, NULL)) {
+            if (editor_remote_get_contents(tab->path, &disk, &dlen, NULL)) { /* over SFTP when remote */
                 GtkTextIter s, e;
                 gtk_text_buffer_get_bounds(tab->buffer, &s, &e);
                 gchar* buf_txt = gtk_text_buffer_get_text(tab->buffer, &s, &e, TRUE);

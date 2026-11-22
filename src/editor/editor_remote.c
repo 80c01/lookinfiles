@@ -74,6 +74,29 @@ static void on_read(GObject* source, GAsyncResult* res, gpointer data) {
     editor_open_contents(app, ro->name, ro->full, g_steal_pointer(&ro->contents), ro->len);
 }
 
+gboolean editor_remote_get_contents(const gchar* path, gchar** contents, gsize* len, GError** error) {
+    if (vfs_is_remote(path)) {
+        GError* err = NULL;
+        GBytes* bytes = vfs_read(path, G_MAXUINT64, NULL, NULL, &err);
+        if (bytes != NULL) {
+            gsize n = 0;
+            const gchar* d = g_bytes_get_data(bytes, &n);
+            *contents = g_malloc(n + 1);
+            if (n > 0) memcpy(*contents, d, n);
+            (*contents)[n] = '\0';
+            if (len != NULL) *len = n;
+            g_bytes_unref(bytes);
+            return TRUE;
+        }
+        if (!vfs_error_is_connection(err)) {
+            g_propagate_error(error, err);
+            return FALSE;
+        }
+        g_error_free(err);
+    }
+    return g_file_get_contents(path, contents, len, error);
+}
+
 void editor_remote_open(AppData* app, const gchar* name, const gchar* full) {
     RemoteOpen* ro = g_new0(RemoteOpen, 1);
     ro->app = app;

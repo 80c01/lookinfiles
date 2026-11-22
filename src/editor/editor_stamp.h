@@ -1,7 +1,8 @@
 /* Disk version tracking for open editor buffers, built on preview_cache's
  * FileStamp: distinguishes unread, missing and existing files so removal,
- * creation and atomic inode replacement are all detected cleanly. Pure GLib,
- * unit-tested. */
+ * creation and atomic inode replacement are all detected cleanly. A remote
+ * machine's file has the stamp last read over SFTP (vfs_watch.h: no wait),
+ * in seconds and without inode. Pure GLib, unit-tested. */
 #ifndef EDITOR_STAMP_H
 #define EDITOR_STAMP_H
 

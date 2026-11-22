@@ -66,6 +66,7 @@ sftp_proto:i18n
 sftp_client:sftp_proto,ssh_session,i18n
 vfs:sftp_client,sftp_proto,ssh_session,i18n
 vfs_cache:vfs,app_paths,i18n
+vfs_watch:vfs
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table
@@ -107,7 +108,7 @@ sunburst_layout:
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types,vfs
 file_save:vfs
-editor_stamp:preview_cache
+editor_stamp:preview_cache,vfs,vfs_watch
 hex_dump:
 ps_convert:i18n
 elf_info:i18n

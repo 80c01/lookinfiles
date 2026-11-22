@@ -52,6 +52,11 @@ fois par version du fichier (64 Mo au plus chacun, 512 Mo en tout, les plus
 anciens retirés d’abord). Les vidéos et les sons passent encore par le
 montage.
 
+Un fichier d’une machine distante ouvert dans l’éditeur est vérifié toutes
+les 3 secondes, en SFTP, pour les modifications faites sur la machine :
+l’éditeur réagit alors comme pour un fichier local (rechargement,
+avertissement ou bandeau, selon son mode).
+
 Pendant que vous parcourez une machine connectée, le fil d’Ariane commence
 par une icône de serveur et le nom de la machine, et le bouton **Terminal**
 de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell
