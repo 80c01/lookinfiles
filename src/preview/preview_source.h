@@ -24,8 +24,9 @@ void preview_source_close(PreviewSource* src);
 /* For what opens a file by its path (images, PDF, archives, documents; a
  * player: player): a local copy of a remote machine's file (vfs_cache.h,
  * up to 64 MB, 512 MB for a player), NULL when path is not remote or cannot
- * be copied (then nothing can be shown). Caller frees. */
-gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel);
+ * be copied (then nothing can be shown; error says why, unset when path
+ * is not remote). Caller frees. */
+gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel, GError** error);
 
 /* For image_file_set_func() (image_utils.h): the file to decode for a
  * picture of a document; a remote machine's picture is copied (up to

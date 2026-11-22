@@ -13087,6 +13087,11 @@ msgstr "La recherche dans les fichiers n’est pas encore disponible sur une mac
 msgid "Opening with another application is not available on a remote machine yet"
 msgstr "L’ouverture avec une autre application n’est pas encore disponible sur une machine distante"
 
+#: src/preview/viewer.c
+#, c-format
+msgid "[ Cannot copy %1$s from the remote machine: %2$s ]"
+msgstr "[ Impossible de copier %1$s depuis la machine distante : %2$s ]"
+
 #: src/search/quick_open.c
 msgid "Go to File is not available on a remote machine yet"
 msgstr "Aller au fichier n’est pas encore disponible sur une machine distante"

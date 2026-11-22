@@ -82,15 +82,10 @@ gchar* preview_source_image_file(const gchar* path) {
     return local;
 }
 
-gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel) {
+gchar* preview_source_local(const gchar* path, gboolean player, GCancellable* cancel, GError** error) {
     if (path == NULL || !vfs_is_remote(path)) return NULL;
-    GError* error = NULL;
-    gchar* local = vfs_cache_copy(path, player ? PLAYER_COPY_MAX_BYTES : COPY_MAX_BYTES, cancel, &error);
-    if (local == NULL) {
-        g_debug("no local copy of %s: %s", path, error->message);
-        g_error_free(error);
-        return NULL;
-    }
+    gchar* local = vfs_cache_copy(path, player ? PLAYER_COPY_MAX_BYTES : COPY_MAX_BYTES, cancel, error);
+    if (local == NULL) return NULL;
     vfs_cache_trim(CACHE_MAX_BYTES);
     return local;
 }

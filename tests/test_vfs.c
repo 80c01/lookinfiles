@@ -421,10 +421,10 @@ static void test_cache(void) {
     g_clear_error(&err);
 
     /* Preview: a copy for a remote file, nothing for a local one */
-    gchar* via = preview_source_local("/virtual/c/pic.png", FALSE, NULL);
+    gchar* via = preview_source_local("/virtual/c/pic.png", FALSE, NULL, NULL);
     g_assert_cmpstr(via, ==, local);
     g_free(via);
-    g_assert_null(preview_source_local(rf, FALSE, NULL));
+    g_assert_null(preview_source_local(rf, FALSE, NULL, NULL));
 
     /* A large file: copied a piece at a time */
     gchar* rbig = g_build_filename(remote, "movie.mkv", NULL);

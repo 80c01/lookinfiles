@@ -376,8 +376,12 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     };
 
     if (file_kind_is_media(td->kind)) {
+        GError* err = NULL;
         td->local = preview_source_local(td->full, td->kind == FILE_KIND_VIDEO || td->kind == FILE_KIND_AUDIO,
-                                         cancellable); /* remote: a copy to open */
+                                         cancellable, &err); /* remote: a copy to open */
+        if (err != NULL) td->error_msg = g_strdup_printf(_("[ Cannot copy %1$s from the remote machine: %2$s ]"),
+                                                         td->name, err->message);
+        g_clear_error(&err);
         preview_source_close(fp);
         g_free(contents);
         g_task_return_boolean(task, TRUE);
@@ -391,9 +395,9 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
          * first PREVIEW_BYTES only, whatever the file size */
         GError* err = NULL;
         if (structured) {
-            td->local = preview_source_local(td->full, FALSE, cancellable); /* remote: a copy to open */
+            td->local = preview_source_local(td->full, FALSE, cancellable, &err); /* remote: a copy to open */
             input.path = td->local != NULL ? td->local : td->full;
-            td->doc = preview_format_build(&input, cancellable, &err);
+            if (err == NULL) td->doc = preview_format_build(&input, cancellable, &err);
         }
         if (td->doc == NULL) {
             if (cap < PREVIEW_BYTES) {
@@ -466,7 +470,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
         input.text_len = text_len;
         input.text_truncated = td->preview;
         if (preview_format_reads_file(&input)) {
-            td->local = preview_source_local(td->full, FALSE, cancellable); /* remote: a copy to open */
+            td->local = preview_source_local(td->full, FALSE, cancellable, NULL); /* remote: a copy to open */
             input.path = td->local != NULL ? td->local : td->full;
         }
         td->doc = preview_format_build(&input, cancellable, NULL);
@@ -668,7 +672,7 @@ static void show_text_preview(TextPreviewTaskData* td) {
         app_emit(app, APP_EVENT_STATUS_CHANGED);
     }
 
-    if (file_kind_is_media(td->kind)) {
+    if (file_kind_is_media(td->kind) && td->error_msg == NULL) {
         preview_media_show(app, td->kind, td->name, td->local != NULL ? td->local : td->full);
         return;
     }
