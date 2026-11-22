@@ -231,7 +231,11 @@ typedef struct {
     VfsEntry info;      /* stat */
     guint64 max;        /* read: bytes wanted */
     guint64 size;       /* read: the file's size */
-    GBytes* bytes;      /* read */
+    GBytes* bytes;      /* read; write: the contents */
+    gchar* remote2;     /* rename: the new path */
+    guint32 mode;       /* write, mkdir */
+    gboolean replace;   /* rename */
+    gint op;            /* the plain operations: OP_* */
     GError* error;
     guint waiting; /* link targets being looked at */
 } Job;
@@ -242,6 +246,7 @@ static void job_unref(Job* j) {
     g_free(j->remote);
     if (j->entries != NULL) g_ptr_array_unref(j->entries);
     if (j->bytes != NULL) g_bytes_unref(j->bytes);
+    g_free(j->remote2);
     g_clear_error(&j->error);
     g_mutex_clear(&j->mu);
     g_cond_clear(&j->cond);
@@ -496,4 +501,164 @@ gboolean vfs_error_is_connection(const GError* error) {
             error->code == G_IO_ERROR_CLOSED || error->code == G_IO_ERROR_TIMED_OUT ||
             error->code == G_IO_ERROR_BROKEN_PIPE || error->code == G_IO_ERROR_INVALID_DATA ||
             error->code == G_IO_ERROR_NOT_SUPPORTED || error->code == G_IO_ERROR_WOULD_BLOCK);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Write, make, remove, rename                                               */
+/* ------------------------------------------------------------------------- */
+
+enum { OP_WRITE, OP_MKDIR, OP_REMOVE, OP_RMDIR, OP_RENAME };
+
+static void on_plain(GObject* src, GAsyncResult* res, gpointer data) {
+    (void)src;
+    GError* error = NULL;
+    sftp_client_finish(res, &error);
+    job_done(data, error);
+}
+
+static gboolean run_plain(gpointer data) {
+    Job* j = data;
+    GError* error = NULL;
+    SftpClient* c = mount_client(j->m, &error);
+    if (c == NULL) {
+        job_done(j, error);
+        return G_SOURCE_REMOVE;
+    }
+    switch (j->op) {
+    case OP_WRITE:
+        sftp_client_write_async(c, j->remote, j->bytes, j->mode, NULL, on_plain, j);
+        break;
+    case OP_MKDIR:
+        sftp_client_mkdir_async(c, j->remote, j->mode, NULL, on_plain, j);
+        break;
+    case OP_REMOVE:
+        sftp_client_remove_async(c, j->remote, NULL, on_plain, j);
+        break;
+    case OP_RMDIR:
+        sftp_client_rmdir_async(c, j->remote, NULL, on_plain, j);
+        break;
+    default:
+        sftp_client_rename_async(c, j->remote, j->remote2, j->replace, NULL, on_plain, j);
+        break;
+    }
+    return G_SOURCE_REMOVE;
+}
+
+static gboolean plain(Job* j, GError** error) {
+    gboolean ok = job_run(j, run_plain, NULL, error);
+    job_unref(j);
+    return ok;
+}
+
+gboolean vfs_write(const gchar* path, GBytes* contents, guint32 mode, GError** error) {
+    Job* j = job_new(path, error);
+    if (j == NULL) return FALSE;
+    j->op = OP_WRITE;
+    j->bytes = contents != NULL ? g_bytes_ref(contents) : g_bytes_new(NULL, 0);
+    j->mode = mode;
+    return plain(j, error);
+}
+
+gboolean vfs_mkdir(const gchar* path, guint32 mode, GError** error) {
+    Job* j = job_new(path, error);
+    if (j == NULL) return FALSE;
+    j->op = OP_MKDIR;
+    j->mode = mode;
+    return plain(j, error);
+}
+
+gboolean vfs_mkdir_with_parents(const gchar* path, guint32 mode, GError** error) {
+    VfsEntry e;
+    GError* err = NULL;
+    if (vfs_stat(path, &e, NULL, &err)) {
+        if (e.is_dir) return TRUE;
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_EXISTS, _("a file of that name already exists"));
+        return FALSE;
+    }
+    if (!g_error_matches(err, G_IO_ERROR, G_IO_ERROR_NOT_FOUND)) {
+        g_propagate_error(error, err);
+        return FALSE;
+    }
+    g_clear_error(&err);
+    gchar* parent = g_path_get_dirname(path);
+    gboolean ok = TRUE;
+    if (strcmp(parent, path) != 0 && vfs_is_remote(parent)) ok = vfs_mkdir_with_parents(parent, mode, error);
+    g_free(parent);
+    return ok && vfs_mkdir(path, mode, error);
+}
+
+static gboolean remove_one(const gchar* path, gint op, GError** error) {
+    Job* j = job_new(path, error);
+    if (j == NULL) return FALSE;
+    j->op = op;
+    return plain(j, error);
+}
+
+gboolean vfs_remove(const gchar* path, GError** error) {
+    return remove_one(path, OP_REMOVE, error);
+}
+
+gboolean vfs_delete_tree(const gchar* path, GError** error) {
+    gchar* p = strip_slashes(path);
+    g_mutex_lock(&lock);
+    gchar* rel = NULL;
+    Mount* m = find_mount(p, &rel);
+    g_mutex_unlock(&lock);
+    gboolean is_mount = m != NULL && rel[0] == '\0';
+    if (m != NULL) mount_unref(m);
+    g_free(rel);
+    if (is_mount) { /* never the whole folder of the machine */
+        g_free(p);
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
+                            _("the folder of the machine itself cannot be deleted"));
+        return FALSE;
+    }
+    GError* err = NULL;
+    gboolean ok = remove_one(p, OP_REMOVE, &err); /* a file, a link */
+    if (!ok && !vfs_error_is_connection(err)) {
+        GError* not_file = err; /* why, if it is no folder either */
+        err = NULL;
+        GPtrArray* list = vfs_list(p, NULL, &err);
+        ok = list != NULL;
+        if (!ok) {
+            g_clear_error(&err);
+            err = not_file;
+        } else {
+            g_error_free(not_file);
+        }
+        for (guint i = 0; ok && i < list->len; i++) {
+            const VfsEntry* e = list->pdata[i];
+            gchar* child = g_strconcat(p, "/", e->name, NULL);
+            ok = e->is_dir && !e->is_link ? vfs_delete_tree(child, &err) : remove_one(child, OP_REMOVE, &err);
+            g_free(child);
+        }
+        if (list != NULL) g_ptr_array_unref(list);
+        if (ok) ok = remove_one(p, OP_RMDIR, &err);
+    }
+    if (!ok) g_propagate_error(error, err);
+    g_free(p);
+    return ok;
+}
+
+gboolean vfs_rename(const gchar* from, const gchar* to, gboolean replace, GError** error) {
+    Job* j = job_new(from, error);
+    if (j == NULL) return FALSE;
+    gchar* rel = NULL;
+    g_mutex_lock(&lock);
+    Mount* m2 = find_mount(to, &rel);
+    g_mutex_unlock(&lock);
+    if (m2 != j->m) {
+        if (m2 != NULL) mount_unref(m2);
+        g_free(rel);
+        job_unref(j);
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                            _("a file can only be renamed on its own machine"));
+        return FALSE;
+    }
+    j->remote2 = vfs_remote_path(m2->root, rel);
+    mount_unref(m2);
+    g_free(rel);
+    j->op = OP_RENAME;
+    j->replace = replace;
+    return plain(j, error);
 }

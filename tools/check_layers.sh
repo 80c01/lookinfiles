@@ -105,7 +105,7 @@ date_bins:
 sunburst_layout:
 dir_summary:file_types,text_encoding,i18n
 dir_scan:file_types,vfs
-file_save:
+file_save:vfs
 editor_stamp:preview_cache
 hex_dump:
 ps_convert:i18n

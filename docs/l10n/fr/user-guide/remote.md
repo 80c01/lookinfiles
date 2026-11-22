@@ -41,7 +41,10 @@ Les dossiers d’une machine connectée sont listés en SFTP, par la connexion
 SSH déjà ouverte (sans nouvelle authentification), plutôt qu’à travers le
 montage ; les fichiers texte sont prévisualisés et ouverts dans l’éditeur de
 la même façon. Un réseau lent fait attendre le listage ou le fichier, pas
-toute la fenêtre.
+toute la fenêtre. L’enregistrement, les nouveaux fichiers et dossiers, les
+renommages et les suppressions passent aussi en SFTP. Une machine distante
+n’a pas de corbeille : y supprimer un fichier ou un dossier (après une
+confirmation qui le dit) est définitif, et `u` ne l’annule pas.
 
 Pendant que vous parcourez une machine connectée, le fil d’Ariane commence
 par une icône de serveur et le nom de la machine, et le bouton **Terminal**

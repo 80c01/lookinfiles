@@ -6,6 +6,7 @@
 #include "widgets/dialog.h"
 #include "editor/editor.h"
 #include "explorer/file_moves.h"
+#include "core/vfs.h"
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -298,8 +299,12 @@ gchar* file_action_new_file(AppData* app) {
         return NULL;
     }
     gchar* full_path = g_build_filename(target_dir, filename, NULL);
-    if (!g_file_test(full_path, G_FILE_TEST_EXISTS)) {
-        g_file_set_contents(full_path, "", 0, NULL);
+    if (!file_moves_exists(full_path)) {
+        GBytes* none = g_bytes_new(NULL, 0);
+        if (!vfs_is_remote(full_path) || !vfs_write(full_path, none, 0644, NULL)) { /* over SFTP when remote */
+            g_file_set_contents(full_path, "", 0, NULL);
+        }
+        g_bytes_unref(none);
     }
 
     if (app->expanded_paths != NULL && g_strcmp0(target_dir, app->base_dir) != 0) {
@@ -326,7 +331,9 @@ gchar* file_action_new_folder(AppData* app) {
         return NULL;
     }
     gchar* new_path = g_build_filename(target_dir, folder_name, NULL);
-    g_mkdir_with_parents(new_path, 0755);
+    if (!vfs_is_remote(new_path) || !vfs_mkdir_with_parents(new_path, 0755, NULL)) { /* over SFTP when remote */
+        g_mkdir_with_parents(new_path, 0755);
+    }
 
     if (app->expanded_paths != NULL) {
         if (g_strcmp0(target_dir, app->base_dir) != 0) {
@@ -359,7 +366,7 @@ gchar* file_action_rename_selected(AppData* app) {
         gchar* new_path = g_build_filename(dir, new_name, NULL);
         if (!is_valid_name(new_name)) {
             show_error(app->window, _("Cannot Rename"), _("A name cannot contain “/” or be “.” or “..”."));
-        } else if (g_file_test(new_path, G_FILE_TEST_EXISTS)) {
+        } else if (file_moves_exists(new_path)) {
             gchar* msg = g_strdup_printf(_("“%s” already exists in this folder."), new_name);
             show_error(app->window, _("Cannot Rename"), msg);
             g_free(msg);
@@ -392,13 +399,31 @@ gchar* file_action_trash_selected(AppData* app) {
     gchar* select_path = NULL;
     gchar* name = g_path_get_basename(path);
     gboolean is_dir = g_file_test(path, G_FILE_TEST_IS_DIR);
-    gchar* message = is_dir ? g_strdup_printf(_("Move the folder “%s” to the trash?"), name)
-                             : g_strdup_printf(_("Move the file “%s” to the trash?"), name);
+    gboolean remote = vfs_is_remote(path); /* no trash there: deleted for good */
+    gchar* message = remote ? (is_dir ? g_strdup_printf(_("Delete the folder “%s” and everything in it for good? "
+                                                          "A remote machine has no trash: this cannot be undone."),
+                                                        name)
+                                      : g_strdup_printf(_("Delete the file “%s” for good? A remote machine has no "
+                                                          "trash: this cannot be undone."),
+                                                        name))
+                     : is_dir ? g_strdup_printf(_("Move the folder “%s” to the trash?"), name)
+                              : g_strdup_printf(_("Move the file “%s” to the trash?"), name);
     gint response = run_dialog(app->window, is_dir ? _("Delete Folder") : _("Delete File"), message,
-                               NULL, FALSE, _("_Move to Trash"), NULL);
+                               NULL, FALSE, remote ? _("_Delete") : _("_Move to Trash"), NULL);
     g_free(message);
 
-    if (response == APP_RESPONSE_OK) {
+    if (response == APP_RESPONSE_OK && remote) {
+        GError* err = NULL;
+        if (!file_moves_delete_remote(app, path, &err)) {
+            gchar* msg = g_strdup_printf(_("Could not delete “%s”: %s"), name,
+                                         err != NULL ? err->message : _("unknown error"));
+            show_error(app->window, _("Cannot Delete"), msg);
+            g_free(msg);
+            g_clear_error(&err);
+        } else {
+            select_path = g_path_get_dirname(path);
+        }
+    } else if (response == APP_RESPONSE_OK) {
         GError* err = NULL;
         if (!file_moves_trash(app, path, &err)) {
             gchar* msg = g_strdup_printf(_("Could not move “%s” to the trash: %s"), name,

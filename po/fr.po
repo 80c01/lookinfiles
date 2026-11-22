@@ -13071,6 +13071,46 @@ msgstr "ce n’est pas un dossier d’une machine distante"
 msgid "the remote machine does not answer"
 msgstr "la machine distante ne répond pas"
 
+#: src/core/vfs.c
+msgid "a file of that name already exists"
+msgstr "un fichier de ce nom existe déjà"
+
+#: src/core/vfs.c
+msgid "the folder of the machine itself cannot be deleted"
+msgstr "le dossier de la machine elle-même ne peut pas être supprimé"
+
+#: src/core/vfs.c
+msgid "a file can only be renamed on its own machine"
+msgstr "un fichier ne peut être renommé que sur sa propre machine"
+
+#: src/explorer/file_moves.c
+#, c-format
+msgid "Deleted “%s”"
+msgstr "« %s » supprimé"
+
+#: src/explorer/file_actions.c
+#, c-format
+msgid "Could not delete “%s”: %s"
+msgstr "Impossible de supprimer « %s » : %s"
+
+#: src/explorer/file_actions.c
+#, c-format
+msgid ""
+"Delete the folder “%s” and everything in it for good? A remote machine has "
+"no trash: this cannot be undone."
+msgstr ""
+"Supprimer définitivement le dossier « %s » et tout son contenu ? Une machine "
+"distante n’a pas de corbeille : c’est irréversible."
+
+#: src/explorer/file_actions.c
+#, c-format
+msgid ""
+"Delete the file “%s” for good? A remote machine has no trash: this cannot be "
+"undone."
+msgstr ""
+"Supprimer définitivement le fichier « %s » ? Une machine distante n’a pas de "
+"corbeille : c’est irréversible."
+
 #: src/explorer/remote_session.c
 #, c-format
 msgid "Cannot open the SSH connection to %s: %s"

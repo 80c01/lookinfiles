@@ -300,6 +300,70 @@ static void test_preview_source(void) {
     g_free(sock);
 }
 
+static void test_write_ops(void) {
+    gchar* sock = fake_master();
+    if (sock == NULL) {
+        g_test_skip("no multiplexing here");
+        return;
+    }
+    gchar* remote = g_build_filename(root, "w-remote", NULL);
+    g_assert_cmpint(g_mkdir(remote, 0755), ==, 0);
+    const gchar* m = "/virtual/w";
+    vfs_mount(m, &TARGET, remote);
+    GError* err = NULL;
+
+    GBytes* text = g_bytes_new_static("saved\n", 6);
+    g_assert_true(vfs_write("/virtual/w/a.txt", text, 0644, &err));
+    g_assert_no_error(err);
+    gchar* on_disk = NULL;
+    gchar* a = g_build_filename(remote, "a.txt", NULL);
+    g_assert_true(g_file_get_contents(a, &on_disk, NULL, NULL));
+    g_assert_cmpstr(on_disk, ==, "saved\n");
+    g_free(on_disk);
+
+    g_assert_true(vfs_mkdir_with_parents("/virtual/w/x/y/z", 0755, &err));
+    g_assert_no_error(err);
+    gchar* z = g_build_filename(remote, "x", "y", "z", NULL);
+    g_assert_true(g_file_test(z, G_FILE_TEST_IS_DIR));
+    g_assert_true(vfs_mkdir_with_parents("/virtual/w/x/y", 0755, &err)); /* already there */
+    g_assert_false(vfs_mkdir_with_parents("/virtual/w/a.txt", 0755, &err)); /* a file */
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_EXISTS);
+    g_clear_error(&err);
+    g_assert_true(vfs_write("/virtual/w/x/y/f", text, 0644, &err));
+
+    g_assert_true(vfs_rename("/virtual/w/a.txt", "/virtual/w/b.txt", FALSE, &err));
+    g_assert_no_error(err);
+    g_assert_false(g_file_test(a, G_FILE_TEST_EXISTS));
+    g_assert_false(vfs_rename("/virtual/w/b.txt", "/elsewhere/b.txt", FALSE, &err));
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
+    g_clear_error(&err);
+
+    g_assert_true(vfs_remove("/virtual/w/b.txt", &err));
+    gchar* x = g_build_filename(remote, "x", NULL);
+    gchar* link = g_build_filename(remote, "x", "y", "to-remote", NULL);
+    g_assert_cmpint(symlink(remote, link), ==, 0); /* removed, not followed */
+    g_assert_true(vfs_delete_tree("/virtual/w/x", &err));
+    g_assert_no_error(err);
+    g_assert_false(g_file_test(x, G_FILE_TEST_EXISTS));
+    g_assert_true(g_file_test(remote, G_FILE_TEST_IS_DIR));
+    g_assert_false(vfs_delete_tree("/virtual/w/none", &err));
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NOT_FOUND);
+    g_clear_error(&err);
+    g_assert_false(vfs_delete_tree("/virtual/w/", &err)); /* never the machine's folder */
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED);
+    g_clear_error(&err);
+    g_assert_true(g_file_test(remote, G_FILE_TEST_IS_DIR));
+
+    vfs_unmount(m);
+    g_bytes_unref(text);
+    g_free(link);
+    g_free(x);
+    g_free(z);
+    g_free(a);
+    g_free(remote);
+    g_free(sock);
+}
+
 int main(int argc, char** argv) {
     if (is_ssh_call(argc, argv)) return serve_stdio();
     g_test_init(&argc, &argv, NULL);
@@ -313,6 +377,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/vfs/threads", test_threads);
     g_test_add_func("/vfs/dir_scan", test_dir_scan);
     g_test_add_func("/vfs/preview_source", test_preview_source);
+    g_test_add_func("/vfs/write_ops", test_write_ops);
     int status = g_test_run();
     vfs_shutdown();
     const gchar* rm_argv[] = { "rm", "-rf", root, runtime, NULL };

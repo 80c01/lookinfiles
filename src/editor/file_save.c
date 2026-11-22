@@ -1,7 +1,9 @@
 /* Saving edited text in place (see file_save.h) */
 #include "editor/file_save.h"
+#include "core/vfs.h"
 
 #include <glib/gstdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #ifndef W_OK
 #define W_OK 2
@@ -29,8 +31,32 @@ static gchar* resolve_links(const gchar* path) {
     return current;
 }
 
+/* A remote machine's file over SFTP; FALSE with *done FALSE when the SFTP
+ * session cannot serve it (the mount is written then) */
+static gboolean save_remote(const gchar* path, const gchar* text, gssize len, gboolean* done, GError** error) {
+    GBytes* bytes = g_bytes_new(text, len >= 0 ? (gsize)len : strlen(text));
+    GError* err = NULL;
+    gboolean ok = vfs_write(path, bytes, 0644, &err); /* links followed, mode kept, atomic */
+    g_bytes_unref(bytes);
+    *done = ok || !vfs_error_is_connection(err);
+    if (ok || !*done) {
+        g_clear_error(&err);
+    } else if (g_error_matches(err, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED)) {
+        g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_ACCES, "%s is read-only", path);
+        g_error_free(err);
+    } else {
+        g_propagate_error(error, err);
+    }
+    return ok;
+}
+
 gboolean file_save_text(const gchar* path, const gchar* text, gssize len, GError** error) {
     g_return_val_if_fail(path != NULL && text != NULL, FALSE);
+    if (vfs_is_remote(path)) {
+        gboolean done = FALSE;
+        gboolean ok = save_remote(path, text, len, &done, error);
+        if (done) return ok;
+    }
     gchar* target = resolve_links(path);
     int mode = 0666;
     GStatBuf st;

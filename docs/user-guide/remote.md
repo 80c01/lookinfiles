@@ -38,7 +38,10 @@ by default). **Save & Connect** connects right away.
 The folders of a connected machine are listed over SFTP, through the SSH
 connection already open (no new login), rather than through the mount; text
 files are previewed and opened in the editor the same way. A slow network
-makes the listing or the file wait, not the whole window.
+makes the listing or the file wait, not the whole window. Saving, new files
+and folders, renames and deletes go over SFTP too. A remote machine has no
+trash: deleting a file or a folder there (after a confirmation that says
+so) is for good, and cannot be undone with `u`.
 
 While you browse a connected machine, the breadcrumbs start with a server icon and
 the machine's name, and the **Terminal** button of the top bar opens an SSH

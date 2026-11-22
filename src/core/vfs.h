@@ -6,8 +6,10 @@
  * shown as machine:path by remote_path.h), and what is below that path is
  * read over SFTP (sftp_client.h), one connection per machine through its
  * master connection. The SFTP clients live on a thread of their own, so
- * the calls here are synchronous (at most a minute), for worker threads
- * (dir_scan): on the main thread they would freeze the interface.
+ * the calls here are synchronous (at most a minute): reads are for worker
+ * threads (dir_scan, previews); the writes asked by the user (save, new
+ * folder, rename, delete) run on the main thread, which waits for them as
+ * it waited for the mount, with a limit now.
  * GIO only, no widgets; unit-tested with the test's SFTP server as ssh. */
 #include "core/ssh_session.h"
 
@@ -52,6 +54,23 @@ gboolean vfs_stat(const gchar* path, VfsEntry* e, GCancellable* cancel, GError**
 /* The first max bytes of the remote file at path (G_MAXUINT64: all of it);
  * *size (may be NULL) gets the file's size. NULL with error as vfs_list(). */
 GBytes* vfs_read(const gchar* path, guint64 max, guint64* size, GCancellable* cancel, GError** error);
+
+/* Write contents to the remote file at path, safely (sftp_client_write_async():
+ * a temporary file renamed over it, the old mode kept; a new file gets
+ * mode); a link stays a link. FALSE with error as vfs_list(). */
+gboolean vfs_write(const gchar* path, GBytes* contents, guint32 mode, GError** error);
+/* Make the remote folder path */
+gboolean vfs_mkdir(const gchar* path, guint32 mode, GError** error);
+/* Make path and the folders above it that are missing (below the mount) */
+gboolean vfs_mkdir_with_parents(const gchar* path, guint32 mode, GError** error);
+/* Remove the remote file (or link) at path */
+gboolean vfs_remove(const gchar* path, GError** error);
+/* Remove path and, for a folder, everything in it (links are removed, not
+ * followed). No trash on a remote machine: this cannot be undone. */
+gboolean vfs_delete_tree(const gchar* path, GError** error);
+/* Rename from to to (both on the same machine); never over an existing
+ * file unless replace */
+gboolean vfs_rename(const gchar* from, const gchar* to, gboolean replace, GError** error);
 
 /* Whether error says the SFTP session could not serve the call (no master
  * connection, lost, no answer) rather than the server's answer about the

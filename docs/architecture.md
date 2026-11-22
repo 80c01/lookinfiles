@@ -92,11 +92,14 @@ Layers, from bottom to top
   limit, for worker threads (`dir_scan`); links to folders are followed.
   `vfs_stat()`, `vfs_read()`; `vfs_error_is_connection()` tells a session
   that could not serve (callers then read the mount) from the server's
-  answer. Unit-tested with the test program as `ssh` serving SFTP. Through
-  it so far: listings, text and hex previews, folder previews and READMEs,
-  opening in the editor. Still on the mount: formats that open the file by
-  path (images, PDF, archives, media...), saving, file operations, the
-  editor's disk-change watch.
+  answer. Writes: `vfs_write()`, `vfs_mkdir()` (`_with_parents()`),
+  `vfs_remove()`, `vfs_delete_tree()` (never the machine's folder itself),
+  `vfs_rename()`; the user's writes wait on the main thread (bounded).
+  Unit-tested with the test program as `ssh` serving SFTP. Through it so
+  far: listings, text and hex previews, folder previews and READMEs, opening
+  in the editor, saving, new file and folder, rename, delete. Still on the
+  mount: formats that open the file by path (images, PDF, archives,
+  media...), the editor's disk-change watch, copy and drag and drop.
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -505,7 +508,8 @@ Layers, from bottom to top
   need (`latex_root_engine()`), the candidate that `\input`s / `\include`s a
   chapter (`latex_root_choose()`).
 - `file_save` — `file_save_text()`: edited text written in place (the target
-  of a symbolic link, permissions kept, read-only files refused, atomic).
+  of a symbolic link, permissions kept, read-only files refused, atomic);
+  a remote machine's file over SFTP (`vfs_write()`).
 - `editor_stamp` — `EditorStamp` over `preview_cache`'s `FileStamp`:
   distinguishes unread, missing and existing files (`editor_stamp_read()`,
   `_equal()`, `_changed()`), used by `editor_watch` to detect external disk
@@ -957,7 +961,9 @@ Layers, from bottom to top
   `git_tab_show_history()`).
 - `file_moves` — renames and moves to the trash with editor tabs and
   expansion following, remembered for one undo step (`u`, explorer bar Undo
-  after the `app_notice()` message).
+  after the `app_notice()` message). On a remote machine renames go over
+  SFTP (`vfs_rename()`) and a delete is for good (`file_moves_delete_remote()`,
+  `vfs_delete_tree()`: no trash there, not undone); `file_moves_exists()`.
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
   `remote_store`; the master connection, password dialogs, sshfs mount

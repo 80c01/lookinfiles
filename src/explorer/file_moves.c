@@ -4,6 +4,7 @@
 #include "editor/editor_modes.h"
 #include "editor/editor_watch.h"
 #include "core/i18n.h"
+#include "core/vfs.h"
 #include "explorer/trash_restore.h"
 
 #include <errno.h>
@@ -63,15 +64,42 @@ static void retarget_editor_tabs(AppData* app, const gchar* old_path, const gcha
     }
 }
 
+gboolean file_moves_exists(const gchar* path) {
+    if (vfs_is_remote(path)) {
+        GError* err = NULL;
+        gboolean found = vfs_stat(path, NULL, NULL, &err);
+        gboolean answered = found || !vfs_error_is_connection(err);
+        g_clear_error(&err);
+        if (answered) return found || g_file_test(path, G_FILE_TEST_IS_SYMLINK); /* a dangling link too */
+    }
+    return g_file_test(path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_SYMLINK);
+}
+
+/* A remote rename over SFTP; FALSE with *done FALSE when the SFTP session
+ * cannot serve it (the mount is used then) */
+static gboolean rename_remote(const gchar* from, const gchar* to, gboolean* done, GError** error) {
+    GError* err = NULL;
+    gboolean ok = vfs_rename(from, to, FALSE, &err);
+    *done = ok || !vfs_error_is_connection(err);
+    if (!ok && *done) {
+        g_propagate_error(error, err);
+    } else {
+        g_clear_error(&err);
+    }
+    return ok;
+}
+
 /* Plain move, the tabs and the expansion following */
 static gboolean move_path(AppData* app, const gchar* from, const gchar* to, GError** error) {
-    if (g_file_test(to, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_SYMLINK)) {
+    if (file_moves_exists(to)) {
         gchar* name = g_path_get_basename(to);
         g_set_error(error, G_IO_ERROR, G_IO_ERROR_EXISTS, "“%s” already exists", name);
         g_free(name);
         return FALSE;
     }
-    if (g_rename(from, to) != 0) {
+    gboolean done = FALSE;
+    if (vfs_is_remote(from) && !rename_remote(from, to, &done, error) && done) return FALSE;
+    if (!done && g_rename(from, to) != 0) {
         int saved = errno;
         g_set_error(error, G_IO_ERROR, g_io_error_from_errno(saved), "%s", g_strerror(saved));
         return FALSE;
@@ -109,6 +137,18 @@ gboolean file_moves_trash(AppData* app, const gchar* path, GError** error) {
     gchar* name = g_path_get_basename(path);
     gchar* msg = g_strdup_printf(_("Moved “%s” to the trash"), name);
     app_notice(app, msg, TRUE);
+    g_free(msg);
+    g_free(name);
+    return TRUE;
+}
+
+gboolean file_moves_delete_remote(AppData* app, const gchar* path, GError** error) {
+    if (!vfs_delete_tree(path, error)) {
+        return FALSE;
+    }
+    gchar* name = g_path_get_basename(path);
+    gchar* msg = g_strdup_printf(_("Deleted “%s”"), name);
+    app_notice(app, msg, FALSE);
     g_free(msg);
     g_free(name);
     return TRUE;
