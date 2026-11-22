@@ -138,8 +138,8 @@ APP_CFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 ifeq ($(OS),Windows_NT)
 EXE = .exe
 # -mwindows suppresses the background cmd terminal window in release builds
+# (added to ALL_LDFLAGS below, once it is defined)
 WINDOWS_SUBSYSTEM ?= -mwindows
-ALL_LDFLAGS += $(WINDOWS_SUBSYSTEM)
 # System Monitor (sysstat_host.c): network table, process memory, accounts
 LIBS += -liphlpapi -lpsapi -ladvapi32
 else
@@ -151,6 +151,9 @@ BUILD_DIR = build
 
 ALL_CFLAGS = $(APP_CFLAGS) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_EXTRA)
 ALL_LDFLAGS = $(CFLAGS) $(CFLAGS_EXTRA) $(LDFLAGS)
+ifeq ($(OS),Windows_NT)
+ALL_LDFLAGS += $(WINDOWS_SUBSYSTEM)
+endif
 
 # Everything is rebuilt when the compiler flags change: the stamp file is
 # rewritten (and gets newer than the objects) only when they differ.
