@@ -40,7 +40,9 @@ lists what does not, or not fully, to come back to later.
   slow or broken connection.
 - **Windows**: without ssh multiplexing, each new SFTP session or remote
   command may ask for the password again (no secret reuse); a key with
-  ssh-agent avoids it. Nothing has been tried on Windows yet.
+  ssh-agent avoids it. The real fix, one libssh connection per machine
+  carrying every channel, is planned in
+  [remote-libssh.md](remote-libssh.md).
 
 ## Beyond remote machines
 

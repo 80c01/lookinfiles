@@ -27,6 +27,8 @@ More detail, read when the task touches it:
   language.
 - [docs/remote-todo.md](docs/remote-todo.md): what remote machines do not
   do yet (LaTeX, Open With Default App) and their known limits.
+- [docs/remote-libssh.md](docs/remote-libssh.md): plan (not started) for one
+  libssh connection per machine on Windows, instead of a login per command.
 
 ## Build and test
 
