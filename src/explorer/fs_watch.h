@@ -3,7 +3,9 @@
 
 /* Filesystem watching for the explorer and the preview. Changes are reported
  * after a 150 ms debounce as APP_EVENT_FILES_CHANGED (directory contents),
- * APP_EVENT_GIT_STATUS_CHANGED (.git) and APP_EVENT_PREVIEW_STALE (viewed file). */
+ * APP_EVENT_GIT_STATUS_CHANGED (.git) and APP_EVENT_PREVIEW_STALE (viewed file).
+ * A remote machine's folders and file, which no monitor sees, have their
+ * date polled over SFTP (vfs_watch.h). */
 #include "core/app_types.h"
 
 /* Watch base_dir and every expanded directory (app->expanded_paths) */

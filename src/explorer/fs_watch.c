@@ -6,11 +6,15 @@
 #include "core/app_events.h"
 #include "git/git_utils.h"
 #include "git/git_tab.h"
+#include "core/vfs.h"
+#include "core/vfs_watch.h"
 
 /* Private to this file */
 struct FsWatch {
     GHashTable* dir_monitors;        /* watched directories: full_path -> GFileMonitor* */
+    GHashTable* remote_dirs;         /* a remote machine's ones: full_path -> VfsWatch* (polled) */
     GFileMonitor* file_monitor;      /* file shown in the preview */
+    VfsWatch* remote_file;           /* the same for a remote file */
     GFileMonitor* git_monitor;       /* .git directory of base_dir */
     GFileMonitor* git_heads_monitor; /* .git/refs/heads (local branches) */
     GFileMonitor* git_tags_monitor;  /* .git/refs/tags (tags) */
@@ -25,6 +29,8 @@ static struct FsWatch* watch_get(AppData* app) {
         app->fs_watch = g_new0(struct FsWatch, 1);
         app->fs_watch->dir_monitors =
             g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+        app->fs_watch->remote_dirs =
+            g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)vfs_watch_free);
     }
     return app->fs_watch;
 }
@@ -263,12 +269,29 @@ static void sync_git_monitor(AppData* app) {
     w->git_tags_monitor = watch_git_subdir(app, git_dir, "refs/tags");
 }
 
+/* A remote folder's date changed: an entry came, went or was renamed */
+static void on_remote_dir_changed(gpointer data) {
+    AppData* app = data;
+    watch_get(app)->dir_dirty = TRUE;
+    schedule_refresh(app);
+}
+
+static void on_remote_file_changed(gpointer data) {
+    AppData* app = data;
+    app->file_dirty = TRUE;
+    schedule_refresh(app);
+}
+
 static void add_single_dir_monitor(AppData* app, const gchar* path) {
     if (app == NULL || path == NULL || path[0] == '\0') {
         return;
     }
     struct FsWatch* w = watch_get(app);
-    if (g_hash_table_contains(w->dir_monitors, path)) {
+    if (g_hash_table_contains(w->dir_monitors, path) || g_hash_table_contains(w->remote_dirs, path)) {
+        return;
+    }
+    if (vfs_is_remote(path)) { /* no monitor sees a remote change: its date is polled */
+        g_hash_table_insert(w->remote_dirs, g_strdup(path), vfs_watch_new(path, on_remote_dir_changed, app));
         return;
     }
     if (!g_file_test(path, G_FILE_TEST_IS_DIR)) {
@@ -294,6 +317,8 @@ void fs_watch_free(AppData* app) {
     g_clear_handle_id(&w->refresh_source, g_source_remove);
     stop_git_monitor(w);
     cancel_monitor(&w->file_monitor);
+    g_clear_pointer(&w->remote_file, vfs_watch_free);
+    g_hash_table_destroy(w->remote_dirs);
     GHashTableIter iter;
     gpointer value;
     g_hash_table_iter_init(&iter, w->dir_monitors);
@@ -358,15 +383,20 @@ void sync_directory_monitors(AppData* app) {
         }
     }
 
+    g_hash_table_iter_init(&miter, w->remote_dirs);
+    while (g_hash_table_iter_next(&miter, &mkey, NULL)) {
+        if (!g_hash_table_contains(needed, mkey)) {
+            g_hash_table_iter_remove(&miter);
+        }
+    }
+
     /* Add monitors for any needed paths not yet monitored */
     GHashTableIter niter;
     gpointer nkey, nvalue;
     g_hash_table_iter_init(&niter, needed);
     while (g_hash_table_iter_next(&niter, &nkey, &nvalue)) {
         const gchar* np = (const gchar*)nkey;
-        if (!g_hash_table_contains(w->dir_monitors, np)) {
-            add_single_dir_monitor(app, np);
-        }
+        add_single_dir_monitor(app, np);
     }
 
     g_hash_table_destroy(needed);
@@ -380,7 +410,10 @@ void monitor_directory(AppData* app) {
 void monitor_file(AppData* app, const char* path) {
     struct FsWatch* w = watch_get(app);
     cancel_monitor(&w->file_monitor);
-    if (path != NULL) {
+    g_clear_pointer(&w->remote_file, vfs_watch_free);
+    if (path != NULL && vfs_is_remote(path)) {
+        w->remote_file = vfs_watch_new(path, on_remote_file_changed, app);
+    } else if (path != NULL) {
         GFile* f = g_file_new_for_path(path);
         GError* err = NULL;
         w->file_monitor = g_file_monitor(f, G_FILE_MONITOR_NONE, NULL, &err);

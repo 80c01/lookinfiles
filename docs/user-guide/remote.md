@@ -50,7 +50,10 @@ first). Videos and sounds still play through the mount.
 
 A file of a remote machine open in the editor is checked for changes made
 on the machine every 3 seconds, over SFTP: the editor then reacts as for a
-local file (reload, warning or banner, depending on its mode).
+local file (reload, warning or banner, depending on its mode). The same
+way, the folders shown in the explorer and the previewed file are checked
+every 3 seconds: files created, removed or renamed on the machine appear
+in the explorer within that time.
 
 While you browse a connected machine, the breadcrumbs start with a server icon and
 the machine's name, and the **Terminal** button of the top bar opens an SSH

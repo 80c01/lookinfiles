@@ -297,7 +297,7 @@ explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths,notebook_icons,remote_mounts,ssh_session
 remote_path:app_types,remote_store,ssh_session
 preview_summary:app_types,remote_store,explorer_row,note_types,canvas_doc,deep_search_store,file_types,i18n
-fs_watch:app_types,app_events,git_utils,git_tab,preview_state
+fs_watch:app_types,app_events,git_utils,git_tab,preview_state,vfs,vfs_watch
 preview_state:app_types
 git_state:
 "

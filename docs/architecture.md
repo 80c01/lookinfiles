@@ -113,7 +113,9 @@ Layers, from bottom to top
   worker thread and calls back on the main thread when it changed; the last
   stamp read of each path is kept (`vfs_watch_stamp()`, no wait;
   `vfs_watch_forget()` before recording one). Used by `editor_stamp` and
-  `editor_watch` (unit-tested).
+  `editor_watch`, and by `fs_watch` for the explorer's remote folders (a
+  folder's date changes when an entry comes, goes or is renamed) and the
+  previewed remote file (unit-tested).
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -875,7 +877,8 @@ Layers, from bottom to top
   (unit-tested).
 - `fs_watch` — `GFileMonitor`s on expanded directories, the previewed file and
   `.git`, debounced `schedule_refresh()` (state in a private `struct FsWatch`,
-  `fs_watch_free()` at exit); reports through events only.
+  `fs_watch_free()` at exit); reports through events only. A remote
+  machine's folders and previewed file get a `VfsWatch` instead (polled).
 - `diff_gutter` — left gutter of a text view: line numbers
   (`diff_gutter_set_line_numbers()`: code previews, editor toggle `Ctrl+Alt+N`)
   and git change bars

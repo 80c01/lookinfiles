@@ -55,7 +55,10 @@ montage.
 Un fichier d’une machine distante ouvert dans l’éditeur est vérifié toutes
 les 3 secondes, en SFTP, pour les modifications faites sur la machine :
 l’éditeur réagit alors comme pour un fichier local (rechargement,
-avertissement ou bandeau, selon son mode).
+avertissement ou bandeau, selon son mode). De la même façon, les dossiers
+affichés dans l’explorateur et le fichier prévisualisé sont vérifiés toutes
+les 3 secondes : les fichiers créés, supprimés ou renommés sur la machine
+apparaissent dans l’explorateur dans ce délai.
 
 Pendant que vous parcourez une machine connectée, le fil d’Ariane commence
 par une icône de serveur et le nom de la machine, et le bouton **Terminal**
