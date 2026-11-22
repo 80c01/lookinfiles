@@ -46,6 +46,12 @@ renommages et les suppressions passent aussi en SFTP. Une machine distante
 n’a pas de corbeille : y supprimer un fichier ou un dossier (après une
 confirmation qui le dit) est définitif, et `u` ne l’annule pas.
 
+Les images, PDF, archives et documents sont copiés en SFTP dans le dossier
+de cache (`~/.cache/lookinfiles/remote-files`) pour être prévisualisés, une
+fois par version du fichier (64 Mo au plus chacun, 512 Mo en tout, les plus
+anciens retirés d’abord). Les vidéos et les sons passent encore par le
+montage.
+
 Pendant que vous parcourez une machine connectée, le fil d’Ariane commence
 par une icône de serveur et le nom de la machine, et le bouton **Terminal**
 de la barre du haut ouvre un terminal SSH vers elle au lieu d’un shell

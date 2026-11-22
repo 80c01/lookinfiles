@@ -65,6 +65,7 @@ ssh_askpass:ssh_session
 sftp_proto:i18n
 sftp_client:sftp_proto,ssh_session,i18n
 vfs:sftp_client,sftp_proto,ssh_session,i18n
+vfs_cache:vfs,app_paths,i18n
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table

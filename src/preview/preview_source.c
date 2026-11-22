@@ -2,10 +2,14 @@
 #include "preview/preview_source.h"
 #include "core/app_types.h"
 #include "core/vfs.h"
+#include "core/vfs_cache.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>
 #include <string.h>
+
+#define COPY_MAX_BYTES (64 * 1024 * 1024)   /* larger files: the mount */
+#define CACHE_MAX_BYTES (512 * 1024 * 1024) /* the copies kept, in all */
 
 struct PreviewSource {
     FILE* fp;     /* a local file (or the mount) */
@@ -66,4 +70,17 @@ void preview_source_close(PreviewSource* src) {
     if (src->fp != NULL) fclose(src->fp);
     if (src->mem != NULL) g_bytes_unref(src->mem);
     g_free(src);
+}
+
+gchar* preview_source_local(const gchar* path, GCancellable* cancel) {
+    if (path == NULL || !vfs_is_remote(path)) return NULL;
+    GError* error = NULL;
+    gchar* local = vfs_cache_copy(path, COPY_MAX_BYTES, cancel, &error);
+    if (local == NULL) {
+        g_debug("no local copy of %s: %s; reading the mount", path, error->message);
+        g_error_free(error);
+        return NULL;
+    }
+    vfs_cache_trim(CACHE_MAX_BYTES);
+    return local;
 }

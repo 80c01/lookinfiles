@@ -5,6 +5,7 @@
 #include "core/vfs.h"
 #include "explorer/dir_scan.h"
 #include "preview/preview_source.h"
+#include "core/vfs_cache.h"
 #include "sftp_test_server.h"
 
 #include <glib/gstdio.h>
@@ -364,6 +365,76 @@ static void test_write_ops(void) {
     g_free(sock);
 }
 
+static void test_cache(void) {
+    gchar* sock = fake_master();
+    if (sock == NULL) {
+        g_test_skip("no multiplexing here");
+        return;
+    }
+    gchar* remote = g_build_filename(root, "c-remote", NULL);
+    g_assert_cmpint(g_mkdir(remote, 0755), ==, 0);
+    gchar* rf = g_build_filename(remote, "pic.png", NULL);
+    g_assert_true(g_file_set_contents(rf, "first", -1, NULL));
+    vfs_mount("/virtual/c", &TARGET, remote);
+    GError* err = NULL;
+
+    gchar* local = vfs_cache_copy("/virtual/c/pic.png", 1000, NULL, &err);
+    g_assert_no_error(err);
+    g_assert_true(g_str_has_suffix(local, "/pic.png")); /* its own name: readers go by the extension */
+    gchar* text = NULL;
+    g_assert_true(g_file_get_contents(local, &text, NULL, NULL));
+    g_assert_cmpstr(text, ==, "first");
+    g_free(text);
+
+    /* The same file: the copy is used again (marked to see it) */
+    g_assert_true(g_file_set_contents(local, "kept!", -1, NULL));
+    gchar* again = vfs_cache_copy("/virtual/c/pic.png", 1000, NULL, &err);
+    g_assert_cmpstr(again, ==, local);
+    g_assert_true(g_file_get_contents(again, &text, NULL, NULL));
+    g_assert_cmpstr(text, ==, "kept!");
+    g_free(text);
+    g_free(again);
+
+    /* Changed: copied again */
+    g_assert_true(g_file_set_contents(rf, "second version", -1, NULL));
+    again = vfs_cache_copy("/virtual/c/pic.png", 1000, NULL, &err);
+    g_assert_true(g_file_get_contents(again, &text, NULL, NULL));
+    g_assert_cmpstr(text, ==, "second version");
+    g_free(text);
+    g_free(again);
+
+    g_assert_null(vfs_cache_copy("/virtual/c/pic.png", 3, NULL, &err));
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NO_SPACE);
+    g_clear_error(&err);
+    g_assert_null(vfs_cache_copy("/virtual/c/none", 1000, NULL, &err));
+    g_assert_error(err, G_IO_ERROR, G_IO_ERROR_NOT_FOUND);
+    g_clear_error(&err);
+
+    /* Preview: a copy for a remote file, nothing for a local one */
+    gchar* via = preview_source_local("/virtual/c/pic.png", NULL);
+    g_assert_cmpstr(via, ==, local);
+    g_free(via);
+    g_assert_null(preview_source_local(rf, NULL));
+
+    /* Trim: the oldest go first */
+    gchar* rf2 = g_build_filename(remote, "b.bin", NULL);
+    g_assert_true(g_file_set_contents(rf2, "0123456789", -1, NULL));
+    gchar* local2 = vfs_cache_copy("/virtual/c/b.bin", 1000, NULL, &err);
+    g_assert_nonnull(local2);
+    g_assert_cmpuint(vfs_cache_trim(G_MAXUINT64), ==, 0);
+    g_assert_cmpuint(vfs_cache_trim(0), ==, 2);
+    g_assert_false(g_file_test(local, G_FILE_TEST_EXISTS));
+    g_assert_false(g_file_test(local2, G_FILE_TEST_EXISTS));
+
+    vfs_unmount("/virtual/c");
+    g_free(local2);
+    g_free(rf2);
+    g_free(local);
+    g_free(rf);
+    g_free(remote);
+    g_free(sock);
+}
+
 int main(int argc, char** argv) {
     if (is_ssh_call(argc, argv)) return serve_stdio();
     g_test_init(&argc, &argv, NULL);
@@ -371,6 +442,7 @@ int main(int argc, char** argv) {
     ssh_session_set_program(program);
     gchar* runtime = g_dir_make_tmp("vfs-run-XXXXXX", NULL);
     g_setenv("XDG_RUNTIME_DIR", runtime, TRUE); /* the sockets' folder */
+    g_setenv("XDG_CACHE_HOME", runtime, TRUE);   /* the copies' */
     root = g_dir_make_tmp("vfs-XXXXXX", NULL);
     g_test_add_func("/vfs/remote_path", test_remote_path);
     g_test_add_func("/vfs/list", test_list);
@@ -378,6 +450,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/vfs/dir_scan", test_dir_scan);
     g_test_add_func("/vfs/preview_source", test_preview_source);
     g_test_add_func("/vfs/write_ops", test_write_ops);
+    g_test_add_func("/vfs/cache", test_cache);
     int status = g_test_run();
     vfs_shutdown();
     const gchar* rm_argv[] = { "rm", "-rf", root, runtime, NULL };

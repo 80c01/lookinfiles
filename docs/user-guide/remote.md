@@ -43,6 +43,11 @@ and folders, renames and deletes go over SFTP too. A remote machine has no
 trash: deleting a file or a folder there (after a confirmation that says
 so) is for good, and cannot be undone with `u`.
 
+Images, PDFs, archives and documents are copied over SFTP into the cache
+folder (`~/.cache/lookinfiles/remote-files`) to be previewed, once per
+version of the file (up to 64 MB each, 512 MB in all, the oldest removed
+first). Videos and sounds still play through the mount.
+
 While you browse a connected machine, the breadcrumbs start with a server icon and
 the machine's name, and the **Terminal** button of the top bar opens an SSH
 terminal to it instead of a local shell.

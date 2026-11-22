@@ -1,5 +1,6 @@
 #include "preview/viewer.h"
 #include "preview/preview_source.h"
+#include "preview/preview_media.h"
 #include "core/profile.h"
 #include "core/memory_trim.h"
 #include "preview/preview_state.h"
@@ -279,6 +280,7 @@ typedef struct {
     AppData* app;
     gchar* name;
     gchar* full;
+    gchar* local; /* a remote file's local copy, for the readers that open a path */
     gboolean render_raw;
     gboolean whole;        /* read to the end, whatever the size (Load Whole File) */
     guint page;            /* PreviewInput.page */
@@ -314,6 +316,7 @@ static void text_preview_task_data_free(gpointer data) {
     }
     g_free(td->name);
     g_free(td->full);
+    g_free(td->local);
     g_free(td->content_type);
     g_free(td->utf8_text);
     preview_doc_free(td->doc);
@@ -372,6 +375,9 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     };
 
     if (file_kind_is_media(td->kind)) {
+        if (td->kind != FILE_KIND_VIDEO && td->kind != FILE_KIND_AUDIO) { /* players stream the mount */
+            td->local = preview_source_local(td->full, cancellable);
+        }
         preview_source_close(fp);
         g_free(contents);
         g_task_return_boolean(task, TRUE);
@@ -385,6 +391,8 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
          * first PREVIEW_BYTES only, whatever the file size */
         GError* err = NULL;
         if (structured) {
+            td->local = preview_source_local(td->full, cancellable); /* remote: a copy to open */
+            input.path = td->local != NULL ? td->local : td->full;
             td->doc = preview_format_build(&input, cancellable, &err);
         }
         if (td->doc == NULL) {
@@ -478,32 +486,6 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
 }
 
 /* Show a file in a media viewer (main thread) */
-static void show_media_preview(AppData* app, FileKind kind, const gchar* name, const gchar* full) {
-    if (kind == FILE_KIND_AUDIO) {
-        video_preview_stop(app);
-        render_audio_preview(app, name, full);
-        return;
-    }
-    if (kind == FILE_KIND_VIDEO) {
-        audio_preview_stop(app);
-        render_video_preview(app, name, full);
-        return;
-    }
-    /* Leave the player page before stopping it (its controls must not be
-     * redrawn unallocated) */
-    if (app->preview_stack != NULL) {
-        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
-    }
-    audio_preview_stop(app);
-    video_preview_stop(app);
-    if (kind == FILE_KIND_PDF) {
-        render_pdf_preview(app, name, full);
-    } else {
-        render_image_preview(app, name, full);
-        image_prefetch_neighbours(app);
-    }
-}
-
 static void show_text_preview(TextPreviewTaskData* td);
 
 /* Previews already built (the worker's results), shown again at once when a
@@ -683,17 +665,10 @@ static void show_text_preview(TextPreviewTaskData* td) {
     }
 
     if (file_kind_is_media(td->kind)) {
-        show_media_preview(app, td->kind, td->name, td->full);
+        preview_media_show(app, td->kind, td->name, td->local != NULL ? td->local : td->full);
         return;
     }
-
-    /* Leave the player page before stopping it (its controls must not be
-     * redrawn unallocated) */
-    if (app->preview_stack != NULL) {
-        gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
-    }
-    audio_preview_stop(app);
-    video_preview_stop(app);
+    preview_media_leave_players(app);
 
     preview_sync_showing(app, td->full, td->md, td->error_msg == NULL && (td->doc == NULL || !td->doc->scroll_to_end));
     search_forget_viewer_match(app);
@@ -1099,13 +1074,7 @@ static void show_selected_row(AppData* app) {
         summary = g_strdup_printf(_("%s\n%s\n\n(waiting for the file system…)\n"), name, full);
     }
     if (is_remote || summary != NULL || summary_lines != NULL) {
-        /* Leave the player page before stopping it (its controls must not be
-         * redrawn unallocated) */
-        if (app->preview_stack != NULL) {
-            gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
-        }
-        audio_preview_stop(app);
-        video_preview_stop(app);
+        preview_media_leave_players(app);
         if (app->preview_cancellable != NULL) {
             g_cancellable_cancel(app->preview_cancellable);
             g_clear_object(&app->preview_cancellable);
@@ -1166,13 +1135,7 @@ static void show_selected_row(AppData* app) {
     }
 
     if (as_dir) {
-        /* Leave the player page before stopping it (its controls must not be
-         * redrawn unallocated) */
-        if (app->preview_stack != NULL) {
-            gtk_stack_set_visible_child_name(GTK_STACK(app->preview_stack), "text");
-        }
-        audio_preview_stop(app);
-        video_preview_stop(app);
+        preview_media_leave_players(app);
         dir_preview_show(app, name, full);
     } else {
         /* If there's an open editor tab for this file with modified/buffered content, flush it */

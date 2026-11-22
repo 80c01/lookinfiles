@@ -97,9 +97,16 @@ Layers, from bottom to top
   `vfs_rename()`; the user's writes wait on the main thread (bounded).
   Unit-tested with the test program as `ssh` serving SFTP. Through it so
   far: listings, text and hex previews, folder previews and READMEs, opening
-  in the editor, saving, new file and folder, rename, delete. Still on the
-  mount: formats that open the file by path (images, PDF, archives,
-  media...), the editor's disk-change watch, copy and drag and drop.
+  in the editor, saving, new file and folder, rename, delete, and (through
+  `vfs_cache`) the previews that open a file by path. Still on the mount:
+  video and audio, the editor's disk-change watch, copy and drag and drop.
+- `vfs_cache` — local copies of remote files for the readers that open a
+  path (image decoders, poppler, archive and database readers):
+  `vfs_cache_copy()` reads the file over SFTP once into
+  `app_cache_dir()/remote-files/<hash>/<name>` (its own name: readers go by
+  the extension) and uses it again while the remote size and date stay the
+  same; `vfs_cache_trim()` removes the least recently used copies past a
+  total size (unit-tested).
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
@@ -528,6 +535,11 @@ Layers, from bottom to top
   `fopen()`, or `vfs_read()` for a remote machine's file (the first
   `PREVIEW_BYTES`, or all of it), and its stamp (`vfs_stat()`); the mount
   when the SFTP session cannot serve. Used by `viewer` and `dir_preview`.
+  `preview_source_local()`: a remote file's local copy (`vfs_cache`, up to
+  64 MB, 512 MB of copies kept) for the images, PDFs and structured previews
+  that open a path.
+- `preview_media` — media previews (`preview_media_show()`: image, PDF,
+  video, audio) and `preview_media_leave_players()` before a text preview.
 - `preview_cache` — bounded most-recently-used cache of previews built,
   keyed by file and settings, with the file's stamp (size, mtime, inode).
 - `path_kind` — whether a path is a folder, a file or missing, read in a

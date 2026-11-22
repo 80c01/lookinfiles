@@ -13071,6 +13071,18 @@ msgstr "ce n’est pas un dossier d’une machine distante"
 msgid "the remote machine does not answer"
 msgstr "la machine distante ne répond pas"
 
+#: src/core/vfs_cache.c
+msgid "a folder, not a file"
+msgstr "un dossier, pas un fichier"
+
+#: src/core/vfs_cache.c
+msgid "the file is too large to copy"
+msgstr "le fichier est trop volumineux pour être copié"
+
+#: src/core/vfs_cache.c
+msgid "the cache folder cannot be made"
+msgstr "le dossier de cache ne peut pas être créé"
+
 #: src/core/vfs.c
 msgid "a file of that name already exists"
 msgstr "un fichier de ce nom existe déjà"
