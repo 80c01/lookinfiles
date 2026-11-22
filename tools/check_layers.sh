@@ -62,6 +62,8 @@ app_paths:
 remote_mounts:app_paths
 ssh_session:app_paths,i18n
 ssh_askpass:ssh_session
+sftp_proto:i18n
+sftp_client:sftp_proto,ssh_session,i18n
 i18n:
 file_types:text_encoding,i18n
 file_type_icons:file_type_icons_table

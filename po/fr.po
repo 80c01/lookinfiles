@@ -13015,9 +13015,49 @@ msgstr "Impossible de lire les statistiques de %s : %s"
 msgid "Reading the statistics of %s…"
 msgstr "Lecture des statistiques de %s…"
 
-#: src/core/ssh_session.c
+#: src/core/ssh_session.c src/core/sftp_client.c
 msgid "the SSH connection to the machine is not open"
 msgstr "la connexion SSH à la machine n’est pas ouverte"
+
+#: src/core/sftp_proto.c
+msgid "the remote operation failed"
+msgstr "l’opération distante a échoué"
+
+#: src/core/sftp_proto.c
+msgid "no such file or folder"
+msgstr "fichier ou dossier introuvable"
+
+#: src/core/sftp_proto.c
+msgid "permission denied"
+msgstr "permission refusée"
+
+#: src/core/sftp_proto.c
+msgid "the remote machine does not support this operation"
+msgstr "la machine distante ne prend pas en charge cette opération"
+
+#: src/core/sftp_proto.c
+msgid "the connection to the remote machine was lost"
+msgstr "la connexion à la machine distante a été perdue"
+
+#: src/core/sftp_proto.c
+msgid "end of file"
+msgstr "fin de fichier"
+
+#: src/core/sftp_client.c
+msgid "the connection to the remote machine was closed"
+msgstr "la connexion à la machine distante a été fermée"
+
+#: src/core/sftp_client.c
+msgid "the remote machine sent a reply that makes no sense"
+msgstr "la machine distante a envoyé une réponse incohérente"
+
+#: src/core/sftp_client.c
+msgid "the remote machine speaks an older SFTP version"
+msgstr "la machine distante parle une version de SFTP trop ancienne"
+
+#: src/core/sftp_client.c
+msgid "the file is too large to read"
+msgstr "le fichier est trop volumineux pour être lu"
 
 #: src/explorer/remote_session.c
 #, c-format

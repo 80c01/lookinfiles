@@ -70,6 +70,20 @@ Layers, from bottom to top
   again as `SSH_ASKPASS` (`ssh_askpass_is_helper()`, first test of `main()`),
   which hands the prompt to the instance over loopback TCP with a random
   token (`ssh_askpass_serve()`), works on Windows too (unit-tested).
+- `sftp_proto` — the SFTP v3 protocol (what OpenSSH speaks): packet types,
+  `SftpAttrs`, packet writing (`sftp_packet_begin()` … `sftp_packet_finish()`)
+  and bounds-checked reading (`SftpReader`), status codes to `GError`s.
+- `sftp_client` — an SFTP client over two streams, usually `ssh -s <machine>
+  sftp` through the master connection (`sftp_client_spawn()`; fails at once
+  without an open master, as `ssh_exec_async()`). Everything is async
+  (GTask `_async` / `_finish`); requests are pipelined and matched by id, so
+  a file is read and written a window of 16 chunks of 32 KiB at a time.
+  `sftp_client_write_async()` writes a temporary file next to the target and
+  renames it over (`posix-rename@openssh.com` when announced), keeping the
+  old mode; in place through a link or in a folder that takes no new file.
+  Unit-tested against a small POSIX SFTP server in the test (short reads,
+  lost connection, cancel). Not used by the interface yet: the explorer
+  still goes through the sshfs mount.
 - `i18n` — translations: `i18n_init()` (first call of `main()`: locale and
   catalog directory, `i18n_locale_dir()`), and the gettext macros `_()`,
   `N_()`, `C_()`, `ngettext()` (docs/translations.md).
