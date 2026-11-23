@@ -2,7 +2,8 @@
 
 Status: **in progress**. Steps 1 and 2 are done and tested by the user on
 Windows (files, previews, Git tab, System Monitor: one password, no
-`ssh.exe`). Step 3 is done (pending Windows testing): kernels and language
+`ssh.exe`). Step 3 is done (pending Windows testing; review fixes in
+c20164a): kernels and language
 servers now go through the loopback relay over the link; terminals still
 start `ssh.exe` (step 4). Part of step 5 is done too (see there).
 
@@ -168,6 +169,28 @@ The link must never repeat this: one channel's full buffer stops reading
    the OpenSSH master"; the freeze lesson is kept by the relay's flow
    control (a terminal not read stops its own channel only). Optional: a
    terminal may keep using `ssh.exe` (one prompt per terminal).
+   **Two Windows limits of the step-3 relay, to solve here** (found by
+   review, not yet run):
+   - *A GUI program gets no console.* `lookinfiles.exe` is linked
+     `-mwindows`; the built-in terminal (`terminal/vt_pty.c`) runs its
+     program in a ConPTY (`CreatePseudoConsole()`), and Windows attaches
+     only console-subsystem programs to it: the relay would see no console
+     (`GetConsoleMode()` fails, so no tty, no size, no raw mode) and read
+     plain pipes. Either a small console-subsystem relay next to the
+     application (`lookinfiles-relay.exe`, built from the same
+     `ssh_relay_helper.c` with `-mconsole`, listed in `docs/packaging.md`),
+     which `ssh_relay_argv()` returns for a tty; or `AttachConsole()` /
+     `AllocConsole()` in the helper, checked in a ConPTY first. Test it in
+     the real terminal on the user's machine: the unit tests run on Linux.
+   - *Console settings in tty mode* (`ssh_relay_helper.c`, the tty branch,
+     which only sets the input mode): stdout also needs
+     `ENABLE_VIRTUAL_TERMINAL_PROCESSING` (with `DISABLE_NEWLINE_AUTO_RETURN`)
+     or the escape sequences print as text; stdin and stdout
+     `_setmode(_O_BINARY)` (text mode turns `\n` into `\r\n` and stops
+     at `^Z`); `SetConsoleCP(CP_UTF8)` and `SetConsoleOutputCP(CP_UTF8)`,
+     or accents come in the OEM code page (850 in France) and leave
+     garbled. Save and restore all of them at exit, as the input mode is.
+     `ssh.exe` (Win32-OpenSSH) does all of this: compare with it.
 5. **Switch.** Done: on Windows the link is used when built with libssh,
    Linux keeps the OpenSSH master, `LOOKINFILES_SSH_LIBSSH` selects either
    (`ssh_link_enabled()`); `ssh_session_shares_connection()` (master or
@@ -320,8 +343,12 @@ Settled here so that every step is written the same way.
   is fine there (one thread stdin to socket, the main one socket to
   stdout/stderr). With a tty: raw mode (Linux `cfmakeraw()`, restored at
   exit; Windows console mode with `ENABLE_VIRTUAL_TERMINAL_INPUT`, without
-  line input, echo and processed input). Without a tty on Windows: stdin and
-  stdout in binary mode (`_setmode(_O_BINARY)`). Window size: Linux
+  line input, echo and processed input; for the output side and the
+  console attachment, see step 4). Without a tty on Windows: stdin and
+  stdout in binary mode (`_setmode(_O_BINARY)`). On Windows the helper
+  takes its arguments from `g_win32_get_command_line()` (UTF-8), never
+  main()'s `argv` (ANSI code page: an accent in the command would reach
+  the server as invalid UTF-8). Window size: Linux
   `SIGWINCH` + `TIOCGWINSZ`; Windows has no signal, so poll
   `GetConsoleScreenBufferInfo()` every 250 ms (ConPTY updates it on
   resize) and send `W` when it changes.
