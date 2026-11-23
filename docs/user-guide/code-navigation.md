@@ -139,6 +139,10 @@ counts and how long it took, with **Run Again** and **Stop** buttons. The
 messages of gcc, clang, the linker, rustc and cargo, tsc, eslint, go,
 pytest and Python tracebacks are recognized, and the folders `make -C` and
 `ninja -C` enter are followed. One task runs at a time: another one stops
-it. The task gets no input, and files left unsaved are not saved first
+it. The messages that name a file are also underlined in the editor tabs,
+counted and listed in the **Problems** tab (`Ctrl+Shift+M`, the program as
+their source) and stepped through with the keys of the diagnostics, until
+the next task; on a line where the language server reports the same kind of
+problem, only the server's is kept. The task gets no input, and files left unsaved are not saved first
 (the message line says how many there are). Tasks do not run on remote
 machines yet.

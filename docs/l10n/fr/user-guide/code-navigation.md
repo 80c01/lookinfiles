@@ -134,18 +134,23 @@ tous d’eux-mêmes.
 | Touche | Action |
 |---|---|
 | `F7` | Lance la tâche choisie en dernier dans ce projet (au début la première de la liste : `make`, `cargo build`, `npm run build`…) ; depuis l’onglet Build, la tâche qu’il montre |
-| `Maj+F7` | Choisit la tâche dans une liste (taper pour filtrer, `Entrée` la lance) ; elle devient celle que `F7` lance dans ce projet |
+| `Shift+F7` | Choisit la tâche dans une liste (taper pour filtrer, `Enter` la lance) ; elle devient celle que `F7` lance dans ce projet |
 | `Ctrl+F7` | Arrête la tâche et ce qu’elle a lancé (tué au bout de trois secondes) |
-| `F8` / `Maj+F8` | Erreur ou avertissement suivant / précédent de l’onglet Build, ouvert dans un onglet d’édition (tant que l’onglet Build est ouvert ; sinon les diagnostics du fichier) |
+| `F8` / `Shift+F8` | Erreur ou avertissement suivant / précédent de l’onglet Build, ouvert dans un onglet d’édition (tant que l’onglet Build est ouvert ; sinon les diagnostics du fichier) |
 
 L’onglet **Build** montre les messages en haut (erreurs, avertissements et
-notes, dans l’ordre de la sortie ; `Entrée` ou un double clic ouvre
+notes, dans l’ordre de la sortie ; `Enter` ou un double clic ouvre
 l’endroit) et la sortie en bas, au fur et à mesure. Son en-tête dit ce qui
 tourne, dans quel dossier, les nombres et le temps pris, avec les boutons
 **Relancer** et **Arrêter**. Les messages de gcc, clang, l’éditeur de
 liens, rustc et cargo, tsc, eslint, go, pytest et des traces Python sont
 reconnus, et les dossiers où entrent `make -C` et `ninja -C` sont suivis.
-Une seule tâche tourne à la fois : une autre l’arrête. La tâche ne reçoit
+Une seule tâche tourne à la fois : une autre l’arrête. Les messages qui nomment un fichier sont aussi soulignés dans les
+onglets d’édition, comptés et listés dans l’onglet **Problèmes**
+(`Ctrl+Shift+M`, le programme comme source) et parcourus avec les touches
+des diagnostics, jusqu’à la tâche suivante ; sur une ligne où le serveur de
+langage signale le même genre de problème, seul celui du serveur est gardé.
+La tâche ne reçoit
 aucune entrée, et les fichiers non enregistrés ne le sont pas avant (la
 ligne de message dit combien il y en a). Les tâches ne tournent pas encore
 sur les machines distantes.

@@ -712,10 +712,12 @@ key Escape
 xdotool mousemove 1237 783 click 1
 xdotool mousemove 1205 650 click 1   # back to "Notepad"
 # Tasks: F7 runs the project's first task (make), its messages in the
-# Build tab; F8 opens the first one; Shift+F7 lists the tasks
+# Build tab and in Problems; F8 opens the first one (underlined); Shift+F7
+# lists the tasks
 printf 'all:\n\t@echo "src/main.c:3:5: error: demo error"; echo "src/main.c:6:5: warning: demo warning"; exit 1\n.PHONY: all test\ntest:\n\t@echo ok\n' > "$FIX/work/Makefile"
 key F7; sleep 1;        shot build_tab
 key F8; sleep 0.5;      shot build_next_message
+key ctrl+shift+m;       shot build_in_problems      # the task's messages in the Problems tab too
 key shift+F7;           shot task_picker
 key Escape;             shot task_picker_closed
 key ctrl+t; sleep 1;    shot terminal

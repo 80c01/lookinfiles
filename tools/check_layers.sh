@@ -452,7 +452,7 @@ org:core,editor,markup,media,preview,theme
 preview:canvas,chrome,code,core,diskuse,editor,explorer,formats,games,git,mail,markup,media,notes,office,org,search,theme,widgets
 search:code,core,editor,explorer,theme,widgets
 sysmon:core,git,theme,widgets
-tasks:core,editor,git,theme,widgets
+tasks:code,core,editor,git,theme,widgets
 terminal:core,editor,explorer,theme,widgets,workspace
 theme:core
 vim:theme

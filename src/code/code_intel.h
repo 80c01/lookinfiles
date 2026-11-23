@@ -85,6 +85,13 @@ GPtrArray* code_intel_all_diagnostics(AppData* app);
 gboolean code_intel_step_diagnostic(AppData* app, EditorTab* tab, gint line, gint index, gboolean forward,
                                     gint* out_line, gint* out_index, LspDiagnostic** out_diag);
 
+/* The messages of the last build or test task (CodeDiagEntry*: absolute
+ * path, 0-based line and character column, severity, message, source),
+ * replacing the previous task's (NULL or empty: none). They are underlined
+ * and counted like a server's, listed in the Problems tab and stepped
+ * through, except where the server reports the same thing on the line. */
+void code_intel_set_task_diagnostics(AppData* app, const GPtrArray* entries);
+
 /* Characters that trigger signature help in tab ("(," by default) */
 const gchar* code_intel_signature_triggers(AppData* app, EditorTab* tab);
 /* Characters that trigger completion in tab, or NULL when none */

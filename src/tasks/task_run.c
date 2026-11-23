@@ -3,6 +3,7 @@
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "core/vfs.h"
+#include "code/code_intel.h"
 #include "tasks/task_detect.h"
 #include "tasks/task_page.h"
 #include "tasks/task_parse.h"
@@ -130,6 +131,33 @@ static void take_line(Run* r, const gchar* line, gsize len, GString* shown) {
     g_free(raw);
 }
 
+/* The messages of r with a file go to the diagnostics: underlined in the
+ * editor tabs, listed in the Problems tab, until the next task */
+static void publish_diagnostics(Run* r) {
+    const GPtrArray* msgs = task_parser_messages(r->parser);
+    GPtrArray* entries = g_ptr_array_new_with_free_func((GDestroyNotify)code_diag_entry_free);
+    gchar* source = g_path_get_basename(r->def->argv[0]);
+    for (guint i = 0; i < msgs->len; i++) {
+        const TaskMessage* m = g_ptr_array_index(msgs, i);
+        if (m->file == NULL || m->line <= 0) continue;
+        CodeDiagEntry* e = g_new0(CodeDiagEntry, 1);
+        e->path = g_strdup(m->file);
+        e->diag.line = m->line - 1;
+        e->diag.column = MAX(m->column - 1, 0);
+        e->diag.end_line = e->diag.line;
+        e->diag.end_column = e->diag.column;
+        e->diag.severity = m->kind == TASK_MSG_ERROR     ? LSP_SEVERITY_ERROR
+                           : m->kind == TASK_MSG_WARNING ? LSP_SEVERITY_WARNING
+                                                         : LSP_SEVERITY_INFO;
+        e->diag.message = g_strdup(m->text);
+        e->diag.source = g_strdup(source);
+        g_ptr_array_add(entries, e);
+    }
+    code_intel_set_task_diagnostics(r->app, entries);
+    g_ptr_array_unref(entries);
+    g_free(source);
+}
+
 static void finish_run(Run* r) {
     AppData* app = r->app;
     struct TaskRun* st = run_state(app);
@@ -149,6 +177,7 @@ static void finish_run(Run* r) {
     }
     gint64 usec = g_get_monotonic_time() - r->started;
     task_page_finish(r->page, success, status, r->stopped, usec, errors, warnings);
+    publish_diagnostics(r);
 
     gchar* msg = NULL;
     if (r->stopped) {
@@ -286,6 +315,7 @@ static void start_run(AppData* app, const TaskDef* def) {
     drop_current(app, FALSE);
     task_def_free(st->last);
     st->last = task_def_copy(def);
+    code_intel_set_task_diagnostics(app, NULL); /* the last task's messages are old now */
 
     GtkWidget* page = task_page_begin(app, def->label, def->dir);
     gchar* program = g_find_program_in_path(def->argv[0]);

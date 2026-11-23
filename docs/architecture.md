@@ -1560,7 +1560,11 @@ Layers, from bottom to top
   container, never the text view) and signature help, from `code_intel` or
   `code_nav_find()`; also highlights the other occurrences of the word at
   the cursor. Diagnostics (`publishDiagnostics`) are underlined by
-  `code_intel` (tags `lsp-error`...) and shown in help cards.
+  `code_intel` (tags `lsp-error`...) and shown in help cards. The messages
+  of the last build or test task (`code_intel_set_task_diagnostics()`,
+  `task_run`) are kept in a table of their own and merged on reading
+  (`file_diagnostics()`), so a server's update never drops them; a task's
+  message on a line where the server reports the same severity is left out.
 - `latex_build` — a `.tex` file saved from an editor tab
   (`editor_save_current()` calls `latex_build_saved()`) is compiled in a
   worker: its main document found (`latex_root`), `latexmk`, else Tectonic,
@@ -1576,7 +1580,9 @@ Layers, from bottom to top
   list) run with `GSubprocess` in its own process group (Stop reaches what
   it started: SIGTERM, then SIGKILL), no input, stdout and stderr merged
   and read asynchronously in 64 KiB pieces, each line given to
-  `task_parse` and to the Build page. One task at a time (a new one drops
+  `task_parse` and to the Build page; at the end its messages with a file
+  go to `code_intel_set_task_diagnostics()` (cleared when the next task
+  starts). One task at a time (a new one drops
   the running one); not on remote machines yet.
 - `task_page` — the Build page of the preview notebook (`app->build_page`,
   after the LaTeX page): a header (task, folder, counts, time, Run Again /

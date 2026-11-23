@@ -36,6 +36,7 @@ typedef struct CodeIntel {
     GHashTable* servers;   /* "root\ncommand" -> Server* */
     GHashTable* commands;  /* CodeLang (as pointer) -> gchar** argv, or a NULL value: none */
     GHashTable* diagnostics; /* canonical path -> GPtrArray of LspDiagnostic (byte columns) */
+    GHashTable* task_diagnostics; /* the same, of the last build or test task (code_intel_set_task_diagnostics()) */
     GHashTable* remote_commands; /* CodeLang -> gchar** command lines tried on a remote machine, or NULL */
     GHashTable* remote_roots;    /* a machine's folder seen here -> its absolute path there */
 } CodeIntel;
@@ -74,6 +75,7 @@ static CodeIntel* intel_of(AppData* app) {
         ci->servers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, server_free);
         ci->commands = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)g_strfreev);
         ci->diagnostics = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_ptr_array_unref);
+        ci->task_diagnostics = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_ptr_array_unref);
         ci->remote_commands = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify)g_strfreev);
         ci->remote_roots = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
         app->code_intel = ci;
@@ -658,6 +660,7 @@ void code_intel_shutdown(AppData* app) {
     g_hash_table_destroy(ci->servers);
     g_hash_table_destroy(ci->commands);
     g_hash_table_destroy(ci->diagnostics);
+    g_hash_table_destroy(ci->task_diagnostics);
     g_hash_table_destroy(ci->remote_commands);
     g_hash_table_destroy(ci->remote_roots);
     g_free(ci);
@@ -706,6 +709,29 @@ static void iter_at(GtkTextBuffer* buf, GtkTextIter* it, gint line, gint index) 
     gtk_text_iter_set_line_index(it, CLAMP(index, 0, gtk_text_iter_get_line_index(&eol)));
 }
 
+/* The diagnostics of path (canonical): the server's (or the built-in
+ * checker's) and the last task's, except a task's on a line where the server
+ * reports one of the same severity (the compiler and its server say the same
+ * thing twice). A new array of borrowed diagnostics, NULL when there is none. */
+static GPtrArray* file_diagnostics(AppData* app, const gchar* path) {
+    CodeIntel* ci = intel_of(app);
+    GPtrArray* own = g_hash_table_lookup(ci->diagnostics, path);
+    GPtrArray* task = g_hash_table_lookup(ci->task_diagnostics, path);
+    if ((own == NULL || own->len == 0) && (task == NULL || task->len == 0)) return NULL;
+    GPtrArray* out = g_ptr_array_new();
+    for (guint i = 0; own != NULL && i < own->len; i++) g_ptr_array_add(out, g_ptr_array_index(own, i));
+    for (guint i = 0; task != NULL && i < task->len; i++) {
+        LspDiagnostic* t = g_ptr_array_index(task, i);
+        gboolean same = FALSE;
+        for (guint j = 0; own != NULL && j < own->len && !same; j++) {
+            const LspDiagnostic* d = g_ptr_array_index(own, j);
+            same = d->line == t->line && d->severity == t->severity;
+        }
+        if (!same) g_ptr_array_add(out, t);
+    }
+    return out;
+}
+
 /* Highlight and underline the diagnostics of path in buffer */
 static void apply_diagnostics_to_buffer(AppData* app, GtkTextBuffer* buf, const gchar* path) {
     if (app == NULL || buf == NULL || path == NULL) return;
@@ -715,7 +741,7 @@ static void apply_diagnostics_to_buffer(AppData* app, GtkTextBuffer* buf, const 
     gtk_text_buffer_remove_tag_by_name(buf, DIAG_ERROR_LINE_TAG, &s, &e);
     for (gint i = 1; i <= 4; i++) gtk_text_buffer_remove_tag_by_name(buf, DIAG_TAGS[i], &s, &e);
     gint lines = gtk_text_buffer_get_line_count(buf);
-    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    GPtrArray* diags = file_diagnostics(app, path);
     for (guint i = 0; diags != NULL && i < diags->len; i++) {
         LspDiagnostic* d = g_ptr_array_index(diags, i);
         if (d->severity == LSP_SEVERITY_ERROR && lines > 0) {
@@ -747,6 +773,7 @@ static void apply_diagnostics_to_buffer(AppData* app, GtkTextBuffer* buf, const 
             gtk_text_buffer_apply_tag_by_name(buf, DIAG_TAGS[d->severity], &a, &b);
         }
     }
+    if (diags != NULL) g_ptr_array_unref(diags);
     for (GList* l = app->editors; l != NULL; l = l->next) {
         EditorTab* t = l->data;
         if (t != NULL && t->buffer == buf && t->minimap != NULL) {
@@ -820,12 +847,20 @@ static gint cmp_diag_entry(gconstpointer a, gconstpointer b) {
 GPtrArray* code_intel_all_diagnostics(AppData* app) {
     GPtrArray* out = g_ptr_array_new_with_free_func((GDestroyNotify)code_diag_entry_free);
     if (app == NULL || app->code_intel == NULL) return out;
+    GHashTable* paths = g_hash_table_new(g_str_hash, g_str_equal);
+    GHashTable* tables[] = {intel_of(app)->diagnostics, intel_of(app)->task_diagnostics};
+    for (guint t = 0; t < G_N_ELEMENTS(tables); t++) {
+        GHashTableIter pit;
+        gpointer path_key = NULL;
+        g_hash_table_iter_init(&pit, tables[t]);
+        while (g_hash_table_iter_next(&pit, &path_key, NULL)) g_hash_table_add(paths, path_key);
+    }
     GHashTableIter it;
-    gpointer key = NULL, val = NULL;
-    g_hash_table_iter_init(&it, intel_of(app)->diagnostics);
-    while (g_hash_table_iter_next(&it, &key, &val)) {
+    gpointer key = NULL;
+    g_hash_table_iter_init(&it, paths);
+    while (g_hash_table_iter_next(&it, &key, NULL)) {
         const gchar* path = key;
-        GPtrArray* list = val;
+        GPtrArray* list = file_diagnostics(app, path);
         for (guint i = 0; list != NULL && i < list->len; i++) {
             const LspDiagnostic* d = g_ptr_array_index(list, i);
             CodeDiagEntry* e = g_new0(CodeDiagEntry, 1);
@@ -835,7 +870,9 @@ GPtrArray* code_intel_all_diagnostics(AppData* app) {
             e->diag.source = g_strdup(d->source);
             g_ptr_array_add(out, e);
         }
+        if (list != NULL) g_ptr_array_unref(list);
     }
+    g_hash_table_unref(paths);
     g_ptr_array_sort(out, cmp_diag_entry);
     return out;
 }
@@ -853,12 +890,9 @@ gboolean code_intel_step_diagnostic(AppData* app, EditorTab* tab, gint line, gin
     if (out_diag != NULL) *out_diag = NULL;
     if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL) return FALSE;
     gchar* path = g_canonicalize_filename(tab->path, NULL);
-    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    GPtrArray* sorted = file_diagnostics(app, path);
     g_free(path);
-    if (diags == NULL || diags->len == 0) return FALSE;
-
-    GPtrArray* sorted = g_ptr_array_sized_new(diags->len);
-    for (guint i = 0; i < diags->len; i++) g_ptr_array_add(sorted, g_ptr_array_index(diags, i));
+    if (sorted == NULL) return FALSE;
     g_ptr_array_sort(sorted, cmp_diag_pos);
 
     const LspDiagnostic* chosen = NULL;
@@ -899,7 +933,7 @@ gboolean code_intel_step_diagnostic(AppData* app, EditorTab* tab, gint line, gin
 gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint index) {
     if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL) return NULL;
     gchar* path = g_canonicalize_filename(tab->path, NULL);
-    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    GPtrArray* diags = file_diagnostics(app, path);
     g_free(path);
     GString* out = NULL;
     static const gchar* const NAMES[] = {NULL, "error", "warning", "info", "hint"};
@@ -918,6 +952,7 @@ gchar* code_intel_diagnostics_at(AppData* app, EditorTab* tab, gint line, gint i
             g_string_append_c(out, *p);
         }
     }
+    if (diags != NULL) g_ptr_array_unref(diags);
     return out != NULL ? g_string_free(out, FALSE) : NULL;
 }
 
@@ -925,9 +960,9 @@ gchar* code_intel_line_diagnostic(AppData* app, EditorTab* tab, gint line, LspSe
     if (out_severity != NULL) *out_severity = LSP_SEVERITY_ERROR;
     if (app == NULL || app->code_intel == NULL || tab == NULL || tab->path == NULL || line < 0) return NULL;
     gchar* path = g_canonicalize_filename(tab->path, NULL);
-    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    GPtrArray* diags = file_diagnostics(app, path);
     g_free(path);
-    if (diags == NULL || diags->len == 0) return NULL;
+    if (diags == NULL) return NULL;
 
     const LspDiagnostic* best = NULL;
     for (guint i = 0; i < diags->len; i++) {
@@ -938,6 +973,7 @@ gchar* code_intel_line_diagnostic(AppData* app, EditorTab* tab, gint line, LspSe
             best = d;
         }
     }
+    g_ptr_array_unref(diags); /* best stays: the tables own it */
     if (best == NULL || best->message == NULL) return NULL;
     if (out_severity != NULL) *out_severity = best->severity;
 
@@ -963,13 +999,14 @@ static void count_diagnostics(AppData* app, EditorTab* tab, guint* errors, guint
     *errors = *warnings = 0;
     if (app->code_intel == NULL || tab == NULL || tab->path == NULL) return;
     gchar* path = g_canonicalize_filename(tab->path, NULL);
-    GPtrArray* diags = g_hash_table_lookup(intel_of(app)->diagnostics, path);
+    GPtrArray* diags = file_diagnostics(app, path);
     g_free(path);
     for (guint i = 0; diags != NULL && i < diags->len; i++) {
         LspDiagnostic* d = g_ptr_array_index(diags, i);
         if (d->severity == LSP_SEVERITY_ERROR) (*errors)++;
         else if (d->severity == LSP_SEVERITY_WARNING) (*warnings)++;
     }
+    if (diags != NULL) g_ptr_array_unref(diags);
 }
 
 /* Kept on the buffer, which the views of a split file share: the tab is
@@ -1123,7 +1160,8 @@ void code_intel_attach(AppData* app, EditorTab* tab) {
     g_signal_connect(tab->buffer, "changed", G_CALLBACK(on_buffer_changed), ss);
     /* Re-apply any diagnostics already known for this file */
     gchar* canon = g_canonicalize_filename(tab->path, NULL);
-    if (g_hash_table_contains(intel_of(app)->diagnostics, canon)) {
+    if (g_hash_table_contains(intel_of(app)->diagnostics, canon) ||
+        g_hash_table_contains(intel_of(app)->task_diagnostics, canon)) {
         apply_diagnostics_to_buffer(app, tab->buffer, canon);
     }
     g_free(canon);
@@ -1154,4 +1192,54 @@ void code_intel_detach(AppData* app, EditorTab* tab) {
         }
     }
     g_free(canon);
+}
+
+/* The byte index of the 0-based character column in line of path, from
+ * its open tab (a closed file is not read: the column is taken as bytes) */
+static gint task_column_to_byte(AppData* app, const gchar* path, gint line, gint column) {
+    EditorTab* t = editor_find_tab(app, path);
+    if (t == NULL || t->buffer == NULL || column <= 0) return MAX(column, 0);
+    if (line < 0 || line >= gtk_text_buffer_get_line_count(t->buffer)) return column;
+    GtkTextIter it;
+    gtk_text_buffer_get_iter_at_line(t->buffer, &it, line);
+    gint chars = gtk_text_iter_get_chars_in_line(&it);
+    gtk_text_iter_set_line_offset(&it, MIN(column, MAX(chars - 1, 0)));
+    return gtk_text_iter_get_line_index(&it);
+}
+
+void code_intel_set_task_diagnostics(AppData* app, const GPtrArray* entries) {
+    if (app == NULL) return;
+    CodeIntel* ci = intel_of(app);
+    if (g_hash_table_size(ci->task_diagnostics) == 0 && (entries == NULL || entries->len == 0)) return;
+    /* The files to underline again: those of the last task and of this one */
+    GHashTable* touched = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    GHashTableIter it;
+    gpointer key = NULL;
+    g_hash_table_iter_init(&it, ci->task_diagnostics);
+    while (g_hash_table_iter_next(&it, &key, NULL)) g_hash_table_add(touched, g_strdup(key));
+    g_hash_table_remove_all(ci->task_diagnostics);
+    for (guint i = 0; entries != NULL && i < entries->len; i++) {
+        const CodeDiagEntry* e = g_ptr_array_index(entries, i);
+        if (e->path == NULL) continue;
+        gchar* canon = g_canonicalize_filename(e->path, NULL);
+        GPtrArray* list = g_hash_table_lookup(ci->task_diagnostics, canon);
+        if (list == NULL) {
+            list = g_ptr_array_new_with_free_func((GDestroyNotify)lsp_diagnostic_free);
+            g_hash_table_insert(ci->task_diagnostics, g_strdup(canon), list);
+        }
+        LspDiagnostic* d = g_new0(LspDiagnostic, 1);
+        *d = e->diag;
+        d->column = task_column_to_byte(app, canon, e->diag.line, e->diag.column);
+        d->end_line = d->line;
+        d->end_column = d->column;
+        d->message = g_strdup(e->diag.message);
+        d->source = g_strdup(e->diag.source);
+        g_ptr_array_add(list, d);
+        g_hash_table_add(touched, canon);
+    }
+    g_hash_table_iter_init(&it, touched);
+    while (g_hash_table_iter_next(&it, &key, NULL)) apply_diagnostics(app, key);
+    g_hash_table_unref(touched);
+    app_emit(app, APP_EVENT_STATUS_CHANGED);
+    app_emit(app, APP_EVENT_DIAGNOSTICS_CHANGED);
 }
