@@ -1,11 +1,11 @@
 # Plan: one SSH connection per machine on Windows (libssh)
 
-Status: **in progress**. Steps 1 and 2 are done and tested by the user on
-Windows (files, previews, Git tab, System Monitor: one password, no
-`ssh.exe`). Step 3 is done (pending Windows testing; review fixes in
-c20164a): kernels and language
-servers now go through the loopback relay over the link; terminals still
-start `ssh.exe` (step 4). Part of step 5 is done too (see there).
+Status: **in progress**. Steps 1, 2 and 3 are done and tested by the user
+on Windows (files, previews, Git tab, System Monitor, notebook kernels and
+language servers: one password, no `ssh.exe`). Kernels and language
+servers go through the loopback relay over the link; terminals still
+start `ssh.exe`. **Next: step 4** (terminal), then step 6. Part of step 5
+is done too (see there).
 
 ### Where things are (read before step 4)
 
@@ -44,8 +44,15 @@ start `ssh.exe` (step 4). Part of step 5 is done too (see there).
   codes with `ssh_trace()`, **never** a secret, a ticket or file data. Ask
   the user for `head -100 ssh.log`, not the whole file.
 - **Local paths on Windows** have `\` separators (`g_build_filename()`):
-  compare paths with the mounts as `vfs.c` does (`local_key()`), and send
-  the server `/` only.
+  compare paths with the mounts as `vfs.c` does (`local_key()`) and
+  `remote_path.c` (`sep_key()`), and send the server `/` only. A path
+  that does not match its mount looks local: a notebook then ran a local
+  Python (console windows) instead of the remote kernel.
+- **Failures must be visible.** A remote program that stops says why in
+  the UI, not only in the log: the notebook keeps the end of the bridge's
+  stderr (`ipynb_kernel.c`), the status bar says "(not running)" for a
+  language server, and `code_intel.c` traces why a remote one did not
+  start (`lsp:` lines). Do the same for the terminal.
 - **"Main thread"** is tested with
   `g_main_context_is_owner(g_main_context_default())`, true only while the
   main loop runs. A unit test that checks a main-thread rule must
@@ -155,7 +162,8 @@ The link must never repeat this: one channel's full buffer stops reading
    few callers (`git_mirror`, `deep_search`, `disk_scan`) adapt.
    Result: System Monitor, Git badges, search, Disk Usage: no more prompts,
    and a channel opens in milliseconds instead of a handshake.
-3. **Programs that want a command line** (done; kernels, language servers):
+3. **Programs that want a command line** (done and tested on Windows;
+   kernels, language servers):
    they start a local process from `ssh_session_argv()` /
    `vfs_command_argv()`. Give them a relay instead of `ssh.exe`:
    `lookinfiles --ssh-channel <port> <id> <command>`, which copies its
