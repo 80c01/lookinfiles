@@ -87,6 +87,13 @@ gboolean ssh_session_can_multiplex(void) {
 #endif
 }
 
+gboolean ssh_session_shares_connection(void) {
+#ifdef HAVE_LIBSSH
+    if (ssh_link_enabled()) return TRUE;
+#endif
+    return ssh_session_can_multiplex();
+}
+
 gchar* ssh_session_control_path(const SshTarget* t) {
     if (t == NULL || t->host == NULL || !ssh_session_can_multiplex()) return NULL;
     gchar* dir = sockets_dir();

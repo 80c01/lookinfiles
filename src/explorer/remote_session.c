@@ -294,7 +294,7 @@ static void on_master_missing(const SshTarget* t, gpointer data) {
 void remote_session_open_master(RemoteMachine* rm) {
     /* Without multiplexing or libssh there is no shared connection: the files'
      * session opens again by itself (vfs.h) */
-    if (rm != NULL && rm->id != NULL && (use_libssh() || ssh_session_can_multiplex())) open_master(rm, TRUE);
+    if (rm != NULL && rm->id != NULL && ssh_session_shares_connection()) open_master(rm, TRUE);
 }
 
 /* Without multiplexing: the SFTP session opened by a worker (it logs in,
@@ -359,7 +359,7 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mo
     g_free(notice);
 
     gboolean ok;
-    if (use_libssh() || ssh_session_can_multiplex()) {
+    if (ssh_session_shares_connection()) {
         MasterEntry* e = open_master(rm, TRUE);
         if (e->starting) {
             GMainLoop* loop = g_main_loop_new(NULL, FALSE);

@@ -55,6 +55,11 @@ GSubprocessLauncher* ssh_session_launcher(GSubprocessFlags flags);
 /* Whether a master connection is used (OpenSSH multiplexing: not on
  * Windows, nor without a private runtime directory) */
 gboolean ssh_session_can_multiplex(void);
+/* Whether the machines' commands and files share one connection: an
+ * OpenSSH master (ssh_session_can_multiplex()) or a libssh link
+ * (ssh_link_enabled()). Without (Windows built without libssh), every
+ * session logs in by itself. */
+gboolean ssh_session_shares_connection(void);
 /* The master connection's socket of target for this process, NULL as
  * ssh_session_can_multiplex(). Caller frees. */
 gchar* ssh_session_control_path(const SshTarget* target);

@@ -237,7 +237,7 @@ typedef struct {
     guint32 mode;       /* write, mkdir */
     gboolean replace;   /* rename */
     gint op;            /* the plain operations: OP_* */
-    gboolean no_login;  /* asked by the main thread without multiplexing */
+    gboolean no_login;  /* asked by the main thread without a shared connection */
     GError* error;
     guint waiting; /* link targets being looked at */
 } Job;
@@ -270,8 +270,8 @@ static void job_done(Job* j, GError* error) {
 }
 
 /* On the thread: the machine's client, connected the first time or after
- * the connection was lost. Without multiplexing (Windows) a new session
- * logs in by itself, through a password dialog of the main thread: a call
+ * the connection was lost. Without a shared connection (Windows built
+ * without libssh) a new session logs in by itself, through a password dialog of the main thread: a call
  * the main thread waits for (no_login) then fails at once, the session
  * opening meanwhile for the next calls. */
 static SftpClient* mount_client(Mount* m, gboolean no_login, GError** error) {
@@ -306,7 +306,7 @@ static Job* job_new(const gchar* path, GError** error) {
     j->refs = 1;
     j->m = m;
     j->remote = vfs_remote_path(m->root, rel);
-    j->no_login = !ssh_session_can_multiplex() && g_main_context_is_owner(g_main_context_default());
+    j->no_login = !ssh_session_shares_connection() && g_main_context_is_owner(g_main_context_default());
     g_mutex_init(&j->mu);
     g_cond_init(&j->cond);
     g_free(rel);
