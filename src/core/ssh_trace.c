@@ -22,12 +22,29 @@ static void write_line(const gchar* text) {
     g_mutex_unlock(&log_mu);
 }
 
+/* libssh repeats the same message on every call of a busy loop: one line,
+ * then how many times it came again, written when another message comes */
+static GPrivate last_message = G_PRIVATE_INIT(g_free);
+static GPrivate repeats; /* GUINT_TO_POINTER(count) */
+
 static void on_libssh_log(int priority, const char* function, const char* buffer, void* userdata) {
     (void)userdata;
     gchar* line = g_strdup_printf("libssh(%d) %s: %s", priority, function != NULL ? function : "",
                                   buffer != NULL ? buffer : "");
+    if (g_strcmp0(line, g_private_get(&last_message)) == 0) {
+        g_private_set(&repeats, GUINT_TO_POINTER(GPOINTER_TO_UINT(g_private_get(&repeats)) + 1));
+        g_free(line);
+        return;
+    }
+    guint count = GPOINTER_TO_UINT(g_private_get(&repeats));
+    if (count > 0) {
+        gchar* note = g_strdup_printf("libssh: (previous message %u more times)", count);
+        write_line(note);
+        g_free(note);
+        g_private_set(&repeats, NULL);
+    }
     write_line(line);
-    g_free(line);
+    g_private_replace(&last_message, line);
 }
 
 void ssh_trace_setup(void) {
