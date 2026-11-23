@@ -114,13 +114,16 @@ tasks come from those files:
 
 | Build file | Tasks |
 |---|---|
-| `Makefile` | `make`, then `make <target>` (the `.PHONY` targets, else the rules with a plain name) |
+| `Makefile` | `make -j<n>`, then `make -j<n> <target>` (the `.PHONY` targets, else the rules with a plain name) |
 | `Cargo.toml` | `cargo build`, `check`, `test`, `clippy`, `run` (in the workspace's folder for a member crate) |
 | `package.json` | `npm run <script>` for each script (`pnpm`, `yarn` or `bun` when their lock file is there) |
 | `go.mod` | `go build ./...`, `go test ./...`, `go vet ./...` |
-| `CMakeLists.txt` | `cmake --build build` (a configured build folder), else `cmake -B build` |
+| `CMakeLists.txt` | `cmake --build build --parallel <n>` (a configured build folder), else `cmake -B build` |
 | `meson.build`, `build.ninja` | `ninja -C build` and `meson test -C build`, else `meson setup build`; `ninja` |
 | `pyproject.toml`, `setup.py`, `pytest.ini` | `pytest` |
+
+The builds use every processor: `<n>` is their number for `make` and
+`cmake`; cargo, ninja, `meson test` and go use them all by themselves.
 
 | Key | Action |
 |---|---|

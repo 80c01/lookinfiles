@@ -219,23 +219,35 @@ static void add_task(GPtrArray* tasks, const gchar* dir, const gchar* label, con
     g_ptr_array_unref(argv);
 }
 
+/* "-j8": every processor, for the tools that build one job at a time
+ * unless told; NULL on a single processor */
+static gchar* jobs_flag(void) {
+    guint n = g_get_num_processors();
+    return n > 1 ? g_strdup_printf("-j%u", n) : NULL;
+}
+
 static void add_make(GPtrArray* tasks, const gchar* dir) {
     const gchar* file = has_file(dir, "GNUmakefile") ? "GNUmakefile"
                         : has_file(dir, "makefile") ? "makefile"
                         : has_file(dir, "Makefile") ? "Makefile"
                                                     : NULL;
     if (file == NULL) return;
-    add_task(tasks, dir, "make", "make", NULL);
+    gchar* jobs = jobs_flag();
+    gchar* label = jobs != NULL ? g_strconcat("make ", jobs, NULL) : g_strdup("make");
+    add_task(tasks, dir, label, "make", jobs, NULL);
+    g_free(label);
     gchar* text = read_file(dir, file);
     GPtrArray* targets = task_detect_make_targets(text);
     for (guint i = 0; i < targets->len; i++) {
         const gchar* t = g_ptr_array_index(targets, i);
-        gchar* label = g_strconcat("make ", t, NULL);
-        add_task(tasks, dir, label, "make", t, NULL);
+        label = jobs != NULL ? g_strdup_printf("make %s %s", jobs, t) : g_strconcat("make ", t, NULL);
+        if (jobs != NULL) add_task(tasks, dir, label, "make", jobs, t, NULL);
+        else add_task(tasks, dir, label, "make", t, NULL);
         g_free(label);
     }
     g_ptr_array_unref(targets);
     g_free(text);
+    g_free(jobs);
 }
 
 /* The folder of the Cargo workspace of the crate in dir (dir itself when it
@@ -315,10 +327,12 @@ static void add_cmake_meson_ninja(GPtrArray* tasks, const gchar* dir) {
     if (has_file(dir, "CMakeLists.txt")) {
         static const gchar* const names[] = {"build", "cmake-build-debug", "cmake-build-release", "out/build", NULL};
         const gchar* b = build_dir_with(dir, names, "CMakeCache.txt");
-        gchar* label = b != NULL ? g_strdup_printf("cmake --build %s", b) : g_strdup("cmake -B build");
-        if (b != NULL) add_task(tasks, dir, label, "cmake", "--build", b, NULL);
+        gchar* jobs = g_strdup_printf("%u", g_get_num_processors());
+        gchar* label = b != NULL ? g_strdup_printf("cmake --build %s --parallel %s", b, jobs) : g_strdup("cmake -B build");
+        if (b != NULL) add_task(tasks, dir, label, "cmake", "--build", b, "--parallel", jobs, NULL);
         else add_task(tasks, dir, label, "cmake", "-B", "build", NULL);
         g_free(label);
+        g_free(jobs);
     }
     if (has_file(dir, "meson.build")) {
         static const gchar* const names[] = {"build", "builddir", "_build", NULL};

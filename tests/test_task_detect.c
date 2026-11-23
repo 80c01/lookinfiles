@@ -116,7 +116,12 @@ static void test_projects(void) {
     gchar* want = g_build_filename(tmp, "c", NULL);
     g_assert_cmpstr(dir, ==, want);
     gchar* s = labels(task_detect(dir));
-    g_assert_cmpstr(s, ==, "make,make all,make test");
+    /* Every processor: make -j<n> (plain make on a single one) */
+    guint n = g_get_num_processors();
+    gchar* want_labels = n > 1 ? g_strdup_printf("make -j%1$u,make -j%1$u all,make -j%1$u test", n)
+                               : g_strdup("make,make all,make test");
+    g_assert_cmpstr(s, ==, want_labels);
+    g_free(want_labels);
     g_free(s);
     g_free(want);
     g_free(dir);
@@ -150,7 +155,9 @@ static void test_projects(void) {
 
     dir = g_build_filename(tmp, "cm", NULL);
     s = labels(task_detect(dir));
-    g_assert_cmpstr(s, ==, "cmake --build build");
+    gchar* want_cmake = g_strdup_printf("cmake --build build --parallel %u", g_get_num_processors());
+    g_assert_cmpstr(s, ==, want_cmake);
+    g_free(want_cmake);
     g_free(s);
     g_free(dir);
 

@@ -3,18 +3,21 @@
 
 /* The build and test tasks of a project, found from its files (F7 / Shift+F7,
  * task_run.h):
- *  - Makefile: make, then make <target> (the .PHONY targets, else the plain
- *    names of the rules);
+ *  - Makefile: make -j<processors>, then make -j<processors> <target> (the
+ *    .PHONY targets, else the plain names of the rules);
  *  - Cargo.toml: cargo build, check, test, clippy, run (in the workspace's
  *    folder when the crate is a member);
  *  - package.json: <runner> run <script> for each script, the runner from the
  *    lock file (pnpm, yarn, bun, else npm);
  *  - go.mod: go build / test / vet ./...;
- *  - CMakeLists.txt: cmake --build <dir> (a configured build folder), else
+ *  - CMakeLists.txt: cmake --build <dir> --parallel <processors> (a
+ *    configured build folder), else
  *    the configuration; meson.build: ninja -C <dir> and meson test, else
  *    meson setup; build.ninja: ninja;
  *  - pyproject.toml, setup.py, pytest.ini: pytest.
- * The first task found is the default one (F7 before any choice).
+ * Every processor is used: make and cmake are told, cargo, ninja, meson
+ * test and go use them all by themselves. The first task found is the
+ * default one (F7 before any choice).
  *
  * Reads files: call from a worker thread. Pure GLib, unit-tested. */
 #include <glib.h>

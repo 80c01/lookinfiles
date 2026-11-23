@@ -119,13 +119,17 @@ fichiers :
 
 | Fichier | Tâches |
 |---|---|
-| `Makefile` | `make`, puis `make <cible>` (les cibles `.PHONY`, sinon les règles au nom simple) |
+| `Makefile` | `make -j<n>`, puis `make -j<n> <cible>` (les cibles `.PHONY`, sinon les règles au nom simple) |
 | `Cargo.toml` | `cargo build`, `check`, `test`, `clippy`, `run` (dans le dossier du workspace pour une crate membre) |
 | `package.json` | `npm run <script>` pour chaque script (`pnpm`, `yarn` ou `bun` quand leur fichier de verrou est là) |
 | `go.mod` | `go build ./...`, `go test ./...`, `go vet ./...` |
-| `CMakeLists.txt` | `cmake --build build` (un dossier de compilation configuré), sinon `cmake -B build` |
+| `CMakeLists.txt` | `cmake --build build --parallel <n>` (un dossier de compilation configuré), sinon `cmake -B build` |
 | `meson.build`, `build.ninja` | `ninja -C build` et `meson test -C build`, sinon `meson setup build` ; `ninja` |
 | `pyproject.toml`, `setup.py`, `pytest.ini` | `pytest` |
+
+Les compilations utilisent tous les processeurs : `<n>` est leur nombre
+pour `make` et `cmake` ; cargo, ninja, `meson test` et go les utilisent
+tous d’eux-mêmes.
 
 | Touche | Action |
 |---|---|

@@ -569,7 +569,8 @@ Layers, from bottom to top
   carriage return dropped, repeats kept once.
 - `task_detect` — the tasks of a project (`TaskDef`: label, argv, folder):
   the nearest folder holding a build file (`task_detect_project_dir()`, not
-  above home), then make targets (`.PHONY`), cargo (from the workspace's
+  above home), then make targets (`.PHONY`; `-j` and `cmake --build
+  --parallel` with every processor), cargo (from the workspace's
   folder), npm / pnpm / yarn / bun scripts, go, CMake, Meson, Ninja,
   pytest; the first one is the default. Reads files: worker threads.
 - `latex_synctex` — SyncTeX: the `.synctex.gz` of a PDF
