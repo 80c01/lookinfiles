@@ -1,13 +1,13 @@
 # Plan: one SSH connection per machine on Windows (libssh)
 
-Status: **in progress**. Steps 1 to 4 are done and tested by the user on
-Windows (files, previews, Git tab, System Monitor, notebook kernels,
-language servers and terminals: one password, no `ssh.exe`; terminals
-checked for colours, full-screen programs, typed accents, resizing and
-Ctrl+C). Kernels, language servers and terminals go through the loopback
-relay over the link (terminals with the `-mconsole`
-`lookinfiles-relay.exe`). **Next: step 6** (diagnostics and docs); the
-Preferences setting of step 5 is optional.
+Status: **done** (steps 1 to 4 tested on Windows, step 6 done; the
+Preferences setting of step 5 is optional). Files, previews, Git tab,
+System Monitor, notebook kernels, language servers and terminals all run
+over one shared libssh connection per machine (one password, no `ssh.exe`;
+terminals checked for colours, full-screen programs, typed accents,
+resizing and Ctrl+C). Kernels, language servers and terminals go through
+the loopback relay over the link (terminals with the `-mconsole`
+`lookinfiles-relay.exe`).
 
 ### Where things are (read before step 4)
 
@@ -210,10 +210,13 @@ The link must never repeat this: one channel's full buffer stops reading
    link) gates `connect_files()` and the `no_login` guard of `vfs.c`, the
    fallback for builds without libssh. Left: a setting in Preferences
    instead of the variable (optional).
-6. **Diagnostics and docs.** The Diagnostics tab says which transport a
-   machine uses; `docs/packaging.md` lists the libssh DLLs (libssh,
-   its crypto library, zlib) for the Windows bundle; `make deps` lists
-   libssh as optional; user guide `remote.md` updated (and its l10n page).
+6. **Diagnostics and docs** (done). The Diagnostics tab shows which
+   transport a machine uses (`Connection` section + header) and lists
+   `libssh` under `Built In`; `docs/packaging.md` lists the libssh DLLs
+   (`libssh.dll`, `libcrypto-3-x64.dll`, `zlib1.dll`) for the Windows
+   bundle; `make deps` (`tools/check_deps.sh`) lists libssh as optional;
+   user guide `remote.md` and `diagnostics.md` updated (with their French
+   l10n pages).
 
 ### Implementation decisions
 

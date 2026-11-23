@@ -120,10 +120,16 @@ The AppImage is bundled using `linuxdeploy` and `linuxdeploy-plugin-gtk`.
 See `packaging/windows/README.md` for prerequisites and build commands
 (`make windows-zip` and `make windows-exe`).
 
-- When built with `libssh`, `make` produces both `lookinfiles.exe` (`-mwindows`)
-  and `lookinfiles-relay.exe` (`-mconsole`, placed next to `lookinfiles.exe`
-  so remote terminals inside ConPTY get a console handle). `build_windows_zip.sh`
-  bundles both executables together with their DLLs.
+- When built with `libssh` (`mingw-w64-ucrt-x86_64-libssh`, optional, enables
+  one shared SSH connection per remote machine instead of spawning `ssh.exe`
+  per command), `make` produces both `lookinfiles.exe` (`-mwindows`) and
+  `lookinfiles-relay.exe` (`-mconsole`, placed next to `lookinfiles.exe` so
+  remote terminals inside ConPTY get a console handle). `build_windows_zip.sh`
+  bundles both executables together with their runtime DLLs (collected
+  recursively via `ldd` / `ntldd`), including for libssh:
+  - `libssh.dll` (libssh)
+  - `libcrypto-3-x64.dll` (its OpenSSL crypto library in MSYS2 UCRT64)
+  - `zlib1.dll` (zlib compression)
 
 ---
 

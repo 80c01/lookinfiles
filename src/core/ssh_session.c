@@ -95,6 +95,14 @@ gboolean ssh_session_shares_connection(void) {
     return ssh_session_can_multiplex();
 }
 
+SshTransport ssh_session_transport(const SshTarget* target) {
+    (void)target;
+#ifdef HAVE_LIBSSH
+    if (ssh_link_enabled()) return SSH_TRANSPORT_LIBSSH;
+#endif
+    return ssh_session_can_multiplex() ? SSH_TRANSPORT_OPENSSH_MUX : SSH_TRANSPORT_OPENSSH;
+}
+
 gchar* ssh_session_control_path(const SshTarget* t) {
     if (t == NULL || t->host == NULL || !ssh_session_can_multiplex()) return NULL;
     gchar* dir = sockets_dir();

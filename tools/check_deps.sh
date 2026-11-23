@@ -48,6 +48,7 @@ else
     check webkitgtk-6.0 -  "Browser tabs"           libwebkitgtk-6.0-dev    optional
 fi
 check gstreamer-video-1.0 - "Video audio / subtitle tracks" libgstreamer-plugins-base1.0-dev optional
+check libssh          -    "Shared SSH connections" libssh-dev              optional
 if command -v msgfmt >/dev/null 2>&1; then
     printf '  %-34s yes  (msgfmt)\n' "Translations"
 else

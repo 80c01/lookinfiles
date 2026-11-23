@@ -61,6 +61,16 @@ gboolean ssh_session_can_multiplex(void);
  * (ssh_link_enabled()). Without (Windows built without libssh), every
  * session logs in by itself. */
 gboolean ssh_session_shares_connection(void);
+
+/* How LookinFiles reaches a remote machine */
+typedef enum {
+    SSH_TRANSPORT_OPENSSH = 0, /* OpenSSH client, separate connection per command */
+    SSH_TRANSPORT_OPENSSH_MUX, /* OpenSSH client with a shared master connection */
+    SSH_TRANSPORT_LIBSSH,      /* built-in libssh connection (shared channels) */
+} SshTransport;
+
+/* The SSH transport used for target (NULL: the default for new connections) */
+SshTransport ssh_session_transport(const SshTarget* target);
 /* The master connection's socket of target for this process, NULL as
  * ssh_session_can_multiplex(). Caller frees. */
 gchar* ssh_session_control_path(const SshTarget* target);

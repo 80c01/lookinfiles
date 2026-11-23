@@ -38,11 +38,11 @@ lists what does not, or not fully, to come back to later.
   network there (`vfs_file_test()` while navigating, `vfs_remote_absolute()`
   when the first language server of a machine starts): short freezes on a
   slow or broken connection.
-- **Windows**: without ssh multiplexing, each new SFTP session or remote
-  command may ask for the password again (no secret reuse); a key with
-  ssh-agent avoids it. The real fix, one libssh connection per machine
-  carrying every channel, is planned in
-  [remote-libssh.md](remote-libssh.md).
+- **Windows without libssh**: builds with `libssh` share one SSH connection
+  per machine for every channel (SFTP, commands, kernels, language servers
+  and terminals; see [remote-libssh.md](remote-libssh.md)). Builds without
+  `libssh` fall back to `ssh.exe`, where each session connects on its own
+  and may ask for the password again (a key with ssh-agent avoids it).
 
 ## Beyond remote machines
 

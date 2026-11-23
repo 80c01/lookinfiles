@@ -49,7 +49,9 @@ something.
 
 When you have [remote machines](remote.md), a list in the header chooses
 the machine checked: **This computer** or one of them (the machine of the
-workspace comes first). A remote machine must be connected; its checks are
+workspace comes first). It shows which SSH transport the machine uses
+(`libssh`, shared OpenSSH master, or separate OpenSSH connections). To run
+its program checks, the remote machine must be connected; its checks are
 those LookinFiles needs there: Python and the kernel modules for its
 notebooks, `git` for the Git tab, `grep` for Search in Files, GNU `find`
 (Linux) for Deep Search, Disk Usage and the Git tab, and the language

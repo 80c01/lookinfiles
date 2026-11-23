@@ -306,6 +306,8 @@ static void on_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer
 
 static const gchar* section_title(DiagSection section) {
     switch (section) {
+    case DIAG_SECTION_CONNECTION:
+        return _("Connection");
     case DIAG_SECTION_BUILT_IN:
         return _("Built In");
     case DIAG_SECTION_PROGRAMS:
@@ -342,7 +344,7 @@ static void select_row(DiagTab* st) {
 static void fill_store(DiagTab* st) {
     g_list_store_remove_all(st->store);
     if (st->items == NULL) return;
-    for (gint section = DIAG_SECTION_BUILT_IN; section <= DIAG_SECTION_LANG_SERVERS; section++) {
+    for (gint section = DIAG_SECTION_CONNECTION; section <= DIAG_SECTION_LANG_SERVERS; section++) {
         gboolean titled = FALSE;
         guint hidden = 0;
         for (guint i = 0; i < st->items->len; i++) {
@@ -515,6 +517,7 @@ static void show_info(DiagTab* st, const gchar* os_name) {
         g_string_append_printf(s, ngettext("%u missing", "%u missing", missing), missing);
     }
     gtk_label_set_text(GTK_LABEL(st->info), s->str);
+    gtk_widget_set_tooltip_text(st->info, s->str);
     g_string_free(s, TRUE);
 }
 
@@ -541,13 +544,43 @@ static void on_checked(GObject* source, GAsyncResult* res, gpointer data) {
     show_results(st, g_steal_pointer(&job->items), g_steal_pointer(&job->relevant), job->family, job->os_name);
 }
 
-/* --- Checks of a remote machine: one command over its master connection --- */
+/* --- Checks of a remote machine: one command over its shared connection --- */
+
+static const gchar* transport_short(SshTransport transport) {
+    switch (transport) {
+    case SSH_TRANSPORT_LIBSSH:
+        return "libssh";
+    case SSH_TRANSPORT_OPENSSH_MUX:
+        return _("OpenSSH (shared)");
+    case SSH_TRANSPORT_OPENSSH:
+        return "OpenSSH";
+    }
+    return "OpenSSH";
+}
+
+static const gchar* transport_detail(SshTransport transport) {
+    switch (transport) {
+    case SSH_TRANSPORT_LIBSSH:
+        return _("libssh (shared connection)");
+    case SSH_TRANSPORT_OPENSSH_MUX:
+        return _("OpenSSH (shared master connection)");
+    case SSH_TRANSPORT_OPENSSH:
+        return _("OpenSSH (separate connections)");
+    }
+    return _("OpenSSH (separate connections)");
+}
+
+static void add_transport_item(GPtrArray* items, SshTransport transport) {
+    diagnostics_add_info(items, DIAG_SECTION_CONNECTION, "ssh-transport", N_("SSH transport"),
+                         transport_detail(transport));
+}
 
 typedef struct {
     GtkWidget* page; /* owned ref */
     guint generation;
     GPtrArray* items;
-    gchar* name;     /* the machine's name */
+    gchar* name; /* the machine's name */
+    SshTransport transport;
 } RemoteJob;
 
 static void remote_job_free(RemoteJob* job) {
@@ -566,12 +599,15 @@ static void on_remote_checked(gint status, const gchar* out, const gchar* err, c
         return;
     }
     if (out == NULL || strstr(out, "@@end") == NULL) {
-        st->busy = FALSE;
+        GPtrArray* info_items = diagnostics_items_empty();
+        add_transport_item(info_items, job->transport);
+        show_results(st, info_items, NULL, DIAG_FAMILY_UNKNOWN, NULL);
         gchar* why = g_strstrip(g_strdup(error != NULL ? error->message
                                          : err != NULL && err[0] != '\0' ? err
                                                                           : _("no reply")));
         gchar* text = g_strdup_printf(_("Cannot check %1$s: %2$s"), job->name, why);
         gtk_label_set_text(GTK_LABEL(st->info), text);
+        gtk_widget_set_tooltip_text(st->info, text);
         g_free(text);
         g_free(why);
         remote_job_free(job);
@@ -580,7 +616,8 @@ static void on_remote_checked(gint status, const gchar* out, const gchar* err, c
     gchar* os_release = NULL;
     diagnostics_remote_apply(job->items, out, &os_release);
     gchar* os_name = diagnostics_os_name(os_release);
-    gchar* shown = g_strdup_printf("%s · %s", job->name, os_name != NULL ? os_name : _("unknown system"));
+    gchar* shown = g_strdup_printf("%s · %s · %s", job->name, transport_short(job->transport),
+                                   os_name != NULL ? os_name : _("unknown system"));
     show_results(st, g_steal_pointer(&job->items), NULL, diagnostics_family(os_release), shown);
     g_free(shown);
     g_free(os_name);
@@ -591,12 +628,16 @@ static void on_remote_checked(gint status, const gchar* out, const gchar* err, c
 /* Check rm: the items with the language servers, the command sent */
 static void run_remote_checks(DiagTab* st, RemoteMachine* rm) {
     const gchar* name = rm->name != NULL && rm->name[0] != '\0' ? rm->name : rm->host;
+    SshTarget target = remote_machine_target(rm);
+    SshTransport transport = ssh_session_transport(&target);
     if (!rm->is_connected) {
-        st->busy = FALSE;
-        show_results(st, NULL, NULL, DIAG_FAMILY_UNKNOWN, NULL);
+        GPtrArray* info_items = diagnostics_items_empty();
+        add_transport_item(info_items, transport);
+        show_results(st, info_items, NULL, DIAG_FAMILY_UNKNOWN, NULL);
         gchar* text = g_strdup_printf(_("%s is not connected: connect to it in the remote view, then Check Again"),
                                       name);
         gtk_label_set_text(GTK_LABEL(st->info), text);
+        gtk_widget_set_tooltip_text(st->info, text);
         g_free(text);
         return;
     }
@@ -604,14 +645,15 @@ static void run_remote_checks(DiagTab* st, RemoteMachine* rm) {
     job->page = g_object_ref(st->page);
     job->generation = st->generation;
     job->name = g_strdup(name);
+    job->transport = transport;
     job->items = diagnostics_items(TRUE);
+    add_transport_item(job->items, transport);
     gchar* dir = app_config_dir();
     gchar* ini = g_build_filename(dir, "lsp.ini", NULL);
     add_lang_servers(job->items, ini);
     g_free(ini);
     g_free(dir);
     gchar* command = diagnostics_remote_command(job->items);
-    SshTarget target = remote_machine_target(rm);
     ssh_exec_async(&target, command, NULL, st->cancel, on_remote_checked, job);
     g_free(command);
 }

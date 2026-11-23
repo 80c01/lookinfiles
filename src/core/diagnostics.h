@@ -13,9 +13,10 @@
 #include <glib.h>
 
 typedef enum {
-    DIAG_SECTION_BUILT_IN = 0, /* libraries of this build (local only) */
-    DIAG_SECTION_PROGRAMS,     /* programs looked for in PATH */
-    DIAG_SECTION_LANG_SERVERS  /* language servers (docs/code-nav.md) */
+    DIAG_SECTION_CONNECTION = 0, /* how this machine is reached (remote only) */
+    DIAG_SECTION_BUILT_IN,       /* libraries of this build (local only) */
+    DIAG_SECTION_PROGRAMS,       /* programs looked for in PATH */
+    DIAG_SECTION_LANG_SERVERS    /* language servers (docs/code-nav.md) */
 } DiagSection;
 
 /* Package manager of a system */
@@ -44,6 +45,15 @@ typedef struct {
  * servers (diagnostics_add_lang_server()). GPtrArray of DiagItem*, frees
  * them. */
 GPtrArray* diagnostics_items(gboolean remote);
+
+/* An empty GPtrArray of DiagItem* with the right free function */
+GPtrArray* diagnostics_items_empty(void);
+
+/* Append an already-checked informational item (found set to detail).
+ * Preserved by diagnostics_check_local() and diagnostics_remote_apply() when
+ * section is DIAG_SECTION_CONNECTION. */
+void diagnostics_add_info(GPtrArray* items, DiagSection section, const gchar* id,
+                          const gchar* feature, const gchar* detail);
 
 /* Append the check of a language server: lines are its command lines
  * (lsp_config_command_lines()), best first; the programs are their first

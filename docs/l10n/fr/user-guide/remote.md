@@ -9,11 +9,17 @@ en haut de l’explorateur.
 
 ## Prérequis
 
-- Le client OpenSSH (`ssh`), et le sous-système SFTP sur la machine (celui
-  des serveurs OpenSSH par défaut). Un mot de passe ou la phrase de passe d’une
-  clé, quand ssh en a besoin, est demandé dans un dialogue de LookinFiles ;
-  une clé SSH avec `ssh-agent` évite la question.
-  L’[onglet Diagnostics](lookinfiles:diagnostics#ssh) indique si `ssh` est trouvé.
+- Sous Linux, le client OpenSSH (`ssh`). Sous Windows, les versions compilées
+  avec `libssh` se connectent directement sans avoir besoin de `ssh.exe`
+  (les versions sans `libssh` se rabattent sur `ssh.exe`).
+- Sur la machine distante, un serveur SSH avec le sous-système SFTP (celui
+  des serveurs OpenSSH par défaut).
+- Un mot de passe, la phrase de passe d’une clé ou la confirmation d’une clé
+  d’hôte inconnue est demandé dans un dialogue de LookinFiles ; une clé SSH
+  avec `ssh-agent` évite la question.
+  L’[onglet Diagnostics](lookinfiles:diagnostics#ssh) indique si `ssh` est
+  trouvé, si [libssh](lookinfiles:diagnostics#libssh) est intégré, et quel
+  transport chaque machine utilise.
 
 ## La liste des machines
 
@@ -81,12 +87,22 @@ infobulles des onglets. Tapez les chemins de la même façon (`serveur:~/a`,
 ou `serveur:docs` depuis le **Dossier distant**) ; un chemin hors du
 dossier distant est refusé.
 
-La connexion ouvre une liaison (multiplexage OpenSSH, pas sous Windows),
-gardée jusqu’à la déconnexion ou la fermeture : les fichiers, les noyaux
-Jupyter et le Moniteur système passent tous par elle, si bien qu’un mot de
-passe n’est demandé qu’une fois. Les terminaux SSH ont leurs propres
-connexions ; un terminal qui a besoin d’un mot de passe le demande dans le
-terminal.
+La connexion ouvre une liaison partagée par machine, gardée jusqu’à la
+déconnexion ou la fermeture : les fichiers (SFTP), les commandes distantes
+(Git, recherche, Deep Search, Occupation disque, Moniteur système), les
+noyaux Jupyter et les serveurs de langage passent tous par elle, si bien
+qu’un mot de passe n’est demandé qu’une fois. Sous Linux, il s’agit d’une
+connexion maître OpenSSH (`ControlMaster`), et les terminaux SSH interactifs
+ouvrent leurs propres connexions afin qu’un terminal bloqué ne bloque pas le
+reste (un terminal qui a besoin d’un mot de passe le demande dans le
+terminal). Sous Windows, les versions compilées avec `libssh` utilisent une
+connexion libssh intégrée pour tout — terminaux SSH interactifs compris,
+avec contrôle de flux par canal et sans `ssh.exe` (les versions sans
+`libssh` se rabattent sur `ssh.exe`, où chaque session se connecte à part ;
+une clé SSH avec `ssh-agent` évite les demandes répétées).
+L’[onglet Diagnostics](lookinfiles:diagnostics) indique quel transport une
+machine utilise ; quand `libssh` est intégré, `LOOKINFILES_SSH_LIBSSH=1` ou
+`0` bascule entre `libssh` et OpenSSH.
 
 Dans LookinFiles, les fichiers d’une machine sont vus sous un dossier privé
 vide de `$XDG_RUNTIME_DIR/lookinfiles/remotes/` (en général

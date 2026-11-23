@@ -33,6 +33,7 @@ static const Packages PACKAGES[] = {
     {"webkit", "libwebkitgtk-6.0-dev", "webkitgtk6.0-devel", "webkitgtk-6.0", NULL, NULL, NULL, NULL},
     {"gstreamer", "libgstreamer-plugins-base1.0-dev", "gstreamer1-plugins-base-devel", "gst-plugins-base-libs",
      "gstreamer-plugins-base-devel", "gst-plugins-base-dev", "gst-plugins-base", NULL},
+    {"libssh", "libssh-dev", "libssh-devel", "libssh", "libssh-devel", "libssh-dev", "libssh", NULL},
     /* Programs */
     {"ctags", "universal-ctags", "ctags", "ctags", "ctags", "ctags", "universal-ctags", NULL},
     {"latex", "latexmk texlive-latex-recommended", "latexmk", "texlive-binextra texlive-latex", "texlive-latexmk",
@@ -94,6 +95,7 @@ static const Check CHECKS[] = {
     {"libjpeg", DIAG_SECTION_BUILT_IN, N_("Fast JPEG photo preview"), {NULL}, WHERE_LOCAL},
     {"webkit", DIAG_SECTION_BUILT_IN, N_("Browser tabs"), {NULL}, WHERE_LOCAL},
     {"gstreamer", DIAG_SECTION_BUILT_IN, N_("Audio and subtitle tracks of videos"), {NULL}, WHERE_LOCAL},
+    {"libssh", DIAG_SECTION_BUILT_IN, N_("Shared SSH connections (libssh)"), {NULL}, WHERE_LOCAL},
     {"ctags", DIAG_SECTION_PROGRAMS, N_("Code outline and Go to Definition without a language server"),
      {"ctags", "universal-ctags", "ctags-universal", NULL}, WHERE_LOCAL},
     {"latex", DIAG_SECTION_PROGRAMS, N_("LaTeX builds"), {"latexmk", "tectonic", "pdflatex", NULL}, WHERE_LOCAL},
@@ -119,7 +121,7 @@ static void item_free(gpointer data) {
 }
 
 GPtrArray* diagnostics_items(gboolean remote) {
-    GPtrArray* items = g_ptr_array_new_with_free_func(item_free);
+    GPtrArray* items = diagnostics_items_empty();
     for (gsize i = 0; i < G_N_ELEMENTS(CHECKS); i++) {
         const Check* c = &CHECKS[i];
         if (!(c->where & (remote ? WHERE_REMOTE : WHERE_LOCAL))) continue;
@@ -131,6 +133,22 @@ GPtrArray* diagnostics_items(gboolean remote) {
         g_ptr_array_add(items, item);
     }
     return items;
+}
+
+GPtrArray* diagnostics_items_empty(void) {
+    return g_ptr_array_new_with_free_func(item_free);
+}
+
+void diagnostics_add_info(GPtrArray* items, DiagSection section, const gchar* id,
+                          const gchar* feature, const gchar* detail) {
+    if (items == NULL || id == NULL || feature == NULL) return;
+    DiagItem* item = g_new0(DiagItem, 1);
+    item->id = g_strdup(id);
+    item->section = section;
+    item->feature = g_strdup(feature);
+    item->found = g_strdup(detail != NULL ? detail : "");
+    item->checked = TRUE;
+    g_ptr_array_add(items, item);
 }
 
 void diagnostics_add_lang_server(GPtrArray* items, const gchar* key, const gchar* language, gchar** lines) {
@@ -198,6 +216,9 @@ static gboolean built_in(const gchar* id) {
 #ifdef HAVE_GSTREAMER
         {"gstreamer", TRUE},
 #endif
+#ifdef HAVE_LIBSSH
+        {"libssh", TRUE},
+#endif
         {NULL, FALSE},
     };
     for (gsize i = 0; BUILT[i].id != NULL; i++) {
@@ -235,6 +256,7 @@ static gchar* local_kernel_python(void) {
 void diagnostics_check_local(GPtrArray* items) {
     for (guint i = 0; items != NULL && i < items->len; i++) {
         DiagItem* item = g_ptr_array_index(items, i);
+        if (item->section == DIAG_SECTION_CONNECTION) continue;
         g_clear_pointer(&item->found, g_free);
         if (item->section == DIAG_SECTION_BUILT_IN) {
             item->found = built_in(item->id) ? g_strdup(_("built in")) : NULL;
@@ -317,6 +339,7 @@ void diagnostics_remote_apply(GPtrArray* items, const gchar* output, gchar** os_
     gchar* jupyter = section_text(sec, "jupyter");
     for (guint i = 0; items != NULL && i < items->len; i++) {
         DiagItem* item = g_ptr_array_index(items, i);
+        if (item->section == DIAG_SECTION_CONNECTION) continue;
         g_clear_pointer(&item->found, g_free);
         if (strcmp(item->id, "find") == 0) {
             if (find != NULL && strstr(find, "GNU") != NULL) item->found = g_strdup(find);

@@ -13558,6 +13558,34 @@ msgstr "Taper la commande d’installation dans un nouveau terminal (sans la lan
 msgid "The terminals of this workspace open on another machine"
 msgstr "Les terminaux de cet espace de travail s’ouvrent sur une autre machine"
 
+#: src/chrome/diagnostics_tab.c
+msgid "Connection"
+msgstr "Connexion"
+
+#: src/chrome/diagnostics_tab.c
+msgid "SSH transport"
+msgstr "Transport SSH"
+
+#: src/chrome/diagnostics_tab.c
+msgid "OpenSSH (shared)"
+msgstr "OpenSSH (partagé)"
+
+#: src/chrome/diagnostics_tab.c
+msgid "libssh (shared connection)"
+msgstr "libssh (connexion partagée)"
+
+#: src/chrome/diagnostics_tab.c
+msgid "OpenSSH (shared master connection)"
+msgstr "OpenSSH (connexion maître partagée)"
+
+#: src/chrome/diagnostics_tab.c
+msgid "OpenSSH (separate connections)"
+msgstr "OpenSSH (connexions séparées)"
+
+#: src/core/diagnostics.c
+msgid "Shared SSH connections (libssh)"
+msgstr "Connexions SSH partagées (libssh)"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 

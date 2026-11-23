@@ -8,11 +8,16 @@ to go back to the files) or the server button at the top of the explorer.
 
 ## Requirements
 
-- The OpenSSH client (`ssh`), and the SFTP subsystem on the machine (the
-  default of OpenSSH servers). A password or a key passphrase, when ssh needs
-  one, is asked in a dialog of LookinFiles; an SSH key with `ssh-agent`
-  spares you the question. The [Diagnostics tab](lookinfiles:diagnostics#ssh)
-  says whether `ssh` is found.
+- On Linux, the OpenSSH client (`ssh`). On Windows, builds with `libssh`
+  connect directly without needing `ssh.exe` (builds without `libssh` fall
+  back to `ssh.exe`).
+- On the remote machine, an SSH server with the SFTP subsystem (the default
+  of OpenSSH servers).
+- A password, a key passphrase or an unknown host key confirmation is asked
+  in a dialog of LookinFiles; an SSH key with `ssh-agent` spares you the
+  question. The [Diagnostics tab](lookinfiles:diagnostics#ssh) says whether
+  `ssh` is found, whether [libssh](lookinfiles:diagnostics#libssh) is built
+  in, and which transport each machine uses.
 
 ## The list of machines
 
@@ -74,11 +79,20 @@ Paths on the machine are written as on the machine, `name:path`: the
 or `server:docs` from the **Remote Directory**); paths outside the remote
 directory are refused.
 
-Connecting opens one connection (OpenSSH multiplexing, not on Windows),
-kept until you disconnect or quit: the files, the Jupyter kernels and the
-System Monitor all go through it, so a password is asked once. The SSH
-terminals have connections of their own; one that needs a password asks in
-the terminal.
+Connecting opens one shared connection per machine, kept until you
+disconnect or quit: files (SFTP), remote commands (Git, search, Deep Search,
+Disk Usage, System Monitor), Jupyter kernels and language servers all go
+through it, so a password is asked once. On Linux this is an OpenSSH master
+connection (`ControlMaster`), and interactive SSH terminals open connections
+of their own so a stalled terminal cannot block the rest (one that needs a
+password asks in the terminal). On Windows, builds with `libssh` use one
+built-in libssh connection for everything — interactive SSH terminals
+included, with per-channel flow control and no `ssh.exe` (builds without
+`libssh` fall back to `ssh.exe`, where each session connects on its own; an
+SSH key with `ssh-agent` avoids repeated prompts). The
+[Diagnostics tab](lookinfiles:diagnostics) shows which transport a machine
+uses; when `libssh` is built in, setting `LOOKINFILES_SSH_LIBSSH=1` or `0`
+switches between `libssh` and OpenSSH.
 
 Inside LookinFiles a machine's files are seen under an empty private folder
 of `$XDG_RUNTIME_DIR/lookinfiles/remotes/` (usually `/run/user/1000/…`),

@@ -36,10 +36,12 @@ static void test_items(void) {
     GPtrArray* local = diagnostics_items(FALSE);
     GPtrArray* remote = diagnostics_items(TRUE);
     g_assert_nonnull(diagnostics_find(local, "vte"));
+    g_assert_nonnull(diagnostics_find(local, "libssh"));
     g_assert_nonnull(diagnostics_find(local, "ctags"));
     g_assert_nonnull(diagnostics_find(local, "jupyter"));
     g_assert_null(diagnostics_find(local, "find"));
     g_assert_null(diagnostics_find(remote, "vte"));
+    g_assert_null(diagnostics_find(remote, "libssh"));
     g_assert_null(diagnostics_find(remote, "latex"));
     g_assert_nonnull(diagnostics_find(remote, "find"));
     g_assert_nonnull(diagnostics_find(remote, "python"));
@@ -91,6 +93,10 @@ static void test_install_command(void) {
     cmd = diagnostics_install_command(vte, DIAG_FAMILY_DNF);
     g_assert_cmpstr(cmd, ==, "sudo dnf install vte291-gtk4-devel");
     g_free(cmd);
+    DiagItem* libssh = diagnostics_find(items, "libssh");
+    cmd = diagnostics_install_command(libssh, DIAG_FAMILY_APT);
+    g_assert_cmpstr(cmd, ==, "sudo apt install libssh-dev");
+    g_free(cmd);
     /* Found: nothing to install */
     gs->found = g_strdup("/usr/bin/gs");
     g_assert_null(diagnostics_install_command(gs, DIAG_FAMILY_APT));
@@ -113,6 +119,8 @@ static void test_check_local(void) {
 
 static void test_remote_parse(void) {
     GPtrArray* items = diagnostics_items(TRUE);
+    diagnostics_add_info(items, DIAG_SECTION_CONNECTION, "ssh-transport", "SSH transport",
+                         "libssh (shared connection)");
     gchar* lines[] = {"clangd", NULL};
     diagnostics_add_lang_server(items, "c", "C", lines);
     const gchar* out = "@@os\nID=debian\nPRETTY_NAME=\"Debian\"\n"
@@ -124,6 +132,12 @@ static void test_remote_parse(void) {
     diagnostics_remote_apply(items, out, &os);
     g_assert_cmpint(diagnostics_family(os), ==, DIAG_FAMILY_APT);
     g_free(os);
+    /* Connection info items are preserved across remote_apply */
+    DiagItem* tr = diagnostics_find(items, "ssh-transport");
+    g_assert_nonnull(tr);
+    g_assert_cmpint(tr->section, ==, DIAG_SECTION_CONNECTION);
+    g_assert_true(tr->checked);
+    g_assert_cmpstr(tr->found, ==, "libssh (shared connection)");
     g_assert_cmpstr(diagnostics_find(items, "python")->found, ==, "/usr/bin/python3");
     g_assert_null(diagnostics_find(items, "git")->found);
     g_assert_true(diagnostics_find(items, "git")->checked);
@@ -136,7 +150,14 @@ static void test_remote_parse(void) {
     g_assert_null(diagnostics_find(items, "find")->found);
     g_assert_null(diagnostics_find(items, "jupyter")->found);
     g_assert_null(diagnostics_find(items, "python")->found);
+    g_assert_cmpstr(diagnostics_find(items, "ssh-transport")->found, ==, "libssh (shared connection)");
     g_ptr_array_unref(items);
+    GPtrArray* empty = diagnostics_items_empty();
+    g_assert_cmpuint(empty->len, ==, 0);
+    diagnostics_add_info(empty, DIAG_SECTION_CONNECTION, "ssh-transport", "SSH transport", "OpenSSH");
+    g_assert_cmpuint(empty->len, ==, 1);
+    g_assert_cmpstr(diagnostics_find(empty, "ssh-transport")->found, ==, "OpenSSH");
+    g_ptr_array_unref(empty);
 }
 
 /* The command runs in the local sh and its output reads back */

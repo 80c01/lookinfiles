@@ -281,6 +281,27 @@ static void test_master(void) {
     g_main_loop_unref(r.loop);
 }
 
+static void test_transport(void) {
+    SshTarget t = { "srv", "me", 22, NULL };
+    const gchar* prev = g_getenv("LOOKINFILES_SSH_LIBSSH");
+    gchar* saved = g_strdup(prev);
+    g_unsetenv("LOOKINFILES_SSH_LIBSSH");
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX);
+    g_assert_cmpint(ssh_session_transport(NULL), ==, SSH_TRANSPORT_OPENSSH_MUX);
+#ifdef HAVE_LIBSSH
+    g_setenv("LOOKINFILES_SSH_LIBSSH", "1", TRUE);
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_LIBSSH);
+    g_setenv("LOOKINFILES_SSH_LIBSSH", "0", TRUE);
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX);
+#endif
+    if (saved != NULL) {
+        g_setenv("LOOKINFILES_SSH_LIBSSH", saved, TRUE);
+        g_free(saved);
+    } else {
+        g_unsetenv("LOOKINFILES_SSH_LIBSSH");
+    }
+}
+
 static void remove_tree(const gchar* path) {
     GDir* d = g_dir_open(path, 0, NULL);
     if (d != NULL) {
@@ -306,6 +327,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     ssh_session_set_program(fake);
     g_test_add_func("/ssh_session/argv", test_argv);
+    g_test_add_func("/ssh_session/transport", test_transport);
     g_test_add_func("/ssh_session/control_path", test_control_path);
     g_test_add_func("/ssh_session/master_missing", test_master_missing);
     g_test_add_func("/ssh_session/exec", test_exec);

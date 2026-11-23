@@ -66,6 +66,17 @@ Layers, from bottom to top
   a remote command. Programs started there
   get `ssh_session_set_env()` variables, no controlling terminal, and die
   with the application on Linux (unit-tested with a fake ssh).
+  `ssh_session_transport()` reports the active transport (`libssh`,
+  multiplexed OpenSSH, or separate OpenSSH connections).
+- `ssh_target`, `ssh_link`, `ssh_channel`, `ssh_watch`, `ssh_trace`,
+  `ssh_link_exec`, `ssh_process`, `ssh_relay`, `ssh_relay_helper`,
+  `ssh_relay_main` — optional libssh transport (`HAVE_LIBSSH`, default on
+  Windows, opt-in via `LOOKINFILES_SSH_LIBSSH=1` on Unix; see
+  [remote-libssh.md](remote-libssh.md)): one non-blocking libssh session per
+  machine on its own thread, channels exposed as `GIOStream`s, a loopback
+  relay for external processes (kernels, language servers, terminals;
+  `lookinfiles-relay.exe` on Windows for ConPTY), and `SshProcess` unifying
+  `GSubprocess` and libssh channels.
 - `ssh_askpass` — ssh password and passphrase prompts: ssh runs this program
   again as `SSH_ASKPASS` (`ssh_askpass_is_helper()`, first test of `main()`),
   which hands the prompt to the instance over loopback TCP with a random
