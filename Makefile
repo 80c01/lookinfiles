@@ -122,11 +122,11 @@ endif
 # Optional shared SSH connections (libssh, src/core/ssh_link.c):
 # enabled automatically when libssh is installed
 HAVE_LIBSSH != $(PKG_CONFIG) --exists libssh 2>/dev/null && echo yes || echo no
-LIBSSH_SRCS = src/core/ssh_link.c src/core/ssh_channel.c
+LIBSSH_SRCS = src/core/ssh_link.c src/core/ssh_channel.c src/core/ssh_trace.c
 ifeq ($(HAVE_LIBSSH),yes)
 APP_CFLAGS += -DHAVE_LIBSSH `$(PKG_CONFIG) --cflags libssh`
 LIBS += `$(PKG_CONFIG) --libs libssh`
-LIBSSH_OBJS = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_channel.o $(BUILD_DIR)/ssh_watch.o
+LIBSSH_OBJS = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_channel.o $(BUILD_DIR)/ssh_watch.o $(BUILD_DIR)/ssh_trace.o
 else
 LIBSSH_OBJS =
 endif
@@ -350,9 +350,9 @@ TEST_DEPS_test_remote_store = $(BUILD_DIR)/remote_store.o $(BUILD_DIR)/remote_mo
 TEST_DEPS_test_remote_path = $(BUILD_DIR)/remote_path.o $(BUILD_DIR)/remote_store.o $(BUILD_DIR)/remote_mounts.o $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/notebook_icons.o $(BUILD_DIR)/app_events.o $(BUILD_DIR)/vfs.o $(BUILD_DIR)/sftp_client.o $(BUILD_DIR)/sftp_proto.o $(BUILD_DIR)/ssh_session.o $(LIBSSH_OBJS) $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_ssh_session = $(BUILD_DIR)/ssh_session.o $(LIBSSH_OBJS) $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_ssh_askpass = $(BUILD_DIR)/ssh_askpass.o $(BUILD_DIR)/ssh_session.o $(LIBSSH_OBJS) $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/i18n.o
-TEST_DEPS_test_ssh_link = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_watch.o $(BUILD_DIR)/ssh_channel.o $(BUILD_DIR)/sftp_client.o $(BUILD_DIR)/sftp_proto.o $(BUILD_DIR)/ssh_session.o $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/i18n.o
+TEST_DEPS_test_ssh_link = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_watch.o $(BUILD_DIR)/ssh_trace.o $(BUILD_DIR)/ssh_channel.o $(BUILD_DIR)/sftp_client.o $(BUILD_DIR)/sftp_proto.o $(BUILD_DIR)/ssh_session.o $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_ssh_watch = $(BUILD_DIR)/ssh_watch.o
-TEST_DEPS_test_ssh_channel = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_watch.o $(BUILD_DIR)/ssh_channel.o $(BUILD_DIR)/i18n.o
+TEST_DEPS_test_ssh_channel = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_watch.o $(BUILD_DIR)/ssh_trace.o $(BUILD_DIR)/ssh_channel.o $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_sftp_client = $(BUILD_DIR)/sftp_client.o $(BUILD_DIR)/sftp_proto.o $(BUILD_DIR)/ssh_session.o $(LIBSSH_OBJS) $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_vfs = $(BUILD_DIR)/vfs_watch.o $(BUILD_DIR)/vfs_cache.o $(BUILD_DIR)/preview_source.o $(BUILD_DIR)/preview_cache.o $(BUILD_DIR)/dir_scan.o $(BUILD_DIR)/file_types.o $(BUILD_DIR)/text_encoding.o $(BUILD_DIR)/vfs.o $(BUILD_DIR)/sftp_client.o $(BUILD_DIR)/sftp_proto.o $(BUILD_DIR)/ssh_session.o $(LIBSSH_OBJS) $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/i18n.o
 TEST_DEPS_test_remote_mounts = $(BUILD_DIR)/remote_mounts.o $(BUILD_DIR)/app_paths.o

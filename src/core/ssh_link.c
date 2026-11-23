@@ -1,6 +1,7 @@
 /* Shared non-blocking libssh connection per remote machine (see ssh_link.h). */
 #include "core/ssh_link.h"
 #include "core/i18n.h"
+#include "core/ssh_trace.h"
 #include "core/ssh_watch.h"
 
 #include <libssh/callbacks.h>
@@ -92,6 +93,7 @@ static guint default_keepalive_ms = KEEPALIVE_DEFAULT_MS;
 static void ensure_libssh_init(void) {
     static gsize once = 0;
     if (g_once_init_enter(&once)) {
+        ssh_trace_setup();
         ssh_threads_set_callbacks(ssh_threads_get_default());
         ssh_init();
         g_once_init_leave(&once, 1);
@@ -222,8 +224,12 @@ static void update_socket_watch(SshLink* link) {
     if (link->sock_src != NULL && link->sock_cond == cond) return;
 
     clear_source(&link->sock_src);
+    ssh_trace("watch fd=%" G_GINT64_FORMAT " in=%d out=%d poll_flags=0x%x state=%d in_bytes=%" G_GUINT64_FORMAT,
+            (gint64)fd, (cond & G_IO_IN) != 0, (cond & G_IO_OUT) != 0, (unsigned)flags, (int)link->state,
+            (guint64)link->rc.in_bytes);
     link->sock_src = ssh_watch_new((gint64)fd, cond);
     if (link->sock_src == NULL) {
+        ssh_trace("watch failed on fd=%" G_GINT64_FORMAT, (gint64)fd);
         link->sock_cond = 0;
         return;
     }
@@ -374,6 +380,7 @@ static void link_cleanup_on_thread(SshLink* link, const GError* channel_err) {
 
 static void link_fail(SshLink* link, const gchar* message) {
     gchar* msg = g_strdup(message != NULL ? message : _("SSH connection failed"));
+    ssh_trace("link failed (state=%d): %s", (int)link->state, msg);
     GError* err = g_error_new_literal(G_IO_ERROR, G_IO_ERROR_CONNECTION_CLOSED, msg);
     link_cleanup_on_thread(link, err);
     g_error_free(err);
@@ -478,6 +485,7 @@ static gboolean on_keepalive_tick(gpointer data) {
 }
 
 static void enter_ready(SshLink* link) {
+    ssh_trace("authenticated");
     clear_auth_scratch(link);
     link->state = LINK_READY;
     link->event = ssh_event_new();
@@ -758,7 +766,9 @@ static void ensure_known_hosts_dir(SshLink* link) {
 
 static void check_host_key(SshLink* link) {
     link->state = LINK_HOSTKEY;
-    switch (ssh_session_is_known_server(link->session)) {
+    enum ssh_known_hosts_e known = ssh_session_is_known_server(link->session);
+    ssh_trace("connected; known host check=%d", (int)known);
+    switch (known) {
     case SSH_KNOWN_HOSTS_OK:
         link->state = LINK_AUTH;
         link->auth_step = AUTH_NONE;
@@ -872,6 +882,7 @@ static gboolean on_ask_replied_on_link(gpointer data) {
 static void drive_connect(SshLink* link) {
     if (link->state != LINK_CONNECTING || link->session == NULL) return;
     int rc = ssh_connect(link->session);
+    ssh_trace("ssh_connect rc=%d fd=%" G_GINT64_FORMAT, rc, (gint64)ssh_get_fd(link->session));
     if (rc == SSH_AGAIN) { update_socket_watch(link); return; }
     clear_source(&link->connect_timer);
     clear_source(&link->retry_timer);
@@ -895,6 +906,10 @@ static gboolean on_retry_timer(gpointer data) {
 
 static gboolean on_socket_ready(gpointer data) {
     SshLink* link = data;
+    if (ssh_trace_enabled()) {
+        static guint calls; /* spinning shows as a fast count */
+        if (++calls <= 200 || calls % 1000 == 0) ssh_trace("socket ready #%u state=%d", calls, (int)link->state);
+    }
     if (link->state == LINK_CONNECTING) drive_connect(link);
     else if (link->state == LINK_AUTH) drive_auth(link);
     else if (link->state == LINK_READY) link_pump_ready(link);
@@ -936,6 +951,19 @@ static gboolean on_start_on_link(gpointer data) {
     }
     ssh_options_set(s, SSH_OPTIONS_TIMEOUT, &timeout);
     ssh_options_set(s, SSH_OPTIONS_NODELAY, &yes);
+    if (ssh_trace_enabled()) {
+        char *h = NULL, *u = NULL, *proxy = NULL;
+        unsigned int port = 0;
+        ssh_options_get(s, SSH_OPTIONS_HOST, &h);
+        ssh_options_get(s, SSH_OPTIONS_USER, &u);
+        ssh_options_get(s, SSH_OPTIONS_PROXYCOMMAND, &proxy);
+        ssh_options_get_port(s, &port);
+        ssh_trace("connect %s@%s port %u proxy=%s (libssh %s)", u != NULL ? u : "?", h != NULL ? h : "?", port,
+                proxy != NULL ? proxy : "none", ssh_version(0));
+        ssh_string_free_char(h);
+        ssh_string_free_char(u);
+        ssh_string_free_char(proxy);
+    }
 
     memset(&link->sc, 0, sizeof link->sc);
     memset(&link->rc, 0, sizeof link->rc);
