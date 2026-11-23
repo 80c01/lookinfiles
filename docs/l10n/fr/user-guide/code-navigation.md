@@ -146,8 +146,9 @@ tourne, dans quel dossier, les nombres et le temps pris, avec les boutons
 liens, rustc et cargo, tsc, eslint, go, pytest et des traces Python sont
 reconnus, et les dossiers où entrent `make -C` et `ninja -C` sont suivis.
 Une seule tâche tourne à la fois : une autre l’arrête. Les messages qui nomment un fichier sont aussi soulignés dans les
-onglets d’édition, comptés et listés dans l’onglet **Problèmes**
-(`Ctrl+Shift+M`, le programme comme source) et parcourus avec les touches
+onglets d’édition, comptés et listés dans l’onglet **Problèmes** (le
+programme comme source ; il ne s’ouvre pas tout seul : `Ctrl+Shift+M`
+depuis un onglet d’édition) et parcourus avec les touches
 des diagnostics, jusqu’à la tâche suivante ; sur une ligne où le serveur de
 langage signale le même genre de problème, seul celui du serveur est gardé.
 La tâche ne reçoit
