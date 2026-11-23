@@ -348,12 +348,19 @@ Settled here so that every step is written the same way.
   stdout in binary mode (`_setmode(_O_BINARY)`). On Windows the helper
   takes its arguments from `g_win32_get_command_line()` (UTF-8), never
   main()'s `argv` (ANSI code page: an accent in the command would reach
-  the server as invalid UTF-8). Window size: Linux
+  the server as invalid UTF-8), and its standard handles from the C
+  descriptors (`_get_osfhandle(0)`, `GetStdHandle()` only as a fallback):
+  GLib passes a child's pipes that way, and in this GUI program
+  `GetStdHandle(STD_INPUT_HANDLE)` gave none, so stdin seemed to end at
+  once (a kernel or language server got EOF before its first command).
+  Window size: Linux
   `SIGWINCH` + `TIOCGWINSZ`; Windows has no signal, so poll
   `GetConsoleScreenBufferInfo()` every 250 ms (ConPTY updates it on
   resize) and send `W` when it changes.
 - **Never a secret** goes through the relay: the link is authenticated
-  before the ticket is issued. The relay writes no log.
+  before the ticket is issued. The relay logs only byte counts and
+  ends (`relay helper:` lines in `LOOKINFILES_SSH_LOG`, an absolute path:
+  its current folder may differ), never what goes through.
 - **Tests** (`tests/test_ssh_relay.c`, against the libssh test server in
   `tests/ssh_test_server.h`, which has fixed commands `hello`, `exit42`,
   `echo`, `flood`, `hang` and a pty shell): frames round-trip, exit status
