@@ -27,8 +27,9 @@ More detail, read when the task touches it:
   language.
 - [docs/remote-todo.md](docs/remote-todo.md): what remote machines do not
   do yet (LaTeX, Open With Default App) and their known limits.
-- [docs/remote-libssh.md](docs/remote-libssh.md): plan (in progress) for one
-  libssh connection per machine on Windows, instead of a login per command.
+- [docs/remote-libssh.md](docs/remote-libssh.md): the libssh transport (one
+  connection per machine, default on Windows): its modules, the relay, the
+  Windows lessons and the open risks. Read it before touching `core/ssh_*`.
 
 ## Build and test
 
