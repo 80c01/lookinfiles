@@ -68,6 +68,7 @@ ssh_link:ssh_target,ssh_channel,ssh_watch,ssh_trace,i18n
 ssh_link_exec:ssh_link,ssh_channel,i18n
 ssh_relay:ssh_target,ssh_link,ssh_channel,ssh_trace,app_paths,i18n
 ssh_relay_helper:ssh_relay,ssh_trace,app_paths
+ssh_relay_main:ssh_relay
 ssh_process:ssh_channel
 ssh_session:app_paths,i18n,ssh_target,ssh_link,ssh_channel,ssh_link_exec,ssh_process,ssh_relay
 ssh_askpass:ssh_session

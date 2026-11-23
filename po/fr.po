@@ -9282,6 +9282,17 @@ msgstr "Saisie :"
 msgid "Running cells needs Python 3"
 msgstr "Exécuter les cellules demande Python 3"
 
+#, c-format
+msgid "Cannot start terminal: %s"
+msgstr "Impossible de démarrer le terminal : %s"
+
+#, c-format
+msgid "Remote terminal on %s closed (SSH error)"
+msgstr "Terminal distant sur %s fermé (erreur SSH)"
+
+msgid "Press Enter to close"
+msgstr "Appuyez sur Entrée pour fermer"
+
 #: src/jupyter/ipynb_run.c:339
 msgid "No kernel installed (e.g. pip install ipykernel)"
 msgstr "Aucun noyau installé (par exemple pip install ipykernel)"

@@ -123,6 +123,7 @@ endif
 # enabled automatically when libssh is installed
 HAVE_LIBSSH != $(PKG_CONFIG) --exists libssh 2>/dev/null && echo yes || echo no
 LIBSSH_SRCS = src/core/ssh_link.c src/core/ssh_channel.c src/core/ssh_trace.c src/core/ssh_link_exec.c src/core/ssh_relay.c src/core/ssh_relay_helper.c
+RELAY_MAIN_SRC = src/core/ssh_relay_main.c
 ifeq ($(HAVE_LIBSSH),yes)
 APP_CFLAGS += -DHAVE_LIBSSH `$(PKG_CONFIG) --cflags libssh`
 LIBS += `$(PKG_CONFIG) --libs libssh`
@@ -175,10 +176,21 @@ FLAGS_STAMP = $(BUILD_DIR)/flags
 FLAGS_NOW = $(CC) $(ALL_CFLAGS) | $(ALL_LDFLAGS) $(LIBS)
 $(shell mkdir -p $(BUILD_DIR); if command -v cmp >/dev/null 2>&1; then printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' | cmp -s - $(FLAGS_STAMP) || printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP); else printf '%s\n' '$(subst ','\'',$(FLAGS_NOW))' > $(FLAGS_STAMP); fi)
 
+# Console-subsystem SSH terminal relay on Windows (ConPTY attaches only to
+# console-subsystem executables; lookinfiles.exe itself is -mwindows)
+RELAY_TARGET =
+ifeq ($(OS),Windows_NT)
+ifeq ($(HAVE_LIBSSH),yes)
+RELAY_TARGET = lookinfiles-relay.exe
+RELAY_OBJS = $(BUILD_DIR)/ssh_relay_main.o $(BUILD_DIR)/ssh_relay_helper.o $(BUILD_DIR)/app_paths.o $(BUILD_DIR)/ssh_trace.o
+RELAY_LIBS = `$(PKG_CONFIG) --libs gio-2.0 libssh` -lws2_32
+endif
+endif
+
 # Every .c file in src/<dir>/ is part of the application: adding a module only
 # requires creating src/<dir>/<module>.c and its .h. Module names are unique,
 # so the objects stay flat in build/ (build/<module>.o).
-EXCLUDE_SRCS = $(MODULE_SRCS) $(if $(filter yes,$(HAVE_LIBSSH)),,$(LIBSSH_SRCS))
+EXCLUDE_SRCS = $(MODULE_SRCS) $(RELAY_MAIN_SRC) $(if $(filter yes,$(HAVE_LIBSSH)),,$(LIBSSH_SRCS))
 SRCS = $(filter-out $(EXCLUDE_SRCS),$(sort $(wildcard src/*.c src/*/*.c)))
 OBJS = $(addprefix $(BUILD_DIR)/,$(notdir $(SRCS:.c=.o))) $(BUILD_DIR)/icon_resources.o $(BUILD_DIR)/guide_resources.o $(BUILD_DIR)/theme_resources.o $(BUILD_DIR)/jupyter_resources.o
 
@@ -187,13 +199,16 @@ GLIB_COMPILE_RESOURCES != $(PKG_CONFIG) --variable=glib_compile_resources gio-2.
 ICON_FILES = $(sort $(wildcard icons/scalable/actions/*.svg icons/sets/*/*.svg))
 DEPS = $(OBJS:.o=.d)
 
-all: $(TARGET) $(WEBKIT_MODULE) translations
+all: $(TARGET) $(RELAY_TARGET) $(WEBKIT_MODULE) translations
 
 $(TARGET): $(OBJS) $(FLAGS_STAMP)
 	$(CC) $(ALL_LDFLAGS) -o $@ $(OBJS) $(LIBS)
 	@echo "Build succeeded!"
 	@ls -lh $(TARGET)
 	@PKG_CONFIG=$(PKG_CONFIG) WEBVIEW2_DIR=$(WEBVIEW2_DIR) sh tools/check_deps.sh || true
+
+lookinfiles-relay.exe: $(RELAY_OBJS) $(FLAGS_STAMP)
+	$(CC) $(CFLAGS) $(CFLAGS_EXTRA) $(LDFLAGS) -mconsole -o $@ $(RELAY_OBJS) $(RELAY_LIBS)
 
 # The WebKit engine module: its own position-independent objects, only the
 # table of web_engine_module.h exported (src/preview/web_engine_module.h)
@@ -586,7 +601,7 @@ asan:
 		$(if $(WEBKIT_MODULE),$(ASAN_DIR)/lookinfiles-webkit.so)
 
 clean:
-	rm -rf $(TARGET) lookinfiles lookinfiles.exe $(BUILD_DIR) $(ASAN_DIR)
+	rm -rf $(TARGET) lookinfiles lookinfiles.exe lookinfiles-relay.exe $(BUILD_DIR) $(ASAN_DIR)
 
 # Installation (make install PREFIX=/usr DESTDIR=pkgroot for packages):
 # the binary, its desktop entry, AppStream metainfo and icon (data/)
@@ -632,6 +647,6 @@ uninstall:
 	rm -f $(DESTDIR)$(MODULEDIR)/lookinfiles-webkit.so
 	rm -f $(LINGUAS:%=$(DESTDIR)$(LOCALEDIR)/%/LC_MESSAGES/$(GETTEXT_DOMAIN).mo)
 
--include $(DEPS) $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d $(BUILD_DIR)/bench_tool.d
+-include $(DEPS) $(BUILD_DIR)/ssh_relay_main.d $(TEST_BINS:=.d) $(BUILD_DIR)/preview_tool.d $(BUILD_DIR)/bench_tool.d
 
 .PHONY: all translations pot po-update asan deps clean dist install uninstall test check ui-test ui-shots bench bench-scan bench-slides bench-app bench-preview preview-coverage deb appimage windows-zip windows-exe

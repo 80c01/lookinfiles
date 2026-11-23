@@ -317,6 +317,27 @@ static gboolean write_ticket_file(const gchar* dir, const gchar* secret, gchar**
     return FALSE;
 }
 
+/* Program path for a relay invocation: on Windows a TTY needs the
+ * console-subsystem helper next to the GUI executable so ConPTY attaches to
+ * it; non-TTY keeps the GUI executable so no console window flashes. */
+static gchar* relay_program_for(const gchar* main_program, gboolean tty) {
+    if (main_program == NULL || main_program[0] == '\0') return NULL;
+#ifdef G_OS_WIN32
+    if (tty) {
+        gchar* dir = g_path_get_dirname(main_program);
+        gchar* helper = g_build_filename(dir, "lookinfiles-relay.exe", NULL);
+        g_free(dir);
+        if (g_file_test(helper, G_FILE_TEST_IS_REGULAR)) return helper;
+        ssh_trace("relay: console helper not found: %s", helper);
+        g_free(helper);
+        return NULL;
+    }
+#else
+    (void)tty;
+#endif
+    return g_strdup(main_program);
+}
+
 GPtrArray* ssh_relay_argv(SshLink* link, gboolean tty) {
     if (link == NULL || !ssh_link_is_up(link)) return NULL;
 
@@ -326,9 +347,13 @@ GPtrArray* ssh_relay_argv(SshLink* link, gboolean tty) {
         return NULL;
     }
     guint16 port = server_port;
-    gchar* prog = g_strdup(relay_program);
+    gchar* main_prog = g_strdup(relay_program);
     guint ttl_ms = ticket_ttl_ms > 0 ? ticket_ttl_ms : TICKET_DEFAULT_TTL_MS;
     g_mutex_unlock(&relay_mu);
+
+    gchar* prog = relay_program_for(main_prog, tty);
+    g_free(main_prog);
+    if (prog == NULL) return NULL;
 
     gchar* dir = relay_dir();
     if (dir == NULL) {
@@ -365,7 +390,9 @@ GPtrArray* ssh_relay_argv(SshLink* link, gboolean tty) {
     g_hash_table_insert(tickets, t->id, t);
     g_mutex_unlock(&relay_mu);
 
-    ssh_trace("relay: issued ticket id=%s port=%u tty=%d", t->id, (guint)port, tty ? 1 : 0);
+    gchar* base = g_path_get_basename(prog);
+    ssh_trace("relay: issued ticket id=%s port=%u tty=%d helper=%s", t->id, (guint)port, tty ? 1 : 0, base);
+    g_free(base);
 
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(argv, prog);

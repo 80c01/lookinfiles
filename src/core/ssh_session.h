@@ -21,7 +21,7 @@
 typedef enum {
     SSH_ARGV_TTY = 1 << 0,    /* -t: an interactive terminal (with SSH_ARGV_NO_MUX) */
     SSH_ARGV_MASTER = 1 << 1, /* -N, ControlMaster=yes: the master connection itself */
-    SSH_ARGV_NO_MUX = 1 << 2, /* never through the master connection */
+    SSH_ARGV_NO_MUX = 1 << 2, /* never through the OpenSSH master connection */
 } SshArgvFlags;
 
 /* The ssh program run (default "ssh"; tests give a fake one) */

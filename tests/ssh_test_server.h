@@ -45,6 +45,7 @@ typedef struct {
     SrvChKind kind;
     gboolean closing;
     gboolean eof_in;
+    gboolean shell_exit;
     GByteArray* out_q;
     guint flood_sent;
     gint pty_cols;
@@ -114,6 +115,17 @@ static int on_srv_ch_data(ssh_session s, ssh_channel ch, void* data, uint32_t le
     SrvChan* c = ud;
     if (c->kind == SRV_CH_ECHO) {
         g_byte_array_append(c->out_q, data, len);
+        return (int)len;
+    }
+    if (c->kind == SRV_CH_SHELL) {
+        const guint8* b = data;
+        for (uint32_t i = 0; i < len; i++) {
+            if (b[i] == 0x04) {
+                c->shell_exit = TRUE;
+            } else {
+                g_byte_array_append(c->out_q, &b[i], 1);
+            }
+        }
         return (int)len;
     }
 #ifdef SSH_TEST_SERVER_WITH_SFTP
@@ -228,6 +240,16 @@ static int on_srv_exec_req(ssh_session s, ssh_channel ch, const char* cmd, void*
         c->closing = TRUE;
         return 0;
     }
+    if (strncmp(cmd, "pty-cmd:", 8) == 0) {
+        gchar* out = g_strdup_printf("pty-exec:%dx%d:%s\n", c->pty_cols, c->pty_rows, cmd + 8);
+        ssh_channel_write(ch, out, (uint32_t)strlen(out));
+        g_free(out);
+        ssh_channel_send_eof(ch);
+        ssh_channel_request_send_exit_status(ch, 0);
+        ssh_channel_close(ch);
+        c->closing = TRUE;
+        return 0;
+    }
     return 1;
 }
 
@@ -269,7 +291,8 @@ static void pump_srv_chan(SrvChan* c) {
                 if (w > 0) g_byte_array_remove_range(c->out_q, 0, (guint)w);
             }
         }
-        if (c->kind == SRV_CH_ECHO && c->eof_in && c->out_q->len == 0) {
+        if (((c->kind == SRV_CH_ECHO && c->eof_in) || (c->kind == SRV_CH_SHELL && c->shell_exit)) &&
+            c->out_q->len == 0) {
             ssh_channel_send_eof(c->ch);
             ssh_channel_request_send_exit_status(c->ch, 0);
             ssh_channel_close(c->ch);

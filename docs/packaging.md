@@ -15,6 +15,7 @@ All packaging recipes and scripts reside in the `packaging/` directory.
 | **Debian / Ubuntu** | `packaging/debian/` | `dpkg-buildpackage` or `build_deb.sh` | `.deb` |
 | **Flatpak** | `packaging/flatpak/io.github._80c01.LookinFiles.yml` | `flatpak-builder` | Flatpak bundle / Flathub |
 | **AppImage** | `packaging/appimage/build_appimage.sh` | `linuxdeploy` + `linuxdeploy-plugin-gtk` | `.AppImage` |
+| **Windows** | `packaging/windows/` | MSYS2 UCRT64 (`make windows-zip` / `windows-exe`) | `.zip` / portable `.exe` |
 
 ---
 
@@ -111,6 +112,18 @@ The AppImage is bundled using `linuxdeploy` and `linuxdeploy-plugin-gtk`.
 ./packaging/appimage/build_appimage.sh
 # Outputs: build/LookinFiles-x86_64.AppImage
 ```
+
+---
+
+## 6. Windows (MSYS2 UCRT64)
+
+See `packaging/windows/README.md` for prerequisites and build commands
+(`make windows-zip` and `make windows-exe`).
+
+- When built with `libssh`, `make` produces both `lookinfiles.exe` (`-mwindows`)
+  and `lookinfiles-relay.exe` (`-mconsole`, placed next to `lookinfiles.exe`
+  so remote terminals inside ConPTY get a console handle). `build_windows_zip.sh`
+  bundles both executables together with their DLLs.
 
 ---
 

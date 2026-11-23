@@ -24,6 +24,15 @@
 #ifdef G_OS_WIN32
 #include <fcntl.h>
 #include <io.h>
+#ifndef ENABLE_PROCESSED_OUTPUT
+#define ENABLE_PROCESSED_OUTPUT 0x0001
+#endif
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+#ifndef DISABLE_NEWLINE_AUTO_RETURN
+#define DISABLE_NEWLINE_AUTO_RETURN 0x0008
+#endif
 #ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
 #define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
 #endif
@@ -73,24 +82,6 @@ static gboolean valid_ticket_id(const gchar* id) {
     return TRUE;
 }
 
-static gboolean write_fd_all(int fd, const void* buf, gsize len) {
-    const guint8* p = buf;
-    gsize rem = len;
-    while (rem > 0) {
-#ifdef G_OS_WIN32
-        int w = _write(fd, p, (unsigned int)MIN(rem, (gsize)G_MAXINT));
-        if (w <= 0) return FALSE;
-#else
-        ssize_t w = write(fd, p, rem);
-        if (w < 0 && errno == EINTR) continue;
-        if (w <= 0) return FALSE;
-#endif
-        p += (gsize)w;
-        rem -= (gsize)w;
-    }
-    return TRUE;
-}
-
 #ifdef G_OS_WIN32
 /* The handle of C file descriptor fd (0, 1, 2), else the standard handle
  * which: GLib passes a child's pipes as C descriptors, so in a GUI program
@@ -101,6 +92,121 @@ static HANDLE std_handle(int fd, DWORD which) {
     if (h == NULL || h == INVALID_HANDLE_VALUE || h == (HANDLE)(intptr_t)-2) h = GetStdHandle(which);
     return h;
 }
+
+static gboolean write_fd_all(int fd, const void* buf, gsize len) {
+    HANDLE h = std_handle(fd, fd == 2 ? STD_ERROR_HANDLE : STD_OUTPUT_HANDLE);
+    if (h == NULL || h == INVALID_HANDLE_VALUE) return FALSE;
+    const guint8* p = buf;
+    gsize rem = len;
+    while (rem > 0) {
+        DWORD chunk = (DWORD)MIN(rem, (gsize)RELAY_MAX_FRAME);
+        DWORD w = 0;
+        if (!WriteFile(h, p, chunk, &w, NULL) || w == 0) return FALSE;
+        p += (gsize)w;
+        rem -= (gsize)w;
+    }
+    return TRUE;
+}
+
+typedef struct {
+    gboolean has_in_mode;
+    DWORD saved_in_mode;
+    gboolean has_out_mode;
+    DWORD saved_out_mode;
+    gboolean has_in_cp;
+    UINT saved_in_cp;
+    gboolean has_out_cp;
+    UINT saved_out_cp;
+    gboolean ctrl_ignored;
+    int saved_stdin_mode;
+    int saved_stdout_mode;
+    int saved_stderr_mode;
+} WinConsoleState;
+
+static void win_console_setup(WinConsoleState* wcs, gboolean use_tty) {
+    memset(wcs, 0, sizeof *wcs);
+    /* Binary mode always (both pipes and ConPTY): text mode translates \n to
+     * \r\n and stops reading at ^Z. */
+    wcs->saved_stdin_mode = _setmode(_fileno(stdin), _O_BINARY);
+    wcs->saved_stdout_mode = _setmode(_fileno(stdout), _O_BINARY);
+    wcs->saved_stderr_mode = _setmode(_fileno(stderr), _O_BINARY);
+    if (!use_tty) return;
+
+    HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
+    if (hin != NULL && hin != INVALID_HANDLE_VALUE && GetConsoleMode(hin, &wcs->saved_in_mode)) {
+        DWORD raw = (wcs->saved_in_mode | ENABLE_VIRTUAL_TERMINAL_INPUT) &
+                    ~(DWORD)(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
+        if (SetConsoleMode(hin, raw)) wcs->has_in_mode = TRUE;
+        ssh_trace("relay helper: win console in 0x%lx -> 0x%lx (ok=%d)",
+                  (unsigned long)wcs->saved_in_mode, (unsigned long)raw, wcs->has_in_mode ? 1 : 0);
+    } else {
+        ssh_trace("relay helper: win tty stdin has no console (err=%lu)", (unsigned long)GetLastError());
+    }
+
+    HANDLE hout = std_handle(1, STD_OUTPUT_HANDLE);
+    if (hout != NULL && hout != INVALID_HANDLE_VALUE && GetConsoleMode(hout, &wcs->saved_out_mode)) {
+        DWORD vt = wcs->saved_out_mode | ENABLE_PROCESSED_OUTPUT |
+                   ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+        if (SetConsoleMode(hout, vt)) {
+            wcs->has_out_mode = TRUE;
+        } else {
+            vt = wcs->saved_out_mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            if (SetConsoleMode(hout, vt)) wcs->has_out_mode = TRUE;
+        }
+        ssh_trace("relay helper: win console out 0x%lx -> 0x%lx (ok=%d)",
+                  (unsigned long)wcs->saved_out_mode, (unsigned long)vt, wcs->has_out_mode ? 1 : 0);
+    } else {
+        ssh_trace("relay helper: win tty stdout has no console (err=%lu)", (unsigned long)GetLastError());
+    }
+
+    UINT in_cp = GetConsoleCP();
+    if (in_cp != 0 && SetConsoleCP(CP_UTF8)) {
+        wcs->saved_in_cp = in_cp;
+        wcs->has_in_cp = TRUE;
+    }
+    UINT out_cp = GetConsoleOutputCP();
+    if (out_cp != 0 && SetConsoleOutputCP(CP_UTF8)) {
+        wcs->saved_out_cp = out_cp;
+        wcs->has_out_cp = TRUE;
+    }
+    ssh_trace("relay helper: win console cp in=%u->%u out=%u->%u",
+              (unsigned int)in_cp, (unsigned int)GetConsoleCP(),
+              (unsigned int)out_cp, (unsigned int)GetConsoleOutputCP());
+
+    if (wcs->has_in_mode && SetConsoleCtrlHandler(NULL, TRUE)) {
+        wcs->ctrl_ignored = TRUE;
+    }
+}
+
+static void win_console_restore(const WinConsoleState* wcs) {
+    if (wcs->ctrl_ignored) SetConsoleCtrlHandler(NULL, FALSE);
+    if (wcs->has_in_cp) SetConsoleCP(wcs->saved_in_cp);
+    if (wcs->has_out_cp) SetConsoleOutputCP(wcs->saved_out_cp);
+    if (wcs->has_in_mode) {
+        HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
+        if (hin != NULL && hin != INVALID_HANDLE_VALUE) SetConsoleMode(hin, wcs->saved_in_mode);
+    }
+    if (wcs->has_out_mode) {
+        HANDLE hout = std_handle(1, STD_OUTPUT_HANDLE);
+        if (hout != NULL && hout != INVALID_HANDLE_VALUE) SetConsoleMode(hout, wcs->saved_out_mode);
+    }
+    if (wcs->saved_stdin_mode != -1) _setmode(_fileno(stdin), wcs->saved_stdin_mode);
+    if (wcs->saved_stdout_mode != -1) _setmode(_fileno(stdout), wcs->saved_stdout_mode);
+    if (wcs->saved_stderr_mode != -1) _setmode(_fileno(stderr), wcs->saved_stderr_mode);
+}
+#else
+static gboolean write_fd_all(int fd, const void* buf, gsize len) {
+    const guint8* p = buf;
+    gsize rem = len;
+    while (rem > 0) {
+        ssize_t w = write(fd, p, rem);
+        if (w < 0 && errno == EINTR) continue;
+        if (w <= 0) return FALSE;
+        p += (gsize)w;
+        rem -= (gsize)w;
+    }
+    return TRUE;
+}
 #endif
 
 static gboolean helper_get_winsize(gint* out_rows, gint* out_cols) {
@@ -109,10 +215,11 @@ static gboolean helper_get_winsize(gint* out_rows, gint* out_cols) {
 #ifdef G_OS_WIN32
     HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
     DWORD mode = 0;
-    if (hin == INVALID_HANDLE_VALUE || !GetConsoleMode(hin, &mode)) return FALSE;
+    if (hin == NULL || hin == INVALID_HANDLE_VALUE || !GetConsoleMode(hin, &mode)) return FALSE;
     HANDLE hout = std_handle(1, STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if (hout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hout, &info)) {
+    if (hout != NULL && hout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hout, &info) &&
+        info.srWindow.Right >= info.srWindow.Left && info.srWindow.Bottom >= info.srWindow.Top) {
         *out_cols = (gint)(info.srWindow.Right - info.srWindow.Left + 1);
         *out_rows = (gint)(info.srWindow.Bottom - info.srWindow.Top + 1);
     }
@@ -134,10 +241,13 @@ typedef struct {
     GMutex write_mu;
     gint stop; /* atomic */
     gboolean use_tty;
+    gint init_rows;
+    gint init_cols;
 #ifdef G_OS_WIN32
     GMutex win_mu;
     HANDLE stdin_thread_handle;
     HANDLE stdin_done_event;
+    HANDLE stop_event;
 #else
     int stop_pipe[2];
 #endif
@@ -179,6 +289,16 @@ static gpointer helper_stdin_thread(gpointer data) {
         sa.sa_handler = on_sigwinch;
         sa.sa_flags = SA_RESTART;
         sigaction(SIGWINCH, &sa, NULL);
+        /* Catch a resize that happened during the handshake before SIGWINCH was installed */
+        gint cur_rows = 0, cur_cols = 0;
+        if (helper_get_winsize(&cur_rows, &cur_cols) && cur_rows > 0 && cur_cols > 0 &&
+            (cur_rows != io->init_rows || cur_cols != io->init_cols)) {
+            ssh_trace("relay helper: resize %dx%d", cur_cols, cur_rows);
+            guint8 payload[4];
+            put_be16(payload, (guint16)cur_rows);
+            put_be16(payload + 2, (guint16)cur_cols);
+            helper_send_frame(io, 'W', payload, 4);
+        }
     }
 
     for (;;) {
@@ -206,6 +326,7 @@ static gpointer helper_stdin_thread(gpointer data) {
             (void)r;
             gint rows = 0, cols = 0;
             if (helper_get_winsize(&rows, &cols) && rows > 0 && cols > 0) {
+                ssh_trace("relay helper: resize %dx%d", cols, rows);
                 guint8 payload[4];
                 put_be16(payload, (guint16)rows);
                 put_be16(payload + 2, (guint16)cols);
@@ -241,16 +362,25 @@ static gpointer helper_stdin_thread(gpointer data) {
 #else
 static gpointer helper_win_resize_thread(gpointer data) {
     HelperIo* io = data;
-    gint last_rows = 0, last_cols = 0;
-    helper_get_winsize(&last_rows, &last_cols);
+    gint last_rows = io->init_rows;
+    gint last_cols = io->init_cols;
+    gboolean first = TRUE;
     while (!g_atomic_int_get(&io->stop)) {
-        Sleep(250);
-        if (g_atomic_int_get(&io->stop)) break;
+        if (!first) {
+            if (io->stop_event != NULL) {
+                if (WaitForSingleObject(io->stop_event, 250) == WAIT_OBJECT_0) break;
+            } else {
+                Sleep(250);
+            }
+            if (g_atomic_int_get(&io->stop)) break;
+        }
+        first = FALSE;
         gint rows = 0, cols = 0;
         if (helper_get_winsize(&rows, &cols) && rows > 0 && cols > 0 &&
             (rows != last_rows || cols != last_cols)) {
             last_rows = rows;
             last_cols = cols;
+            ssh_trace("relay helper: resize %dx%d", cols, rows);
             guint8 payload[4];
             put_be16(payload, (guint16)rows);
             put_be16(payload + 2, (guint16)cols);
@@ -270,6 +400,8 @@ static gpointer helper_stdin_thread(gpointer data) {
     g_mutex_unlock(&io->win_mu);
 
     HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
+    DWORD cmode = 0;
+    gboolean is_console = (hin != NULL && hin != INVALID_HANDLE_VALUE && GetConsoleMode(hin, &cmode));
     guint8 buf[RELAY_MAX_FRAME];
     guint64 total = 0;
     while (!g_atomic_int_get(&io->stop)) {
@@ -279,6 +411,9 @@ static gpointer helper_stdin_thread(gpointer data) {
         if (ok && nread > 0) {
             total += nread;
             if (!helper_send_frame(io, 'I', buf, (guint32)nread)) break;
+        } else if (ok && nread == 0 && is_console) {
+            /* A console read can return 0 bytes on non-character events; never EOF */
+            continue;
         } else {
             /* 109 (ERROR_BROKEN_PIPE): the normal end of a pipe */
             ssh_trace("relay helper: stdin ended after %" G_GUINT64_FORMAT " bytes (error %lu)", total,
@@ -360,6 +495,7 @@ static int helper_run(int argc, char** argv) {
     ssh_trace_setup(); /* LOOKINFILES_SSH_LOG, as the instance */
     gchar* ticket = read_and_delete_ticket(argv[3]);
     if (ticket == NULL) {
+        ssh_trace("relay helper: missing ticket id=%s", argv[3]);
         fprintf(stderr, "lookinfiles relay: missing ticket\n");
         return 255;
     }
@@ -382,6 +518,8 @@ static int helper_run(int argc, char** argv) {
     GSocketConnection* conn = g_socket_client_connect_to_host(client, "127.0.0.1", (guint16)port, NULL, &err);
     g_object_unref(client);
     if (conn == NULL) {
+        ssh_trace("relay helper: connect failed id=%s port=%u: %s", argv[3], (guint)port,
+                  err != NULL ? err->message : "connection failed");
         fprintf(stderr, "lookinfiles relay: %s\n", err != NULL ? err->message : "connection failed");
         g_clear_error(&err);
         wipe_string(ticket);
@@ -399,6 +537,7 @@ static int helper_run(int argc, char** argv) {
     gboolean sent = g_output_stream_write_all(sock_out, hs, strlen(hs), NULL, NULL, NULL);
     wipe_string(hs);
     if (!sent) {
+        ssh_trace("relay helper: handshake write failed id=%s", argv[3]);
         fprintf(stderr, "lookinfiles relay: connection lost\n");
         g_io_stream_close(G_IO_STREAM(conn), NULL, NULL);
         g_object_unref(conn);
@@ -410,6 +549,7 @@ static int helper_run(int argc, char** argv) {
     g_data_input_stream_set_newline_type(in, G_DATA_STREAM_NEWLINE_TYPE_LF);
     gchar* reply = g_data_input_stream_read_line(in, NULL, NULL, NULL);
     if (reply == NULL) {
+        ssh_trace("relay helper: handshake reply lost id=%s", argv[3]);
         fprintf(stderr, "lookinfiles relay: connection lost\n");
         g_object_unref(in);
         g_io_stream_close(G_IO_STREAM(conn), NULL, NULL);
@@ -423,6 +563,7 @@ static int helper_run(int argc, char** argv) {
         use_tty = TRUE;
     } else {
         const gchar* msg = g_str_has_prefix(reply, "ERR ") ? reply + 4 : reply;
+        ssh_trace("relay helper: refused id=%s: %s", argv[3], msg);
         fprintf(stderr, "lookinfiles relay: %s\n", msg);
         g_free(reply);
         g_object_unref(in);
@@ -431,29 +572,20 @@ static int helper_run(int argc, char** argv) {
         return 255;
     }
     g_free(reply);
+    ssh_trace("relay helper: connected id=%s tty=%d size=%dx%d", argv[3], use_tty ? 1 : 0, cols, rows);
 
     /* Configure TTY raw mode or Windows binary stdio */
 #ifdef G_OS_WIN32
-    DWORD saved_mode = 0;
-    gboolean restore_console = FALSE;
-    if (use_tty) {
-        HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
-        if (hin != INVALID_HANDLE_VALUE && GetConsoleMode(hin, &saved_mode)) {
-            DWORD raw = (saved_mode | ENABLE_VIRTUAL_TERMINAL_INPUT) &
-                        ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
-            if (SetConsoleMode(hin, raw)) restore_console = TRUE;
-        }
-    } else {
-        _setmode(_fileno(stdin), _O_BINARY);
-        _setmode(_fileno(stdout), _O_BINARY);
-        _setmode(_fileno(stderr), _O_BINARY);
-    }
+    WinConsoleState wcs;
+    win_console_setup(&wcs, use_tty);
 #else
     struct termios saved_termios;
     gboolean restore_termios = FALSE;
     if (use_tty && isatty(STDIN_FILENO) && tcgetattr(STDIN_FILENO, &saved_termios) == 0) {
         struct termios raw = saved_termios;
         cfmakeraw(&raw);
+        raw.c_cc[VMIN] = 1;
+        raw.c_cc[VTIME] = 0;
         if (tcsetattr(STDIN_FILENO, TCSANOW, &raw) == 0) restore_termios = TRUE;
     }
 #endif
@@ -462,10 +594,13 @@ static int helper_run(int argc, char** argv) {
     memset(&io, 0, sizeof io);
     io.sock_out = sock_out;
     io.use_tty = use_tty;
+    io.init_rows = rows;
+    io.init_cols = cols;
     g_mutex_init(&io.write_mu);
 #ifdef G_OS_WIN32
     g_mutex_init(&io.win_mu);
     io.stdin_done_event = CreateEventW(NULL, TRUE, FALSE, NULL);
+    io.stop_event = CreateEventW(NULL, TRUE, FALSE, NULL);
     GThread* resize_th = use_tty ? g_thread_new("relay-resize", helper_win_resize_thread, &io) : NULL;
 #else
     io.stop_pipe[0] = io.stop_pipe[1] = -1;
@@ -497,13 +632,21 @@ static int helper_run(int argc, char** argv) {
         if (type == 'O') {
             out_total += len;
             if (len > 0 && !write_fd_all(1, buf, len)) {
+#ifdef G_OS_WIN32
+                ssh_trace("relay helper: cannot write stdout (err=%lu)", (unsigned long)GetLastError());
+#else
                 ssh_trace("relay helper: cannot write stdout");
+#endif
                 break;
             }
         } else if (type == 'R') {
             err_total += len;
             if (len > 0 && !write_fd_all(2, buf, len)) {
+#ifdef G_OS_WIN32
+                ssh_trace("relay helper: cannot write stderr (err=%lu)", (unsigned long)GetLastError());
+#else
                 ssh_trace("relay helper: cannot write stderr");
+#endif
                 break;
             }
         } else if (type == 'X' && len == 4) {
@@ -523,6 +666,7 @@ static int helper_run(int argc, char** argv) {
     /* Stop stdin thread cleanly */
     g_atomic_int_set(&io.stop, 1);
 #ifdef G_OS_WIN32
+    if (io.stop_event != NULL) SetEvent(io.stop_event);
     gboolean stdin_done = io.stdin_done_event == NULL;
     for (int tries = 0; tries < 50 && !stdin_done; tries++) {
         g_mutex_lock(&io.win_mu);
@@ -531,18 +675,19 @@ static int helper_run(int argc, char** argv) {
         stdin_done = WaitForSingleObject(io.stdin_done_event, 10) == WAIT_OBJECT_0;
     }
     if (resize_th != NULL) g_thread_join(resize_th);
-    if (restore_console) SetConsoleMode(std_handle(0, STD_INPUT_HANDLE), saved_mode);
+    win_console_restore(&wcs);
     if (!stdin_done) {
         /* Its ReadFile() could not be cancelled: never wait for it (the
          * kernel or language server would seem to hang); the process ends
          * with its exit status, which ends the thread too. io stays valid:
          * nothing below is freed before ExitProcess(). */
-        fflush(NULL);
         if (!got_exit) fprintf(stderr, "lookinfiles relay: connection lost\n");
+        fflush(NULL);
         ExitProcess((UINT)exit_code);
     }
     g_thread_join(stdin_th);
     if (io.stdin_done_event != NULL) CloseHandle(io.stdin_done_event);
+    if (io.stop_event != NULL) CloseHandle(io.stop_event);
     g_mutex_clear(&io.win_mu);
 #else
     if (io.stop_pipe[1] >= 0) {

@@ -1,8 +1,11 @@
+#define _XOPEN_SOURCE 600
+#define _DEFAULT_SOURCE
+
 /* Unit tests for src/core/ssh_relay.c and src/core/ssh_relay_helper.c
  * against the in-process libssh test server (tests/ssh_test_server.h).
  * Also runs this test binary itself in --ssh-channel helper mode so every
  * end-to-end test exercises real subprocess spawning, ticket file handling,
- * framing, flow control, and exit status propagation. */
+ * framing, flow control, real PTY raw mode/resize, and exit status propagation. */
 #include "core/app_paths.h"
 #include "core/ssh_link.h"
 #include "core/ssh_relay.h"
@@ -11,8 +14,12 @@
 #include "ssh_test_server.h"
 
 #include <glib/gstdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <termios.h>
 
 static gchar* self_exe;
 static gchar* test_runtime_root;
@@ -522,6 +529,190 @@ static void test_link_lost_exits_255(void) {
     fixture_teardown(&f);
 }
 
+static pid_t spawn_on_pty(GPtrArray* argv, gint cols, gint rows, int* out_master) {
+    int master = posix_openpt(O_RDWR | O_NOCTTY);
+    g_assert_cmpint(master, >=, 0);
+    g_assert_cmpint(grantpt(master), ==, 0);
+    g_assert_cmpint(unlockpt(master), ==, 0);
+    const char* sname = ptsname(master);
+    g_assert_nonnull(sname);
+    gchar* slave = g_strdup(sname);
+
+    struct winsize ws;
+    memset(&ws, 0, sizeof ws);
+    ws.ws_col = (unsigned short)cols;
+    ws.ws_row = (unsigned short)rows;
+    g_assert_cmpint(ioctl(master, TIOCSWINSZ, &ws), ==, 0);
+    fcntl(master, F_SETFD, FD_CLOEXEC);
+
+    g_ptr_array_add(argv, NULL);
+    pid_t pid = fork();
+    g_assert_cmpint(pid, >=, 0);
+    if (pid == 0) {
+        setsid();
+        int fd = open(slave, O_RDWR);
+        if (fd < 0) _exit(127);
+        ioctl(fd, TIOCSCTTY, 0);
+        dup2(fd, 0);
+        dup2(fd, 1);
+        dup2(fd, 2);
+        if (fd > 2) close(fd);
+        execv((const char*)argv->pdata[0], (char* const*)argv->pdata);
+        _exit(127);
+    }
+    g_free(slave);
+    int fl = fcntl(master, F_GETFL, 0);
+    if (fl >= 0) fcntl(master, F_SETFL, fl | O_NONBLOCK);
+    *out_master = master;
+    return pid;
+}
+
+static void pty_read_expect(int master, const gchar* expected, gsize expected_len, guint timeout_ms) {
+    GByteArray* acc = g_byte_array_new();
+    gint64 deadline = g_get_monotonic_time() + (gint64)timeout_ms * 1000;
+    while (acc->len < expected_len) {
+        gint64 rem_ms = (deadline - g_get_monotonic_time()) / 1000;
+        if (rem_ms <= 0) break;
+        struct pollfd pfd = { .fd = master, .events = POLLIN };
+        int pr = poll(&pfd, 1, (int)MIN(rem_ms, 100));
+        if (pr <= 0) continue;
+        guint8 buf[256];
+        ssize_t n = read(master, buf, MIN(sizeof buf, expected_len - acc->len));
+        if (n > 0) g_byte_array_append(acc, buf, (guint)n);
+        else if (n == 0 || (n < 0 && errno != EAGAIN && errno != EINTR)) break;
+    }
+    g_assert_cmpmem(acc->data, acc->len, expected, expected_len);
+    g_byte_array_unref(acc);
+}
+
+static void test_pty_helper_end_to_end(void) {
+    Fixture f;
+    fixture_setup(&f, "grace", "pw7");
+
+    GPtrArray* argv = ssh_session_argv(&f.target, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
+    g_assert_cmpuint(argv->len, ==, 4);
+    g_assert_cmpstr(argv->pdata[0], ==, self_exe);
+    g_assert_cmpstr(argv->pdata[1], ==, "--ssh-channel");
+
+    int master = -1;
+    pid_t pid = spawn_on_pty(argv, 100, 30, &master);
+    g_ptr_array_unref(argv);
+
+    /* Initial PTY size from helper_get_winsize() -> login shell */
+    pty_read_expect(master, "pty:100x30\n", 11, 5000);
+
+    /* Raw mode: Ctrl+C (0x03) is not swallowed by ISIG and UTF-8 passes intact */
+    const gchar raw_in[] = "\x03" "caf\xc3\xa9\n";
+    g_assert_cmpint(write(master, raw_in, sizeof raw_in - 1), ==, (ssize_t)(sizeof raw_in - 1));
+    pty_read_expect(master, raw_in, sizeof raw_in - 1, 5000);
+
+    /* Dynamic resize: TIOCSWINSZ -> SIGWINCH -> 'W' frame -> ssh_channel_resize_pty */
+    struct winsize ws;
+    memset(&ws, 0, sizeof ws);
+    ws.ws_col = 120;
+    ws.ws_row = 40;
+    g_assert_cmpint(ioctl(master, TIOCSWINSZ, &ws), ==, 0);
+    pty_read_expect(master, "resize:120x40\n", 14, 5000);
+
+    /* Ctrl+D (0x04) ends the test shell cleanly with status 0 */
+    char eot = 0x04;
+    g_assert_cmpint(write(master, &eot, 1), ==, 1);
+    int wstatus = 0;
+    g_assert_cmpint(waitpid(pid, &wstatus, 0), ==, pid);
+    g_assert_true(WIFEXITED(wstatus));
+    g_assert_cmpint(WEXITSTATUS(wstatus), ==, 0);
+
+    close(master);
+    fixture_teardown(&f);
+}
+
+static void test_pty_exec_with_command(void) {
+    Fixture f;
+    fixture_setup(&f, "heidi", "pw8");
+
+    /* Like terminal.c with remote_path: SSH_ARGV_TTY | SSH_ARGV_NO_MUX + command */
+    GPtrArray* argv = ssh_session_argv(&f.target, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
+    g_assert_cmpuint(argv->len, ==, 4);
+    g_ptr_array_add(argv, g_strdup("pty-cmd:cd /proj; exec sh"));
+
+    int master = -1;
+    pid_t pid = spawn_on_pty(argv, 90, 28, &master);
+    g_ptr_array_unref(argv);
+
+    const gchar* expected = "pty-exec:90x28:cd /proj; exec sh\n";
+    pty_read_expect(master, expected, strlen(expected), 5000);
+
+    int wstatus = 0;
+    g_assert_cmpint(waitpid(pid, &wstatus, 0), ==, pid);
+    g_assert_true(WIFEXITED(wstatus));
+    g_assert_cmpint(WEXITSTATUS(wstatus), ==, 0);
+
+    close(master);
+    fixture_teardown(&f);
+}
+
+static void test_pty_slow_reader_does_not_stall_sibling(void) {
+    Fixture f;
+    fixture_setup(&f, "ivan", "pw9");
+
+    /* A remote terminal whose PTY is not read must never stall sibling channels */
+    GPtrArray* argv = ssh_session_argv(&f.target, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
+    g_ptr_array_add(argv, g_strdup("flood"));
+    int master = -1;
+    pid_t pid = spawn_on_pty(argv, 80, 24, &master);
+    g_ptr_array_unref(argv);
+
+    g_usleep(120 * 1000);
+
+    for (int i = 0; i < 3; i++) {
+        GBytes* out = NULL;
+        GBytes* serr = NULL;
+        const gchar* hello_cmd[] = { "hello", NULL };
+        gint st = run_relay_cmd(&f.target, hello_cmd, NULL, &out, &serr);
+        g_assert_cmpint(st, ==, 0);
+        gsize n = 0;
+        g_assert_cmpmem(g_bytes_get_data(out, &n), n, "hello stdout\n", 13);
+        g_bytes_unref(out);
+        g_bytes_unref(serr);
+    }
+
+    /* Drain the PTY until the helper exits */
+    gsize total = 0;
+    gint64 deadline = g_get_monotonic_time() + 10 * G_USEC_PER_SEC;
+    for (;;) {
+        struct pollfd pfd = { .fd = master, .events = POLLIN };
+        int pr = poll(&pfd, 1, 50);
+        if (pr > 0) {
+            guint8 buf[32768];
+            ssize_t n = read(master, buf, sizeof buf);
+            if (n > 0) {
+                total += (gsize)n;
+                continue;
+            }
+            if (n == 0 || (n < 0 && errno != EAGAIN && errno != EINTR)) break;
+        }
+        int wstatus = 0;
+        pid_t r = waitpid(pid, &wstatus, WNOHANG);
+        if (r == pid) {
+            g_assert_true(WIFEXITED(wstatus));
+            g_assert_cmpint(WEXITSTATUS(wstatus), ==, 0);
+            pid = -1;
+            break;
+        }
+        g_assert_cmpint(g_get_monotonic_time(), <, deadline);
+    }
+    if (pid > 0) {
+        int wstatus = 0;
+        g_assert_cmpint(waitpid(pid, &wstatus, 0), ==, pid);
+        g_assert_true(WIFEXITED(wstatus));
+        g_assert_cmpint(WEXITSTATUS(wstatus), ==, 0);
+    }
+    g_assert_cmpuint(total, ==, FLOOD_TOTAL);
+
+    close(master);
+    fixture_teardown(&f);
+}
+
 static guint missing_hits;
 
 static void on_missing(const SshTarget* t, gpointer data) {
@@ -541,13 +732,14 @@ static void test_session_argv_dispatch(void) {
     g_assert_cmpstr(argv->pdata[1], ==, "--ssh-channel");
     g_ptr_array_unref(argv);
 
-    /* 2. Terminal flags (SSH_ARGV_TTY | SSH_ARGV_NO_MUX) still use ssh in step 3 */
+    /* 2. Terminal flags (SSH_ARGV_TTY | SSH_ARGV_NO_MUX) also use the relay with an open link */
     argv = ssh_session_argv(&f.target, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
-    g_assert_cmpstr(argv->pdata[0], ==, "ssh");
-    g_assert_true(has_arg(argv, "-t"));
+    g_assert_cmpuint(argv->len, ==, 4);
+    g_assert_cmpstr(argv->pdata[0], ==, self_exe);
+    g_assert_cmpstr(argv->pdata[1], ==, "--ssh-channel");
     g_ptr_array_unref(argv);
 
-    /* 3. Missing link -> reports missing and returns ssh argv with BatchMode=yes */
+    /* 3. Missing link -> reports missing and returns ssh argv with BatchMode=yes (for both non-tty and tty) */
     missing_hits = 0;
     ssh_session_on_master_missing(on_missing, NULL);
     SshTarget other = { .host = "no-such-host", .user = "frank", .port = 2222 };
@@ -557,10 +749,18 @@ static void test_session_argv_dispatch(void) {
     g_assert_cmpstr(argv->pdata[0], ==, "ssh");
     g_assert_true(has_arg(argv, "BatchMode=yes"));
     g_ptr_array_unref(argv);
+
+    argv = ssh_session_argv(&other, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
+    while (g_main_context_iteration(NULL, FALSE)) {}
+    g_assert_cmpuint(missing_hits, ==, 2);
+    g_assert_cmpstr(argv->pdata[0], ==, "ssh");
+    g_assert_true(has_arg(argv, "-t"));
+    g_assert_true(has_arg(argv, "BatchMode=yes"));
+    g_ptr_array_unref(argv);
     ssh_session_on_master_missing(NULL, NULL);
 
-    /* 4. Non-private runtime directory (app_runtime_dir() returns NULL) -> falls back to ssh,
-     * never asking (BatchMode=yes): a program restarted in a loop must not prompt each time */
+    /* 4. Non-private runtime directory (app_runtime_dir() returns NULL) -> falls back to ssh;
+     * non-tty keeps BatchMode=yes (restart loops must not prompt), tty falls back to interactive ssh */
     gchar* rdir = app_runtime_dir();
     g_assert_nonnull(rdir);
     g_assert_cmpint(chmod(rdir, 0755), ==, 0);
@@ -568,6 +768,11 @@ static void test_session_argv_dispatch(void) {
     argv = ssh_session_argv(&f.target, 0);
     g_assert_cmpstr(argv->pdata[0], ==, "ssh");
     g_assert_true(has_arg(argv, "BatchMode=yes"));
+    g_ptr_array_unref(argv);
+    argv = ssh_session_argv(&f.target, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
+    g_assert_cmpstr(argv->pdata[0], ==, "ssh");
+    g_assert_true(has_arg(argv, "-t"));
+    g_assert_false(has_arg(argv, "BatchMode=yes"));
     g_ptr_array_unref(argv);
     g_assert_cmpint(chmod(rdir, 0700), ==, 0);
     g_free(rdir);
@@ -592,6 +797,10 @@ int main(int argc, char** argv) {
                     test_roundtrip_status_stderr_and_ticket_file);
     g_test_add_func("/ssh_relay/ticket_refusals_and_cleanup", test_ticket_refusals_and_cleanup);
     g_test_add_func("/ssh_relay/pty_shell_and_resize", test_pty_shell_and_resize);
+    g_test_add_func("/ssh_relay/pty_helper_end_to_end", test_pty_helper_end_to_end);
+    g_test_add_func("/ssh_relay/pty_exec_with_command", test_pty_exec_with_command);
+    g_test_add_func("/ssh_relay/pty_slow_reader_does_not_stall_sibling",
+                    test_pty_slow_reader_does_not_stall_sibling);
     g_test_add_func("/ssh_relay/slow_reader_does_not_stall_sibling", test_slow_reader_does_not_stall_sibling);
     g_test_add_func("/ssh_relay/link_lost_exits_255", test_link_lost_exits_255);
     g_test_add_func("/ssh_relay/session_argv_dispatch", test_session_argv_dispatch);

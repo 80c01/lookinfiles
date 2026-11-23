@@ -2,9 +2,10 @@
 
 Status: **in progress**. Steps 1, 2 and 3 are done and tested by the user
 on Windows (files, previews, Git tab, System Monitor, notebook kernels and
-language servers: one password, no `ssh.exe`). Kernels and language
-servers go through the loopback relay over the link; terminals still
-start `ssh.exe`. **Next: step 4** (terminal), then step 6. Part of step 5
+language servers: one password, no `ssh.exe`). Step 4 (remote terminals
+over the relay, with the `-mconsole` `lookinfiles-relay.exe` helper on
+Windows and full ConPTY console setup) is implemented and ready to test on
+Windows. **Next: test step 4 on Windows**, then step 6. Part of step 5
 is done too (see there).
 
 ### Where things are (read before step 4)
@@ -20,6 +21,7 @@ is done too (see there).
 | `core/ssh_process`    | `SshProcess`: a streamed command, `GSubprocess` or channel        |
 | `core/ssh_relay`      | loopback TCP relay server + single-use ticket registry            |
 | `core/ssh_relay_helper` | `--ssh-channel` helper process (stdio <-> framed relay socket)  |
+| `core/ssh_relay_main` | `-mconsole` entry point for Windows `lookinfiles-relay.exe`       |
 | `core/ssh_session`    | dispatch: link or `ssh` program (`ssh_exec_*`, `ssh_spawn`, argv) |
 | `core/sftp_client`    | `sftp_client_spawn()`: an `sftp` subsystem channel on the link    |
 | `explorer/remote_session` | opens / closes the link, its prompts (`on_link_ask()`)        |
@@ -171,34 +173,33 @@ The link must never repeat this: one channel's full buffer stops reading
    command and exits with the channel's status. The callers do not change:
    `ssh_session_argv()` returns the relay's argv when the link is in use.
    Protocol: see "Relay protocol" below.
-4. **Terminal.** The same relay with a pty channel (the ticket says so).
+4. **Terminal** (implemented, awaiting Windows test). The same relay with
+   a pty channel (the ticket says so).
    `terminal.c` asks `SSH_ARGV_TTY | SSH_ARGV_NO_MUX`: with a link,
    `NO_MUX` no longer means "a connection of its own" but "never through
    the OpenSSH master"; the freeze lesson is kept by the relay's flow
-   control (a terminal not read stops its own channel only). Optional: a
-   terminal may keep using `ssh.exe` (one prompt per terminal).
-   **Two Windows limits of the step-3 relay, to solve here** (found by
-   review, not yet run):
-   - *A GUI program gets no console.* `lookinfiles.exe` is linked
-     `-mwindows`; the built-in terminal (`terminal/vt_pty.c`) runs its
-     program in a ConPTY (`CreatePseudoConsole()`), and Windows attaches
-     only console-subsystem programs to it: the relay would see no console
-     (`GetConsoleMode()` fails, so no tty, no size, no raw mode) and read
-     plain pipes. Either a small console-subsystem relay next to the
-     application (`lookinfiles-relay.exe`, built from the same
-     `ssh_relay_helper.c` with `-mconsole`, listed in `docs/packaging.md`),
-     which `ssh_relay_argv()` returns for a tty; or `AttachConsole()` /
-     `AllocConsole()` in the helper, checked in a ConPTY first. Test it in
-     the real terminal on the user's machine: the unit tests run on Linux.
-   - *Console settings in tty mode* (`ssh_relay_helper.c`, the tty branch,
-     which only sets the input mode): stdout also needs
-     `ENABLE_VIRTUAL_TERMINAL_PROCESSING` (with `DISABLE_NEWLINE_AUTO_RETURN`)
-     or the escape sequences print as text; stdin and stdout
-     `_setmode(_O_BINARY)` (text mode turns `\n` into `\r\n` and stops
-     at `^Z`); `SetConsoleCP(CP_UTF8)` and `SetConsoleOutputCP(CP_UTF8)`,
-     or accents come in the OEM code page (850 in France) and leave
-     garbled. Save and restore all of them at exit, as the input mode is.
-     `ssh.exe` (Win32-OpenSSH) does all of this: compare with it.
+   control (a terminal not read stops its own channel only). Failed remote
+   terminals (spawn error or exit 255) stay open with a status-bar notice
+   and `[ Press Enter to close ]` so the error text remains visible.
+   Windows relay details implemented here:
+   - *Console-subsystem helper.* `lookinfiles.exe` is linked `-mwindows`,
+     so Windows does not attach it to ConPTY (`terminal/vt_pty.c`).
+     `Makefile` builds a small `-mconsole` helper `lookinfiles-relay.exe`
+     (`core/ssh_relay_main.c` + `ssh_relay_helper.o` + `app_paths.o` +
+     `ssh_trace.o`, bundled by `build_windows_zip.sh`, listed in
+     `docs/packaging.md`). `ssh_relay_argv()` selects
+     `lookinfiles-relay.exe` when `tty` is true and keeps `lookinfiles.exe`
+     for non-tty relays (so kernels and language servers never flash a
+     console window).
+   - *Console settings in tty mode* (`ssh_relay_helper.c`): stdin, stdout
+     and stderr are switched to `_O_BINARY`; in tty mode input sets
+     `ENABLE_VIRTUAL_TERMINAL_INPUT` (clearing line input, echo and
+     processed input), output sets `ENABLE_PROCESSED_OUTPUT |
+     ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN`,
+     both console code pages are set to `CP_UTF8`, `Ctrl+C` is ignored
+     locally so `0x03` reaches the remote shell, and all settings are
+     saved and restored on exit. Output writes use `WriteFile()` via
+     `std_handle()`, and 0-byte console reads do not send EOF.
 5. **Switch.** Done: on Windows the link is used when built with libssh,
    Linux keeps the OpenSSH master, `LOOKINFILES_SSH_LIBSSH` selects either
    (`ssh_link_enabled()`); `ssh_session_shares_connection()` (master or

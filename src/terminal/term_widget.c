@@ -857,6 +857,14 @@ void vte_terminal_paste_clipboard(VteTerminal* t) {
     paste_from(t, gtk_widget_get_clipboard(GTK_WIDGET(t)));
 }
 
+void vte_terminal_feed(VteTerminal* t, const char* data, gssize length) {
+    if (data == NULL) return;
+    gsize len = length < 0 ? strlen(data) : (gsize)length;
+    if (len == 0) return;
+    vt_screen_feed(t->screen, data, len);
+    gtk_widget_queue_draw(GTK_WIDGET(t));
+}
+
 void vte_terminal_feed_child(VteTerminal* t, const char* text, gssize length) {
     if (text != NULL) send(t, text, length);
 }

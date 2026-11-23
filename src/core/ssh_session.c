@@ -203,23 +203,26 @@ static void report_missing(const SshTarget* t) {
 
 GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
     gboolean force_batch = FALSE;
-    if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX))) {
 #ifdef HAVE_LIBSSH
-        if (ssh_link_enabled()) {
-            SshLink* link = ssh_link_lookup(t);
-            if (link != NULL) {
-                GPtrArray* relay = ssh_relay_argv(link, (flags & SSH_ARGV_TTY) != 0);
-                ssh_link_unref(link);
-                if (relay != NULL) return relay;
-                /* No relay (no runtime directory...): ssh then, but never
-                 * asking, or a program restarted in a loop would ask each time */
-                force_batch = TRUE;
-            } else {
-                if (missing_func != NULL) report_missing(t);
-                force_batch = TRUE;
-            }
-        } else
+    if (ssh_link_enabled() && !(flags & SSH_ARGV_MASTER)) {
+        /* With a libssh link, SSH_ARGV_NO_MUX only skips the OpenSSH master:
+         * interactive terminals also go through the relay (its per-channel
+         * flow control keeps one slow terminal from stalling the link). */
+        SshLink* link = ssh_link_lookup(t);
+        if (link != NULL) {
+            GPtrArray* relay = ssh_relay_argv(link, (flags & SSH_ARGV_TTY) != 0);
+            ssh_link_unref(link);
+            if (relay != NULL) return relay;
+            /* No relay (no runtime directory, missing console helper): ssh
+             * then, never asking in background restart loops. */
+            if (!(flags & SSH_ARGV_TTY)) force_batch = TRUE;
+        } else {
+            if (missing_func != NULL) report_missing(t);
+            force_batch = TRUE;
+        }
+    } else
 #endif
+    if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX))) {
         if (missing_func != NULL) {
             gchar* sock = ssh_session_control_path(t);
             gboolean missing = (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS));

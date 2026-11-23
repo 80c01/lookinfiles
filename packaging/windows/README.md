@@ -58,11 +58,13 @@ From the root of the repository in the MSYS2 UCRT64 shell:
 make
 ```
 
-This will produce `lookinfiles.exe`.
+This will produce `lookinfiles.exe` (and `lookinfiles-relay.exe` when built with
+`mingw-w64-ucrt-x86_64-libssh`, a small console-subsystem helper used by remote
+terminals inside ConPTY).
 
 ## 3. Creating a Portable Windows Zip
 
-To package a standalone portable distribution containing `lookinfiles.exe` along with all required runtime DLLs, GLib schemas, and Adwaita icons:
+To package a standalone portable distribution containing `lookinfiles.exe` (and `lookinfiles-relay.exe` when built with libssh) along with all required runtime DLLs, GLib schemas, and Adwaita icons:
 
 ```bash
 make windows-zip

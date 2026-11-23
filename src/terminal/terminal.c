@@ -1,13 +1,21 @@
 #include "terminal/terminal_private.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
+#include "core/i18n.h"
 #include "explorer/remote_store.h"
 #include "core/ssh_session.h"
+#ifdef HAVE_LIBSSH
+#include "core/ssh_trace.h"
+#endif
 #include "theme/palette.h"
 #include "theme/fonts.h"
 #include "widgets/tab_drop.h"
 #include "editor/editor.h"
 #include "widgets/focus_route.h"
+
+#ifndef G_OS_WIN32
+#include <sys/wait.h>
+#endif
 
 #ifdef HAVE_VTE
 
@@ -107,15 +115,38 @@ void terminal_refresh_theme(void) {
 /* Async spawn callback: report failures. VTE already watches the child (and
  * hangs it up when the terminal was closed meanwhile: term is then NULL); the
  * error belongs to VTE. */
-#define TYPED_KEY "lookin-term-typed"     /* text to type once the shell runs */
-#define SPAWNED_KEY "lookin-term-spawned" /* the shell was started */
+#define TYPED_KEY        "lookin-term-typed"   /* text to type once the shell runs */
+#define SPAWNED_KEY      "lookin-term-spawned" /* the shell was started */
+#define REMOTE_LABEL_KEY "lookin-term-remote"  /* remote machine label, NULL if local */
+#define EXITED_KEY       "lookin-term-exited"  /* failed terminal kept open until Enter */
+
+static void term_close_pane(AppData* app, GtkWidget* term_w);
 
 static void on_spawn_result(VteTerminal* term, GPid pid, GError* error,
                             gpointer data) {
     (void)pid;
-    (void)data;
+    AppData* app = (AppData*)data;
     if (error != NULL) {
         g_printerr("[ Cannot start terminal shell: %s ]\n", error->message);
+#ifdef HAVE_LIBSSH
+        ssh_trace("terminal: spawn failed: %s", error->message);
+#endif
+        if (app != NULL) {
+            gchar* notice = g_strdup_printf(_("Cannot start terminal: %s"), error->message);
+            app_notice(app, notice, FALSE);
+            g_free(notice);
+        }
+        if (term != NULL) {
+#ifndef HAVE_BUILTIN_TERM
+            gchar* line = g_strdup_printf("[ %s ]\r\n", error->message);
+            vte_terminal_feed(term, line, -1);
+            g_free(line);
+#endif
+            gchar* hint = g_strdup_printf("\r\n[ %s ]\r\n", _("Press Enter to close"));
+            vte_terminal_feed(term, hint, -1);
+            g_free(hint);
+            g_object_set_data(G_OBJECT(term), EXITED_KEY, GINT_TO_POINTER(1));
+        }
         return;
     }
     if (term == NULL) return;
@@ -149,16 +180,25 @@ static gchar* user_shell(void) {
 static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
     RemoteMachine* rm = remote_get_active_machine(app);
     if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
-        /* A connection of its own, never the master one: the master writes to
-         * the tty of its clients with blocking writes, so a terminal not read
-         * would stall the SFTP sessions and commands going through it */
+        /* Never through the OpenSSH master (its blocking writes to a slow tty
+         * would stall SFTP and commands); with a libssh link, ssh_session_argv
+         * uses the loopback relay whose per-channel flow control avoids that. */
         SshTarget t = remote_machine_target(rm);
         GPtrArray* args = ssh_session_argv(&t, SSH_ARGV_TTY | SSH_ARGV_NO_MUX);
+        const gchar* label = (rm->name != NULL && rm->name[0] != '\0') ? rm->name : rm->host;
+        g_object_set_data_full(G_OBJECT(term), REMOTE_LABEL_KEY, g_strdup(label), g_free);
 
         if (rm->remote_path != NULL && rm->remote_path[0] != '\0' &&
             g_strcmp0(rm->remote_path, "~") != 0 && g_strcmp0(rm->remote_path, "") != 0) {
             g_ptr_array_add(args, g_strdup_printf("cd %s 2>/dev/null; exec $SHELL -l", rm->remote_path));
         }
+#ifdef HAVE_LIBSSH
+        if (args->len > 0 && args->pdata[0] != NULL) {
+            gchar* prog = g_path_get_basename(args->pdata[0]);
+            ssh_trace("terminal: spawn remote=%s via=%s", label, prog);
+            g_free(prog);
+        }
+#endif
         g_ptr_array_add(args, NULL);
 
         vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, NULL, (gchar**)args->pdata, NULL,
@@ -614,22 +654,37 @@ static GtkNotebook* term_target_notebook(AppData* app) {
     return target != NULL ? term_notebook_of(target) : NULL;
 }
 
-/* Ctrl+Shift+C / Ctrl+Shift+V: copy the selection, paste the clipboard */
+/* Ctrl+Shift+C / Ctrl+Shift+V: copy the selection, paste the clipboard.
+ * On a failed terminal kept open to show its error, Enter / Esc / Ctrl+D /
+ * Ctrl+W closes the tab (never swallowing Ctrl+Q or Ctrl+Shift+C). */
 static gboolean on_term_copy_paste_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode,
                                        GdkModifierType state, gpointer data) {
     (void)keycode;
-    (void)data;
-    if ((state & (GDK_CONTROL_MASK | GDK_SHIFT_MASK | GDK_ALT_MASK)) != (GDK_CONTROL_MASK | GDK_SHIFT_MASK)) {
+    VteTerminal* term = VTE_TERMINAL(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl)));
+    GdkModifierType mods = state & (GDK_CONTROL_MASK | GDK_SHIFT_MASK | GDK_ALT_MASK);
+    if (mods == (GDK_CONTROL_MASK | GDK_SHIFT_MASK)) {
+        if (keyval == GDK_KEY_C || keyval == GDK_KEY_c) {
+            vte_terminal_copy_clipboard_format(term, VTE_FORMAT_TEXT);
+            return TRUE;
+        }
+        if (keyval == GDK_KEY_V || keyval == GDK_KEY_v) {
+            vte_terminal_paste_clipboard(term);
+            return TRUE;
+        }
         return FALSE;
     }
-    VteTerminal* term = VTE_TERMINAL(gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(ctrl)));
-    if (keyval == GDK_KEY_C || keyval == GDK_KEY_c) {
-        vte_terminal_copy_clipboard_format(term, VTE_FORMAT_TEXT);
-        return TRUE;
-    }
-    if (keyval == GDK_KEY_V || keyval == GDK_KEY_v) {
-        vte_terminal_paste_clipboard(term);
-        return TRUE;
+    if (g_object_get_data(G_OBJECT(term), EXITED_KEY) != NULL) {
+        gboolean plain = (mods == 0) &&
+                         (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter ||
+                          keyval == GDK_KEY_ISO_Enter || keyval == GDK_KEY_Escape);
+        gboolean ctrl_close = (mods == GDK_CONTROL_MASK) &&
+                              (keyval == GDK_KEY_d || keyval == GDK_KEY_D ||
+                               keyval == GDK_KEY_w || keyval == GDK_KEY_W);
+        if (plain || ctrl_close) {
+            g_object_set_data(G_OBJECT(term), EXITED_KEY, NULL);
+            term_close_pane((AppData*)data, GTK_WIDGET(term));
+            return TRUE;
+        }
     }
     return FALSE;
 }
@@ -659,7 +714,7 @@ GtkWidget* term_new_pane(AppData* app, const gchar* cwd) {
 
     GtkEventController* keys = gtk_event_controller_key_new();
     gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
-    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_term_copy_paste_key), NULL);
+    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_term_copy_paste_key), app);
     gtk_widget_add_controller(vte, keys);
 
     spawn_shell(app, VTE_TERMINAL(vte), cwd);
@@ -718,10 +773,7 @@ gboolean terminal_step_tab(AppData* app, gint step) {
     return nb != NULL && focus_route_step_tab(app, nb, step, TRUE);
 }
 
-void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
-    (void)status;
-    AppData* app = (AppData*)data;
-    GtkWidget* term_w = GTK_WIDGET(term);
+static void term_close_pane(AppData* app, GtkWidget* term_w) {
     terminal_forget(app, term_w);
     GtkNotebook* nb = term_notebook_of(term_w);
     if (nb == NULL) {
@@ -750,6 +802,37 @@ void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
         app_emit(app, APP_EVENT_LAYOUT_CHANGED);
     }
     g_ptr_array_unref(panes);
+}
+
+void on_term_child_exited(VteTerminal* term, gint status, gpointer data) {
+    AppData* app = (AppData*)data;
+    GtkWidget* term_w = GTK_WIDGET(term);
+#ifdef G_OS_WIN32
+    gint code = status;
+#else
+    gint code = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+#endif
+    const gchar* remote = g_object_get_data(G_OBJECT(term), REMOTE_LABEL_KEY);
+    if (remote != NULL) {
+#ifdef HAVE_LIBSSH
+        ssh_trace("terminal: remote=%s exited status=%d code=%d", remote, status, code);
+#endif
+        if (code == 255) {
+            /* SSH / relay failure: keep the terminal open so its error message
+             * stays readable, and show a notice in the status bar. */
+            if (app != NULL) {
+                gchar* msg = g_strdup_printf(_("Remote terminal on %s closed (SSH error)"), remote);
+                app_notice(app, msg, FALSE);
+                g_free(msg);
+            }
+            gchar* hint = g_strdup_printf("\r\n[ %s ]\r\n", _("Press Enter to close"));
+            vte_terminal_feed(term, hint, -1);
+            g_free(hint);
+            g_object_set_data(G_OBJECT(term), EXITED_KEY, GINT_TO_POINTER(1));
+            return;
+        }
+    }
+    term_close_pane(app, term_w);
 }
 
 /* ------------------------------------------------------------------------- */
