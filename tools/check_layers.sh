@@ -62,7 +62,8 @@ app_paths:
 remote_mounts:app_paths
 ssh_target:
 ssh_channel:i18n
-ssh_link:ssh_target,ssh_channel,i18n
+ssh_watch:
+ssh_link:ssh_target,ssh_channel,ssh_watch,i18n
 ssh_session:app_paths,i18n,ssh_target,ssh_link,ssh_channel
 ssh_askpass:ssh_session
 sftp_proto:i18n

@@ -1,15 +1,11 @@
 /* Shared non-blocking libssh connection per remote machine (see ssh_link.h). */
 #include "core/ssh_link.h"
 #include "core/i18n.h"
+#include "core/ssh_watch.h"
 
 #include <libssh/callbacks.h>
 #include <libssh/server.h> /* ssh_send_keepalive() */
 #include <string.h>
-
-#ifdef G_OS_UNIX
-#include <fcntl.h>
-#include <unistd.h>
-#endif
 
 #define CONNECT_TIMEOUT_MS 20000u
 #define KEEPALIVE_DEFAULT_MS 15000u
@@ -62,7 +58,6 @@ struct SshLink {
     struct ssh_counter_struct sc, rc;
 
     socket_t watched_fd;
-    GSocket* gsock;
     GSource *sock_src, *connect_timer, *retry_timer, *keepalive_timer;
     GIOCondition sock_cond;
 
@@ -176,7 +171,7 @@ void ssh_link_set_keepalive_ms(guint interval_ms) {
     g_mutex_unlock(&opt_mu);
 }
 
-/* Socket wrapping & polling (non-blocking, Windows-safe via GSocket) */
+/* Socket polling (non-blocking, level-triggered: ssh_watch.h) */
 
 static void clear_source(GSource** src) {
     if (*src != NULL) {
@@ -186,39 +181,13 @@ static void clear_source(GSource** src) {
     }
 }
 
-/* Duplicate the underlying socket descriptor so GSocket never closes libssh's fd */
-static GSocket* wrap_ssh_socket(socket_t fd) {
-    if (fd == SSH_INVALID_SOCKET) return NULL;
-#ifdef G_OS_WIN32
-    WSAPROTOCOL_INFOW info;
-    if (WSADuplicateSocketW(fd, GetCurrentProcessId(), &info) != 0) return NULL;
-    SOCKET dup_fd = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-                               &info, 0, WSA_FLAG_OVERLAPPED);
-    if (dup_fd == INVALID_SOCKET) return NULL;
-    GSocket* sock = g_socket_new_from_fd((gint)dup_fd, NULL);
-    if (sock == NULL) closesocket(dup_fd);
-    return sock;
-#else
-#ifdef F_DUPFD_CLOEXEC
-    int dup_fd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
-#else
-    int dup_fd = dup(fd);
-#endif
-    if (dup_fd < 0) return NULL;
-    GSocket* sock = g_socket_new_from_fd(dup_fd, NULL);
-    if (sock == NULL) close(dup_fd);
-    return sock;
-#endif
-}
-
 static void drop_socket_watch(SshLink* link) {
     clear_source(&link->sock_src);
-    g_clear_object(&link->gsock);
     link->watched_fd = SSH_INVALID_SOCKET;
     link->sock_cond = 0;
 }
 
-static gboolean on_socket_ready(GSocket* sock, GIOCondition cond, gpointer data);
+static gboolean on_socket_ready(gpointer data);
 static gboolean on_retry_timer(gpointer data);
 
 static void update_socket_watch(SshLink* link) {
@@ -240,19 +209,25 @@ static void update_socket_watch(SshLink* link) {
     clear_source(&link->retry_timer);
     if (fd != link->watched_fd) {
         drop_socket_watch(link);
-        link->gsock = wrap_ssh_socket(fd);
         link->watched_fd = fd;
     }
-    if (link->gsock == NULL) return;
 
     GIOCondition cond = G_IO_IN | G_IO_HUP | G_IO_ERR;
     int flags = ssh_get_poll_flags(link->session);
-    if ((flags & SSH_WRITE_PENDING) != 0 || (link->state == LINK_CONNECTING && flags == 0)) cond |= G_IO_OUT;
+    /* Writable is asked for only when libssh has bytes to send, or while the
+     * TCP connection is still being made (nothing received yet): a connected
+     * socket is always writable, so asking more would spin */
+    gboolean tcp_pending = link->state == LINK_CONNECTING && flags == 0 && link->rc.in_bytes == 0;
+    if ((flags & SSH_WRITE_PENDING) != 0 || tcp_pending) cond |= G_IO_OUT;
     if (link->sock_src != NULL && link->sock_cond == cond) return;
 
     clear_source(&link->sock_src);
-    link->sock_src = g_socket_create_source(link->gsock, cond, NULL);
-    g_source_set_callback(link->sock_src, G_SOURCE_FUNC(on_socket_ready), link, NULL);
+    link->sock_src = ssh_watch_new((gint64)fd, cond);
+    if (link->sock_src == NULL) {
+        link->sock_cond = 0;
+        return;
+    }
+    g_source_set_callback(link->sock_src, on_socket_ready, link, NULL);
     g_source_attach(link->sock_src, link->ctx);
     link->sock_cond = cond;
 }
@@ -909,8 +884,7 @@ static gboolean on_retry_timer(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-static gboolean on_socket_ready(GSocket* sock, GIOCondition cond, gpointer data) {
-    (void)sock, (void)cond;
+static gboolean on_socket_ready(gpointer data) {
     SshLink* link = data;
     if (link->state == LINK_CONNECTING) drive_connect(link);
     else if (link->state == LINK_AUTH) drive_auth(link);

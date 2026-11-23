@@ -3,8 +3,8 @@
 
 /* One shared libssh connection per remote machine, living on a thread of
  * its own with its own GMainContext. libssh runs strictly non-blocking on
- * that thread (ssh_set_blocking(session, 0) + a GSocket poll source on a
- * duplicate of its socket descriptor), so a slow channel never stalls other
+ * that thread (ssh_set_blocking(session, 0) + a level-triggered source on
+ * its socket, ssh_watch.h), so a slow channel never stalls other
  * channels or the UI thread. Layer 1, no widgets; never includes
  * ssh_session.h or ssh_askpass.h. */
 #include "core/ssh_channel.h"
