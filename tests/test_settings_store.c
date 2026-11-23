@@ -35,6 +35,7 @@ static void test_missing_file(void) {
     g_assert_cmpint(s.color_column, ==, 81);
     g_assert_cmpint(s.timer_minutes, ==, 60);
     g_assert_cmpint(s.timer_expiry, ==, SETTINGS_EXPIRY_RESTART);
+    g_assert_cmpint(s.ssh, ==, SETTINGS_SSH_AUTO);
     g_assert_true(s.clock_shown);
     g_assert_false(s.clock_12h);
     g_assert_false(s.clock_seconds);
@@ -67,6 +68,7 @@ static void test_save_load(void) {
     s.color_column = 81;
     s.timer_minutes = 0;
     s.timer_expiry = SETTINGS_EXPIRY_COUNT_ON;
+    s.ssh = SETTINGS_SSH_OPENSSH;
     s.clock_shown = FALSE;
     s.clock_12h = TRUE;
     s.clock_seconds = TRUE;
@@ -97,6 +99,7 @@ static void test_save_load(void) {
     g_assert_cmpint(r.color_column, ==, 81);
     g_assert_cmpint(r.timer_minutes, ==, 0);
     g_assert_cmpint(r.timer_expiry, ==, SETTINGS_EXPIRY_COUNT_ON);
+    g_assert_cmpint(r.ssh, ==, SETTINGS_SSH_OPENSSH);
     g_assert_false(r.clock_shown);
     g_assert_true(r.clock_12h);
     g_assert_true(r.clock_seconds);
@@ -134,7 +137,7 @@ static void test_invalid_values(void) {
     gchar* path = g_build_filename(dir, "settings.ini", NULL);
     g_assert_true(g_file_set_contents(path,
                                       "[Editor]\nmode=nano\nline-numbers=maybe\nwrap=true\ncolor-column=-3\n"
-                                      "[Clock]\ntimer-minutes=5000\ntimer-expiry=never\nclock=yes\nclock-format=13h\n[Window]\nwidth=10\nheight=abc\n",
+                                      "[Clock]\ntimer-minutes=5000\ntimer-expiry=never\nclock=yes\nclock-format=13h\n[Remote]\nssh=putty\n[Window]\nwidth=10\nheight=abc\n",
                                       -1, NULL));
     Settings s;
     g_assert_true(settings_store_load(path, &s));
@@ -144,6 +147,7 @@ static void test_invalid_values(void) {
     g_assert_cmpint(s.color_column, ==, 81);
     g_assert_cmpint(s.timer_minutes, ==, 60);
     g_assert_cmpint(s.timer_expiry, ==, SETTINGS_EXPIRY_RESTART);
+    g_assert_cmpint(s.ssh, ==, SETTINGS_SSH_AUTO);
     g_assert_true(s.clock_shown);
     g_assert_false(s.clock_12h);
     g_assert_cmpint(s.width, ==, 1000);

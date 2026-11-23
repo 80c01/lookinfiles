@@ -31,6 +31,11 @@
  *                        # on the clock opens nothing)
  *   timer-minutes=60     # top bar timer 1, started at launch (0: no timer)
  *   timer-expiry=restart # what timer 1 does at 0:00: restart, stop or count-on
+ *   [Remote]
+ *   ssh=auto             # how remote machines are reached: auto (the
+ *                        # built-in libssh on Windows, the ssh program
+ *                        # elsewhere), libssh or openssh; read at startup,
+ *                        # LOOKINFILES_SSH_LIBSSH wins over it
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
@@ -66,6 +71,13 @@ typedef enum {
     SETTINGS_PLACE_BESIDE /* on their right */
 } SettingsPlace;
 
+/* How remote machines are reached ([Remote] ssh) */
+typedef enum {
+    SETTINGS_SSH_AUTO,    /* libssh on Windows, the ssh program elsewhere */
+    SETTINGS_SSH_LIBSSH,  /* one built-in libssh connection per machine */
+    SETTINGS_SSH_OPENSSH  /* the ssh program (OpenSSH) */
+} SettingsSsh;
+
 /* What timer 1 of the top bar does when it expires */
 typedef enum {
     SETTINGS_EXPIRY_RESTART, /* a new cycle at once */
@@ -92,6 +104,7 @@ typedef struct {
     gboolean timers_shown; /* the top bar has timers */
     gint timer_minutes;    /* top bar timer, started at launch, 0: none */
     SettingsExpiry timer_expiry; /* what that timer does at 0:00 */
+    SettingsSsh ssh;       /* how remote machines are reached (at startup) */
     gint width;            /* window size at startup */
     gint height;
 } Settings;
@@ -99,7 +112,7 @@ typedef struct {
 /* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap,
  * editor tabs updating the preview, Auto
  * keeping the panels, a 24-hour clock without seconds, a 60-minute timer
- * restarting when it expires, 1000 x 600 */
+ * restarting when it expires, the automatic SSH transport, 1000 x 600 */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

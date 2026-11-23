@@ -91,8 +91,9 @@ included, with per-channel flow control and no `ssh.exe` (builds without
 `libssh` fall back to `ssh.exe`, where each session connects on its own; an
 SSH key with `ssh-agent` avoids repeated prompts). The
 [Diagnostics tab](lookinfiles:diagnostics) shows which transport a machine
-uses; when `libssh` is built in, setting `LOOKINFILES_SSH_LIBSSH=1` or `0`
-switches between `libssh` and OpenSSH.
+uses; when `libssh` is built in, the Preferences (`Ctrl+,`), **Remote
+machines** page, choose between `libssh` and the `ssh` program (at the next
+launch; the variable `LOOKINFILES_SSH_LIBSSH=1` or `0` wins over it).
 
 Inside LookinFiles a machine's files are seen under an empty private folder
 of `$XDG_RUNTIME_DIR/lookinfiles/remotes/` (usually `/run/user/1000/…`),

@@ -28,5 +28,7 @@ EditorMode preferences_editor_mode(SettingsEditor editor);
 
 /* At startup, once app exists: the editor settings of new tabs */
 void preferences_apply_startup(AppData* app, const Settings* settings);
+/* The SSH transport chosen ([Remote] ssh): at startup, before any connection */
+void preferences_apply_ssh(SettingsSsh ssh);
 
 #endif /* PREFERENCES_H */

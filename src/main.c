@@ -301,6 +301,7 @@ int main(int argc, char** argv) {
     gchar* settings_path = settings_store_path();
     settings_store_load(settings_path, &prefs);
     g_free(settings_path);
+    preferences_apply_ssh(prefs.ssh); /* before any connection */
     profile_mark("settings");
     int win_width = prefs.width;
     int win_height = prefs.height;

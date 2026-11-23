@@ -69,6 +69,12 @@ typedef enum {
     SSH_TRANSPORT_LIBSSH,      /* built-in libssh connection (shared channels) */
 } SshTransport;
 
+/* Whether this build has libssh (else the ssh program only) */
+gboolean ssh_session_has_libssh(void);
+/* The transport chosen in the Preferences, at startup (ssh_link_set_enabled():
+ * 1 libssh, 0 the ssh program, -1 the default; nothing without libssh) */
+void ssh_session_choose_libssh(gint choice);
+
 /* The SSH transport used for target (NULL: the default for new connections) */
 SshTransport ssh_session_transport(const SshTarget* target);
 /* The master connection's socket of target for this process, NULL as

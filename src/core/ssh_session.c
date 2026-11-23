@@ -95,6 +95,22 @@ gboolean ssh_session_shares_connection(void) {
     return ssh_session_can_multiplex();
 }
 
+gboolean ssh_session_has_libssh(void) {
+#ifdef HAVE_LIBSSH
+    return TRUE;
+#else
+    return FALSE;
+#endif
+}
+
+void ssh_session_choose_libssh(gint choice) {
+#ifdef HAVE_LIBSSH
+    ssh_link_set_enabled(choice);
+#else
+    (void)choice;
+#endif
+}
+
 SshTransport ssh_session_transport(const SshTarget* target) {
     (void)target;
 #ifdef HAVE_LIBSSH

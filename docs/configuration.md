@@ -37,8 +37,9 @@ keeps every change, **Cancel** restores them all.
 | Layouts | Terminal, preview and editor tagbar of the **Auto** layout (`Alt+L`): as they are, shown or hidden; the terminal's place: where it is, below or on the right (as `Ctrl+Shift+L` does) |
 | Clock | The time of the top bar: shown or hidden (an icon then opens the timers while none runs), 24-hour or 12-hour, with or without the seconds; duration of top bar timer 1 at launch, in minutes (0: no timer; a new duration restarts it), and what it does when it expires: restart, stop at 0:00 or count on below 0:00 (the timers menu sets up all three until the next launch) |
 | Code navigation | **Edit lsp.ini** opens `lsp.ini` in an editor tab, created with a commented example if missing (see [Language servers](#language-servers)) |
+| Remote machines | **SSH connection**: automatic (the built-in libssh on Windows, the `ssh` program elsewhere), the built-in libssh, or the `ssh` program; taken at the next launch, the variable `LOOKINFILES_SSH_LIBSSH` (`1` or `0`) wins over it (see [remote-libssh.md](remote-libssh.md)) |
 
-The Editor, Window, Layouts and Clock values are kept in `settings.ini`; the command-line
+The Editor, Window, Layouts, Clock and Remote machines values are kept in `settings.ini`; the command-line
 options `-e` and `--size` win over them:
 
 ```ini
@@ -61,6 +62,9 @@ clock-seconds=false   # the time shows the seconds
 timers=true           # the top bar has timers (default; false: none)
 timer-minutes=60      # top bar timer 1 started at launch (default; 0: no timer)
 timer-expiry=restart  # timer 1 at 0:00: restart (default), stop or count-on
+
+[Remote]
+ssh=auto              # auto (default), libssh or openssh; read at launch
 
 [Window]
 width=1600

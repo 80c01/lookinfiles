@@ -293,6 +293,19 @@ static void test_transport(void) {
     g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_LIBSSH);
     g_setenv("LOOKINFILES_SSH_LIBSSH", "0", TRUE);
     g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX);
+    /* The Preferences choice: used when the variable is not set */
+    ssh_session_choose_libssh(1);
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX); /* the variable wins */
+    g_unsetenv("LOOKINFILES_SSH_LIBSSH");
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_LIBSSH);
+    ssh_session_choose_libssh(0);
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX);
+    ssh_session_choose_libssh(-1); /* the default: the ssh program here */
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX);
+#else
+    ssh_session_choose_libssh(1); /* no libssh: no effect */
+    g_assert_cmpint(ssh_session_transport(&t), ==, SSH_TRANSPORT_OPENSSH_MUX);
+    ssh_session_choose_libssh(-1);
 #endif
     if (saved != NULL) {
         g_setenv("LOOKINFILES_SSH_LIBSSH", saved, TRUE);

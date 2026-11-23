@@ -35,9 +35,14 @@ void ssh_link_reply(SshLinkAsk* ask, const gchar* answer);
  * authenticated, else error_text (UTF-8, non-NULL). */
 typedef void (*SshLinkReadyFunc)(SshLink* link, gboolean ok, const gchar* error_text, gpointer data);
 
-/* Whether libssh links are enabled for connections (TRUE on Windows unless
- * LOOKINFILES_SSH_LIBSSH=0; on Unix opt-in via LOOKINFILES_SSH_LIBSSH=1). */
+/* Whether libssh links are enabled for connections: LOOKINFILES_SSH_LIBSSH
+ * (1 or 0) if set, else the choice of ssh_link_set_enabled(), else TRUE on
+ * Windows and FALSE elsewhere. */
 gboolean ssh_link_enabled(void);
+/* The user's choice (the Preferences): 1 libssh, 0 the ssh program, -1 the
+ * default. Set at startup, before any connection: machines connected with
+ * one transport cannot move to the other. */
+void ssh_link_set_enabled(gint choice);
 
 /* Connect to target on a new link thread. Returns an owning ref; close with
  * ssh_link_close() and drop with ssh_link_unref(). Once authenticated the

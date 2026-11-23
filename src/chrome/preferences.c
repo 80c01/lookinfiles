@@ -3,6 +3,7 @@
 #include "core/i18n.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
+#include "core/ssh_session.h"
 #include "widgets/color_column.h"
 #include "widgets/diff_gutter.h"
 #include "widgets/dialog.h"
@@ -51,7 +52,11 @@ typedef struct {
     GtkWidget* auto_preview;
     GtkWidget* auto_tagbar;
     GtkWidget* auto_place;    /* GtkDropDown: where it is, below, beside (PLACE_CHOICES) */
+    GtkWidget* ssh;           /* GtkDropDown: automatic, libssh, ssh program (SSH_CHOICES) */
 } Preferences;
+
+/* Drop-down order of the SSH transports */
+static const SettingsSsh SSH_CHOICES[] = {SETTINGS_SSH_AUTO, SETTINGS_SSH_LIBSSH, SETTINGS_SSH_OPENSSH};
 
 /* Drop-down order of the panel rules of the Auto layout */
 static const SettingsPanel PANEL_CHOICES[] = {SETTINGS_PANEL_KEEP, SETTINGS_PANEL_SHOW, SETTINGS_PANEL_HIDE};
@@ -79,6 +84,10 @@ static SettingsEditor settings_editor_of(EditorMode mode) {
     case EDITOR_MODE_ORGMODE: return SETTINGS_EDITOR_EMACS;
     default: return SETTINGS_EDITOR_NOTEPAD;
     }
+}
+
+void preferences_apply_ssh(SettingsSsh ssh) {
+    ssh_session_choose_libssh(ssh == SETTINGS_SSH_LIBSSH ? 1 : ssh == SETTINGS_SSH_OPENSSH ? 0 : -1);
 }
 
 void preferences_apply_startup(AppData* app, const Settings* settings) {
@@ -280,6 +289,39 @@ static void on_timers_toggled(GtkCheckButton* check, gpointer data) {
     gtk_widget_set_sensitive(gtk_widget_get_parent(p->timer), on); /* the grid of timer 1 */
 }
 
+static GtkWidget* remote_page(Preferences* p, const Settings* s) {
+    GtkWidget* box = page_box();
+    gtk_box_append(GTK_BOX(box), hint_label(_("How LookinFiles connects to remote machines. A change takes effect "
+                                            "at the next launch.")));
+    GtkWidget* grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
+    const char* const names[] = {_("Automatic (libssh on Windows, the ssh program elsewhere)"),
+                                 _("Built-in libssh"), _("The ssh program (OpenSSH)"), NULL};
+    guint selected = 0;
+    for (guint i = 0; i < G_N_ELEMENTS(SSH_CHOICES); i++) {
+        selected = (SSH_CHOICES[i] == s->ssh) ? i : selected;
+    }
+    p->ssh = grid_choice(grid, 0, _("SSH _connection"),
+                         _("Built-in libssh: one connection per machine for files, commands, notebooks, language "
+                           "servers and terminals, one password. The ssh program: OpenSSH, with one shared "
+                           "connection where it can multiplex (not on Windows)."),
+                         names, selected);
+    gtk_widget_set_hexpand(gtk_grid_get_child_at(GTK_GRID(grid), 0, 0), TRUE);
+    gtk_box_append(GTK_BOX(box), grid);
+    if (!ssh_session_has_libssh()) {
+        gtk_widget_set_sensitive(p->ssh, FALSE);
+        gtk_box_append(GTK_BOX(box), hint_label(_("This build has no libssh: the ssh program is used.")));
+    } else if (g_getenv("LOOKINFILES_SSH_LIBSSH") != NULL && g_getenv("LOOKINFILES_SSH_LIBSSH")[0] != '\0') {
+        gtk_box_append(GTK_BOX(box), hint_label(_("LOOKINFILES_SSH_LIBSSH is set: it wins over this choice.")));
+    }
+    gboolean libssh = ssh_session_transport(NULL) == SSH_TRANSPORT_LIBSSH;
+    gchar* now = g_strdup_printf(_("In use now: %s"), libssh ? _("built-in libssh") : _("the ssh program"));
+    gtk_box_append(GTK_BOX(box), hint_label(now));
+    g_free(now);
+    return box;
+}
+
 static GtkWidget* clock_page(Preferences* p, const Settings* s) {
     GtkWidget* box = page_box();
     gtk_box_append(GTK_BOX(box), hint_label(_("Click the clock or a timer to set up three timers; right-click a "
@@ -460,6 +502,9 @@ static void save_settings(Preferences* p) {
     s.auto_tagbar = panel_selected(p->auto_tagbar);
     guint place = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->auto_place));
     s.auto_terminal_place = (place < G_N_ELEMENTS(PLACE_CHOICES)) ? PLACE_CHOICES[place] : SETTINGS_PLACE_KEEP;
+    guint ssh = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->ssh));
+    /* Read at the next launch: the machines connected now keep their transport */
+    s.ssh = (ssh < G_N_ELEMENTS(SSH_CHOICES)) ? SSH_CHOICES[ssh] : SETTINGS_SSH_AUTO;
     GError* error = NULL;
     if (!settings_store_save(path, &s, &error)) {
         g_printerr("[ Preferences not saved: %s ]\n", error->message);
@@ -534,6 +579,9 @@ static GtkWidget* page_focus(Preferences* p) {
     if (g_strcmp0(name, "clock") == 0) {
         return p->clock_shown;
     }
+    if (g_strcmp0(name, "remote") == 0) {
+        return p->ssh;
+    }
     return NULL;
 }
 
@@ -566,6 +614,7 @@ void preferences_show(AppData* app, const gchar* section) {
     gtk_stack_add_titled(p.stack, layouts_page(&p, &s), "layouts", _("Layouts"));
     gtk_stack_add_titled(p.stack, clock_page(&p, &s), "clock", _("Clock"));
     gtk_stack_add_titled(p.stack, code_page(&p), "code", _("Code navigation"));
+    gtk_stack_add_titled(p.stack, remote_page(&p, &s), "remote", _("Remote machines"));
     const gchar* show = (section != NULL) ? section : last_section;
     if (show != NULL && gtk_stack_get_child_by_name(p.stack, show) != NULL) {
         gtk_stack_set_visible_child_name(p.stack, show);

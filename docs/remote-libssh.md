@@ -1,7 +1,6 @@
 # Plan: one SSH connection per machine on Windows (libssh)
 
-Status: **done** (steps 1 to 4 tested on Windows, step 6 done; the
-Preferences setting of step 5 is optional). Files, previews, Git tab,
+Status: **done** (steps 1 to 4 tested on Windows, steps 5 and 6 done). Files, previews, Git tab,
 System Monitor, notebook kernels, language servers and terminals all run
 over one shared libssh connection per machine (one password, no `ssh.exe`;
 terminals checked for colours, full-screen programs, typed accents,
@@ -28,7 +27,8 @@ the loopback relay over the link (terminals with the `-mconsole`
 | `explorer/remote_session` | opens / closes the link, its prompts (`on_link_ask()`)        |
 
 - **Switch**: `ssh_link_enabled()`: on by default on Windows, off on Linux;
-  `LOOKINFILES_SSH_LIBSSH=1` (or `0`) forces it. To try the libssh path on
+  the Preferences (**Remote machines**, read at launch) change the default,
+  and `LOOKINFILES_SSH_LIBSSH=1` (or `0`) wins over both. To try the libssh path on
   Linux, run with `LOOKINFILES_SSH_LIBSSH=1`.
 - **No link, no login**: when libssh is in use and the machine has no open
   link, the commands fail at once with `G_IO_ERROR_NOT_CONNECTED` and the
@@ -208,8 +208,12 @@ The link must never repeat this: one channel's full buffer stops reading
    Linux keeps the OpenSSH master, `LOOKINFILES_SSH_LIBSSH` selects either
    (`ssh_link_enabled()`); `ssh_session_shares_connection()` (master or
    link) gates `connect_files()` and the `no_login` guard of `vfs.c`, the
-   fallback for builds without libssh. Left: a setting in Preferences
-   instead of the variable (optional).
+   fallback for builds without libssh. The Preferences, **Remote
+   machines** page, choose the transport (`[Remote] ssh=auto|libssh|openssh`
+   in `settings.ini`, applied by `preferences_apply_ssh()` at startup
+   through `ssh_link_set_enabled()`; the variable still wins). Read at
+   launch only: machines connected with one transport cannot move to the
+   other.
 6. **Diagnostics and docs** (done). The Diagnostics tab shows which
    transport a machine uses (`Connection` section + header) and lists
    `libssh` under `Built In`; `docs/packaging.md` lists the libssh DLLs

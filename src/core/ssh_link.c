@@ -146,12 +146,18 @@ SshLink* ssh_link_lookup(const SshTarget* target) {
     return link;
 }
 
+static gint enabled_choice = -1; /* ssh_link_set_enabled(); -1: the default */
+
+void ssh_link_set_enabled(gint choice) { g_atomic_int_set(&enabled_choice, choice); }
+
 gboolean ssh_link_enabled(void) {
-    const gchar* env = g_getenv("LOOKINFILES_SSH_LIBSSH");
+    const gchar* env = g_getenv("LOOKINFILES_SSH_LIBSSH"); /* wins over the choice */
+    if (env != NULL && env[0] != '\0') return strcmp(env, "0") != 0;
+    gint choice = g_atomic_int_get(&enabled_choice);
 #ifdef G_OS_WIN32
-    return env == NULL || strcmp(env, "0") != 0;
+    return choice != 0;
 #else
-    return env != NULL && env[0] != '\0' && strcmp(env, "0") != 0;
+    return choice > 0;
 #endif
 }
 

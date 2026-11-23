@@ -101,8 +101,10 @@ avec contrôle de flux par canal et sans `ssh.exe` (les versions sans
 `libssh` se rabattent sur `ssh.exe`, où chaque session se connecte à part ;
 une clé SSH avec `ssh-agent` évite les demandes répétées).
 L’[onglet Diagnostics](lookinfiles:diagnostics) indique quel transport une
-machine utilise ; quand `libssh` est intégré, `LOOKINFILES_SSH_LIBSSH=1` ou
-`0` bascule entre `libssh` et OpenSSH.
+machine utilise ; quand `libssh` est intégré, les Préférences (`Ctrl+,`),
+page **Machines distantes**, choisissent entre `libssh` et le programme
+`ssh` (au prochain lancement ; la variable `LOOKINFILES_SSH_LIBSSH=1` ou `0`
+l’emporte).
 
 Dans LookinFiles, les fichiers d’une machine sont vus sous un dossier privé
 vide de `$XDG_RUNTIME_DIR/lookinfiles/remotes/` (en général

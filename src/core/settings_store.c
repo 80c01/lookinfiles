@@ -10,6 +10,12 @@ static const gchar* const EXPIRY_NAMES[] = {
     [SETTINGS_EXPIRY_COUNT_ON] = "count-on",
 };
 
+static const gchar* const SSH_NAMES[] = {
+    [SETTINGS_SSH_AUTO] = "auto",
+    [SETTINGS_SSH_LIBSSH] = "libssh",
+    [SETTINGS_SSH_OPENSSH] = "openssh",
+};
+
 static const gchar* const EDITOR_NAMES[] = {
     [SETTINGS_EDITOR_NOTEPAD] = "notepad",
     [SETTINGS_EDITOR_VIM] = "vim",
@@ -35,6 +41,7 @@ void settings_defaults(Settings* s) {
     s->timers_shown = TRUE;
     s->timer_minutes = 60;
     s->timer_expiry = SETTINGS_EXPIRY_RESTART;
+    s->ssh = SETTINGS_SSH_AUTO;
     s->width = 1000;
     s->height = 600;
 }
@@ -117,6 +124,17 @@ static SettingsExpiry read_expiry(GKeyFile* kf, SettingsExpiry def) {
     return expiry;
 }
 
+/* The SSH transport, or automatic when missing or unknown */
+static SettingsSsh read_ssh(GKeyFile* kf) {
+    gchar* value = g_key_file_get_string(kf, "Remote", "ssh", NULL);
+    SettingsSsh ssh = SETTINGS_SSH_AUTO;
+    for (gsize i = 0; value != NULL && i < G_N_ELEMENTS(SSH_NAMES); i++) {
+        if (g_ascii_strcasecmp(g_strstrip(value), SSH_NAMES[i]) == 0) ssh = (SettingsSsh)i;
+    }
+    g_free(value);
+    return ssh;
+}
+
 /* The clock format: "12h" or "24h", else def */
 static gboolean read_12h(GKeyFile* kf, gboolean def) {
     gchar* value = g_key_file_get_string(kf, "Clock", "clock-format", NULL);
@@ -168,6 +186,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->timers_shown = read_bool(kf, "Clock", "timers", s->timers_shown);
     s->timer_minutes = read_int(kf, "Clock", "timer-minutes", 0, SETTINGS_MAX_TIMER_MINUTES, s->timer_minutes);
     s->timer_expiry = read_expiry(kf, s->timer_expiry);
+    s->ssh = read_ssh(kf);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
     g_key_file_free(kf);
@@ -201,6 +220,8 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_integer(kf, "Clock", "timer-minutes", s->timer_minutes);
     gsize expiry = ((gsize)s->timer_expiry < G_N_ELEMENTS(EXPIRY_NAMES)) ? (gsize)s->timer_expiry : 0;
     g_key_file_set_string(kf, "Clock", "timer-expiry", EXPIRY_NAMES[expiry]);
+    gsize ssh = ((gsize)s->ssh < G_N_ELEMENTS(SSH_NAMES)) ? (gsize)s->ssh : 0;
+    g_key_file_set_string(kf, "Remote", "ssh", SSH_NAMES[ssh]);
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);
     gchar* dir = g_path_get_dirname(path);
