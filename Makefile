@@ -126,6 +126,9 @@ LIBSSH_SRCS = src/core/ssh_link.c src/core/ssh_channel.c
 ifeq ($(HAVE_LIBSSH),yes)
 APP_CFLAGS += -DHAVE_LIBSSH `$(PKG_CONFIG) --cflags libssh`
 LIBS += `$(PKG_CONFIG) --libs libssh`
+ifeq ($(OS),Windows_NT)
+LIBS += -lws2_32 # WSADuplicateSocketW, WSASocketW, closesocket (ssh_link.c)
+endif
 LIBSSH_OBJS = $(BUILD_DIR)/ssh_link.o $(BUILD_DIR)/ssh_channel.o
 else
 LIBSSH_OBJS =
