@@ -46,9 +46,15 @@ One `SshLink` per machine: a libssh session, authenticated once, living on
 a thread of its own with its own `GMainContext` (as `core/vfs` does). Every
 user of the machine opens **channels** on it. libssh is non-blocking on
 that thread (`ssh_set_blocking(session, 0)` + a poll source on its socket):
-a slow reader never blocks the others nor the UI thread (lesson of the
-terminal freeze, see `remote-without-sshfs` notes: never a blocking write
-towards a tty client).
+a slow reader never blocks the others nor the UI thread.
+
+Lesson of the terminal freeze (Linux, 2026-11): remote terminals went
+through the OpenSSH master; when one terminal stopped reading, the master
+wrote to it with blocking writes and every other user of the machine froze
+with it, the application included (ssh had to be killed with `kill -9`).
+Since then terminals use `SSH_ARGV_NO_MUX`. Pipes (exec, sftp) are fine.
+The link must never repeat this: one channel's full buffer stops reading
+*that* channel only, and no write of the link thread ever blocks.
 
 ### New modules (layer 1, `core/`, GIO + libssh, no widgets, unit-tested)
 
@@ -122,6 +128,59 @@ towards a tty client).
    machine uses; `docs/packaging.md` lists the libssh DLLs (libssh,
    its crypto library, zlib) for the Windows bundle; `make deps` lists
    libssh as optional; user guide `remote.md` updated (and its l10n page).
+
+### Implementation decisions
+
+Settled here so that every step is written the same way.
+
+- **Modules and layers.** `SshTarget` moves to a header-only
+  `core/ssh_target.h` (`ssh_session.h` includes it: callers do not change).
+  Rules in `tools/check_layers.sh`: `ssh_channel:i18n`,
+  `ssh_link:ssh_target,ssh_channel,i18n`, and `ssh_session` gains
+  `ssh_target,ssh_link,ssh_channel`. `ssh_link` never includes
+  `ssh_session` nor `ssh_askpass` (both would make a cycle): the dispatch
+  "link or `ssh` program" lives in `ssh_session` and `sftp_client`.
+- **Finding a machine's link.** A registry inside `ssh_link`:
+  `ssh_link_lookup(const SshTarget*)` returns a new ref or NULL, keyed by
+  `user@host:port` (empty user and port 0/22 normalised), guarded by a
+  `GMutex` (the `vfs` thread looks it up). `remote_session` creates the link
+  on connect, holds the owning ref and closes it on disconnect; a closed
+  link leaves the registry at once.
+- **Prompts.** `ssh_link` has its own callback,
+  `SshLinkAskFunc(SshLinkAsk* ask, SshLinkAskKind kind, const gchar* prompt,
+  gpointer data)`, answered once with `ssh_link_reply(ask, answer)`
+  (secret, yes/no, notice: the same three kinds as `SshAskpassKind`, not
+  the same type). It is always called on the main thread
+  (`g_main_context_invoke()` on the default context). In `remote_session.c`
+  the dialog body of `on_ask()` becomes a static helper taking a reply
+  callback, shared by `on_ask()` and the new `on_link_ask()`.
+- **`SshProcess`.** The three `ssh_spawn()` / `vfs_spawn()` callers
+  (`git_mirror`, `deep_search`, `disk_scan`) use only stdin pipe, stdout
+  pipe, `force_exit` and `wait`. `SshProcess` is a plain opaque struct in
+  `ssh_session` with exactly `ssh_process_get_stdin()`,
+  `ssh_process_get_stdout()`, `ssh_process_force_exit()`,
+  `ssh_process_wait()` (returns the exit status, cancellable) and
+  `ssh_process_free()`, wrapping either a `GSubprocess` or a channel. No
+  GObject, no GInterface.
+- **Threads.** Every libssh call runs on the link thread, none elsewhere
+  (a libssh session is not thread-safe). Channel streams are `GIOStream`
+  subclasses whose async methods post the request to the link thread and
+  complete in the caller's thread-default context (the `vfs` thread for
+  SFTP); the sync methods wait on a `GCond` and are refused on the main
+  thread (`g_return_val_if_fail`).
+- **Socket polling.** Wrap the session socket with
+  `g_socket_new_from_fd(ssh_get_fd())` and watch it with
+  `g_socket_create_source()`: a raw `GPollFD` on a SOCKET does not work
+  with `g_poll()` on Windows. The `GSocket` must not close the fd (libssh
+  owns it).
+- **Keep-alive.** A 15 s timeout on the link context calls
+  `ssh_send_keepalive()`; a missing reply counts as a miss, 3 misses = lost
+  (libssh has no keep-alive of its own).
+- **Build.** The Makefile detects `pkg-config --exists libssh` like
+  `HAVE_POPPLER` and defines `HAVE_LIBSSH`. Without it `ssh_link.c` and
+  `ssh_channel.c` are not built, the dispatch code is under `#ifdef`, and
+  `test_ssh_link` / `test_ssh_channel` are not in `TESTS` (the test server
+  needs `libssh/server.h`, part of `libssh-dev` and the MSYS2 package).
 
 ### Tests (`tests/test_ssh_link.c`, `tests/test_ssh_channel.c`)
 
