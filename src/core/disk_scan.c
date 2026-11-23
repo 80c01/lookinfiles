@@ -1,6 +1,7 @@
 /* Disk usage of a folder, read in a worker thread (see disk_scan.h) */
 #include "core/disk_scan.h"
 #include "core/disk_remote.h"
+#include "core/ssh_process.h"
 #include "core/vfs.h"
 
 #include <errno.h>
@@ -526,11 +527,11 @@ void disk_scan_set_filter(DiskScan* s, DiskScanFilter filter, gpointer data) {
  * it could not run */
 static DiskRemoteListing* list_remote(DiskScan* s) {
     gchar* cmd = disk_remote_command(s->one_filesystem);
-    GSubprocess* proc = vfs_spawn(s->root_path, cmd, NULL);
+    SshProcess* proc = vfs_spawn(s->root_path, cmd, NULL);
     g_free(cmd);
     if (proc == NULL) return NULL;
-    g_output_stream_close(g_subprocess_get_stdin_pipe(proc), NULL, NULL);
-    GDataInputStream* in = g_data_input_stream_new(g_subprocess_get_stdout_pipe(proc));
+    g_output_stream_close(ssh_process_get_stdin(proc), NULL, NULL);
+    GDataInputStream* in = g_data_input_stream_new(ssh_process_get_stdout(proc));
     DiskRemoteListing* l = disk_remote_listing_new();
     guint64 n = 0;
     gchar* rec;
@@ -550,11 +551,11 @@ static DiskRemoteListing* list_remote(DiskScan* s) {
     }
     g_object_unref(in);
     if (g_cancellable_is_cancelled(s->cancel)) {
-        g_subprocess_force_exit(proc);
+        ssh_process_force_exit(proc);
         s->cancelled = TRUE;
     }
-    g_subprocess_wait(proc, NULL, NULL);
-    g_object_unref(proc);
+    ssh_process_wait(proc);
+    ssh_process_free(proc);
     return l;
 }
 

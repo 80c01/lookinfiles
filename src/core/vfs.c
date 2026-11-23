@@ -2,6 +2,7 @@
 #include "core/vfs.h"
 #include "core/i18n.h"
 #include "core/sftp_client.h"
+#include "core/ssh_process.h"
 
 #include <string.h>
 
@@ -507,12 +508,12 @@ GPtrArray* vfs_command_argv(const gchar* path, const gchar* command, GError** er
     return argv;
 }
 
-GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error) {
+SshProcess* vfs_spawn(const gchar* path, const gchar* command, GError** error) {
     Job* j = job_new(path, error);
     if (j == NULL) return NULL;
     SshTarget t = mount_target(j->m);
     gchar* line = command_in(j, command);
-    GSubprocess* p = ssh_spawn(&t, line, error);
+    SshProcess* p = ssh_spawn(&t, line, error);
     g_free(line);
     job_unref(j);
     return p;

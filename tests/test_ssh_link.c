@@ -692,6 +692,105 @@ static void test_exec_over_link(void) {
     g_free(tmp);
 }
 
+typedef struct {
+    SshTarget* target;
+    gboolean ok;
+    gint status;
+    gsize got;
+    gboolean same;
+} SpawnRun;
+
+typedef struct {
+    GOutputStream* out;
+    const guint8* data;
+    gsize len;
+} SpawnFeed;
+
+static gpointer spawn_feed(gpointer data) {
+    SpawnFeed* f = data;
+    g_output_stream_write_all(f->out, f->data, f->len, NULL, NULL, NULL);
+    g_output_stream_close(f->out, NULL, NULL);
+    return NULL;
+}
+
+/* On a worker, as git_mirror: stdin fed by a thread while stdout is read */
+static gpointer spawn_worker(gpointer data) {
+    SpawnRun* r = data;
+    gsize big = 1024u * 1024u + 17u;
+    guint8* sent = g_malloc(big);
+    for (gsize i = 0; i < big; i++) sent[i] = (guint8)(i * 13u);
+    SshProcess* p = ssh_spawn(r->target, "echo", NULL);
+    r->ok = p != NULL;
+    if (p == NULL) {
+        g_free(sent);
+        return NULL;
+    }
+    SpawnFeed f = { ssh_process_get_stdin(p), sent, big };
+    GThread* t = g_thread_new("feed", spawn_feed, &f);
+    guint8* back = g_malloc(big + 1);
+    g_input_stream_read_all(ssh_process_get_stdout(p), back, big + 1, &r->got, NULL, NULL);
+    g_thread_join(t);
+    r->same = r->got == big && memcmp(back, sent, big) == 0;
+    r->status = ssh_process_wait(p);
+    ssh_process_free(p);
+    g_free(back);
+    g_free(sent);
+
+    /* stderr is dropped, stdout still read whole */
+    p = ssh_spawn(r->target, "hello", NULL);
+    gchar out[64] = { 0 };
+    gsize n = 0;
+    g_output_stream_close(ssh_process_get_stdin(p), NULL, NULL);
+    g_input_stream_read_all(ssh_process_get_stdout(p), out, sizeof out - 1, &n, NULL, NULL);
+    r->same = r->same && strcmp(out, "hello stdout\n") == 0 && ssh_process_wait(p) == 0;
+    ssh_process_free(p);
+
+    /* Stopped before the end */
+    p = ssh_spawn(r->target, "hang", NULL);
+    ssh_process_force_exit(p);
+    ssh_process_free(p);
+    return NULL;
+}
+
+static void test_spawn_over_link(void) {
+    gchar* tmp = g_dir_make_tmp("ssh-link-spawn-XXXXXX", NULL);
+    gchar* kh = g_build_filename(tmp, "known_hosts", NULL);
+    ssh_link_set_test_options("", kh, FALSE, FALSE);
+    ssh_link_set_keepalive_ms(0);
+    SshTestServer* srv = ssh_test_server_start("bob", "hunter2");
+    SshTarget t = { .host = "127.0.0.1", .user = "bob", .port = srv->port };
+    AskFixture ask = { .accept_hostkey = TRUE, .secret = "hunter2" };
+    gboolean ok = FALSE;
+    SshLink* link = connect_wait(&t, &ask, &ok, NULL);
+    g_assert_true(ok);
+
+    SpawnRun r = { .target = &t };
+    g_thread_join(g_thread_new("spawn", spawn_worker, &r));
+    g_assert_true(r.ok);
+    g_assert_cmpuint(r.got, ==, 1024u * 1024u + 17u);
+    g_assert_true(r.same);
+    g_assert_cmpint(r.status, ==, 0);
+    g_assert_cmpuint(srv->auth_success_count, ==, 1); /* never a login of its own */
+
+    /* The main thread (owning the default context, as in its main loop) is
+     * refused: the streams block */
+    GError* error = NULL;
+    g_assert_true(g_main_context_acquire(NULL));
+    g_assert_null(ssh_spawn(&t, "hello", &error));
+    g_main_context_release(NULL);
+    g_assert_error(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK);
+    g_clear_error(&error);
+
+    ssh_link_close(link);
+    ssh_link_unref(link);
+    ask_fixture_clear(&ask);
+    ssh_test_server_stop(srv);
+    ssh_link_set_test_options(NULL, NULL, TRUE, TRUE);
+    rm_rf(tmp);
+    g_free(kh);
+    g_free(tmp);
+}
+
 int main(int argc, char** argv) {
     g_setenv("LOOKINFILES_SSH_LIBSSH", "1", TRUE); /* before any thread */
     g_test_init(&argc, &argv, NULL);
@@ -705,5 +804,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/ssh_link/keepalive_alive_and_lost", test_keepalive_alive_and_lost);
     g_test_add_func("/ssh_link/connection_lost_fails_channels", test_connection_lost_fails_channels);
     g_test_add_func("/ssh_link/exec_over_link", test_exec_over_link);
+    g_test_add_func("/ssh_link/spawn_over_link", test_spawn_over_link);
     return g_test_run();
 }

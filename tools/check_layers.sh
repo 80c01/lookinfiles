@@ -66,11 +66,12 @@ ssh_watch:
 ssh_trace:
 ssh_link:ssh_target,ssh_channel,ssh_watch,ssh_trace,i18n
 ssh_link_exec:ssh_link,ssh_channel,i18n
-ssh_session:app_paths,i18n,ssh_target,ssh_link,ssh_channel,ssh_link_exec
+ssh_process:ssh_channel
+ssh_session:app_paths,i18n,ssh_target,ssh_link,ssh_channel,ssh_link_exec,ssh_process
 ssh_askpass:ssh_session
 sftp_proto:i18n
 sftp_client:sftp_proto,ssh_session,ssh_link,ssh_channel,i18n
-vfs:sftp_client,sftp_proto,ssh_session,i18n
+vfs:sftp_client,sftp_proto,ssh_session,ssh_process,i18n
 vfs_cache:vfs,app_paths,i18n
 vfs_watch:vfs
 i18n:
@@ -79,7 +80,7 @@ file_type_icons:file_type_icons_table
 git_utils:palette,i18n,git_lib
 git_remote:git_state,git_utils,ssh_session,vfs
 git_worktree_remote:git_worktree,ssh_session,vfs
-git_mirror:vfs,app_paths,i18n,git_remote,git_utils
+git_mirror:vfs,ssh_process,app_paths,i18n,git_remote,git_utils
 git_lib:
 git_log:git_utils,git_lib
 git_worktree:git_lib,i18n
@@ -109,7 +110,7 @@ diagnostics:i18n
 proc_query:
 countdown:
 run_time:
-disk_scan:disk_remote,vfs
+disk_scan:disk_remote,vfs,ssh_process
 disk_remote:
 disk_stats:disk_scan,file_types,i18n
 git_space:git_utils,disk_scan,git_remote,vfs
@@ -259,7 +260,7 @@ xml_text:
 text_search:code_index,i18n
 remote_search:text_search,code_index,ssh_session,vfs
 deep_query:text_search,path_globs,file_types,i18n
-deep_search:deep_query,deep_search_remote,remote_search,vfs
+deep_search:deep_query,deep_search_remote,remote_search,vfs,ssh_process
 deep_search_remote:deep_query,text_search,code_index
 deep_search_store:app_paths,deep_query,file_types,i18n
 session_store:app_paths,layout_store

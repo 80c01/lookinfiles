@@ -2,6 +2,7 @@
 #include "git/git_mirror.h"
 #include "core/app_paths.h"
 #include "core/i18n.h"
+#include "core/ssh_process.h"
 #include "core/vfs.h"
 #include "git/git_remote.h"
 #include "git/git_utils.h"
@@ -212,15 +213,15 @@ static gpointer feed_names(gpointer data) {
 /* Copy the files named (NUL-separated) from top's .git into gitdir */
 static gboolean copy_files(const gchar* top, GBytes* names, const gchar* gitdir, GCancellable* cancel, guint* copied,
                            GError** error) {
-    GSubprocess* p = vfs_spawn(top, GIT_MIRROR_TAR_COMMAND, error);
+    SshProcess* p = vfs_spawn(top, GIT_MIRROR_TAR_COMMAND, error);
     if (p == NULL) return FALSE;
-    Feed f = { g_subprocess_get_stdin_pipe(p), names };
+    Feed f = { ssh_process_get_stdin(p), names };
     GThread* t = g_thread_new("git-mirror-names", feed_names, &f);
-    gboolean ok = git_mirror_extract(g_subprocess_get_stdout_pipe(p), gitdir, cancel, copied, error);
-    if (!ok) g_subprocess_force_exit(p);
+    gboolean ok = git_mirror_extract(ssh_process_get_stdout(p), gitdir, cancel, copied, error);
+    if (!ok) ssh_process_force_exit(p);
     g_thread_join(t);
-    g_subprocess_wait(p, NULL, NULL);
-    g_object_unref(p);
+    ssh_process_wait(p);
+    ssh_process_free(p);
     return ok;
 }
 

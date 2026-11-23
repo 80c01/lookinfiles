@@ -1,8 +1,9 @@
 # Plan: one SSH connection per machine on Windows (libssh)
 
-Status: **in progress**. Step 1 is done; of step 2, `ssh_exec_sync()` and
-`ssh_exec_async()` run on exec channels (`core/ssh_link_exec`), while
-`ssh_spawn()` (Disk Usage, deep search, Git mirror) still starts `ssh.exe`.
+Status: **in progress**. Steps 1 and 2 are done: `ssh_exec_sync()` and
+`ssh_exec_async()` run on exec channels (`core/ssh_link_exec`), and
+`ssh_spawn()` / `vfs_spawn()` return an `SshProcess` (`core/ssh_process`).
+Next: step 3 (kernels, language servers still start `ssh.exe`).
 
 ## The problem
 

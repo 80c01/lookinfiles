@@ -1,5 +1,6 @@
 /* A deep search below a folder (see deep_search.h) */
 #include "search/deep_search.h"
+#include "core/ssh_process.h"
 #include "core/vfs.h"
 #include "search/deep_search_remote.h"
 #include "search/remote_search.h"
@@ -372,11 +373,11 @@ static gboolean remote_entry(DeepSearch* s, const DeepRemoteEntry* e, GHashTable
 
 static DeepSearchState run_remote(DeepSearch* s) {
     gchar* cmd = deep_remote_find_command(&s->query);
-    GSubprocess* proc = vfs_spawn(s->root, cmd, NULL);
+    SshProcess* proc = vfs_spawn(s->root, cmd, NULL);
     g_free(cmd);
     if (proc == NULL) return DEEP_SEARCH_NO_FOLDER;
-    g_output_stream_close(g_subprocess_get_stdin_pipe(proc), NULL, NULL);
-    GDataInputStream* in = g_data_input_stream_new(g_subprocess_get_stdout_pipe(proc));
+    g_output_stream_close(ssh_process_get_stdin(proc), NULL, NULL);
+    GDataInputStream* in = g_data_input_stream_new(ssh_process_get_stdout(proc));
     GHashTable* excluded = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     GPtrArray* batch = g_ptr_array_new_with_free_func(pending_free);
     gboolean go_on = TRUE;
@@ -400,9 +401,9 @@ static DeepSearchState run_remote(DeepSearch* s) {
     g_ptr_array_unref(batch);
     g_hash_table_destroy(excluded);
     g_object_unref(in);
-    if (!go_on || g_cancellable_is_cancelled(s->cancel)) g_subprocess_force_exit(proc);
-    g_subprocess_wait(proc, NULL, NULL);
-    g_object_unref(proc);
+    if (!go_on || g_cancellable_is_cancelled(s->cancel)) ssh_process_force_exit(proc);
+    ssh_process_wait(proc);
+    ssh_process_free(proc);
     if (g_cancellable_is_cancelled(s->cancel)) return DEEP_SEARCH_STOPPED;
     if (!go_on) return DEEP_SEARCH_FULL;
     return entered ? DEEP_SEARCH_DONE : DEEP_SEARCH_NO_FOLDER;

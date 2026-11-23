@@ -68,8 +68,9 @@ gchar* vfs_remote_absolute(const gchar* path, GCancellable* cancel, GError** err
  * through the master (ssh_session_argv()), for a process kept running
  * here (g_ptr_array_unref; not NULL-terminated) */
 GPtrArray* vfs_command_argv(const gchar* path, const gchar* command, GError** error);
-/* The same started, its output read as it comes (ssh_spawn()) */
-GSubprocess* vfs_spawn(const gchar* path, const gchar* command, GError** error);
+/* The same started, its output read as it comes (ssh_spawn(), worker
+ * threads only; ssh_process_free()) */
+SshProcess* vfs_spawn(const gchar* path, const gchar* command, GError** error);
 
 /* What the last vfs_list() of its folder or vfs_stat() said of path
  * (e->name NULL), at once, without the network; FALSE when nothing did */

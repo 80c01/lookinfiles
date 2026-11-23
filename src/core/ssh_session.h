@@ -13,6 +13,7 @@
  * ssh_session_set_env() (the password prompt, ssh_askpass.h), have no
  * controlling terminal, and die with the application (Linux). GIO only, no
  * widgets; unit-tested with a fake ssh program. */
+#include "core/ssh_process.h"
 #include "core/ssh_target.h"
 
 #include <gio/gio.h>
@@ -102,10 +103,11 @@ void ssh_exec_async(const SshTarget* target, const gchar* command, const gchar* 
  * text) */
 gboolean ssh_exec_sync(const SshTarget* target, const gchar* command, GBytes* input, GCancellable* cancel,
                        gint* status, GBytes** out, GError** error);
-/* command started on target through its master, its output read as it
- * comes (g_subprocess_get_stdout_pipe(); stdin a pipe, errors dropped);
- * NULL with error as ssh_exec_sync() */
-GSubprocess* ssh_spawn(const SshTarget* target, const gchar* command, GError** error);
+/* command started on target through its master (with libssh, on an exec
+ * channel of the link), its output read as it comes
+ * (ssh_process_get_stdout(); stdin a pipe, errors dropped); NULL with error
+ * as ssh_exec_sync(). Worker threads only. Free with ssh_process_free(). */
+SshProcess* ssh_spawn(const SshTarget* target, const gchar* command, GError** error);
 /* arg quoted for a POSIX remote shell. Caller frees. */
 gchar* ssh_session_quote(const gchar* arg);
 

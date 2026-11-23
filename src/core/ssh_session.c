@@ -511,11 +511,6 @@ static GSubprocess* spawn_command(const SshTarget* t, const gchar* command, GSub
     return p;
 }
 
-GSubprocess* ssh_spawn(const SshTarget* t, const gchar* command, GError** error) {
-    return spawn_command(t, command, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
-                                         G_SUBPROCESS_FLAGS_STDERR_SILENCE, error);
-}
-
 #ifdef HAVE_LIBSSH
 /* The machine's libssh link, or NULL (error set, the application told)
  * when libssh is in use but the link is not open: never an ssh program
@@ -529,6 +524,32 @@ static SshLink* command_link(const SshTarget* t, GError** error) {
     return link;
 }
 #endif
+
+SshProcess* ssh_spawn(const SshTarget* t, const gchar* command, GError** error) {
+#ifdef HAVE_LIBSSH
+    if (ssh_link_enabled()) {
+        if (g_main_context_is_owner(g_main_context_default())) {
+            g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK, "ssh_spawn() on the main thread");
+            return NULL;
+        }
+        SshLink* link = command_link(t, error);
+        if (link == NULL) return NULL;
+        SshChannel* ch = ssh_link_open_channel_sync(link, SSH_CHANNEL_KIND_EXEC, command != NULL ? command : "true",
+                                                    0, 0, NULL, error);
+        ssh_link_unref(link);
+        if (ch == NULL) return NULL;
+        SshProcess* p = ssh_process_new_channel(G_IO_STREAM(ch));
+        g_object_unref(ch);
+        return p;
+    }
+#endif
+    GSubprocess* sp = spawn_command(t, command, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                                    G_SUBPROCESS_FLAGS_STDERR_SILENCE, error);
+    if (sp == NULL) return NULL;
+    SshProcess* p = ssh_process_new_subprocess(sp);
+    g_object_unref(sp);
+    return p;
+}
 
 gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GBytes* input, GCancellable* cancel, gint* status,
                        GBytes** out, GError** error) {
