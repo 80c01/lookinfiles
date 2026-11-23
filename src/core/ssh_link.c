@@ -417,7 +417,11 @@ static void link_pump_ready(SshLink* link) {
     if (link->rc.in_packets != pkts_before) link->keepalive_misses = 0;
 
     gboolean lost = session_is_lost(link->session, poll_rc);
-    pump_channels(link);
+    if (lost) { /* down before the channels hear of it: none may find the link up */
+        g_atomic_int_set(&link->up, 0);
+        registry_remove(link);
+    }
+    pump_channels(link); /* the last bytes received still reach them */
     if (lost) {
         link_fail_session(link, _("the connection to the remote machine was closed"));
         return;
@@ -427,11 +431,16 @@ static void link_pump_ready(SshLink* link) {
     if ((ssh_get_poll_flags(link->session) & SSH_WRITE_PENDING) != 0 && link->event != NULL) {
         uint64_t pkts2 = link->rc.in_packets;
         int rc2 = ssh_event_dopoll(link->event, 0);
+        gboolean lost2 = session_is_lost(link->session, rc2);
+        if (lost2) {
+            g_atomic_int_set(&link->up, 0);
+            registry_remove(link);
+        }
         if (link->rc.in_packets != pkts2) {
             link->keepalive_misses = 0;
             pump_channels(link);
         }
-        if (session_is_lost(link->session, rc2)) {
+        if (lost2) {
             link_fail_session(link, _("the connection to the remote machine was closed"));
             return;
         }
