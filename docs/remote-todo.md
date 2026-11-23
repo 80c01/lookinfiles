@@ -1,8 +1,10 @@
 # Remote machines: what is left
 
-Remote machines are read without sshfs: one OpenSSH master connection per
-machine, files over SFTP (`core/vfs.h`), and commands run there through it
-(`vfs_exec()`, `vfs_spawn()`). Search in files, Go to File, Deep Search,
+Remote machines are read without sshfs: one SSH connection per machine
+(the built-in libssh by default on Windows, an OpenSSH master connection
+elsewhere; the Preferences choose when libssh is built in, see
+[remote-libssh.md](remote-libssh.md)), files over SFTP (`core/vfs.h`), and
+commands run there through it (`vfs_exec()`, `vfs_spawn()`). Search in files, Go to File, Deep Search,
 Disk Usage, the Git tab, Git badges and the language servers all work on a
 remote machine (see the user guide, `docs/user-guide/remote.md`). This page
 lists what does not, or not fully, to come back to later.
@@ -38,11 +40,13 @@ lists what does not, or not fully, to come back to later.
   network there (`vfs_file_test()` while navigating, `vfs_remote_absolute()`
   when the first language server of a machine starts): short freezes on a
   slow or broken connection.
-- **Windows without libssh**: builds with `libssh` share one SSH connection
-  per machine for every channel (SFTP, commands, kernels, language servers
-  and terminals; see [remote-libssh.md](remote-libssh.md)). Builds without
-  `libssh` fall back to `ssh.exe`, where each session connects on its own
-  and may ask for the password again (a key with ssh-agent avoids it).
+- **Windows with the `ssh` program**: the Windows packages are built with
+  `libssh`, which shares one connection per machine for every channel
+  (SFTP, commands, kernels, language servers and terminals). A build
+  without `libssh`, or the `ssh` program chosen in the Preferences (or
+  `LOOKINFILES_SSH_LIBSSH=0`), falls back to `ssh.exe`, which has no master
+  connection: each session connects on its own and may ask for the
+  password again (a key with ssh-agent avoids it).
 
 ## Beyond remote machines
 
