@@ -19,6 +19,17 @@ static gchar* norm_root(const gchar* root) {
     return r;
 }
 
+/* A local path as compared with a mount: on Windows '\\' is a separator too
+ * (g_build_filename() makes them), so it becomes '/', and what follows the
+ * mount is then the remote path, with '/' (as vfs.c does). Caller frees. */
+static gchar* sep_key(const gchar* path) {
+    gchar* p = g_strdup(path);
+#ifdef G_OS_WIN32
+    g_strdelimit(p, "\\", '/');
+#endif
+    return p;
+}
+
 /* Length of mount without its trailing '/' */
 static gsize mount_len(const gchar* mount) {
     gsize n = strlen(mount);
@@ -31,9 +42,21 @@ static gboolean under_mount(const gchar* path, const gchar* mount, gsize n) {
     return strncmp(path, mount, n) == 0 && (path[n] == '\0' || path[n] == '/');
 }
 
+static gchar* map_to_display(const gchar* path, const gchar* mount, const gchar* name, const gchar* root);
+
 gchar* remote_path_map_to_display(const gchar* path, const gchar* mount, const gchar* name,
                                   const gchar* root) {
     if (path == NULL || mount == NULL || mount[0] == '\0' || name == NULL) return NULL;
+    gchar* p = sep_key(path);
+    gchar* m = sep_key(mount);
+    gchar* out = map_to_display(p, m, name, root);
+    g_free(p);
+    g_free(m);
+    return out;
+}
+
+/* remote_path_map_to_display() on paths with '/' only */
+static gchar* map_to_display(const gchar* path, const gchar* mount, const gchar* name, const gchar* root) {
     gsize n = mount_len(mount);
     if (!under_mount(path, mount, n)) return NULL;
     const gchar* rest = path + n;
@@ -77,11 +100,15 @@ gboolean remote_path_map_from_display(const gchar* text, const gchar* mount, con
     if (rel != NULL && out_local != NULL) {
         gchar* m = g_strndup(mount, mount_len(mount));
         gchar* local = rel[0] == '\0' ? g_strdup(m) : g_canonicalize_filename(rel, m);
-        if (under_mount(local, m, strlen(m))) {
+        gchar* local_key = sep_key(local);
+        gchar* m_key = sep_key(m);
+        if (under_mount(local_key, m_key, mount_len(m_key))) {
             *out_local = local;
         } else {
             g_free(local); /* "..": out of the mounted folder */
         }
+        g_free(local_key);
+        g_free(m_key);
         g_free(m);
     }
     g_free(r);
@@ -107,17 +134,24 @@ gchar* remote_path_display(AppData* app, const gchar* path) {
 
 /* The connected machine path is on, at its mount or below */
 static RemoteMachine* machine_of(AppData* app, const gchar* path, gboolean* is_root) {
-    for (GList* l = remote_machine_list(app); l != NULL && path != NULL; l = l->next) {
+    if (path == NULL) return NULL;
+    gchar* p = sep_key(path);
+    RemoteMachine* found = NULL;
+    for (GList* l = remote_machine_list(app); l != NULL && found == NULL; l = l->next) {
         RemoteMachine* rm = l->data;
         if (!rm->is_connected || rm->mount_point == NULL) continue;
-        gsize n = mount_len(rm->mount_point);
-        if (!under_mount(path, rm->mount_point, n)) continue;
-        const gchar* rest = path + n;
-        while (*rest == '/') rest++;
-        if (is_root != NULL) *is_root = rest[0] == '\0';
-        return rm;
+        gchar* m = sep_key(rm->mount_point);
+        gsize n = mount_len(m);
+        if (under_mount(p, m, n)) {
+            const gchar* rest = p + n;
+            while (*rest == '/') rest++;
+            if (is_root != NULL) *is_root = rest[0] == '\0';
+            found = rm;
+        }
+        g_free(m);
     }
-    return NULL;
+    g_free(p);
+    return found;
 }
 
 gchar* remote_path_display_name(AppData* app, const gchar* path) {
