@@ -157,5 +157,5 @@ enregistrés, pour qu’elle compile ce que vous voyez (un fichier changé sur
 le disque entre-temps demande d’abord ; **Préférences → Éditeur →
 Enregistrer les fichiers du projet avant une tâche** le désactive, la ligne
 de message dit alors combien restent non enregistrés). La tâche ne reçoit
-aucune entrée. Les tâches ne tournent pas encore sur les machines
-distantes.
+aucune entrée. Sur une machine distante, la tâche tourne là-bas (voir
+[Tâches de compilation et de test](remote.md#tâches-de-compilation-et-de-test)).

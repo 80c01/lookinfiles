@@ -7,7 +7,8 @@
  * Shift+F7 chooses one in a list, Ctrl+F7 stops it. The output is read as it
  * comes, its messages (task_parse.h) listed in the Build page (task_page.h);
  * F8 / Shift+F8 go to the next / previous one. One task runs at a time: a
- * new one stops the one running. Not on remote machines yet. */
+ * new one stops the one running. On a remote machine the task runs there
+ * (task_remote.h). */
 #include "core/app_types.h"
 
 /* F7: run the task chosen last in the current project, or its default one */

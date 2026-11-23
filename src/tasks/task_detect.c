@@ -1,6 +1,7 @@
 /* The build and test tasks of a project (see task_detect.h) */
 #include "tasks/task_detect.h"
 #include "tasks/task_config.h"
+#include "core/vfs.h"
 #include <string.h>
 
 /* Make targets offered at most */
@@ -14,9 +15,10 @@ static const gchar* const MARKERS[] = {
     "meson.build", "build.ninja", "pyproject.toml", "setup.py", "pytest.ini", ".lookinfiles/tasks.toml",
 };
 
+/* Files are read through vfs: a remote machine's over SFTP, others here */
 static gboolean has_file(const gchar* dir, const gchar* name) {
     gchar* path = g_build_filename(dir, name, NULL);
-    gboolean found = g_file_test(path, G_FILE_TEST_IS_REGULAR);
+    gboolean found = vfs_file_test(path, G_FILE_TEST_IS_REGULAR);
     g_free(path);
     return found;
 }
@@ -25,27 +27,55 @@ static gchar* read_file(const gchar* dir, const gchar* name) {
     gchar* path = g_build_filename(dir, name, NULL);
     gchar* text = NULL;
     gsize len = 0;
-    if (!g_file_get_contents(path, &text, &len, NULL)) text = NULL;
+    if (!vfs_file_get_contents(path, MAX_FILE_BYTES, &text, &len, NULL)) text = NULL;
     else if (len > MAX_FILE_BYTES) text[MAX_FILE_BYTES] = '\0';
     g_free(path);
     return text;
+}
+
+/* dir holds a build file; a remote folder is listed once (one request)
+ * rather than asked for each name */
+static gboolean has_marker(const gchar* dir) {
+    if (!vfs_is_remote(dir)) {
+        for (guint i = 0; i < G_N_ELEMENTS(MARKERS); i++) {
+            if (has_file(dir, MARKERS[i])) return TRUE;
+        }
+        return FALSE;
+    }
+    GPtrArray* entries = vfs_list(dir, NULL, NULL);
+    gboolean found = FALSE;
+    gboolean own = FALSE; /* a .lookinfiles folder */
+    for (guint i = 0; entries != NULL && i < entries->len && !found; i++) {
+        const VfsEntry* e = g_ptr_array_index(entries, i);
+        if (e->is_dir) {
+            own = own || g_strcmp0(e->name, ".lookinfiles") == 0;
+            continue;
+        }
+        for (guint k = 0; k < G_N_ELEMENTS(MARKERS) && !found; k++) found = g_strcmp0(e->name, MARKERS[k]) == 0;
+    }
+    if (entries != NULL) g_ptr_array_unref(entries);
+    return found || (own && has_file(dir, ".lookinfiles/tasks.toml"));
 }
 
 gchar* task_detect_project_dir(const gchar* start) {
     if (start == NULL) return NULL;
     gchar* dir = g_canonicalize_filename(start, NULL);
     const gchar* home = g_get_home_dir();
+    /* On a remote machine, not above the folder it is seen at */
+    gchar* mount = vfs_mount_of(dir);
     while (dir != NULL) {
-        for (guint i = 0; i < G_N_ELEMENTS(MARKERS); i++) {
-            if (has_file(dir, MARKERS[i])) return dir;
+        if (has_marker(dir)) {
+            g_free(mount);
+            return dir;
         }
         gchar* parent = g_path_get_dirname(dir);
-        gboolean top = g_strcmp0(parent, dir) == 0 || g_strcmp0(dir, home) == 0;
+        gboolean top = g_strcmp0(parent, dir) == 0 || g_strcmp0(dir, home) == 0 || g_strcmp0(dir, mount) == 0;
         g_free(dir);
         dir = NULL;
         if (!top) dir = parent;
         else g_free(parent);
     }
+    g_free(mount);
     return NULL;
 }
 
@@ -195,20 +225,25 @@ static void add_task(GPtrArray* tasks, const gchar* dir, const gchar* label, con
     g_ptr_array_unref(argv);
 }
 
+/* Processors of the machine the tasks run on (task_detect()) */
+static guint jobs_count(guint jobs) {
+    return jobs > 0 ? jobs : g_get_num_processors();
+}
+
 /* "-j8": every processor, for the tools that build one job at a time
  * unless told; NULL on a single processor */
-static gchar* jobs_flag(void) {
-    guint n = g_get_num_processors();
+static gchar* jobs_flag(guint jobs) {
+    guint n = jobs_count(jobs);
     return n > 1 ? g_strdup_printf("-j%u", n) : NULL;
 }
 
-static void add_make(GPtrArray* tasks, const gchar* dir) {
+static void add_make(GPtrArray* tasks, const gchar* dir, guint jobs_n) {
     const gchar* file = has_file(dir, "GNUmakefile") ? "GNUmakefile"
                         : has_file(dir, "makefile") ? "makefile"
                         : has_file(dir, "Makefile") ? "Makefile"
                                                     : NULL;
     if (file == NULL) return;
-    gchar* jobs = jobs_flag();
+    gchar* jobs = jobs_flag(jobs_n);
     gchar* label = jobs != NULL ? g_strconcat("make ", jobs, NULL) : g_strdup("make");
     add_task(tasks, dir, label, "make", jobs, NULL);
     g_free(label);
@@ -230,17 +265,22 @@ static void add_make(GPtrArray* tasks, const gchar* dir) {
  * is no member), not above the home folder */
 static gchar* cargo_root(const gchar* dir) {
     const gchar* home = g_get_home_dir();
+    gchar* mount = vfs_mount_of(dir);
     gchar* cur = g_strdup(dir);
     while (TRUE) {
         gchar* text = read_file(cur, "Cargo.toml");
         gboolean workspace = text != NULL && strstr(text, "[workspace]") != NULL;
         g_free(text);
-        if (workspace) return cur;
+        if (workspace) {
+            g_free(mount);
+            return cur;
+        }
         gchar* parent = g_path_get_dirname(cur);
-        gboolean top = g_strcmp0(parent, cur) == 0 || g_strcmp0(cur, home) == 0;
+        gboolean top = g_strcmp0(parent, cur) == 0 || g_strcmp0(cur, home) == 0 || g_strcmp0(cur, mount) == 0;
         g_free(cur);
         if (top) {
             g_free(parent);
+            g_free(mount);
             return g_strdup(dir);
         }
         cur = parent;
@@ -299,11 +339,11 @@ static const gchar* build_dir_with(const gchar* dir, const gchar* const* names, 
     return NULL;
 }
 
-static void add_cmake_meson_ninja(GPtrArray* tasks, const gchar* dir) {
+static void add_cmake_meson_ninja(GPtrArray* tasks, const gchar* dir, guint jobs_n) {
     if (has_file(dir, "CMakeLists.txt")) {
         static const gchar* const names[] = {"build", "cmake-build-debug", "cmake-build-release", "out/build", NULL};
         const gchar* b = build_dir_with(dir, names, "CMakeCache.txt");
-        gchar* jobs = g_strdup_printf("%u", g_get_num_processors());
+        gchar* jobs = g_strdup_printf("%u", jobs_count(jobs_n));
         gchar* label = b != NULL ? g_strdup_printf("cmake --build %s --parallel %s", b, jobs) : g_strdup("cmake -B build");
         if (b != NULL) add_task(tasks, dir, label, "cmake", "--build", b, "--parallel", jobs, NULL);
         else add_task(tasks, dir, label, "cmake", "-B", "build", NULL);
@@ -341,7 +381,7 @@ static void add_python(GPtrArray* tasks, const gchar* dir) {
 static void add_config(GPtrArray* tasks, const gchar* dir, gchar** problem) {
     gchar* path = task_config_path(dir);
     gchar* text = NULL;
-    if (g_file_get_contents(path, &text, NULL, NULL)) {
+    if (vfs_file_get_contents(path, MAX_FILE_BYTES, &text, NULL, NULL)) {
         GError* error = NULL;
         GPtrArray* own = task_config_parse(text, dir, &error);
         if (own != NULL) {
@@ -356,14 +396,14 @@ static void add_config(GPtrArray* tasks, const gchar* dir, gchar** problem) {
     g_free(path);
 }
 
-GPtrArray* task_detect(const gchar* dir, gchar** problem) {
+GPtrArray* task_detect(const gchar* dir, guint jobs, gchar** problem) {
     GPtrArray* tasks = g_ptr_array_new_with_free_func((GDestroyNotify)task_def_free);
     if (problem != NULL) *problem = NULL;
     if (dir == NULL) return tasks;
     add_config(tasks, dir, problem);
-    add_make(tasks, dir);
+    add_make(tasks, dir, jobs);
     add_cargo(tasks, dir);
-    add_cmake_meson_ninja(tasks, dir);
+    add_cmake_meson_ninja(tasks, dir, jobs);
     add_npm(tasks, dir);
     add_go(tasks, dir);
     add_python(tasks, dir);

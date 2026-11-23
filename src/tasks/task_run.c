@@ -10,6 +10,7 @@
 #include "tasks/task_choice.h"
 #include "tasks/task_detect.h"
 #include "tasks/task_page.h"
+#include "tasks/task_remote.h"
 #include "tasks/task_parse.h"
 #include "theme/palette.h"
 #include "widgets/dialog.h"
@@ -31,7 +32,8 @@ typedef struct Run {
     gint refs;
     AppData* app;
     TaskDef* def;
-    GSubprocess* proc;
+    GSubprocess* proc;  /* here, or NULL */
+    TaskRemote* remote; /* on a remote machine, or NULL */
     GInputStream* in;
     GCancellable* cancellable;
     TaskParser* parser;
@@ -42,6 +44,8 @@ typedef struct Run {
     guint kill_id;
     gboolean output_done;
     gboolean exited;
+    gboolean success;  /* once exited */
+    gint exit_status;  /* once exited: -1 when unknown */
     gboolean stopped; /* by the user */
     gboolean dead;    /* replaced by another run, or the application quits */
 } Run;
@@ -82,6 +86,7 @@ static void run_unref(Run* r) {
     if (r->kill_id != 0) g_source_remove(r->kill_id);
     task_def_free(r->def);
     g_clear_object(&r->proc);
+    g_clear_pointer(&r->remote, task_remote_free);
     g_clear_object(&r->in);
     g_clear_object(&r->cancellable);
     task_parser_free(r->parser);
@@ -93,7 +98,12 @@ static void run_unref(Run* r) {
 
 /* Send sig to the task and what it started (its process group) */
 static void signal_run(Run* r, gboolean kill_now) {
-    if (r->proc == NULL || r->exited) return;
+    if (r->exited) return;
+    if (r->remote != NULL) {
+        task_remote_stop(r->remote, kill_now);
+        return;
+    }
+    if (r->proc == NULL) return;
 #ifdef G_OS_UNIX
     const gchar* id = g_subprocess_get_identifier(r->proc);
     pid_t pid = id != NULL ? (pid_t)g_ascii_strtoll(id, NULL, 10) : 0;
@@ -113,11 +123,34 @@ static gboolean on_kill_timeout(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* m as seen here: on a remote machine, its file (a folder of the machine)
+ * where the machine is seen, or in the text when it is outside; *out holds
+ * the strings to free (task_message_clear()) */
+static const TaskMessage* message_here(Run* r, const TaskMessage* m, TaskMessage* out) {
+    memset(out, 0, sizeof *out);
+    if (r->remote == NULL || m->file == NULL) return m;
+    *out = *m;
+    out->file = task_remote_local_path(r->remote, m->file);
+    out->text = out->file != NULL ? g_strdup(m->text)
+                : m->line > 0    ? g_strdup_printf("%s:%d: %s", m->file, m->line, m->text)
+                                 : g_strdup_printf("%s: %s", m->file, m->text);
+    return out;
+}
+
+static void task_message_clear(TaskMessage* m) {
+    g_free(m->file);
+    g_free(m->text);
+}
+
 /* The page shows the messages the parser added since it had shown
  * `before` of them */
 static void show_new_messages(Run* r, guint before) {
     const GPtrArray* msgs = task_parser_messages(r->parser);
-    for (guint i = before; i < msgs->len; i++) task_page_add_message(r->page, g_ptr_array_index(msgs, i));
+    for (guint i = before; i < msgs->len; i++) {
+        TaskMessage here;
+        task_page_add_message(r->page, message_here(r, g_ptr_array_index(msgs, i), &here));
+        task_message_clear(&here);
+    }
 }
 
 /* A complete line of output (without its newline) into the parser and the
@@ -143,10 +176,14 @@ static void take_line(Run* r, const gchar* line, gsize len, GString* shown) {
 static void publish_diagnostics(Run* r) {
     const GPtrArray* msgs = task_parser_messages(r->parser);
     GPtrArray* entries = g_ptr_array_new_with_free_func((GDestroyNotify)code_diag_entry_free);
-    gchar* source = g_path_get_basename(r->def->argv[0]);
+    gchar* source = g_path_get_basename(r->def->shell ? "sh" : r->def->argv[0]);
     for (guint i = 0; i < msgs->len; i++) {
-        const TaskMessage* m = g_ptr_array_index(msgs, i);
-        if (m->file == NULL || m->line <= 0) continue;
+        TaskMessage here;
+        const TaskMessage* m = message_here(r, g_ptr_array_index(msgs, i), &here);
+        if (m->file == NULL || m->line <= 0) {
+            task_message_clear(&here);
+            continue;
+        }
         CodeDiagEntry* e = g_new0(CodeDiagEntry, 1);
         e->path = g_strdup(m->file);
         e->diag.line = m->line - 1;
@@ -159,6 +196,7 @@ static void publish_diagnostics(Run* r) {
         e->diag.message = g_strdup(m->text);
         e->diag.source = g_strdup(source);
         g_ptr_array_add(entries, e);
+        task_message_clear(&here);
     }
     code_intel_set_task_diagnostics(r->app, entries);
     g_ptr_array_unref(entries);
@@ -172,8 +210,8 @@ static void finish_run(Run* r) {
     task_parser_finish(r->parser);
     show_new_messages(r, before);
 
-    gboolean success = !r->stopped && g_subprocess_get_successful(r->proc);
-    gint status = !r->stopped && g_subprocess_get_if_exited(r->proc) ? g_subprocess_get_exit_status(r->proc) : -1;
+    gboolean success = !r->stopped && r->success;
+    gint status = !r->stopped ? r->exit_status : -1;
     guint errors = task_parser_count(r->parser, TASK_MSG_ERROR);
     guint warnings = task_parser_count(r->parser, TASK_MSG_WARNING);
     /* A failure with no message: its last line says why */
@@ -214,31 +252,19 @@ static void maybe_finish(Run* r) {
     finish_run(r);
 }
 
-static void read_next(Run* r);
-
-static void on_read(GObject* source, GAsyncResult* result, gpointer data) {
-    Run* r = data;
-    GBytes* bytes = g_input_stream_read_bytes_finish(G_INPUT_STREAM(source), result, NULL);
-    if (r->dead) {
-        if (bytes != NULL) g_bytes_unref(bytes);
-        run_unref(r);
-        return;
-    }
-    gsize len = 0;
-    const gchar* data_bytes = bytes != NULL ? g_bytes_get_data(bytes, &len) : NULL;
+/* The end of the output: the last line without a newline */
+static void end_output(Run* r) {
     GString* shown = g_string_new(NULL);
-    if (len == 0) {
-        /* The end (or a read error): the last line without a newline */
-        if (r->partial->len > 0) take_line(r, r->partial->str, r->partial->len, shown);
-        g_string_truncate(r->partial, 0);
-        task_page_append_output(r->page, shown->str);
-        g_string_free(shown, TRUE);
-        if (bytes != NULL) g_bytes_unref(bytes);
-        r->output_done = TRUE;
-        maybe_finish(r);
-        run_unref(r);
-        return;
-    }
+    if (r->partial->len > 0) take_line(r, r->partial->str, r->partial->len, shown);
+    g_string_truncate(r->partial, 0);
+    task_page_append_output(r->page, shown->str);
+    g_string_free(shown, TRUE);
+    r->output_done = TRUE;
+}
+
+/* Output read (any cut): its complete lines taken, the rest kept */
+static void take_chunk(Run* r, const gchar* data_bytes, gsize len) {
+    GString* shown = g_string_new(NULL);
     const gchar* start = data_bytes;
     const gchar* end = data_bytes + len;
     while (start < end) {
@@ -262,6 +288,29 @@ static void on_read(GObject* source, GAsyncResult* result, gpointer data) {
     }
     task_page_append_output(r->page, shown->str);
     g_string_free(shown, TRUE);
+}
+
+static void read_next(Run* r);
+
+static void on_read(GObject* source, GAsyncResult* result, gpointer data) {
+    Run* r = data;
+    GBytes* bytes = g_input_stream_read_bytes_finish(G_INPUT_STREAM(source), result, NULL);
+    if (r->dead) {
+        if (bytes != NULL) g_bytes_unref(bytes);
+        run_unref(r);
+        return;
+    }
+    gsize len = 0;
+    const gchar* data_bytes = bytes != NULL ? g_bytes_get_data(bytes, &len) : NULL;
+    if (len == 0) {
+        /* The end, or a read error */
+        if (bytes != NULL) g_bytes_unref(bytes);
+        end_output(r);
+        maybe_finish(r);
+        run_unref(r);
+        return;
+    }
+    take_chunk(r, data_bytes, len);
     g_bytes_unref(bytes);
     read_next(r);
 }
@@ -274,6 +323,8 @@ static void on_exited(GObject* source, GAsyncResult* result, gpointer data) {
     Run* r = data;
     g_subprocess_wait_finish(G_SUBPROCESS(source), result, NULL);
     r->exited = TRUE;
+    r->success = g_subprocess_get_successful(r->proc);
+    r->exit_status = g_subprocess_get_if_exited(r->proc) ? g_subprocess_get_exit_status(r->proc) : -1;
     if (r->kill_id != 0) {
         g_source_remove(r->kill_id);
         r->kill_id = 0;
@@ -345,24 +396,24 @@ static void drop_current(AppData* app, gboolean quiet) {
     r->dead = TRUE;
     signal_run(r, TRUE);
     g_cancellable_cancel(r->cancellable);
+    if (r->remote != NULL) {
+        /* Its calls stop: the reference they held goes */
+        g_clear_pointer(&r->remote, task_remote_free);
+        run_unref(r);
+    }
     if (!quiet) task_page_finish(r->page, FALSE, -1, TRUE, g_get_monotonic_time() - r->started, 0, 0);
     run_unref(r);
 }
 
-/* Run def, a task of the project in folder project */
-static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
-    struct TaskRun* st = run_state(app);
-    drop_current(app, FALSE);
-    task_def_free(st->last);
-    st->last = task_def_copy(def);
-    if (st->last_project != project) {
-        g_free(st->last_project);
-        st->last_project = g_strdup(project);
-    }
-    guint saved = app->settings.task_save_first ? save_under(app, project) : 0;
-    code_intel_set_task_diagnostics(app, NULL); /* the last task's messages are old now */
+/* The parser of def's output, the tools in dir */
+static TaskParser* new_parser(const TaskDef* def, const gchar* dir) {
+    TaskParser* parser = task_parser_new(dir);
+    if (def->matcher != NULL) task_parser_add_matcher(parser, def->matcher); /* checked when read */
+    return parser;
+}
 
-    GtkWidget* page = task_page_begin(app, def->label, def->dir);
+/* def run here (page: its Build page, taken), or NULL when it did not start */
+static Run* start_local(AppData* app, const TaskDef* def, GtkWidget* page) {
     gchar* program = g_find_program_in_path(def->argv[0]);
     if (program == NULL) {
         gchar* msg = g_strdup_printf(_("%s: program not found (install it or add it to PATH)"), def->argv[0]);
@@ -374,7 +425,7 @@ static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
         }
         notice(app, msg);
         g_free(msg);
-        return;
+        return NULL;
     }
 
     GPtrArray* argv = g_ptr_array_new();
@@ -409,7 +460,7 @@ static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
         notice(app, msg);
         g_free(msg);
         g_error_free(error);
-        return;
+        return NULL;
     }
     /* No input: a question asked would wait forever */
     g_output_stream_close(g_subprocess_get_stdin_pipe(proc), NULL, NULL);
@@ -421,15 +472,80 @@ static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
     r->proc = proc;
     r->in = g_object_ref(g_subprocess_get_stdout_pipe(proc));
     r->cancellable = g_cancellable_new();
-    r->parser = task_parser_new(def->dir);
-    if (def->matcher != NULL) task_parser_add_matcher(r->parser, def->matcher); /* checked when read */
+    r->parser = new_parser(def, def->dir);
     r->page = page;
     r->partial = g_string_new(NULL);
     r->started = g_get_monotonic_time();
-    st->current = r;
     g_subprocess_wait_async(proc, NULL, on_exited, run_ref(r));
     run_ref(r);
     read_next(r);
+    return r;
+
+}
+
+static void on_remote_ready(gpointer data, const gchar* remote_dir) {
+    Run* r = data;
+    /* The tools write the folders of the machine */
+    task_parser_free(r->parser);
+    r->parser = new_parser(r->def, remote_dir);
+}
+
+static void on_remote_output(gpointer data, const gchar* bytes, gsize len) {
+    take_chunk(data, bytes, len);
+}
+
+static void on_remote_done(gpointer data, gint status, const gchar* error) {
+    Run* r = data;
+    end_output(r);
+    if (error != NULL) {
+        /* Why it did not run, as the failure's message */
+        g_free(r->last_line);
+        r->last_line = g_strdup(error);
+    }
+    r->exited = TRUE;
+    r->success = error == NULL && status == 0;
+    r->exit_status = error == NULL ? status : -1;
+    if (r->kill_id != 0) {
+        g_source_remove(r->kill_id);
+        r->kill_id = 0;
+    }
+    maybe_finish(r);
+    run_unref(r); /* its calls' reference */
+}
+
+/* def run on the remote machine its folder is on (page: taken) */
+static Run* start_remote(AppData* app, const TaskDef* def, GtkWidget* page) {
+    static const TaskRemoteFuncs funcs = {on_remote_ready, on_remote_output, on_remote_done};
+    Run* r = g_new0(Run, 1);
+    r->refs = 2; /* st->current and the calls of r->remote */
+    r->app = app;
+    r->def = task_def_copy(def);
+    r->cancellable = g_cancellable_new();
+    r->parser = new_parser(def, def->dir);
+    r->page = page;
+    r->partial = g_string_new(NULL);
+    r->started = g_get_monotonic_time();
+    r->remote = task_remote_start(def, &funcs, r);
+    return r;
+}
+
+/* Run def, a task of the project in folder project */
+static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
+    struct TaskRun* st = run_state(app);
+    drop_current(app, FALSE);
+    task_def_free(st->last);
+    st->last = task_def_copy(def);
+    if (st->last_project != project) {
+        g_free(st->last_project);
+        st->last_project = g_strdup(project);
+    }
+    guint saved = app->settings.task_save_first ? save_under(app, project) : 0;
+    code_intel_set_task_diagnostics(app, NULL); /* the last task's messages are old now */
+
+    GtkWidget* page = task_page_begin(app, def->label, def->dir);
+    Run* r = vfs_is_remote(def->dir) ? start_remote(app, def, page) : start_local(app, def, page);
+    if (r == NULL) return;
+    st->current = r;
 
     guint unsaved = unsaved_under(app, project);
     gchar* msg = unsaved > 0 ? g_strdup_printf(ngettext("Running %1$s… (%2$u unsaved file)",
@@ -725,12 +841,32 @@ static void find_job_free(gpointer data) {
     g_free(job);
 }
 
+/* The processors of the remote machine of dir, 0 for this computer's (or
+ * when the machine does not say) */
+static guint remote_processors(const gchar* dir) {
+    if (!vfs_is_remote(dir)) return 0;
+    gint status = 0;
+    GBytes* out = NULL;
+    guint n = 0;
+    if (vfs_exec(dir, "nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null", NULL, NULL, &status, &out, NULL) &&
+        status == 0) {
+        gsize len = 0;
+        const gchar* data = g_bytes_get_data(out, &len);
+        gchar* text = g_strndup(data, len);
+        gint64 v = g_ascii_strtoll(text, NULL, 10);
+        n = v > 0 && v < 4096 ? (guint)v : 0;
+        g_free(text);
+    }
+    if (out != NULL) g_bytes_unref(out);
+    return n;
+}
+
 static void find_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
     (void)source;
     (void)cancellable;
     FindJob* job = data;
     job->project = task_detect_project_dir(job->start);
-    if (job->project != NULL) job->tasks = task_detect(job->project, &job->problem);
+    if (job->project != NULL) job->tasks = task_detect(job->project, remote_processors(job->project), &job->problem);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -786,11 +922,6 @@ static void find_tasks(AppData* app, gboolean choose) {
     struct TaskRun* st = run_state(app);
     gchar* start = start_dir(app);
     if (start == NULL) return;
-    if (vfs_is_remote(start)) {
-        notice(app, _("Tasks do not run on remote machines yet"));
-        g_free(start);
-        return;
-    }
     if (st->finding != NULL) {
         g_cancellable_cancel(st->finding);
         g_clear_object(&st->finding);

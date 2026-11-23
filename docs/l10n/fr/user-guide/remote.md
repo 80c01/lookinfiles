@@ -121,6 +121,21 @@ L’ouverture d’un fichier avec une autre application n’est pas disponible
 non plus : « Ouvrir avec l’application par défaut » le dit dans la barre
 d’état.
 
+## Tâches de compilation et de test
+
+`F7` / `Shift+F7` dans un projet de la machine y lancent sa tâche, par la
+connexion de la machine, dans le dossier de la tâche sur la machine : les
+fichiers de compilation sont lus par SFTP, `make -j` utilise les
+processeurs de la machine, et les outils doivent y être installés (un
+outil absent finit par son « command not found » dans l’onglet Build). La
+sortie arrive au fur et à mesure ; les fichiers que nomment les messages
+(les dossiers de la machine) s’ouvrent là où la machine est vue ici, et un
+fichier hors de ce dossier (un en-tête du système) n’est nommé que dans le
+texte du message. **Arrêter** (`Ctrl+F7`) demande à la machine de terminer
+la tâche et les programmes qu’elle a lancés (SIGTERM, puis SIGKILL). Une
+tâche encore en cours quand l’application se ferme peut continuer sur la
+machine.
+
 ## Serveurs de langage
 
 Les serveurs de langage (complétion, diagnostics, aller à la définition,

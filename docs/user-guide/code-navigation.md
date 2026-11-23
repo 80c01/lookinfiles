@@ -149,5 +149,5 @@ problem, only the server's is kept. Before a task, the edited tabs of the
 project's files are saved, so that it builds what you see (a file changed
 on disk meanwhile asks first; **Preferences → Editor → Save the project's
 files before a task** turns it off, the message line then says how many are
-left unsaved). The task gets no input. Tasks do not run on remote machines
-yet.
+left unsaved). The task gets no input. On a remote machine, the task runs
+there (see [Build and test tasks](remote.md#build-and-test-tasks)).

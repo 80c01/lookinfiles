@@ -20,19 +20,22 @@
  * test and go use them all by themselves. The first task found is the
  * default one (F7 before any choice).
  *
- * Reads files: call from a worker thread. Pure GLib, unit-tested. */
+ * Reads files: call from a worker thread. GLib and vfs, unit-tested. */
 #include <glib.h>
 
 #include "tasks/task_def.h"
 
 /* The folder of the project of start (a folder): start or the nearest of its
- * parents holding a build file, not above the home folder; NULL when none */
+ * parents holding a build file, not above the home folder nor, on a remote
+ * machine, the folder it is seen at (vfs.h: its files are read over SFTP);
+ * NULL when none */
 gchar* task_detect_project_dir(const gchar* start);
 
 /* The tasks of the project in dir (TaskDef*, default first; empty when dir
- * has no build file). *problem (may be NULL): what is wrong with the
+ * has no build file); jobs: the processors of the machine they run on (0:
+ * this computer's). *problem (may be NULL): what is wrong with the
  * project's tasks file, or NULL (its tasks are then left out). */
-GPtrArray* task_detect(const gchar* dir, gchar** problem);
+GPtrArray* task_detect(const gchar* dir, guint jobs, gchar** problem);
 
 /* The targets a Makefile offers to run (gchar*, in file order) */
 GPtrArray* task_detect_make_targets(const gchar* makefile);

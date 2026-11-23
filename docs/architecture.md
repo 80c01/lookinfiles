@@ -1598,7 +1598,16 @@ Layers, from bottom to top
   and `editor_tab_write()`); at the end its messages with a file
   go to `code_intel_set_task_diagnostics()` (cleared when the next task
   starts). One task at a time (a new one drops
-  the running one); not on remote machines yet.
+  the running one). A task of a remote machine's folder runs there
+  (`task_remote`); its messages' files are mapped back to the mount.
+- `task_remote` — a task run on a remote machine: `vfs_spawn()` in the
+  task's folder there (its absolute path from `vfs_remote_absolute()`,
+  the parser's base), the command line merging standard error and printing
+  the shell's process number first (`exec`, so it is the command's), read on
+  a thread of its own and handed to the main thread in order
+  (`g_main_context_invoke_full()`); Stop runs `pkill -P` / `kill` with that
+  number over `vfs_exec()`. Paths of the machine are mapped to the mount
+  (`task_remote_map_path()`). Unit-tested with the test program as `ssh`.
 - `task_page` — the Build page of the preview notebook (`app->build_page`,
   after the LaTeX page): a header (task, folder, counts, time, Run Again /
   Stop / Close), the messages in a `GtkListView` above (`Enter` opens one

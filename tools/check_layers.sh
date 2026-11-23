@@ -101,7 +101,8 @@ task_parse:
 task_def:
 task_choice:task_def,app_paths
 task_config:task_def,i18n
-task_detect:task_def,task_config
+task_detect:task_def,task_config,vfs
+task_remote:task_def,vfs,ssh_session,ssh_process,i18n
 preview_cache:
 path_kind:
 pane_geometry:

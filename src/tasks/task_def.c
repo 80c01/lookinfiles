@@ -15,6 +15,7 @@ TaskDef* task_def_copy(const TaskDef* def) {
     copy->detail = g_strdup(def->detail);
     copy->env = g_strdupv(def->env);
     copy->matcher = g_strdup(def->matcher);
+    copy->shell = def->shell;
     return copy;
 }
 

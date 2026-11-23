@@ -23,6 +23,10 @@ lists what does not, or not fully, to come back to later.
 
 ## Known limits
 
+- **Build and test tasks** (`F7`, `task_remote`): run without a terminal,
+  so a task still running when the application quits is not stopped on
+  the machine (the connection closing does not end it); Stop needs `pkill`
+  there (procps) to reach the programs the task started.
 - **Notebooks**: the pictures of the Markdown cells of a remote notebook
   are not shown. Those cells are rendered on the interface thread, where
   `image_file_local()` gives nothing for a remote file (never a wait for

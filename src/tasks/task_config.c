@@ -312,6 +312,7 @@ static TaskDef* table_task(const TaskTable* t, const gchar* dir) {
     g_ptr_array_unref(argv);
     if (t->command != NULL) {
         def->detail = g_strdup(t->command);
+        def->shell = TRUE;
     } else {
         g_ptr_array_add(t->args, NULL);
         def->detail = g_strjoinv(" ", (gchar**)t->args->pdata);

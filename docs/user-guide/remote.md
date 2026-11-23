@@ -107,6 +107,19 @@ LaTeX builds run on this computer and need local files: they stay off for a
 remote machine's files. Opening a file with another application is not
 available either: Open With Default App says so in the status bar.
 
+## Build and test tasks
+
+`F7` / `Shift+F7` in a project of the machine run its task there, through
+the machine's connection, in the task's folder on the machine: the build
+files are read over SFTP, `make -j` uses the machine's processors, and the
+tools must be installed there (a missing one ends with its "command not
+found" in the Build tab). The output comes as it is written; the files the
+messages name (the machine's folders) are opened where the machine is seen
+here, and a file outside it (a system header) is named in the message
+text only. **Stop** (`Ctrl+F7`) asks the machine to end the task and the
+programs it started (SIGTERM, then SIGKILL). A task still running when the
+application quits may go on on the machine.
+
 ## Language servers
 
 The language servers (completion, diagnostics, go to definition, rename)

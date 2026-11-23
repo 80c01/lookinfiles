@@ -13725,8 +13725,8 @@ msgstr "Dans %s"
 msgid "No build file in %s or above (Makefile, Cargo.toml, package.json, go.mod…)"
 msgstr "Aucun fichier de compilation dans %s ni au-dessus (Makefile, Cargo.toml, package.json, go.mod…)"
 
-msgid "Tasks do not run on remote machines yet"
-msgstr "Les tâches ne tournent pas encore sur les machines distantes"
+msgid "the folder is not on a remote machine"
+msgstr "le dossier n’est pas sur une machine distante"
 
 #, c-format
 msgid "%1$s: %2$u error (Build tab)"

@@ -13,6 +13,7 @@ typedef struct {
     gchar* dir;     /* absolute folder it runs in */
     gchar** env;    /* "NAME=value" added to the environment, or NULL */
     gchar* matcher; /* regular expression read before the built-in ones, or NULL */
+    gboolean shell; /* detail is a shell command line (argv runs it with the local shell) */
 } TaskDef;
 
 TaskDef* task_def_new(const gchar* label, const gchar* const* argv, const gchar* dir);

@@ -120,7 +120,7 @@ static void test_projects(void) {
     gchar* dir = task_detect_project_dir(start);
     gchar* want = g_build_filename(tmp, "c", NULL);
     g_assert_cmpstr(dir, ==, want);
-    gchar* s = labels(task_detect(dir, NULL));
+    gchar* s = labels(task_detect(dir, 0, NULL));
     /* Every processor: make -j<n> (plain make on a single one) */
     guint n = g_get_num_processors();
     gchar* want_labels = n > 1 ? g_strdup_printf("make -j%1$u,make -j%1$u all,make -j%1$u test", n)
@@ -133,7 +133,7 @@ static void test_projects(void) {
     g_free(start);
 
     dir = g_build_filename(tmp, "web", NULL);
-    GPtrArray* tasks = task_detect(dir, NULL);
+    GPtrArray* tasks = task_detect(dir, 0, NULL);
     const TaskDef* first = g_ptr_array_index(tasks, 0);
     g_assert_cmpstr(first->argv[0], ==, "pnpm");
     g_assert_cmpstr(first->argv[2], ==, "build");
@@ -145,7 +145,7 @@ static void test_projects(void) {
 
     /* A crate of a Cargo workspace builds from the workspace's folder */
     dir = g_build_filename(tmp, "rs", "crates", "a", NULL);
-    tasks = task_detect(dir, NULL);
+    tasks = task_detect(dir, 0, NULL);
     g_assert_cmpuint(tasks->len, ==, 5);
     gchar* root = g_build_filename(tmp, "rs", NULL);
     g_assert_cmpstr(((TaskDef*)g_ptr_array_index(tasks, 0))->dir, ==, root);
@@ -159,7 +159,7 @@ static void test_projects(void) {
     g_free(dir);
 
     dir = g_build_filename(tmp, "cm", NULL);
-    s = labels(task_detect(dir, NULL));
+    s = labels(task_detect(dir, 0, NULL));
     gchar* want_cmake = g_strdup_printf("cmake --build build --parallel %u", g_get_num_processors());
     g_assert_cmpstr(s, ==, want_cmake);
     g_free(want_cmake);
@@ -167,7 +167,7 @@ static void test_projects(void) {
     g_free(dir);
 
     dir = g_build_filename(tmp, "empty", NULL);
-    tasks = task_detect(dir, NULL);
+    tasks = task_detect(dir, 0, NULL);
     g_assert_cmpuint(tasks->len, ==, 0);
     g_ptr_array_unref(tasks);
     g_free(dir);
@@ -177,7 +177,7 @@ static void test_projects(void) {
     dir = task_detect_project_dir(start);
     want = g_build_filename(tmp, "own", NULL);
     g_assert_cmpstr(dir, ==, want);
-    tasks = task_detect(dir, NULL);
+    tasks = task_detect(dir, 0, NULL);
     g_assert_cmpstr(((TaskDef*)g_ptr_array_index(tasks, 0))->label, ==, "lint");
     g_assert_cmpuint(tasks->len, ==, 3);
     g_ptr_array_unref(tasks);
@@ -188,7 +188,7 @@ static void test_projects(void) {
     /* A broken file is said and left out, the other tasks kept */
     dir = g_build_filename(tmp, "bad", NULL);
     gchar* problem = NULL;
-    tasks = task_detect(dir, &problem);
+    tasks = task_detect(dir, 0, &problem);
     g_assert_nonnull(problem);
     g_assert_nonnull(strstr(problem, "tasks.toml"));
     g_assert_cmpuint(tasks->len, ==, 3);
