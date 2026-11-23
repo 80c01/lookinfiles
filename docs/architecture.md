@@ -32,7 +32,7 @@ The directories group modules by feature, not by layer:
 | `canvas/` | Canvas notes |
 | `games/` | games mode |
 | `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
-| `latex/` | LaTeX documents compiled on save: log messages, main document, SyncTeX, the LaTeX tab |
+| `latex/` | LaTeX documents: log messages, main document, SyncTeX, their PDF in the preview (compiled by the tasks) |
 | `tasks/` | build and test tasks (F7): the tasks of a project, the messages of their output, the Build tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
@@ -1578,15 +1578,15 @@ Layers, from bottom to top
   `task_run`) are kept in a table of their own and merged on reading
   (`file_diagnostics()`), so a server's update never drops them; a task's
   message on a line where the server reports the same severity is left out.
-- `latex_build` — a `.tex` file saved from an editor tab
-  (`editor_save_current()` calls `latex_build_saved()`) is compiled in a
-  worker: its main document found (`latex_root`), `latexmk`, else Tectonic,
-  else the engine, run with `GSubprocess` in the document's folder (SyncTeX
-  on), its log parsed (`latex_log`); then the PDF shown in the preview as
-  a selected file is (`load_file_content()`, then `preview_state_set_file()`
-  and `monitor_file()`, so zoom and reloads are of the PDF), or
-  `APP_EVENT_PREVIEW_STALE` when it is shown already and the messages given to `latex_errors`. One compilation at a
-  time: a save meanwhile compiles again when it ends.
+- `latex_build` — the PDF of LaTeX documents in the preview: a `.tex` file
+  saved (`editor_save_current()` calls `latex_build_saved()`) emits
+  `APP_EVENT_LATEX_SAVED` when `settings.latex_on_save` is on (the task
+  compiles it, `task_run_latex_saved()`); `latex_build_show_built()` shows
+  a compilation's PDF as a selected file is (`load_file_content()`, then
+  `preview_state_set_file()` and `monitor_file()`, so zoom and reloads are
+  of the PDF), or `APP_EVENT_PREVIEW_STALE` when it is shown already, then
+  `latex_sync_after_build()`; selecting a `.tex` tab shows its document's
+  PDF when it was built (found in a worker).
 - `task_run` — F7 / Shift+F7 / Ctrl+F7: the project of the focused editor
   tab's file (else the explorer's folder) found in a worker
   (`task_detect`), the task chosen last there (Shift+F7: an `AppDialog`
@@ -1600,6 +1600,11 @@ Layers, from bottom to top
   starts). One task at a time (a new one drops
   the running one). A task of a remote machine's folder runs there
   (`task_remote`); its messages' files are mapped back to the mount.
+- `task_latex` — the LaTeX tasks of a `.tex` file: its main document
+  (`latex_root`, files read through `vfs`), `latexmk` (else Tectonic or the
+  engine) with SyncTeX and file:line errors, then `latexmk -C`; the
+  compilation's `TaskDef.tex_root` makes `task_run` read the `.log`
+  (`latex_log`) for its messages and show the PDF (`latex_build`).
 - `task_remote` — a task run on a remote machine: `vfs_spawn()` in the
   task's folder there (its absolute path from `vfs_remote_absolute()`,
   the parser's base), the command line merging standard error and printing
@@ -1608,6 +1613,9 @@ Layers, from bottom to top
   (`g_main_context_invoke_full()`); Stop runs `pkill -P` / `kill` with that
   number over `vfs_exec()`. Paths of the machine are mapped to the mount
   (`task_remote_map_path()`). Unit-tested with the test program as `ssh`.
+- `task_picker` — Shift+F7: the project's tasks in an `AppDialog`, filtered
+  by label and command; the one chosen goes back to `task_run` (kept in
+  `task_choice`, then run).
 - `task_page` — the Build page of the preview notebook (`app->build_page`,
   after the LaTeX page): a header (task, folder, counts, time, Run Again /
   Stop / Close), the messages in a `GtkListView` above (`Enter` opens one
@@ -1624,13 +1632,6 @@ Layers, from bottom to top
   had in the old PDF (`pdf_preview_point_align()`), while the new pages
   come into the preview buffer. `pdf.c` keeps each page's scale (pixels per
   point) on its texture for this.
-- `latex_errors` — the LaTeX page of the preview notebook (`app->latex_page`,
-  after the Git and result tabs): one row per message (kind icon, message,
-  file and line, the source of an error), `Enter` opens it with
-  `editor_open_at()`. Made when a compilation has errors or warnings,
-  otherwise only updated. One page per workspace (`VirtualLayout.latex_page`);
-  a compilation ending in another workspace shows there, as its PDF does.
-  A movable page (drag, tab menu), like an editor tab.
 - `code_refs` — the References page of the preview notebook (after the Git
   tab; `editor_detach_tabs()` and `editor_current_tab()` only touch editor
   pages, wherever they are), from the server or `code_index_references()`;

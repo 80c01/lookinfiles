@@ -1,24 +1,27 @@
 #ifndef LATEX_BUILD_H
 #define LATEX_BUILD_H
 
-/* LaTeX documents compiled when they are saved, as in Overleaf: the main
- * document of the saved .tex file (latex_root.h) is compiled in a worker
- * by latexmk, else Tectonic, else the engine it needs (pdflatex, xelatex,
- * lualatex), with SyncTeX data. Its PDF is then shown in the preview at
- * the line of the editor's cursor (latex_sync.h), and the messages of its
- * log go to the LaTeX page (latex_errors.h). A save during a compilation
- * compiles again once it ends. */
+/* The PDF of LaTeX documents in the preview. They are compiled by the
+ * build tasks (F7, task_latex.h), and when saved while Preferences →
+ * Editor → Compile LaTeX documents when saved is on (the default): a save
+ * emits APP_EVENT_LATEX_SAVED. After a compilation, its PDF is shown at the
+ * line of the editor's cursor (latex_sync.h). */
 #include "core/app_types.h"
 
-/* The file at path was saved from an editor tab: compile it when it is a
- * .tex file */
+/* The file at path was saved from an editor tab: when it is a .tex file
+ * and compiling on save is on, app->latex_saved_path = path and
+ * APP_EVENT_LATEX_SAVED (task_run.c compiles it) */
 void latex_build_saved(AppData* app, const gchar* path);
 
 /* The tab of the .tex file at path was selected: show the PDF of its main
  * document in the preview when it was built (found in a worker) */
 void latex_build_show_pdf(AppData* app, const gchar* path);
 
-/* Stop a running compilation (at exit) */
+/* A compilation made pdf: show it in the preview (reloaded where it was
+ * when shown already), at the place of the editor's cursor */
+void latex_build_show_built(AppData* app, const gchar* pdf);
+
+/* Stop the search of a PDF (at exit) */
 void latex_build_free(AppData* app);
 
 #endif /* LATEX_BUILD_H */

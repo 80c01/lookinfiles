@@ -31,6 +31,7 @@
  *   APP_EVENT_PREVIEW_PATH    -> preview_show_requested()     (preview_show.c)
  *   APP_EVENT_EDIT_PATH       -> editor_edit_requested()      (editor_request.c)
  *   APP_EVENT_QUIT            -> ui_quit()                    (ui.c)
+ *   APP_EVENT_LATEX_SAVED     -> task_run_latex_saved()       (task_run.c)
  */
 #include "core/app_types.h"
 
@@ -88,6 +89,9 @@ typedef enum {
     /* Ctrl+Q pressed where the window does not see it (a popover): quit,
      * after confirming unsaved changes */
     APP_EVENT_QUIT,
+    /* A .tex file was saved while compiling on save is on:
+     * app->latex_saved_path (taken by the handler) */
+    APP_EVENT_LATEX_SAVED,
     APP_EVENT_COUNT
 } AppEvent;
 

@@ -277,7 +277,6 @@ static void insert_page(AppData* app, BuildPage* bp) {
     gint after = git_page != NULL ? gtk_notebook_page_num(nb, git_page) : 0;
     if (app->refs_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->refs_page));
     if (app->search_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->search_page));
-    if (app->latex_page != NULL) after = MAX(after, gtk_notebook_page_num(nb, app->latex_page));
     gtk_notebook_insert_page(nb, bp->page, bp->label, after + 1);
     gtk_notebook_set_tab_reorderable(nb, bp->page, TRUE);
     gtk_notebook_set_tab_detachable(nb, bp->page, TRUE);
@@ -435,7 +434,7 @@ static gboolean on_flush(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
-GtkWidget* task_page_begin(AppData* app, const gchar* label, const gchar* dir) {
+GtkWidget* task_page_begin(AppData* app, const gchar* label, const gchar* dir, gboolean front) {
     BuildPage* bp = ensure_page(app, TRUE);
     if (bp == NULL) return NULL;
     g_list_store_remove_all(bp->store);
@@ -455,9 +454,13 @@ GtkWidget* task_page_begin(AppData* app, const gchar* label, const gchar* dir) {
     bp->dir = g_strdup(dir);
     gtk_widget_set_sensitive(bp->stop, TRUE);
     running_header(bp);
-    GtkNotebook* nb = page_notebook(bp->page);
-    if (nb != NULL) gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, bp->page));
+    if (front) task_page_present(bp->page);
     return g_object_ref(bp->page);
+}
+
+void task_page_present(GtkWidget* page) {
+    GtkNotebook* nb = page_notebook(page);
+    if (nb != NULL) gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, page));
 }
 
 void task_page_append_output(GtkWidget* page, const gchar* text) {

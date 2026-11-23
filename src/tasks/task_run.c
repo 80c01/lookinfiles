@@ -10,10 +10,12 @@
 #include "tasks/task_choice.h"
 #include "tasks/task_detect.h"
 #include "tasks/task_page.h"
+#include "tasks/task_picker.h"
 #include "tasks/task_remote.h"
+#include "tasks/task_latex.h"
+#include "latex/latex_build.h"
+#include "latex/latex_log.h"
 #include "tasks/task_parse.h"
-#include "theme/palette.h"
-#include "widgets/dialog.h"
 #include "widgets/focus_route.h"
 #include <string.h>
 #ifdef G_OS_UNIX
@@ -47,12 +49,17 @@ typedef struct Run {
     gboolean success;  /* once exited */
     gint exit_status;  /* once exited: -1 when unknown */
     gboolean stopped; /* by the user */
+    gboolean quiet;   /* a LaTeX document saved: the Build tab stays behind */
+    gboolean log_read;     /* LaTeX: its .log was read */
+    GPtrArray* latex_msgs; /* LaTeX: the messages of its .log (TaskMessage*, files here), or NULL */
+    gchar* pdf;            /* LaTeX: its PDF, when there is one */
     gboolean dead;    /* replaced by another run, or the application quits */
 } Run;
 
 struct TaskRun {
     GHashTable* chosen;    /* project folder -> TaskDef* chosen last there */
     TaskDef* last;         /* the task run last (Run Again) */
+    gboolean told_no_tex;  /* "no LaTeX compiler" said once */
     gchar* last_project;   /* its project's folder */
     Run* current;          /* the task running, or NULL */
     GCancellable* finding; /* the search for the project's tasks, or NULL */
@@ -93,6 +100,8 @@ static void run_unref(Run* r) {
     g_clear_object(&r->page);
     g_string_free(r->partial, TRUE);
     g_free(r->last_line);
+    if (r->latex_msgs != NULL) g_ptr_array_unref(r->latex_msgs);
+    g_free(r->pdf);
     g_free(r);
 }
 
@@ -142,6 +151,11 @@ static void task_message_clear(TaskMessage* m) {
     g_free(m->text);
 }
 
+static void task_message_free(gpointer p) {
+    task_message_clear(p);
+    g_free(p);
+}
+
 /* The page shows the messages the parser added since it had shown
  * `before` of them */
 static void show_new_messages(Run* r, guint before) {
@@ -159,7 +173,8 @@ static void take_line(Run* r, const gchar* line, gsize len, GString* shown) {
     gchar* raw = g_strndup(line, len);
     guint before = task_parser_messages(r->parser)->len;
     task_parser_feed(r->parser, raw);
-    show_new_messages(r, before);
+    /* LaTeX: the messages come from its .log, at the end */
+    if (r->def->tex_root == NULL) show_new_messages(r, before);
     gchar* clean = task_parse_clean_line(raw);
     g_string_append(shown, clean);
     g_string_append_c(shown, '\n');
@@ -173,13 +188,12 @@ static void take_line(Run* r, const gchar* line, gsize len, GString* shown) {
 
 /* The messages of r with a file go to the diagnostics: underlined in the
  * editor tabs, listed in the Problems tab, until the next task */
-static void publish_diagnostics(Run* r) {
-    const GPtrArray* msgs = task_parser_messages(r->parser);
+static void publish_diagnostics(Run* r, const GPtrArray* msgs, gboolean local) {
     GPtrArray* entries = g_ptr_array_new_with_free_func((GDestroyNotify)code_diag_entry_free);
     gchar* source = g_path_get_basename(r->def->shell ? "sh" : r->def->argv[0]);
     for (guint i = 0; i < msgs->len; i++) {
-        TaskMessage here;
-        const TaskMessage* m = message_here(r, g_ptr_array_index(msgs, i), &here);
+        TaskMessage here = {0};
+        const TaskMessage* m = local ? g_ptr_array_index(msgs, i) : message_here(r, g_ptr_array_index(msgs, i), &here);
         if (m->file == NULL || m->line <= 0) {
             task_message_clear(&here);
             continue;
@@ -203,17 +217,29 @@ static void publish_diagnostics(Run* r) {
     g_free(source);
 }
 
+static guint count_kind(const GPtrArray* msgs, TaskMsgKind kind) {
+    guint n = 0;
+    for (guint i = 0; i < msgs->len; i++) n += ((const TaskMessage*)g_ptr_array_index(msgs, i))->kind == kind;
+    return n;
+}
+
 static void finish_run(Run* r) {
     AppData* app = r->app;
     struct TaskRun* st = run_state(app);
     guint before = task_parser_messages(r->parser)->len;
     task_parser_finish(r->parser);
-    show_new_messages(r, before);
+    const GPtrArray* msgs = r->latex_msgs;
+    if (msgs != NULL) {
+        for (guint i = 0; i < msgs->len; i++) task_page_add_message(r->page, g_ptr_array_index(msgs, i));
+    } else {
+        show_new_messages(r, before);
+        msgs = task_parser_messages(r->parser);
+    }
 
     gboolean success = !r->stopped && r->success;
     gint status = !r->stopped ? r->exit_status : -1;
-    guint errors = task_parser_count(r->parser, TASK_MSG_ERROR);
-    guint warnings = task_parser_count(r->parser, TASK_MSG_WARNING);
+    guint errors = count_kind(msgs, TASK_MSG_ERROR);
+    guint warnings = count_kind(msgs, TASK_MSG_WARNING);
     /* A failure with no message: its last line says why */
     if (!success && !r->stopped && errors == 0 && r->last_line != NULL) {
         TaskMessage m = {TASK_MSG_ERROR, NULL, 0, 0, r->last_line, 0};
@@ -222,7 +248,12 @@ static void finish_run(Run* r) {
     }
     gint64 usec = g_get_monotonic_time() - r->started;
     task_page_finish(r->page, success, status, r->stopped, usec, errors, warnings);
-    publish_diagnostics(r);
+    publish_diagnostics(r, msgs, r->latex_msgs != NULL);
+    /* LaTeX: its PDF in the preview, else the Build tab says why */
+    if (r->def->tex_root != NULL && !r->stopped) {
+        if (r->pdf != NULL) latex_build_show_built(app, r->pdf);
+        else task_page_present(r->page);
+    }
 
     gchar* msg = NULL;
     if (r->stopped) {
@@ -247,8 +278,103 @@ static void finish_run(Run* r) {
     }
 }
 
+typedef struct {
+    Run* r; /* a reference */
+    gchar* root;
+    GPtrArray* msgs; /* LatexMessage* of the log */
+    gchar* pdf;      /* when it exists */
+} LogJob;
+
+static void log_job_free(gpointer data) {
+    LogJob* job = data;
+    g_free(job->root);
+    if (job->msgs != NULL) g_ptr_array_unref(job->msgs);
+    g_free(job->pdf);
+    g_free(job);
+}
+
+/* Log of a LaTeX document read at most */
+#define LOG_MAX_BYTES (16 * 1024 * 1024)
+
+static void log_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancellable) {
+    (void)source;
+    (void)cancellable;
+    LogJob* job = data;
+    gchar* log_path = task_latex_output(job->root, ".log");
+    gchar* log = NULL;
+    gsize len = 0;
+    if (vfs_file_get_contents(log_path, LOG_MAX_BYTES, &log, &len, NULL)) {
+        /* Logs of 8-bit input files are not UTF-8 */
+        gchar* valid = g_utf8_make_valid(log, (gssize)len);
+        job->msgs = latex_log_parse(valid, -1);
+        g_free(valid);
+        g_free(log);
+    }
+    g_free(log_path);
+    job->pdf = task_latex_output(job->root, ".pdf");
+    if (!vfs_file_test(job->pdf, G_FILE_TEST_IS_REGULAR)) g_clear_pointer(&job->pdf, g_free);
+    g_task_return_boolean(task, TRUE);
+}
+
+static void finish_run(Run* r);
+
+static void on_log_read(GObject* source, GAsyncResult* result, gpointer data) {
+    (void)source;
+    (void)data;
+    LogJob* job = g_task_get_task_data(G_TASK(result));
+    Run* r = job->r;
+    if (!r->dead) {
+        gchar* dir = g_path_get_dirname(job->root);
+        r->latex_msgs = g_ptr_array_new_with_free_func(task_message_free);
+        /* Errors first, then warnings and bad boxes, each in log order */
+        for (gint k = LATEX_MSG_ERROR; job->msgs != NULL && k <= LATEX_MSG_BADBOX; k++) {
+            for (guint i = 0; i < job->msgs->len; i++) {
+                const LatexMessage* lm = g_ptr_array_index(job->msgs, i);
+                if ((gint)lm->kind != k) continue;
+                TaskMessage* m = g_new0(TaskMessage, 1);
+                m->kind = lm->kind == LATEX_MSG_ERROR ? TASK_MSG_ERROR
+                          : lm->kind == LATEX_MSG_WARNING ? TASK_MSG_WARNING
+                                                         : TASK_MSG_NOTE;
+                m->line = lm->line;
+                gchar* file = lm->file == NULL           ? NULL
+                              : !g_path_is_absolute(lm->file) ? g_canonicalize_filename(lm->file, dir)
+                              : r->remote != NULL         ? task_remote_local_path(r->remote, lm->file)
+                                                          : g_strdup(lm->file);
+                gchar* text = lm->context != NULL && lm->context[0] != '\0'
+                                  ? g_strdup_printf("%s — %s", lm->text, lm->context)
+                                  : g_strdup(lm->text);
+                if (file == NULL && lm->file != NULL) {
+                    /* A file of the machine not seen here: named in the text */
+                    m->text = g_strdup_printf("%s:%d: %s", lm->file, lm->line, text);
+                    g_free(text);
+                } else {
+                    m->text = text;
+                }
+                m->file = file;
+                g_ptr_array_add(r->latex_msgs, m);
+            }
+        }
+        g_free(dir);
+        r->pdf = g_steal_pointer(&job->pdf);
+        r->log_read = TRUE;
+        finish_run(r);
+    }
+    run_unref(r);
+}
+
 static void maybe_finish(Run* r) {
     if (r->dead || !r->output_done || !r->exited) return;
+    if (r->def->tex_root != NULL && !r->stopped && !r->log_read) {
+        /* Its messages are in the .log (warnings, bad boxes too), read in a worker */
+        LogJob* job = g_new0(LogJob, 1);
+        job->r = run_ref(r);
+        job->root = g_strdup(r->def->tex_root);
+        GTask* task = g_task_new(NULL, NULL, on_log_read, NULL);
+        g_task_set_task_data(task, job, log_job_free);
+        g_task_run_in_thread(task, log_thread);
+        g_object_unref(task);
+        return;
+    }
     finish_run(r);
 }
 
@@ -529,8 +655,9 @@ static Run* start_remote(AppData* app, const TaskDef* def, GtkWidget* page) {
     return r;
 }
 
-/* Run def, a task of the project in folder project */
-static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
+/* Run def, a task of the project in folder project; quiet: a LaTeX
+ * document saved (nothing else saved first, the Build tab stays behind) */
+static void start_run(AppData* app, const TaskDef* def, const gchar* project, gboolean quiet) {
     struct TaskRun* st = run_state(app);
     drop_current(app, FALSE);
     task_def_free(st->last);
@@ -539,12 +666,14 @@ static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
         g_free(st->last_project);
         st->last_project = g_strdup(project);
     }
-    guint saved = app->settings.task_save_first ? save_under(app, project) : 0;
+    guint saved = !quiet && app->settings.task_save_first ? save_under(app, project) : 0;
     code_intel_set_task_diagnostics(app, NULL); /* the last task's messages are old now */
 
-    GtkWidget* page = task_page_begin(app, def->label, def->dir);
+    /* A LaTeX document: its PDF in the preview comes first */
+    GtkWidget* page = task_page_begin(app, def->label, def->dir, !quiet && def->tex_root == NULL);
     Run* r = vfs_is_remote(def->dir) ? start_remote(app, def, page) : start_local(app, def, page);
     if (r == NULL) return;
+    r->quiet = quiet;
     st->current = r;
 
     guint unsaved = unsaved_under(app, project);
@@ -572,90 +701,11 @@ gboolean task_run_stop(AppData* app) {
     return TRUE;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Choosing a task                                                           */
-/* ------------------------------------------------------------------------- */
-
-#define TASK_TYPE_CHOICE (task_choice_get_type())
-G_DECLARE_FINAL_TYPE(TaskChoice, task_choice, TASK, CHOICE, GObject)
-
-struct _TaskChoice {
-    GObject parent;
-    TaskDef* def;
-};
-
-G_DEFINE_FINAL_TYPE(TaskChoice, task_choice, G_TYPE_OBJECT)
-
-static void task_choice_finalize(GObject* obj) {
-    task_def_free(TASK_CHOICE(obj)->def);
-    G_OBJECT_CLASS(task_choice_parent_class)->finalize(obj);
-}
-
-static void task_choice_class_init(TaskChoiceClass* klass) {
-    G_OBJECT_CLASS(klass)->finalize = task_choice_finalize;
-}
-
-static void task_choice_init(TaskChoice* c) {
-    (void)c;
-}
-
-enum { RESPONSE_RUN = 1 };
-
-typedef struct {
-    AppData* app;
-    gchar* project;
-    GtkWidget* dialog;
-    GtkWidget* entry;
-    GtkWidget* list;
-    GListStore* store;
-    GtkCustomFilter* filter;
-    GtkFilterListModel* filtered;
-    GtkSingleSelection* selection;
-    gchar* needle; /* filter text, lower case */
-} Picker;
-
-static void picker_free(gpointer data) {
-    Picker* p = data;
-    g_clear_object(&p->store);
-    g_free(p->project);
-    g_free(p->needle);
-    g_free(p);
-}
-
-static gboolean filter_func(gpointer item, gpointer data) {
-    Picker* p = data;
-    if (p->needle == NULL || p->needle[0] == '\0') return TRUE;
-    gchar* low = g_utf8_strdown(TASK_CHOICE(item)->def->label, -1);
-    gboolean match = strstr(low, p->needle) != NULL;
-    g_free(low);
-    if (!match && TASK_CHOICE(item)->def->detail != NULL) {
-        low = g_utf8_strdown(TASK_CHOICE(item)->def->detail, -1);
-        match = strstr(low, p->needle) != NULL;
-        g_free(low);
-    }
-    return match;
-}
-
-static void on_search_changed(GtkSearchEntry* entry, gpointer data) {
-    Picker* p = data;
-    g_free(p->needle);
-    p->needle = g_utf8_strdown(gtk_editable_get_text(GTK_EDITABLE(entry)), -1);
-    gtk_filter_changed(GTK_FILTER(p->filter), GTK_FILTER_CHANGE_DIFFERENT);
-    if (g_list_model_get_n_items(G_LIST_MODEL(p->filtered)) > 0) {
-        gtk_single_selection_set_selected(p->selection, 0);
-        gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), 0, GTK_LIST_SCROLL_NONE, NULL);
-    }
-}
-
-static void run_selected(Picker* p) {
-    TaskChoice* c = gtk_single_selection_get_selected_item(p->selection);
-    if (c == NULL) return;
-    AppData* app = p->app;
-    TaskDef* def = task_def_copy(c->def);
-    gchar* project = g_strdup(p->project);
+/* Shift+F7 chose def among the tasks of project: kept as its choice (also
+ * for the next sessions), then run */
+static void run_chosen(AppData* app, const TaskDef* def, const gchar* project) {
     struct TaskRun* st = run_state(app);
     g_hash_table_replace(st->chosen, g_strdup(project), task_def_copy(def));
-    /* Kept for the next sessions */
     gchar* path = task_choice_path();
     GError* error = NULL;
     if (!task_choice_save(path, st->chosen, &error)) {
@@ -663,158 +713,7 @@ static void run_selected(Picker* p) {
         g_error_free(error);
     }
     g_free(path);
-    app_dialog_destroy(APP_DIALOG(p->dialog)); /* frees p */
-    start_run(app, def, project);
-    task_def_free(def);
-    g_free(project);
-}
-
-static void on_response(AppDialog* dialog, gint response, gpointer data) {
-    if (response == RESPONSE_RUN) {
-        run_selected(data);
-        return;
-    }
-    app_dialog_destroy(dialog);
-}
-
-static void on_activate_row(GtkListView* view, guint position, gpointer data) {
-    (void)view;
-    Picker* p = data;
-    gtk_single_selection_set_selected(p->selection, position);
-    run_selected(p);
-}
-
-static void on_entry_activate(GtkSearchEntry* entry, gpointer data) {
-    (void)entry;
-    run_selected(data);
-}
-
-static gboolean on_entry_key(GtkEventControllerKey* ctrl, guint keyval, guint keycode, GdkModifierType state,
-                             gpointer data) {
-    (void)ctrl;
-    (void)keycode;
-    (void)state;
-    Picker* p = data;
-    /* Escape closes the picker (the search entry would only clear its text) */
-    if (keyval == GDK_KEY_Escape) {
-        app_dialog_response(APP_DIALOG(p->dialog), APP_RESPONSE_CANCEL);
-        return TRUE;
-    }
-    gint delta = 0;
-    switch (keyval) {
-    case GDK_KEY_Down: case GDK_KEY_KP_Down: delta = 1; break;
-    case GDK_KEY_Up: case GDK_KEY_KP_Up: delta = -1; break;
-    case GDK_KEY_Page_Down: case GDK_KEY_KP_Page_Down: delta = 10; break;
-    case GDK_KEY_Page_Up: case GDK_KEY_KP_Page_Up: delta = -10; break;
-    default: return FALSE;
-    }
-    guint n = g_list_model_get_n_items(G_LIST_MODEL(p->filtered));
-    if (n == 0) return TRUE;
-    guint cur = gtk_single_selection_get_selected(p->selection);
-    gint next = cur == GTK_INVALID_LIST_POSITION ? 0 : CLAMP((gint)cur + delta, 0, (gint)n - 1);
-    gtk_single_selection_set_selected(p->selection, (guint)next);
-    gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), (guint)next, GTK_LIST_SCROLL_NONE, NULL);
-    return TRUE;
-}
-
-static void on_choice_setup(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
-    (void)f;
-    (void)data;
-    GtkWidget* label = gtk_label_new(NULL);
-    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
-    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
-    gtk_widget_set_margin_start(label, 6);
-    gtk_widget_set_margin_end(label, 6);
-    gtk_list_item_set_child(item, label);
-}
-
-static void on_choice_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpointer data) {
-    (void)f;
-    const gchar* project = data;
-    TaskChoice* c = gtk_list_item_get_item(item);
-    /* A named task's command; the folder when it is not the project's */
-    const gchar* where = c->def->detail != NULL               ? c->def->detail
-                         : g_strcmp0(c->def->dir, project) != 0 ? c->def->dir
-                                                                : "";
-    gchar* markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">%s</span>", c->def->label,
-                                            palette_color(PAL_FG_SUBTLE), where);
-    gtk_label_set_markup(GTK_LABEL(gtk_list_item_get_child(item)), markup);
-    g_free(markup);
-}
-
-/* The dialog over the tasks of project (TaskDef*), the one chosen last
- * there selected */
-static void show_picker(AppData* app, const gchar* project, GPtrArray* tasks) {
-    if (app->window == NULL || app_dialog_is_open(app->window)) return;
-    Picker* p = g_new0(Picker, 1);
-    p->app = app;
-    p->project = g_strdup(project);
-    p->store = g_list_store_new(TASK_TYPE_CHOICE);
-    const TaskDef* chosen = g_hash_table_lookup(run_state(app)->chosen, project);
-    guint selected = 0;
-    for (guint i = 0; i < tasks->len; i++) {
-        TaskChoice* c = g_object_new(TASK_TYPE_CHOICE, NULL);
-        c->def = task_def_copy(g_ptr_array_index(tasks, i));
-        if (task_def_equal(c->def, chosen)) selected = i;
-        g_list_store_append(p->store, c);
-        g_object_unref(c);
-    }
-
-    gchar* base = g_path_get_basename(project);
-    gchar* title = g_strdup_printf(_("Run a Task of %s"), base);
-    g_free(base);
-    p->dialog = app_dialog_new(title, app->window, _("_Cancel"), APP_RESPONSE_CANCEL, _("_Run"), RESPONSE_RUN, NULL);
-    g_free(title);
-    app_dialog_set_width(APP_DIALOG(p->dialog), 520);
-    app_dialog_set_default_response(APP_DIALOG(p->dialog), RESPONSE_RUN);
-    GtkWidget* area = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_margin_top(area, 14);
-    gtk_widget_set_margin_bottom(area, 14);
-    gtk_widget_set_margin_start(area, 16);
-    gtk_widget_set_margin_end(area, 16);
-    gtk_box_append(GTK_BOX(app_dialog_get_content_area(APP_DIALOG(p->dialog))), area);
-
-    p->entry = gtk_search_entry_new();
-    gtk_search_entry_set_placeholder_text(GTK_SEARCH_ENTRY(p->entry), _("Filter the tasks"));
-    g_signal_connect(p->entry, "search-changed", G_CALLBACK(on_search_changed), p);
-    g_signal_connect(p->entry, "activate", G_CALLBACK(on_entry_activate), p);
-    GtkEventController* keys = gtk_event_controller_key_new();
-    gtk_event_controller_set_propagation_phase(keys, GTK_PHASE_CAPTURE);
-    g_signal_connect(keys, "key-pressed", G_CALLBACK(on_entry_key), p);
-    gtk_widget_add_controller(p->entry, keys);
-    gtk_box_append(GTK_BOX(area), p->entry);
-
-    p->filter = gtk_custom_filter_new(filter_func, p, NULL);
-    p->filtered = gtk_filter_list_model_new(G_LIST_MODEL(g_object_ref(p->store)), GTK_FILTER(p->filter));
-    p->selection = gtk_single_selection_new(G_LIST_MODEL(p->filtered));
-    GtkListItemFactory* factory = gtk_signal_list_item_factory_new();
-    g_signal_connect(factory, "setup", G_CALLBACK(on_choice_setup), NULL);
-    g_signal_connect(factory, "bind", G_CALLBACK(on_choice_bind), p->project);
-    p->list = gtk_list_view_new(GTK_SELECTION_MODEL(p->selection), factory);
-    g_signal_connect(p->list, "activate", G_CALLBACK(on_activate_row), p);
-    GtkWidget* scroll = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_size_request(scroll, -1, 280);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll), p->list);
-    gtk_widget_add_css_class(scroll, "dialog-list");
-    gtk_widget_set_margin_top(scroll, 6);
-    gtk_box_append(GTK_BOX(area), scroll);
-
-    gchar* where = g_strdup_printf(_("In %s"), project);
-    GtkWidget* note = gtk_label_new(where);
-    g_free(where);
-    gtk_widget_add_css_class(note, "dim-label");
-    gtk_label_set_xalign(GTK_LABEL(note), 0.0f);
-    gtk_label_set_ellipsize(GTK_LABEL(note), PANGO_ELLIPSIZE_MIDDLE);
-    gtk_widget_set_margin_top(note, 4);
-    gtk_box_append(GTK_BOX(area), note);
-
-    gtk_single_selection_set_selected(p->selection, selected);
-    g_signal_connect(p->dialog, "response", G_CALLBACK(on_response), p);
-    g_object_set_data_full(G_OBJECT(p->dialog), "task-picker", p, picker_free);
-    app_dialog_present(APP_DIALOG(p->dialog));
-    gtk_widget_grab_focus(p->entry);
-    gtk_list_view_scroll_to(GTK_LIST_VIEW(p->list), selected, GTK_LIST_SCROLL_NONE, NULL);
+    start_run(app, def, project, FALSE);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -825,7 +724,11 @@ typedef struct {
     AppData* app;
     GCancellable* cancellable;
     gchar* start;    /* the folder searched from */
+    gchar* start_file; /* the .tex file of the focused tab, or NULL */
     gboolean choose; /* Shift+F7: ask which task */
+    gboolean quiet;  /* start_file was saved: compile it, quietly */
+    gchar* tex_root; /* found: the main document of start_file, or NULL */
+    guint n_latex;   /* the LaTeX tasks among tasks (first) */
     gchar* project;  /* found: the project's folder, or NULL */
     GPtrArray* tasks;
     gchar* problem;  /* what is wrong with its tasks file, or NULL */
@@ -835,6 +738,8 @@ static void find_job_free(gpointer data) {
     FindJob* job = data;
     g_clear_object(&job->cancellable);
     g_free(job->start);
+    g_free(job->start_file);
+    g_free(job->tex_root);
     g_free(job->project);
     g_free(job->problem);
     if (job->tasks != NULL) g_ptr_array_unref(job->tasks);
@@ -865,8 +770,20 @@ static void find_thread(GTask* task, gpointer source, gpointer data, GCancellabl
     (void)source;
     (void)cancellable;
     FindJob* job = data;
-    job->project = task_detect_project_dir(job->start);
-    if (job->project != NULL) job->tasks = task_detect(job->project, remote_processors(job->project), &job->problem);
+    /* A .tex file: the tasks of its document first */
+    job->tex_root = job->start_file != NULL ? task_latex_root(job->start_file) : NULL;
+    GPtrArray* latex = job->tex_root != NULL ? task_latex_tasks(job->tex_root) : NULL;
+    if (!job->quiet) {
+        job->project = task_detect_project_dir(job->start);
+        if (job->project != NULL) job->tasks = task_detect(job->project, remote_processors(job->project), &job->problem);
+    }
+    if (latex != NULL && latex->len > 0) {
+        if (job->project == NULL) job->project = g_path_get_dirname(job->tex_root);
+        if (job->tasks == NULL) job->tasks = g_ptr_array_new_with_free_func((GDestroyNotify)task_def_free);
+        for (guint i = 0; i < latex->len; i++) g_ptr_array_insert(job->tasks, (gint)i, task_def_copy(g_ptr_array_index(latex, i)));
+        job->n_latex = latex->len;
+    }
+    if (latex != NULL) g_ptr_array_unref(latex);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -878,6 +795,38 @@ static void on_found(GObject* source, GAsyncResult* result, gpointer data) {
     AppData* app = job->app;
     struct TaskRun* st = run_state(app);
     g_clear_object(&st->finding);
+    if (job->start_file != NULL && job->n_latex == 0 && (job->quiet || job->tasks == NULL || job->tasks->len == 0)) {
+        gchar* name = g_path_get_basename(job->start_file);
+        if (job->tex_root == NULL) {
+            gchar* msg = g_strdup_printf(_("%s: no main document found (add a “%% !TEX root = main.tex” line)"), name);
+            notice(app, msg);
+            g_free(msg);
+        } else if (!st->told_no_tex || !job->quiet) {
+            st->told_no_tex = TRUE;
+            notice(app, _("No LaTeX compiler found: install latexmk (TeX Live) or Tectonic (the Diagnostics tab of the + menu gives the command)"));
+        }
+        g_free(name);
+        return;
+    }
+    if (job->quiet) {
+        /* A save compiles the document: the LaTeX task chosen in the project,
+         * else its first; never in place of another task running */
+        if (st->current != NULL && st->current->def->tex_root == NULL) {
+            gchar* msg = g_strdup_printf(_("%s is running: the document is compiled with F7 once it ends"),
+                                         st->current->def->label);
+            notice(app, msg);
+            g_free(msg);
+            return;
+        }
+        const TaskDef* chosen = g_hash_table_lookup(st->chosen, job->project);
+        const TaskDef* def = g_ptr_array_index(job->tasks, 0);
+        for (guint i = 0; chosen != NULL && i < job->n_latex; i++) {
+            const TaskDef* t = g_ptr_array_index(job->tasks, i);
+            if (t->tex_root != NULL && task_def_equal(t, chosen)) def = t;
+        }
+        start_run(app, def, job->project, TRUE);
+        return;
+    }
     if (job->problem != NULL) {
         /* Said, and the other tasks still offered */
         gchar* msg = g_strdup_printf(_("Tasks file left out: %s"), job->problem);
@@ -893,7 +842,7 @@ static void on_found(GObject* source, GAsyncResult* result, gpointer data) {
         return;
     }
     if (job->choose) {
-        show_picker(app, job->project, job->tasks);
+        task_picker_show(app, job->project, job->tasks, g_hash_table_lookup(st->chosen, job->project), run_chosen);
         return;
     }
     /* The task chosen last in this project when it is still there, else the
@@ -904,24 +853,30 @@ static void on_found(GObject* source, GAsyncResult* result, gpointer data) {
         /* The task as found now: its matcher too, which is not kept */
         if (task_def_equal(g_ptr_array_index(job->tasks, i), chosen)) def = g_ptr_array_index(job->tasks, i);
     }
-    start_run(app, def, job->project);
+    start_run(app, def, job->project, FALSE);
 }
 
 /* The folder whose project F7 builds: the focused editor tab's file's, else
- * the explorer's */
-static gchar* start_dir(AppData* app) {
+ * the explorer's; *tex: the tab's file when it is a .tex file */
+static gchar* start_dir(AppData* app, gchar** tex) {
+    *tex = NULL;
     FocusInfo info;
     focus_route_get(app, &info);
     if (info.area == FOCUS_AREA_EDITOR && info.tab != NULL && info.tab->path != NULL && !info.tab->is_buffer) {
+        if (g_str_has_suffix(info.tab->path, ".tex")) *tex = g_strdup(info.tab->path);
         return g_path_get_dirname(info.tab->path);
     }
     return g_strdup(app->base_dir);
 }
 
-static void find_tasks(AppData* app, gboolean choose) {
+/* Find the tasks from the folder start (taken) and the .tex file tex
+ * (taken, may be NULL), then run one or (choose) ask which */
+static void find_tasks_from(AppData* app, gchar* start, gchar* tex, gboolean choose, gboolean quiet) {
     struct TaskRun* st = run_state(app);
-    gchar* start = start_dir(app);
-    if (start == NULL) return;
+    if (start == NULL) {
+        g_free(tex);
+        return;
+    }
     if (st->finding != NULL) {
         g_cancellable_cancel(st->finding);
         g_clear_object(&st->finding);
@@ -929,13 +884,21 @@ static void find_tasks(AppData* app, gboolean choose) {
     FindJob* job = g_new0(FindJob, 1);
     job->app = app;
     job->start = start;
+    job->start_file = tex;
     job->choose = choose;
+    job->quiet = quiet;
     job->cancellable = g_cancellable_new();
     st->finding = g_object_ref(job->cancellable);
     GTask* task = g_task_new(NULL, job->cancellable, on_found, NULL);
     g_task_set_task_data(task, job, find_job_free);
     g_task_run_in_thread(task, find_thread);
     g_object_unref(task);
+}
+
+static void find_tasks(AppData* app, gboolean choose) {
+    gchar* tex = NULL;
+    gchar* start = start_dir(app, &tex);
+    find_tasks_from(app, start, tex, choose, FALSE);
 }
 
 /* The header's Run Again button: the task run last, wherever it was */
@@ -947,7 +910,7 @@ static void run_last(AppData* app) {
     }
     TaskDef* def = task_def_copy(st->last);
     gchar* project = g_strdup(st->last_project);
-    start_run(app, def, project);
+    start_run(app, def, project, FALSE);
     g_free(project);
     task_def_free(def);
 }
@@ -970,6 +933,13 @@ void task_run_again(AppData* app) {
         return;
     }
     find_tasks(app, FALSE);
+}
+
+void task_run_latex_saved(AppData* app) {
+    if (app == NULL || app->latex_saved_path == NULL) return;
+    ensure_actions();
+    gchar* path = g_steal_pointer(&app->latex_saved_path);
+    find_tasks_from(app, g_path_get_dirname(path), path, FALSE, TRUE);
 }
 
 void task_run_choose(AppData* app) {

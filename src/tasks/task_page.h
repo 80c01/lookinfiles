@@ -7,7 +7,7 @@
  * place in an editor tab) and its output below, in a split. Its header says
  * what runs, where, the counts and the time it took, with Run Again, Stop
  * and Close buttons. One page per workspace; it moves like an editor tab
- * (drag, tab menu). */
+ * (drag, tab menu). It is also the page of LaTeX compilations (task_latex.h). */
 #include "core/app_types.h"
 #include "tasks/task_parse.h"
 
@@ -15,11 +15,14 @@
 typedef void (*TaskPageAction)(AppData* app);
 void task_page_set_actions(TaskPageAction run_again, TaskPageAction stop);
 
-/* The page of the current workspace, made when missing and shown in front
- * of its notebook (not focused), emptied for the task label running in dir.
- * Returns the page (a new reference: the run keeps writing to it even when
- * its workspace is left or the page closed). */
-GtkWidget* task_page_begin(AppData* app, const gchar* label, const gchar* dir);
+/* The page of the current workspace, made when missing and (front) shown
+ * in front of its notebook (not focused), emptied for the task label
+ * running in dir. Returns the page (a new reference: the run keeps writing
+ * to it even when its workspace is left or the page closed). */
+GtkWidget* task_page_begin(AppData* app, const gchar* label, const gchar* dir, gboolean front);
+
+/* Show page in front of its notebook (not focused) */
+void task_page_present(GtkWidget* page);
 
 /* Output lines read (each ends with '\n'): kept and shown in batches */
 void task_page_append_output(GtkWidget* page, const gchar* text);

@@ -121,6 +121,7 @@ tasks come from those files:
 | `CMakeLists.txt` | `cmake --build build --parallel <n>` (a configured build folder), else `cmake -B build` |
 | `meson.build`, `build.ninja` | `ninja -C build` and `meson test -C build`, else `meson setup build`; `ninja` |
 | `pyproject.toml`, `setup.py`, `pytest.ini` | `pytest` |
+| a `.tex` file (F7 from its tab) | `latexmk <document>.tex` (else Tectonic or the engine), then `latexmk -C` (see [LaTeX documents](editor.md#latex-documents)), first |
 | `.lookinfiles/tasks.toml` | the project's own tasks, listed first: any command, its folder, variables and the pattern of its messages (see [Project tasks](../configuration.md#project-tasks)) |
 
 The builds use every processor: `<n>` is their number for `make` and

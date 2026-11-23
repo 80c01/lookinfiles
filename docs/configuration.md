@@ -59,6 +59,9 @@ update-preview=true # saving, selecting or focusing an editor tab shows its file
 [Tasks]
 save-first=true    # F7 saves the edited files of the project before its task (default)
 
+[LaTeX]
+compile-on-save=true # saving a .tex file compiles its document, as F7 does (default)
+
 [Preview]
 tagbar=false       # previews with headings or symbols show the tagbar (o in the preview; new workspaces)
 

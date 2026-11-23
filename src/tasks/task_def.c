@@ -16,6 +16,7 @@ TaskDef* task_def_copy(const TaskDef* def) {
     copy->env = g_strdupv(def->env);
     copy->matcher = g_strdup(def->matcher);
     copy->shell = def->shell;
+    copy->tex_root = g_strdup(def->tex_root);
     return copy;
 }
 
@@ -27,6 +28,7 @@ void task_def_free(TaskDef* def) {
     g_free(def->dir);
     g_strfreev(def->env);
     g_free(def->matcher);
+    g_free(def->tex_root);
     g_free(def);
 }
 

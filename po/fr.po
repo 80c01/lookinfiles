@@ -1203,8 +1203,8 @@ msgstr ""
 
 #: src/chrome/help.c:151 src/chrome/help.c:152 src/chrome/help.c:153
 #: src/chrome/help.c:154 src/chrome/help.c:155 src/chrome/help.c:156
-msgid "References, Search, Problems and LaTeX tabs"
-msgstr "Onglets Références, Recherche, Problèmes et LaTeX"
+msgid "References, Search, Problems and Build tabs"
+msgstr "Onglets Références, Recherche, Problèmes et Build"
 
 #: src/chrome/help.c:151 src/chrome/help.c:152
 msgid "Close the tab (also its cross or a middle click)"
@@ -13841,6 +13841,16 @@ msgid "Running %1$s… (%2$u file saved)"
 msgid_plural "Running %1$s… (%2$u files saved)"
 msgstr[0] "%1$s en cours… (%2$u fichier enregistré)"
 msgstr[1] "%1$s en cours… (%2$u fichiers enregistrés)"
+
+msgid "Compile LaTeX documents when sa_ved"
+msgstr "Compiler les documents LaTeX à l’_enregistrement"
+
+msgid "Saving a .tex file compiles its main document, as F7 does, and shows its PDF in the preview; the errors go to the Build tab"
+msgstr "Enregistrer un fichier .tex compile son document principal, comme F7, et affiche son PDF dans l’aperçu ; les erreurs vont dans l’onglet Build"
+
+#, c-format
+msgid "%s is running: the document is compiled with F7 once it ends"
+msgstr "%s est en cours : compilez le document avec F7 quand elle sera finie"
 
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"

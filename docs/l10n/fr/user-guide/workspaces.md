@@ -63,7 +63,7 @@ manquent ; les terminaux en cours pour lesquels elle n’a pas de place
 deviennent des onglets de son dernier panneau de terminal, si bien
 qu’appliquer une disposition n’en ferme jamais.
 Elle garde aussi les onglets **Problèmes**, **Références**, **Recherche**,
-**LaTeX** et **Deep Search** qui étaient ouverts, et leur emplacement
+**Build** et **Deep Search** qui étaient ouverts, et leur emplacement
 (l’aperçu ou un volet d’édition ; un volet qui ne contient que de tels
 onglets leur reste réservé) : l’appliquer ouvre ceux qui sont fermés, sans
 leur donner le focus (un onglet vide indique comment le remplir :

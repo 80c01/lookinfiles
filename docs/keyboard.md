@@ -37,7 +37,7 @@ also `:tabnext` / `:tabprevious`, `:bnext` / `:bprevious`); `Alt+Left` /
 that has the focus and put the focus in the new tab; from the explorer they
 switch the tabs of the preview panel and the explorer keeps the focus.
 Clicking a tab also puts the focus in it; a middle click on an editor,
-**References**, **Search**, **Problems** or **LaTeX** tab closes it, and so
+**References**, **Search**, **Problems** or **Build** tab closes it, and so
 does `Ctrl+W` (Notepad) / `Ctrl+W c` (Vim) on these four tabs when they have
 the focus or are in front in the preview panel. They move to another pane
 like an editor tab: drag the tab, or right-click it. In the **Git**,

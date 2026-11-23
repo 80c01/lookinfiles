@@ -126,6 +126,7 @@ fichiers :
 | `CMakeLists.txt` | `cmake --build build --parallel <n>` (un dossier de compilation configuré), sinon `cmake -B build` |
 | `meson.build`, `build.ninja` | `ninja -C build` et `meson test -C build`, sinon `meson setup build` ; `ninja` |
 | `pyproject.toml`, `setup.py`, `pytest.ini` | `pytest` |
+| un fichier `.tex` (F7 depuis son onglet) | `latexmk <document>.tex` (sinon Tectonic ou le moteur), puis `latexmk -C` (voir [Documents LaTeX](editor.md#documents-latex)), en tête |
 | `.lookinfiles/tasks.toml` | les tâches propres au projet, en tête de liste : n’importe quelle commande, son dossier, ses variables et le motif de ses messages (voir [Project tasks](../configuration.md#project-tasks), en anglais) |
 
 Les compilations utilisent tous les processeurs : `<n>` est leur nombre

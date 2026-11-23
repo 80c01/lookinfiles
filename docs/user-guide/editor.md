@@ -298,8 +298,11 @@ the tab.
 
 ## LaTeX documents
 
-Saving a `.tex` file (`Ctrl+S`, `:w`, `C-x C-s`) compiles its document in
-the background, as Overleaf does, and shows the PDF in the preview. The
+`F7` in a `.tex` file compiles its document (a build task, see
+[Build and test tasks](code-navigation.md#build-and-test-tasks)) and shows
+the PDF in the preview; saving it (`Ctrl+S`, `:w`, `C-x C-s`) does the same
+in the background, as Overleaf does, unless **Preferences → Editor →
+Compile LaTeX documents when saved** is off. The
 PDF then follows the cursor: moving in the `.tex` file scrolls the preview
 to the place of the line (SyncTeX, through the `synctex` command of TeX
 Live), at the height of the cursor in the editor. After a compilation, the
@@ -315,13 +318,20 @@ place stays where it was in the preview.
   `% !TEX root = ../main.tex` line, else the document of its folder (or of
   the folder above) that includes it with `\input` or `\include`, else
   `main.tex`.
-- Errors, warnings and bad boxes go to the **LaTeX** tab, next to
-  **Git**, with the source line of each error. `Enter` or a double click
-  opens the place in an editor tab. The tab opens by itself when there are
-  errors or warnings.
+- Errors, warnings and bad boxes go to the **Build** tab, read from the
+  document's `.log`, with the source line of each error. `Enter` or a
+  double click opens the place in an editor tab, `F8` / `Shift+F8` go from
+  one to the next, and they are underlined in the editor and listed in
+  Problems. When there is no PDF, the Build tab comes in front to say why.
+- `Shift+F7` also offers `latexmk -C` (remove the files of the
+  compilation), the other tasks of the project (a `Makefile` above...), and
+  makes one of them what `F7` runs there; a save always compiles the
+  document. `Ctrl+F7` stops a compilation.
 - The files of the compilation (`.aux`, `.log`, `.synctex.gz`...) are
-  written next to the document. A save during a compilation compiles again
-  once it ends.
+  written next to the document. A save during a compilation starts it
+  again; it never stops another task (a running `make test`).
+- On a remote machine, the document is compiled there (`latexmk` must be
+  installed on the machine).
 
 ## Code features
 

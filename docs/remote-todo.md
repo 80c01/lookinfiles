@@ -6,16 +6,12 @@ elsewhere; the Preferences choose when libssh is built in, see
 [remote-libssh.md](remote-libssh.md)), files over SFTP (`core/vfs.h`), and
 commands run there through it (`vfs_exec()`, `vfs_spawn()`). Search in files, Go to File, Deep Search,
 Disk Usage, the Git tab, Git badges and the language servers all work on a
-remote machine (see the user guide, `docs/user-guide/remote.md`). This page
+remote machine (see the user guide, `docs/user-guide/remote.md`), and so do the build and
+test tasks, LaTeX documents included. This page
 lists what does not, or not fully, to come back to later.
 
 ## Not available yet
 
-- **LaTeX builds.** They stay off for a remote machine's files
-  (`latex_build_saved()` skips them). Idea: run `latexmk` / `pdflatex` on
-  the machine (`vfs_spawn()` for the log as it comes), then bring the PDF
-  and the `.log` back over SFTP for the preview and the error list. Needs a
-  TeX distribution on the machine.
 - **Open With Default App.** Refused with a status bar message
   (`files_menu.c`, `remote_path_refuse()`). Opening a cached copy was ruled
   out: the edits made in the other application would not go back to the

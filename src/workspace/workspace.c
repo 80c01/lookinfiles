@@ -26,7 +26,6 @@
 #include "search/project_search.h"
 #include "code/code_problems.h"
 #include "code/code_refs.h"
-#include "latex/latex_errors.h"
 #include "tasks/task_page.h"
 #include "search/deep_search_tab.h"
 #include "chrome/help_guide.h"
@@ -479,7 +478,6 @@ void workspace_switch(AppData* app, gint idx) {
             deep_search_tab_workspace_hidden(app, &app->workspaces[app->current_ws]);
             code_problems_workspace_hidden(app, &app->workspaces[app->current_ws]);
             code_refs_workspace_hidden(app, &app->workspaces[app->current_ws]);
-            latex_errors_workspace_hidden(app, &app->workspaces[app->current_ws]);
             task_page_workspace_hidden(app, &app->workspaces[app->current_ws]);
             browser_workspace_hidden(app, &app->workspaces[app->current_ws]);
             canvas_view_workspace_hidden(app, &app->workspaces[app->current_ws]);
@@ -515,7 +513,6 @@ void workspace_switch(AppData* app, gint idx) {
         deep_search_tab_workspace_shown(app, ws);
         code_problems_workspace_shown(app, ws);
         code_refs_workspace_shown(app, ws);
-        latex_errors_workspace_shown(app, ws);
         task_page_workspace_shown(app, ws);
         browser_workspace_shown(app, ws);
         launcher_tab_workspace_shown(app, ws);
@@ -794,7 +791,6 @@ void workspace_remove(AppData* app, gint idx) {
     deep_search_tab_workspace_removed(app, rm);
     code_problems_workspace_removed(app, rm);
     code_refs_workspace_removed(app, rm);
-    latex_errors_workspace_removed(app, rm);
     task_page_workspace_removed(app, rm);
     browser_workspace_removed(app, rm);
     launcher_tab_workspace_removed(app, rm);

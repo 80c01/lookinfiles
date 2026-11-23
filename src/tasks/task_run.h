@@ -8,7 +8,9 @@
  * comes, its messages (task_parse.h) listed in the Build page (task_page.h);
  * F8 / Shift+F8 go to the next / previous one. One task runs at a time: a
  * new one stops the one running. On a remote machine the task runs there
- * (task_remote.h). */
+ * (task_remote.h). From a .tex file, the LaTeX tasks of its document come
+ * first (task_latex.h): its messages are read from its .log, its PDF shown
+ * in the preview. */
 #include "core/app_types.h"
 
 /* F7: run the task chosen last in the current project, or its default one */
@@ -19,6 +21,12 @@ void task_run_choose(AppData* app);
 
 /* Ctrl+F7: stop the running task (and what it started). FALSE when none runs. */
 gboolean task_run_stop(AppData* app);
+
+/* A .tex file was saved while compiling on save is on
+ * (APP_EVENT_LATEX_SAVED, app->latex_saved_path): compile its document
+ * with the LaTeX task chosen in its project, else the first one, the Build
+ * tab left behind the PDF; not in place of another task running */
+void task_run_latex_saved(AppData* app);
 
 /* Stop the running task without a word (at exit) */
 void task_run_free(AppData* app);

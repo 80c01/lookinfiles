@@ -336,9 +336,12 @@ bas de l’onglet. Ses messages restent en anglais, comme dans Emacs.
 
 ## Documents LaTeX
 
-Enregistrer un fichier `.tex` (`Ctrl+S`, `:w`, `C-x C-s`) compile son
-document en arrière-plan, comme Overleaf, et affiche le PDF dans l’aperçu.
-Le PDF suit ensuite le curseur : se déplacer dans le fichier `.tex` fait
+`F7` dans un fichier `.tex` compile son document (une tâche de
+compilation, voir [Tâches de compilation et de
+test](code-navigation.md#tâches-de-compilation-et-de-test)) et affiche le PDF
+dans l’aperçu ; l’enregistrer (`Ctrl+S`, `:w`, `C-x C-s`) fait de même en
+arrière-plan, comme Overleaf, sauf si **Préférences → Éditeur → Compiler
+les documents LaTeX à l’enregistrement** est décoché. Le PDF suit ensuite le curseur : se déplacer dans le fichier `.tex` fait
 défiler l’aperçu jusqu’à l’endroit de la ligne (SyncTeX, par la commande
 `synctex` de TeX Live), à la hauteur du curseur dans l’éditeur. Après une
 compilation, l’endroit reste où il était dans l’aperçu.
@@ -355,14 +358,20 @@ compilation, l’endroit reste où il était dans l’aperçu.
   (ou du dossier au-dessus) qui l’inclut avec `\input` ou `\include`,
   sinon `main.tex`.
 - Les erreurs, avertissements et boîtes mal remplies vont dans l’onglet
-  **LaTeX**, à côté de **Git**, avec la ligne source de chaque
+  **Build**, lus dans le `.log` du document, avec la ligne source de chaque
   erreur. `Enter` ou un double-clic ouvre l’endroit dans un onglet
-  d’édition.
-  L’onglet s’ouvre de lui-même quand il y a des erreurs ou des
-  avertissements.
+  d’édition, `F8` / `Shift+F8` passent de l’un à l’autre, et ils sont
+  soulignés dans l’éditeur et listés dans Problèmes. Quand il n’y a pas de
+  PDF, l’onglet Build passe devant pour dire pourquoi.
+- `Shift+F7` propose aussi `latexmk -C` (supprimer les fichiers de la
+  compilation), les autres tâches du projet (un `Makefile` au-dessus…), et
+  fait de l’une d’elles celle que `F7` lance là ; un enregistrement compile
+  toujours le document. `Ctrl+F7` arrête une compilation.
 - Les fichiers de la compilation (`.aux`, `.log`, `.synctex.gz`...) sont
-  écrits à côté du document. Un enregistrement pendant une compilation
-  recompile à la fin de celle-ci.
+  écrits à côté du document. Un enregistrement pendant une compilation la
+  relance ; il n’arrête jamais une autre tâche (un `make test` en cours).
+- Sur une machine distante, le document est compilé là-bas (`latexmk` doit
+  y être installé).
 
 ## Fonctions pour le code
 

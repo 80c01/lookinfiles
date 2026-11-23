@@ -36,6 +36,7 @@ typedef struct {
     GtkWidget* wrap;          /* GtkCheckButton */
     GtkWidget* update_preview; /* GtkCheckButton */
     GtkWidget* task_save_first; /* GtkCheckButton */
+    GtkWidget* latex_on_save; /* GtkCheckButton */
     GtkWidget* tagbar;        /* GtkCheckButton */
     GtkWidget* preview_tagbar; /* GtkCheckButton */
     GtkWidget* minimap;        /* GtkCheckButton */
@@ -179,6 +180,12 @@ static GtkWidget* editor_page(Preferences* p) {
     gtk_widget_set_tooltip_text(p->task_save_first, _("F7 and Shift+F7 first save the edited tabs of files under the "
                                                     "task's project, so that it builds what you see"));
     gtk_box_append(GTK_BOX(box), p->task_save_first);
+
+    p->latex_on_save = gtk_check_button_new_with_mnemonic(_("Compile LaTeX documents when sa_ved"));
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->latex_on_save), p->app->settings.latex_on_save);
+    gtk_widget_set_tooltip_text(p->latex_on_save, _("Saving a .tex file compiles its main document, as F7 does, and "
+                                                  "shows its PDF in the preview; the errors go to the Build tab"));
+    gtk_box_append(GTK_BOX(box), p->latex_on_save);
 
     p->tagbar = gtk_check_button_new_with_mnemonic(_("Show the _tagbar"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->tagbar), p->app->settings.tagbar);
@@ -490,6 +497,7 @@ static void save_settings(Preferences* p) {
     s.wrap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->wrap));
     s.update_preview = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->update_preview));
     s.task_save_first = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->task_save_first));
+    s.latex_on_save = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->latex_on_save));
     s.tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->tagbar));
     s.preview_tagbar = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->preview_tagbar));
     s.minimap = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->minimap));

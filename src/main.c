@@ -570,6 +570,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_FOCUS_PREV_PANEL, focus_prev_panel);
     app_events_subscribe(app, APP_EVENT_CLOSE_TAB, close_shown_tab);
     app_events_subscribe(app, APP_EVENT_QUIT, ui_quit);
+    app_events_subscribe(app, APP_EVENT_LATEX_SAVED, task_run_latex_saved);
     app_events_subscribe(app, APP_EVENT_SAVE_WORKSPACE_BOOKMARK, session_bookmark_save);
     app_events_subscribe(app, APP_EVENT_OPEN_WORKSPACE_BOOKMARK, session_bookmark_open);
     app_events_subscribe(app, APP_EVENT_SAVE_SEARCH_BOOKMARK, deep_search_bookmark_save);

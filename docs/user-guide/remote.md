@@ -103,9 +103,9 @@ with sshfs are unmounted at start-up. Machines added by hand are saved in
 
 ## Not available on a remote machine yet
 
-LaTeX builds run on this computer and need local files: they stay off for a
-remote machine's files. Opening a file with another application is not
-available either: Open With Default App says so in the status bar.
+Opening a file with another application is not available: Open With
+Default App says so in the status bar. LaTeX documents are compiled on the
+machine, as the other build tasks (below).
 
 ## Build and test tasks
 

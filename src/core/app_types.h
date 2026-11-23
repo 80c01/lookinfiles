@@ -132,7 +132,6 @@ typedef struct {
     GtkWidget* diagnostics_page;   /* its Diagnostics tab while another workspace is shown (owned ref, diagnostics_tab.c) */
     GtkWidget* disk_usage_page;    /* its Disk Usage tab while another workspace is shown (owned ref, disk_usage_tab.c) */
     GtkWidget* refs_page;          /* its References tab while another workspace is shown (owned ref, code_refs.c) */
-    GtkWidget* latex_page;         /* its LaTeX tab while another workspace is shown (owned ref, latex_errors.c) */
     GtkWidget* build_page;         /* its Build tab while another workspace is shown (owned ref, task_page.c) */
     GtkWidget* problems_page;      /* its Problems tab while another workspace is shown (owned ref, code_problems.c) */
     GtkWidget* deep_search_page;   /* its Deep Search tab while another workspace is shown (owned ref, deep_search_tab.c) */
@@ -237,8 +236,8 @@ typedef struct AppData {
     GtkWidget* refs_page;           /* References page of the preview notebook (code_refs.c), or NULL */
     GtkWidget* search_page;         /* Search page (text search results, code_refs.c), or NULL */
     GtkWidget* problems_page;       /* Problems page (LSP diagnostics, code_problems.c), or NULL */
-    GtkWidget* latex_page;          /* LaTeX page (compilation messages, latex_errors.c), or NULL */
-    struct LatexBuild* latex_build; /* compilation of saved LaTeX documents (latex_build.c), or NULL */
+    struct LatexBuild* latex_build; /* the PDF of LaTeX documents in the preview (latex_build.c), or NULL */
+    gchar* latex_saved_path;        /* the .tex file of APP_EVENT_LATEX_SAVED (taken by the handler) */
     struct LatexSync* latex_sync;   /* PDF preview following a LaTeX source (latex_sync.c), or NULL */
     GtkWidget* build_page;          /* Build page (output and messages of a task, task_page.c), or NULL */
     struct TaskRun* task_run;       /* build and test tasks (task_run.c), or NULL */

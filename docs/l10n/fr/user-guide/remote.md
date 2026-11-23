@@ -115,11 +115,10 @@ Les machines ajoutées à la main sont enregistrées dans
 
 ## Pas encore disponible sur une machine distante
 
-La compilation LaTeX s’exécute sur cet ordinateur et a besoin de fichiers
-locaux : elle reste éteinte pour les fichiers d’une machine distante.
-L’ouverture d’un fichier avec une autre application n’est pas disponible
-non plus : « Ouvrir avec l’application par défaut » le dit dans la barre
-d’état.
+L’ouverture d’un fichier avec une autre application n’est pas
+disponible : « Ouvrir avec l’application par défaut » le dit dans la barre
+d’état. Les documents LaTeX sont compilés sur la machine, comme les autres
+tâches de compilation (plus bas).
 
 ## Tâches de compilation et de test
 

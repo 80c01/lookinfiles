@@ -103,6 +103,7 @@ task_choice:task_def,app_paths
 task_config:task_def,i18n
 task_detect:task_def,task_config,vfs
 task_remote:task_def,vfs,ssh_session,ssh_process,i18n
+task_latex:task_def,vfs,latex_root
 preview_cache:
 path_kind:
 pane_geometry:
@@ -446,7 +447,7 @@ formats:core,preview
 games:core,editor,explorer,theme,widgets
 git:core,theme,widgets
 jupyter:code,core,editor,formats,markup,theme,widgets
-latex:core,editor,explorer,git,preview,theme,widgets
+latex:core,editor,explorer,git,preview,tasks,theme,widgets
 mail:core,office,preview
 markup:core,media,theme
 media:core,editor,preview,search,theme
@@ -456,7 +457,7 @@ org:core,editor,markup,media,preview,theme
 preview:canvas,chrome,code,core,diskuse,editor,explorer,formats,games,git,mail,markup,media,notes,office,org,search,theme,widgets
 search:code,core,editor,explorer,theme,widgets
 sysmon:core,git,theme,widgets
-tasks:code,core,editor,git,theme,widgets
+tasks:code,core,editor,git,latex,theme,widgets
 terminal:core,editor,explorer,theme,widgets,workspace
 theme:core
 vim:theme
