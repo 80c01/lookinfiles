@@ -103,7 +103,7 @@ The link must never repeat this: one channel's full buffer stops reading
 3. **Programs that want a command line** (kernels, language servers):
    they start a local process from `ssh_session_argv()` /
    `vfs_command_argv()`. Give them a relay instead of `ssh.exe`:
-   `lookinfiles --ssh-channel <port> <ticket>`, which copies its
+   `lookinfiles --ssh-channel <port> <id>`, which copies its
    stdin/stdout/stderr to an `exec` channel the instance opened and exits
    with the channel's status. The callers do not change:
    `ssh_session_argv()` returns the relay's argv when the link is in use.
@@ -179,26 +179,33 @@ Settled here so that every step is written the same way.
 ### Relay protocol (steps 3 and 4)
 
 - **Module.** `core/ssh_relay` (layer 1), both sides: the server in the
-  instance and the helper. Rule: `ssh_relay:ssh_target,ssh_link,ssh_channel,i18n`;
+  instance and the helper. Rule: `ssh_relay:ssh_target,ssh_link,ssh_channel,app_paths,i18n`;
   `ssh_session` includes `ssh_relay` (for the argv), never the opposite.
   `main.c` checks `ssh_relay_is_helper(argc, argv)` before any GTK call and
   returns `ssh_relay_helper_main(argc, argv)`, as it does for askpass. The
   program path is the one given to `ssh_askpass_serve()`.
-- **Ticket, not environment.** Language servers (`lsp_client.c`) and
-  kernels (`ipynb_kernel.c`) build their own `GSubprocessLauncher`, and
-  the terminal spawns through VTE/ConPTY: a variable set with
-  `ssh_session_set_env()` would not reach the relay. So every call of
-  `ssh_session_argv()` that goes through a link registers a **ticket** in
-  the instance: 128 random bits (hex), bound to the link, the command
-  line and the tty flag, **single use**, dropped after 60 s if unused.
-  The argv is `<program> --ssh-channel <port> <ticket>`: the relay never
-  chooses the command, so a ticket cannot run anything else. Callers that
+- **Ticket in a private file, never on the command line.** Language
+  servers (`lsp_client.c`) and kernels (`ipynb_kernel.c`) build their own
+  `GSubprocessLauncher`, and the terminal spawns through VTE/ConPTY: a
+  variable set with `ssh_session_set_env()` would not reach the relay. And
+  a command line is readable by other local users (`/proc/*/cmdline` on
+  Linux): no secret may go there. So every call of `ssh_session_argv()`
+  that goes through a link registers a **ticket** in the instance:
+  - 128 random bits (hex), bound to the link, the command line and the
+    tty flag; **single use**; dropped after 60 s if unused.
+  - Written to `app_runtime_dir()/relay/<id>` (the directory `0700`, the
+    file created `0600` with `O_CREAT | O_EXCL`; on Windows the directory
+    is under the user's profile). `<id>` is a counter, not a secret.
+  - The argv is `<program> --ssh-channel <port> <id>`. The relay reads the
+    file, **deletes it at once**, then sends the ticket. The instance also
+    deletes the file when the ticket is used or expires, and every
+    remaining one at exit.
+  - No private runtime directory (`app_runtime_dir()` returns NULL): no
+    relay, the machine uses the `ssh` program.
+  The relay never chooses the command, so a ticket cannot run anything
+  else; another user sees only the id, which opens nothing. Callers that
   run the same argv twice must call `ssh_session_argv()` again (check
-  `ipynb_run` and `code_intel` rebuild it at each start). On Linux a
-  command line is readable by other local users (`/proc/*/cmdline`): a
-  ticket seen there can be raced once; this is why the relay is the
-  default only on Windows (to verify there: other users' command lines
-  are not readable without admin rights).
+  `ipynb_run` and `code_intel` rebuild it at each start).
 - **Server.** `ssh_relay_serve()` listens on `127.0.0.1`, port 0 (chosen
   by the system), started with the first link, stopped with the last. It
   runs on the link thread side: accepting, reading and writing are async,
@@ -237,7 +244,7 @@ Settled here so that every step is written the same way.
   before the ticket is issued. The relay writes no log.
 - **Tests** (`tests/test_ssh_relay.c`, against the libssh test server):
   frames round-trip, exit status passed on, stderr kept apart, ticket used
-  twice / expired / wrong refused, a relay that stops reading does not
+  twice / expired / wrong refused, ticket file `0600` and gone after use, a relay that stops reading does not
   stall another channel of the same link, link lost gives exit 255.
 
 ### Tests (`tests/test_ssh_link.c`, `tests/test_ssh_channel.c`)
