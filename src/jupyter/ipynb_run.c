@@ -94,8 +94,27 @@ IpynbRunState ipynb_run_state(IpynbTab* t, guint index, gchar** text) {
 
 /* --- Showing what the kernel does --- */
 
+/* Why the kernel is not running, shown until it runs again (error: the
+ * text, details: the bridge's error output or NULL) */
+static void set_kernel_error(IpynbTab* t, const gchar* error, const gchar* details) {
+    g_free(t->kernel_error);
+    t->kernel_error = g_strdup(error);
+    g_free(t->kernel_details);
+    t->kernel_details = details != NULL && details[0] != '\0' ? g_strdup(details) : NULL;
+}
+
 static void update_kernel_label(IpynbTab* t) {
     IpynbKernelState state = t->kernel != NULL ? ipynb_kernel_get_state(t->kernel) : IPYNB_KERNEL_OFF;
+    if (state == IPYNB_KERNEL_OFF && t->kernel_error != NULL) {
+        gtk_label_set_text(GTK_LABEL(t->kernel_state), t->kernel_error);
+        gtk_widget_add_css_class(t->kernel_state, "ipynb-error");
+        gtk_widget_set_tooltip_text(t->kernel_state,
+                                    t->kernel_details != NULL ? t->kernel_details : t->kernel_error);
+        gtk_widget_set_sensitive(t->interrupt_button, FALSE);
+        gtk_widget_set_sensitive(t->restart_button, FALSE);
+        return;
+    }
+    gtk_widget_remove_css_class(t->kernel_state, "ipynb-error");
     const gchar* text = state == IPYNB_KERNEL_STARTING ? _("Kernel starting…")
                       : state == IPYNB_KERNEL_IDLE     ? _("Kernel idle")
                       : state == IPYNB_KERNEL_BUSY     ? _("Kernel busy")
@@ -169,6 +188,7 @@ static void on_started(const gchar* kernelspec, const gchar* language_info, cons
                        const gchar* python, const gchar* env, gpointer data) {
     (void)display;
     IpynbTab* t = data;
+    set_kernel_error(t, NULL, NULL);
     g_free(t->kernel_python);
     t->kernel_python = g_strdup(python);
     g_free(t->kernel_env);
@@ -198,25 +218,40 @@ static gchar* no_jupyter_text(IpynbTab* t, const gchar* venv) {
                : g_strdup(_("Running cells needs Jupyter: pip install jupyter_client ipykernel"));
 }
 
+/* The last line of text (a traceback ends with the error) */
+static const gchar* last_line(const gchar* text) {
+    const gchar* nl = strrchr(text, '\n');
+    return nl != NULL ? nl + 1 : text;
+}
+
+/* What a failure of the bridge (ipynb_kernel.h) means. Caller frees. */
+static gchar* failure_text(IpynbTab* t, const gchar* code, const gchar* message) {
+    if (g_strcmp0(code, "no-jupyter") == 0) return no_jupyter_text(t, NULL);
+    if (g_strcmp0(code, "no-jupyter-venv") == 0) return no_jupyter_text(t, message);
+    if (g_strcmp0(code, "no-python") == 0) {
+        return t->kernel_host != NULL ? g_strdup_printf(_("Running cells needs Python 3 on %s"), t->kernel_host)
+                                      : g_strdup(_("Running cells needs Python 3"));
+    }
+    if (g_strcmp0(code, "no-kernel") == 0) return g_strdup_printf(_("Kernel not installed: %s"), message);
+    if (g_strcmp0(code, "exited") == 0) {
+        /* message: what the bridge (Python, ssh) wrote last on its error output */
+        return message[0] != '\0' ? g_strdup_printf(_("The kernel stopped: %s"), last_line(message))
+                                  : g_strdup(_("The kernel stopped (no error message)"));
+    }
+    return g_strdup_printf(_("Kernel error: %s"), message);
+}
+
 static void on_failed(const gchar* code, const gchar* message, gpointer data) {
     IpynbTab* t = data;
-    gchar* text;
-    if (g_strcmp0(code, "no-jupyter") == 0) {
-        text = no_jupyter_text(t, NULL);
-    } else if (g_strcmp0(code, "no-jupyter-venv") == 0) {
-        text = no_jupyter_text(t, message);
-    } else if (g_strcmp0(code, "no-python") == 0) {
-        text = g_strdup_printf(_("Running cells needs Python 3 on %s"), t->kernel_host != NULL ? t->kernel_host : "");
-    } else if (g_strcmp0(code, "no-kernel") == 0) {
-        text = g_strdup_printf(_("Kernel not installed: %s"), message);
-    } else if (g_strcmp0(code, "exited") == 0) {
-        text = g_strdup(_("The kernel stopped"));
+    gchar* text = failure_text(t, code, message);
+    if (g_strcmp0(code, "command") == 0) {
+        ipynb_tab_set_status(t, text, TRUE); /* the kernel still runs */
     } else {
-        text = g_strdup_printf(_("Kernel error: %s"), message);
+        /* Kept in the kernel's label: a later "Saved" does not hide it */
+        set_kernel_error(t, text, g_strcmp0(code, "exited") == 0 ? message : NULL);
+        forget_running(t);
     }
-    ipynb_tab_set_status(t, text, TRUE);
     g_free(text);
-    if (g_strcmp0(code, "command") != 0) forget_running(t);
     update_kernel_label(t);
 }
 
@@ -372,6 +407,7 @@ static gboolean ensure_kernel(IpynbTab* t) {
     GError* error = NULL;
     gchar* cwd = NULL;
     gchar** envp = NULL;
+    set_kernel_error(t, NULL, NULL);
     gchar** argv = bridge_argv(t, &cwd, &envp, &error);
     if (argv != NULL) {
         t->kernel = ipynb_kernel_new(&CALLBACKS, t);
@@ -385,7 +421,7 @@ static gboolean ensure_kernel(IpynbTab* t) {
     g_strfreev(envp);
     g_free(cwd);
     if (t->kernel == NULL) {
-        ipynb_tab_set_status(t, error != NULL ? error->message : _("No kernel"), TRUE);
+        set_kernel_error(t, error != NULL ? error->message : _("No kernel"), NULL);
         g_clear_error(&error);
     }
     update_kernel_label(t);
@@ -541,12 +577,13 @@ static void menu_add_python(IpynbTab* t) {
 /* The kernels listed (specs NULL: why not) fill the menu */
 static void fill_kernel_menu(IpynbTab* t, GPtrArray* specs, const gchar* code, const gchar* message) {
     if (specs == NULL) {
-        gchar* text = g_strcmp0(code, "no-jupyter") == 0        ? no_jupyter_text(t, NULL)
-                      : g_strcmp0(code, "no-jupyter-venv") == 0 ? no_jupyter_text(t, message)
-                      : g_strcmp0(code, "no-python") == 0
-                          ? g_strdup_printf(_("Running cells needs Python 3 on %s"),
-                                            t->kernel_host != NULL ? t->kernel_host : "")
-                          : g_strdup_printf(_("Kernel error: %s"), message);
+        gchar* text = failure_text(t, code, message);
+        /* The whole error output: the menu has room for it */
+        if (g_strcmp0(code, "exited") == 0 && strchr(message, '\n') != NULL) {
+            gchar* full = g_strdup_printf("%s\n\n%s", text, message);
+            g_free(text);
+            text = full;
+        }
         menu_message(t, text);
         g_free(text);
         return;
@@ -709,6 +746,8 @@ GtkWidget* ipynb_run_bar(IpynbTab* t, GtkWidget* bar) {
     g_signal_connect(popover, "show", G_CALLBACK(on_kernel_menu_show), t);
     gtk_menu_button_set_popover(GTK_MENU_BUTTON(t->kernel_button), popover);
     t->kernel_state = gtk_label_new(NULL);
+    gtk_label_set_ellipsize(GTK_LABEL(t->kernel_state), PANGO_ELLIPSIZE_END);
+    gtk_label_set_max_width_chars(GTK_LABEL(t->kernel_state), 80);
     update_kernel_label(t);
     return t->kernel_button;
 }

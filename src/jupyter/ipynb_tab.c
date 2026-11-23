@@ -913,6 +913,8 @@ static void tab_free(gpointer data) {
     g_free(t->kernel_host);
     g_free(t->kernel_python);
     g_free(t->kernel_env);
+    g_free(t->kernel_error);
+    g_free(t->kernel_details);
     g_free(t);
 }
 

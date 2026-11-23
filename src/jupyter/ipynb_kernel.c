@@ -7,6 +7,9 @@
 
 #include "formats/json_view.h"
 
+#define ERR_TAIL_BYTES 2048 /* the end of the bridge's stderr kept: why it stopped */
+#define ERR_WAIT_MS 500     /* after the end of its stdout, for the rest of its stderr */
+
 struct IpynbKernel {
     gint ref;                 /* the owner, and each operation in flight */
     gboolean freed;           /* the owner let go: no more callbacks */
@@ -15,6 +18,12 @@ struct IpynbKernel {
     GSubprocess* proc;
     GDataInputStream* out;    /* the bridge's events */
     GOutputStream* in;        /* its commands */
+    GInputStream* err;        /* its stderr (Python tracebacks, ssh errors) */
+    GString* err_tail;        /* the end of it */
+    gchar err_buf[1024];
+    gboolean err_ended;
+    gboolean out_ended;       /* the bridge exited: told once its stderr is read */
+    guint err_wait;           /* source: stderr not ended in time */
     GCancellable* cancel;
     GQueue writes;            /* gchar*: command lines waiting */
     gchar* writing;           /* the line being written, or NULL */
@@ -30,10 +39,12 @@ static void kernel_unref(IpynbKernel* k) {
     if (--k->ref > 0) return;
     g_queue_clear_full(&k->writes, g_free);
     g_free(k->writing);
+    g_string_free(k->err_tail, TRUE);
     /* The pipes close with their streams: the bridge sees the end of its
      * stdin and stops the kernel */
     g_clear_object(&k->out);
     g_clear_object(&k->in);
+    g_clear_object(&k->err);
     g_clear_object(&k->proc);
     g_clear_object(&k->cancel);
     g_free(k);
@@ -45,6 +56,7 @@ IpynbKernel* ipynb_kernel_new(const IpynbKernelCallbacks* callbacks, gpointer da
     if (callbacks != NULL) k->cb = *callbacks;
     k->data = data;
     k->cancel = g_cancellable_new();
+    k->err_tail = g_string_new(NULL);
     g_queue_init(&k->writes);
     return k;
 }
@@ -232,6 +244,66 @@ static void handle_event(IpynbKernel* k, const gchar* line, gsize len) {
     g_free(ev);
 }
 
+/* What the bridge wrote to stderr last (whole lines, valid UTF-8, trimmed),
+ * or NULL. Caller frees. */
+static gchar* err_message(const gchar* text, gsize len) {
+    if (len > ERR_TAIL_BYTES) {
+        const gchar* start = text + len - ERR_TAIL_BYTES;
+        const gchar* nl = memchr(start, '\n', ERR_TAIL_BYTES);
+        if (nl != NULL) start = nl + 1;
+        len -= (gsize)(start - text);
+        text = start;
+    }
+    gchar* s = g_utf8_make_valid(text, (gssize)len);
+    g_strstrip(s);
+    if (s[0] != '\0') return s;
+    g_free(s);
+    return NULL;
+}
+
+/* The bridge exited, and its stderr is read (or took too long) */
+static void exited(IpynbKernel* k) {
+    if (k->err_wait != 0) {
+        g_source_remove(k->err_wait);
+        k->err_wait = 0;
+        kernel_unref(k); /* its ref (the caller holds one) */
+    }
+    gboolean was_on = k->state != IPYNB_KERNEL_OFF;
+    set_state(k, IPYNB_KERNEL_OFF);
+    g_clear_object(&k->in);
+    if (!was_on) return;
+    gchar* why = err_message(k->err_tail->str, k->err_tail->len);
+    failed(k, "exited", why);
+    g_free(why);
+}
+
+static gboolean on_err_wait(gpointer data) {
+    IpynbKernel* k = data;
+    k->err_wait = 0;
+    if (!k->freed) exited(k);
+    kernel_unref(k);
+    return G_SOURCE_REMOVE;
+}
+
+static void on_err(GObject* source, GAsyncResult* res, gpointer data) {
+    IpynbKernel* k = data;
+    gssize n = g_input_stream_read_finish(G_INPUT_STREAM(source), res, NULL);
+    if (k->freed) {
+        kernel_unref(k);
+        return;
+    }
+    if (n > 0) {
+        g_string_append_len(k->err_tail, k->err_buf, n);
+        /* Keep the end only */
+        if (k->err_tail->len > 2 * ERR_TAIL_BYTES) g_string_erase(k->err_tail, 0, (gssize)(k->err_tail->len - ERR_TAIL_BYTES));
+        g_input_stream_read_async(k->err, k->err_buf, sizeof k->err_buf, G_PRIORITY_DEFAULT, k->cancel, on_err, k);
+        return;
+    }
+    k->err_ended = TRUE;
+    if (k->out_ended) exited(k);
+    kernel_unref(k);
+}
+
 static void on_line(GObject* source, GAsyncResult* res, gpointer data) {
     IpynbKernel* k = data;
     gsize len = 0;
@@ -245,11 +317,14 @@ static void on_line(GObject* source, GAsyncResult* res, gpointer data) {
     }
     if (line == NULL) {
         /* End of its stdout: the bridge exited (or crashed) */
-        gboolean was_on = k->state != IPYNB_KERNEL_OFF;
-        set_state(k, IPYNB_KERNEL_OFF);
-        g_clear_object(&k->in);
-        if (was_on) failed(k, "exited", error != NULL ? error->message : NULL);
+        if (error != NULL && k->err_tail->len == 0) g_string_append(k->err_tail, error->message);
         g_clear_error(&error);
+        k->out_ended = TRUE;
+        if (k->err_ended) {
+            exited(k);
+        } else {
+            k->err_wait = g_timeout_add(ERR_WAIT_MS, on_err_wait, kernel_ref(k));
+        }
         kernel_unref(k);
         return;
     }
@@ -265,8 +340,8 @@ static void on_line(GObject* source, GAsyncResult* res, gpointer data) {
 
 /* The bridge run with its pipes, in environment envp (NULL: this one) */
 static GSubprocess* spawn_bridge(const gchar* const* argv, const gchar* const* envp, GError** error) {
-    GSubprocessLauncher* launcher =
-        g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE);
+    GSubprocessLauncher* launcher = g_subprocess_launcher_new(
+        G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE);
     if (envp != NULL) g_subprocess_launcher_set_environ(launcher, (gchar**)envp);
     GSubprocess* proc = g_subprocess_launcher_spawnv(launcher, argv, error);
     g_object_unref(launcher);
@@ -284,6 +359,9 @@ gboolean ipynb_kernel_start(IpynbKernel* k, const gchar* const* argv, const gcha
     set_state(k, IPYNB_KERNEL_STARTING);
     send(k, "start", "kernel", kernel_name != NULL ? kernel_name : "", "cwd", cwd != NULL ? cwd : "", NULL);
     g_data_input_stream_read_line_async(k->out, G_PRIORITY_DEFAULT, k->cancel, on_line, kernel_ref(k));
+    k->err = g_object_ref(g_subprocess_get_stderr_pipe(k->proc));
+    g_input_stream_read_async(k->err, k->err_buf, sizeof k->err_buf, G_PRIORITY_DEFAULT, k->cancel, on_err,
+                              kernel_ref(k));
     return TRUE;
 }
 
@@ -331,7 +409,7 @@ static void list_call_free(ListCall* call) {
 
 /* The kernels of the bridge's events (out), or NULL with *code and
  * *message set */
-static GPtrArray* parse_list(const gchar* out, gchar** code, gchar** message) {
+static GPtrArray* parse_list(const gchar* out, const gchar* err, gchar** code, gchar** message) {
     gchar** lines = g_strsplit(out != NULL ? out : "", "\n", -1);
     GPtrArray* specs = NULL;
     for (gchar** l = lines; *l != NULL && specs == NULL && *code == NULL; l++) {
@@ -363,17 +441,28 @@ static GPtrArray* parse_list(const gchar* out, gchar** code, gchar** message) {
         g_free(ev);
     }
     g_strfreev(lines);
-    if (specs == NULL && *code == NULL) *code = g_strdup("exited");
+    if (specs == NULL && *code == NULL) {
+        *code = g_strdup("exited");
+        *message = err != NULL ? err_message(err, strlen(err)) : NULL;
+    }
     return specs;
 }
 
 static void on_listed(GObject* source, GAsyncResult* res, gpointer data) {
     ListCall* call = data;
-    gchar* out = NULL;
+    GBytes* out_bytes = NULL;
+    GBytes* err_bytes = NULL;
     GError* error = NULL;
-    gboolean ok = g_subprocess_communicate_utf8_finish(G_SUBPROCESS(source), res, &out, NULL, &error);
+    /* Bytes: stderr may be in the local code page (Windows) */
+    gboolean ok = g_subprocess_communicate_finish(G_SUBPROCESS(source), res, &out_bytes, &err_bytes, &error);
+    gchar* out = out_bytes != NULL ? g_strndup(g_bytes_get_data(out_bytes, NULL), g_bytes_get_size(out_bytes)) : NULL;
+    gchar* err = err_bytes != NULL ? g_strndup(g_bytes_get_data(err_bytes, NULL), g_bytes_get_size(err_bytes)) : NULL;
+    if (out_bytes != NULL) g_bytes_unref(out_bytes);
+    if (err_bytes != NULL) g_bytes_unref(err_bytes);
     if (!ok && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
         g_error_free(error);
+        g_free(out);
+        g_free(err);
         list_call_free(call);
         return;
     }
@@ -381,7 +470,7 @@ static void on_listed(GObject* source, GAsyncResult* res, gpointer data) {
     gchar* message = NULL;
     GPtrArray* specs = NULL;
     if (ok) {
-        specs = parse_list(out, &code, &message);
+        specs = parse_list(out, err, &code, &message);
     } else {
         code = g_strdup("start");
         message = g_strdup(error->message);
@@ -389,6 +478,7 @@ static void on_listed(GObject* source, GAsyncResult* res, gpointer data) {
     call->done(specs, code, message != NULL ? message : "", call->data);
     g_clear_error(&error);
     g_free(out);
+    g_free(err);
     g_free(code);
     g_free(message);
     list_call_free(call);
@@ -419,6 +509,8 @@ void ipynb_kernel_list(const gchar* const* argv, const gchar* const* envp, GCanc
         g_idle_add(on_list_failed, call); /* in the main loop, as when it runs */
         return;
     }
-    g_subprocess_communicate_utf8_async(proc, NULL, cancel, on_listed, call);
+    GBytes* none = g_bytes_new_static("", 0); /* its stdin ends at once */
+    g_subprocess_communicate_async(proc, none, cancel, on_listed, call);
+    g_bytes_unref(none);
     g_object_unref(proc);
 }

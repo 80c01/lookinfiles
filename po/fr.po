@@ -9258,8 +9258,12 @@ msgid "Kernel not installed: %s"
 msgstr "Noyau non installé : %s"
 
 #: src/jupyter/ipynb_run.c:166
-msgid "The kernel stopped"
-msgstr "Le noyau s’est arrêté"
+#, c-format
+msgid "The kernel stopped: %s"
+msgstr "Le noyau s’est arrêté : %s"
+
+msgid "The kernel stopped (no error message)"
+msgstr "Le noyau s’est arrêté (sans message d’erreur)"
 
 #: src/jupyter/ipynb_run.c:168 src/jupyter/ipynb_run.c:333
 #, c-format

@@ -112,7 +112,7 @@ static void test_execute(void) {
     ipynb_kernel_execute(r.kernel, 10, "quit");
     g_assert_true(wait_for(&r, has_failed));
     g_assert_cmpint(r.state, ==, IPYNB_KERNEL_OFF);
-    g_assert_true(g_str_has_suffix(r.log->str, "input 10 4\nfailed exited \n"));
+    g_assert_true(g_str_has_suffix(r.log->str, "input 10 4\nfailed exited Traceback (most recent call last):\n  ...\nRuntimeError: gone\n"));
     ipynb_kernel_free(r.kernel);
     g_string_free(r.log, TRUE);
 }
@@ -154,6 +154,7 @@ static void test_failures(void) {
 typedef struct {
     GString* log;
     gboolean done;
+    gchar* message; /* of the last failure */
 } Listing;
 
 static void on_listed(GPtrArray* specs, const gchar* code, const gchar* message, gpointer data) {
@@ -162,6 +163,8 @@ static void on_listed(GPtrArray* specs, const gchar* code, const gchar* message,
     if (specs == NULL) {
         g_string_append_printf(l->log, "failed %s\n", code);
         g_assert_nonnull(message);
+        g_free(l->message);
+        l->message = g_strdup(message);
         return;
     }
     for (guint i = 0; i < specs->len; i++) {
@@ -186,7 +189,7 @@ static gboolean wait_listed(Listing* l) {
 }
 
 static void test_list(void) {
-    Listing l = { g_string_new(NULL), FALSE };
+    Listing l = { g_string_new(NULL), FALSE, NULL };
     ipynb_kernel_list(FAKE, NULL, NULL, on_listed, &l);
     g_assert_true(wait_listed(&l));
     g_assert_cmpstr(l.log->str, ==,
@@ -198,12 +201,13 @@ static void test_list(void) {
     g_assert_null(ipynb_kernel_spec_language_info(&bare));
 
     /* A bridge that says nothing, or cannot run */
-    static const gchar* const SILENT[] = { "python3", "-c", "", NULL };
+    static const gchar* const SILENT[] = { "python3", "-c", "import sys; sys.stderr.write('\\nNo module x\\n')", NULL };
     static const gchar* const NONE[] = { "/nonexistent/python3", "-c", "", NULL };
     g_string_truncate(l.log, 0);
     l.done = FALSE;
     ipynb_kernel_list(SILENT, NULL, NULL, on_listed, &l);
     g_assert_true(wait_listed(&l));
+    g_assert_cmpstr(l.message, ==, "No module x"); /* why, from its stderr */
     l.done = FALSE;
     ipynb_kernel_list(NONE, NULL, NULL, on_listed, &l);
     g_assert_false(l.done); /* in the main loop */
@@ -222,6 +226,7 @@ static void test_list(void) {
     }
     g_assert_false(l.done);
     g_object_unref(cancel);
+    g_free(l.message);
     g_string_free(l.log, TRUE);
 }
 

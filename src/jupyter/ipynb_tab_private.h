@@ -62,6 +62,8 @@ typedef struct {
     gchar* kernel_host;      /* the remote machine it runs on (over ssh), NULL: here */
     gchar* kernel_python;    /* the Python of the kernel last started ("": not Python) */
     gchar* kernel_env;       /* its virtual or conda environment ("": none) */
+    gchar* kernel_error;     /* why it could not start or stopped, until it runs again; or NULL */
+    gchar* kernel_details;   /* the bridge's last error output, or NULL */
     GtkWidget* kernel_button; /* the notebook's kernel; its menu chooses the kernel */
     GtkWidget* kernel_state;  /* the kernel's state (status bar) */
     GtkWidget* kernel_menu;   /* the box of that menu */

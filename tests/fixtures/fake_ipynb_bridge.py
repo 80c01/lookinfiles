@@ -44,8 +44,9 @@ for line in sys.stdin:
         count += 1
         emit("status", state="busy")
         emit("execute_input", id=cell, count=count)
-        if code == "quit":
-            sys.exit(0)
+        if code == "quit":  # with why on stderr, as a crash would
+            sys.stderr.write("Traceback (most recent call last):\n  ...\nRuntimeError: gone\n\n")
+            sys.exit(1)
         if code == "ask":
             waiting = cell
             emit("input_request", prompt="Name? ", password=False)
