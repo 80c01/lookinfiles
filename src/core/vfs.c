@@ -12,6 +12,7 @@
 typedef struct {
     gint refs; /* the list, the jobs */
     gchar* local;
+    gchar* key; /* local as local_key(): what paths are compared with */
     gchar* host;
     gchar* user;
     gint port;
@@ -36,6 +37,7 @@ static void mount_unref(Mount* m) {
     if (!g_atomic_int_dec_and_test(&m->refs)) return;
     sftp_client_free(m->client); /* NULL once closed on the thread */
     g_free(m->local);
+    g_free(m->key);
     g_free(m->host);
     g_free(m->user);
     g_free(m->identity);
@@ -74,6 +76,20 @@ static gchar* strip_slashes(const gchar* path) {
     return p;
 }
 
+/* A local path as compared with the mounts: on Windows '\\' is a separator
+ * too (g_build_filename() makes them), so it becomes '/'; without its
+ * trailing '/'. The part under a mount then is the remote path with '/'.
+ * Caller frees. */
+static gchar* local_key(const gchar* path) {
+    gchar* p = g_strdup(path != NULL ? path : "");
+#ifdef G_OS_WIN32
+    g_strdelimit(p, "\\", '/');
+#endif
+    gchar* key = strip_slashes(p);
+    g_free(p);
+    return key;
+}
+
 static gboolean under(const gchar* path, const gchar* prefix, const gchar** rest) {
     gsize n = strlen(prefix);
     if (strncmp(path, prefix, n) != 0 || (path[n] != '\0' && path[n] != '/')) return FALSE;
@@ -88,15 +104,18 @@ static gboolean under(const gchar* path, const gchar* prefix, const gchar** rest
 /* The mount path is in (a ref) and *rel what follows it. lock held. */
 static Mount* find_mount(const gchar* path, gchar** rel) {
     if (mounts == NULL || path == NULL) return NULL;
-    for (guint i = 0; i < mounts->len; i++) {
+    gchar* key = local_key(path);
+    Mount* found = NULL;
+    for (guint i = 0; i < mounts->len && found == NULL; i++) {
         Mount* m = mounts->pdata[i];
         const gchar* rest = NULL;
-        if (under(path, m->local, &rest)) {
+        if (under(key, m->key, &rest)) {
             if (rel != NULL) *rel = strip_slashes(rest);
-            return mount_ref(m);
+            found = mount_ref(m);
         }
     }
-    return NULL;
+    g_free(key);
+    return found;
 }
 
 /* On the thread: the client is closed; the last ref may go */
@@ -119,6 +138,7 @@ void vfs_mount(const gchar* local, const SshTarget* target, const gchar* remote_
     Mount* m = g_new0(Mount, 1);
     m->refs = 1;
     m->local = strip_slashes(local);
+    m->key = local_key(local);
     m->host = g_strdup(target->host);
     m->user = g_strdup(target->user);
     m->port = target->port;
@@ -128,7 +148,7 @@ void vfs_mount(const gchar* local, const SshTarget* target, const gchar* remote_
     if (mounts == NULL) mounts = g_ptr_array_new();
     for (guint i = 0; i < mounts->len; i++) {
         Mount* old = mounts->pdata[i];
-        if (strcmp(old->local, m->local) != 0) continue;
+        if (strcmp(old->key, m->key) != 0) continue;
         if (g_strcmp0(old->host, m->host) == 0 && g_strcmp0(old->user, m->user) == 0 && old->port == m->port &&
             g_strcmp0(old->identity, m->identity) == 0 && g_strcmp0(old->root, m->root) == 0) {
             g_mutex_unlock(&lock); /* the same: its connection goes on */
@@ -143,10 +163,10 @@ void vfs_mount(const gchar* local, const SshTarget* target, const gchar* remote_
 }
 
 void vfs_unmount(const gchar* local) {
-    gchar* l = strip_slashes(local);
+    gchar* l = local_key(local);
     g_mutex_lock(&lock);
     for (guint i = 0; mounts != NULL && i < mounts->len; i++) {
-        if (strcmp(((Mount*)mounts->pdata[i])->local, l) == 0) {
+        if (strcmp(((Mount*)mounts->pdata[i])->key, l) == 0) {
             drop_mount(i);
             break;
         }
