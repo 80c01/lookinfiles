@@ -5,6 +5,7 @@
 #ifdef HAVE_LIBSSH
 #include "core/ssh_link.h"
 #include "core/ssh_link_exec.h"
+#include "core/ssh_relay.h"
 #endif
 
 #include <glib/gstdio.h>
@@ -201,30 +202,42 @@ static void report_missing(const SshTarget* t) {
 }
 
 GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
-    if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX)) && missing_func != NULL) {
-        gboolean missing = FALSE;
+    gboolean force_batch = FALSE;
+    if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX))) {
 #ifdef HAVE_LIBSSH
         if (ssh_link_enabled()) {
             SshLink* link = ssh_link_lookup(t);
-            missing = (link == NULL);
-            if (link != NULL) ssh_link_unref(link);
+            if (link != NULL) {
+                GPtrArray* relay = ssh_relay_argv(link, (flags & SSH_ARGV_TTY) != 0);
+                ssh_link_unref(link);
+                if (relay != NULL) return relay;
+            } else {
+                if (missing_func != NULL) report_missing(t);
+                force_batch = TRUE;
+            }
         } else
 #endif
-        {
+        if (missing_func != NULL) {
             gchar* sock = ssh_session_control_path(t);
-            missing = (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS));
+            gboolean missing = (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS));
             g_free(sock);
+            if (missing) report_missing(t);
         }
-        if (missing) report_missing(t);
     }
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(argv, g_strdup(program != NULL ? program : SSH_DEFAULT_PROGRAM));
     GPtrArray* opts = ssh_session_options(t, flags);
+    gboolean has_batch = FALSE;
     for (guint i = 0; i < opts->len; i++) {
+        if (g_strcmp0(opts->pdata[i], "BatchMode=yes") == 0) has_batch = TRUE;
         g_ptr_array_add(argv, g_strdup("-o"));
         g_ptr_array_add(argv, g_strdup(opts->pdata[i]));
     }
     g_ptr_array_unref(opts);
+    if (force_batch && !has_batch) {
+        g_ptr_array_add(argv, g_strdup("-o"));
+        g_ptr_array_add(argv, g_strdup("BatchMode=yes"));
+    }
     if (flags & SSH_ARGV_MASTER) {
         /* No -M: after "-o ControlMaster=yes" it turns it into "ask", a
          * confirmation for every command sent through the master */

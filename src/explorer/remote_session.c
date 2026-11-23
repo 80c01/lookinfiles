@@ -6,10 +6,17 @@
 #include "core/ssh_askpass.h"
 #ifdef HAVE_LIBSSH
 #include "core/ssh_link.h"
+#include "core/ssh_relay.h"
 #endif
 #include "core/ssh_session.h"
 #include "core/vfs.h"
 #include "widgets/dialog.h"
+
+#include <string.h>
+
+#ifdef G_OS_WIN32
+#include <windows.h>
+#endif
 
 
 /* The master connection of a machine */
@@ -135,11 +142,27 @@ static void on_link_ask(SshLinkAsk* ask, SshLinkAskKind kind, const gchar* promp
 }
 #endif
 
-/* This program's path for SSH_ASKPASS, NULL when unknown. Caller frees. */
+/* This program's path for SSH_ASKPASS and the SSH channel relay, NULL when
+ * unknown. Caller frees. */
 static gchar* program_path(const gchar* argv0) {
-    gchar* exe = g_file_read_link("/proc/self/exe", NULL);
+    gchar* exe = NULL;
+#ifdef G_OS_WIN32
+    wchar_t wpath[MAX_PATH];
+    DWORD n = GetModuleFileNameW(NULL, wpath, MAX_PATH);
+    if (n > 0 && n < MAX_PATH) {
+        exe = g_utf16_to_utf8((const gunichar2*)wpath, n, NULL, NULL, NULL);
+    }
+#else
+    exe = g_file_read_link("/proc/self/exe", NULL);
+#endif
     if (exe == NULL && argv0 != NULL) {
-        exe = g_path_is_absolute(argv0) ? g_strdup(argv0) : g_find_program_in_path(argv0);
+        if (g_path_is_absolute(argv0)) {
+            exe = g_strdup(argv0);
+        } else if (strchr(argv0, G_DIR_SEPARATOR) != NULL) {
+            exe = g_canonicalize_filename(argv0, NULL);
+        } else {
+            exe = g_find_program_in_path(argv0);
+        }
     }
     return exe;
 }
@@ -151,6 +174,9 @@ void remote_session_init(AppData* app, const gchar* argv0) {
     ssh_session_cleanup_stale();
     ssh_session_on_master_missing(on_master_missing, app);
     gchar* exe = program_path(argv0);
+#ifdef HAVE_LIBSSH
+    ssh_relay_set_program(exe);
+#endif
     GError* error = NULL;
     if (exe == NULL || !ssh_askpass_serve(exe, on_ask, app, &error)) {
         /* ssh can still use keys and the agent; a password just cannot be asked */
@@ -165,6 +191,10 @@ void remote_session_shutdown(void) {
     ssh_session_on_master_missing(NULL, NULL);
     g_clear_pointer(&masters, g_hash_table_destroy);
     g_clear_pointer(&connecting, g_hash_table_destroy);
+#ifdef HAVE_LIBSSH
+    ssh_relay_stop();
+    ssh_relay_set_program(NULL);
+#endif
     ssh_askpass_stop();
 }
 
@@ -227,12 +257,26 @@ static void on_master_ready(SshMaster* m, gboolean ok, const gchar* text, gpoint
 }
 
 #ifdef HAVE_LIBSSH
+static void maybe_stop_relay(void) {
+    if (masters != NULL) {
+        GHashTableIter it;
+        gpointer value;
+        g_hash_table_iter_init(&it, masters);
+        while (g_hash_table_iter_next(&it, NULL, &value)) {
+            MasterEntry* e = value;
+            if (e->link != NULL) return;
+        }
+    }
+    ssh_relay_stop();
+}
+
 static void on_link_ready(SshLink* link, gboolean ok, const gchar* text, gpointer data) {
     MasterEntry* e = data;
     if (!ok) {
         e->link = NULL;
         ssh_link_close(link);
         ssh_link_unref(link);
+        maybe_stop_relay();
     }
     entry_finish_ready(e, ok, text);
 }
@@ -265,6 +309,11 @@ static MasterEntry* open_master(RemoteMachine* rm, gboolean explicit) {
         if (e->link != NULL) {
             ssh_link_close(e->link); /* it dropped */
             ssh_link_unref(e->link);
+        }
+        GError* rerr = NULL;
+        if (!ssh_relay_serve(&rerr)) {
+            g_debug("ssh relay not available: %s", rerr != NULL ? rerr->message : "");
+            g_clear_error(&rerr);
         }
         e->link = ssh_link_connect(&t, on_link_ask, session_app, on_link_ready, e);
         return e;
@@ -386,6 +435,9 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mo
 void remote_session_close(RemoteMachine* rm) {
     if (rm != NULL && rm->mount_point != NULL) vfs_unmount(rm->mount_point);
     if (masters != NULL && rm != NULL && rm->id != NULL) g_hash_table_remove(masters, rm->id);
+#ifdef HAVE_LIBSSH
+    maybe_stop_relay();
+#endif
 }
 
 void remote_session_files_open(RemoteMachine* rm) {

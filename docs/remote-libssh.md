@@ -2,10 +2,11 @@
 
 Status: **in progress**. Steps 1 and 2 are done and tested by the user on
 Windows (files, previews, Git tab, System Monitor: one password, no
-`ssh.exe`). Part of step 5 is done too (see there). Next: step 3; kernels,
-language servers and terminals still start `ssh.exe`.
+`ssh.exe`). Step 3 is done (pending Windows testing): kernels and language
+servers now go through the loopback relay over the link; terminals still
+start `ssh.exe` (step 4). Part of step 5 is done too (see there).
 
-### Where things are (read before step 3)
+### Where things are (read before step 4)
 
 | Module                | What it does                                                      |
 | --------------------- | ----------------------------------------------------------------- |
@@ -16,6 +17,8 @@ language servers and terminals still start `ssh.exe`.
 | `core/ssh_trace`      | debug log to the file named by `LOOKINFILES_SSH_LOG`              |
 | `core/ssh_link_exec`  | `ssh_link_exec()`: a command's stdout, stderr, status             |
 | `core/ssh_process`    | `SshProcess`: a streamed command, `GSubprocess` or channel        |
+| `core/ssh_relay`      | loopback TCP relay server + single-use ticket registry            |
+| `core/ssh_relay_helper` | `--ssh-channel` helper process (stdio <-> framed relay socket)  |
 | `core/ssh_session`    | dispatch: link or `ssh` program (`ssh_exec_*`, `ssh_spawn`, argv) |
 | `core/sftp_client`    | `sftp_client_spawn()`: an `sftp` subsystem channel on the link    |
 | `explorer/remote_session` | opens / closes the link, its prompts (`on_link_ask()`)        |
@@ -151,7 +154,7 @@ The link must never repeat this: one channel's full buffer stops reading
    few callers (`git_mirror`, `deep_search`, `disk_scan`) adapt.
    Result: System Monitor, Git badges, search, Disk Usage: no more prompts,
    and a channel opens in milliseconds instead of a handshake.
-3. **Programs that want a command line** (kernels, language servers):
+3. **Programs that want a command line** (done; kernels, language servers):
    they start a local process from `ssh_session_argv()` /
    `vfs_command_argv()`. Give them a relay instead of `ssh.exe`:
    `lookinfiles --ssh-channel <port> <id> <command>`, which copies its
@@ -183,8 +186,10 @@ Settled here so that every step is written the same way.
 - **Modules and layers.** `SshTarget` is in the header-only
   `core/ssh_target.h`. Rules in `tools/check_layers.sh` (now):
   `ssh_channel:i18n`, `ssh_link:ssh_target,ssh_channel,ssh_watch,ssh_trace,i18n`,
-  `ssh_link_exec:ssh_link,ssh_channel,i18n`, `ssh_process:ssh_channel`,
-  `ssh_session:...,ssh_link,ssh_channel,ssh_link_exec,ssh_process`. A new
+  `ssh_link_exec:ssh_link,ssh_channel,i18n`,
+  `ssh_relay:ssh_target,ssh_link,ssh_channel,ssh_trace,app_paths,i18n`,
+  `ssh_relay_helper:ssh_relay,app_paths`, `ssh_process:ssh_channel`,
+  `ssh_session:...,ssh_link,ssh_channel,ssh_link_exec,ssh_process,ssh_relay`. A new
   module gets its rule there and its objects in `LIBSSH_SRCS` /
   `LIBSSH_OBJS` of the Makefile when it needs libssh. `ssh_link` never includes
   `ssh_session` nor `ssh_askpass` (both would make a cycle): the dispatch
@@ -238,9 +243,11 @@ Settled here so that every step is written the same way.
 
 ### Relay protocol (steps 3 and 4)
 
-- **Module.** `core/ssh_relay` (layer 1), both sides: the server in the
-  instance and the helper. Rule:
-  `ssh_relay:ssh_target,ssh_link,ssh_channel,ssh_trace,app_paths,i18n`;
+- **Module.** `core/ssh_relay` + `core/ssh_relay_helper` (layer 1, sharing
+  `core/ssh_relay.h` to stay under the 1 200-line limit): the server in the
+  instance and the helper. Rules:
+  `ssh_relay:ssh_target,ssh_link,ssh_channel,ssh_trace,app_paths,i18n`,
+  `ssh_relay_helper:ssh_relay,app_paths`;
   `ssh_session` includes `ssh_relay` (for the argv), never the opposite.
   `main.c` checks `ssh_relay_is_helper(argc, argv)` before any GTK call and
   returns `ssh_relay_helper_main(argc, argv)`, as it does for askpass. The
@@ -286,14 +293,15 @@ Settled here so that every step is written the same way.
   Accepting, reading and writing are async, and no write ever blocks.
 - **Handshake.** The relay connects and sends four text lines:
   `LOOKIN-RELAY 1`, the ticket, `<rows> <cols>` (the size of its
-  terminal, `0 0` without a tty), then the command (its arguments after
-  `<id>` joined by spaces, as ssh does; an empty line: a login shell,
-  `shell` channel). The command line has no newline (the callers' commands
-  are one shell line); one with a newline is refused (`ERR`). The instance compares the ticket in
-  constant time (as `same_secret()`), consumes it, opens the channel
-  (`exec`, or `pty` of that size then `exec`/`shell`), and answers one line:
-  `OK` or `ERR <message>` (then closes). Any other first line, a bad,
-  used or expired ticket: `ERR` and close.
+  terminal, `0 0` without a tty), then the command (`g_strescape()`d as in
+  `ssh_askpass.c`, since `ipynb_run.c` passes the multi-line
+  `ipynb_bridge.py` script; its arguments after `<id>` joined by spaces, as
+  ssh does; an empty line: a login shell, `shell` channel). The instance
+  compares the ticket in constant time (as `same_secret()`), consumes it,
+  opens the channel (`exec`, or `pty` of that size then `exec`/`shell`),
+  and answers one line: `OK` (or `OK tty` when the ticket requested a PTY)
+  or `ERR <message>` (then closes). Any other first line, a bad, used or
+  expired ticket: `ERR` and close.
 - **Frames** after `OK`, both ways: 1 byte type, 4 bytes length (big
   endian), payload of at most 32 KiB.
   - relay to instance: `I` stdin data; `E` stdin closed (empty); `W`

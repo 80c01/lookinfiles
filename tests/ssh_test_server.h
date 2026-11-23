@@ -219,6 +219,15 @@ static int on_srv_exec_req(ssh_session s, ssh_channel ch, const char* cmd, void*
         c->kind = SRV_CH_HANG;
         return 0;
     }
+    if (strncmp(cmd, "echo-cmd:", 9) == 0) {
+        const char* rest = cmd + 9;
+        ssh_channel_write(ch, rest, (uint32_t)strlen(rest));
+        ssh_channel_send_eof(ch);
+        ssh_channel_request_send_exit_status(ch, 0);
+        ssh_channel_close(ch);
+        c->closing = TRUE;
+        return 0;
+    }
     return 1;
 }
 

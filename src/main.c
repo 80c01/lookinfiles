@@ -48,6 +48,9 @@
 #include "explorer/remote_mounts.h"
 #include "explorer/remote_session.h"
 #include "core/ssh_askpass.h"
+#ifdef HAVE_LIBSSH
+#include "core/ssh_relay.h"
+#endif
 #include "games/games.h"
 #include "explorer/files_menu.h"
 #include "workspace/session.h"
@@ -283,6 +286,12 @@ int main(int argc, char** argv) {
     if (ssh_askpass_is_helper(argc, argv)) {
         return ssh_askpass_helper_main(argc, argv);
     }
+#ifdef HAVE_LIBSSH
+    /* Started as an SSH channel relay: copy stdio to a channel of the instance */
+    if (ssh_relay_is_helper(argc, argv)) {
+        return ssh_relay_helper_main(argc, argv);
+    }
+#endif
     profile_init(); /* LOOKIN_PROFILE: the origin of the start-up timings */
     tune_malloc();
     i18n_init(argc > 0 ? argv[0] : NULL); /* before any message is printed */
