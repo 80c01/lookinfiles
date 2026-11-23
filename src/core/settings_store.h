@@ -94,6 +94,7 @@ typedef struct {
     gboolean preview_tagbar; /* previews with headings show the tagbar */
     gboolean minimap;      /* editor tabs, the preview and Help show a minimap */
     gboolean update_preview; /* editor tabs update the preview (saves, selection) */
+    gboolean task_save_first; /* F7 saves the project's edited files before its task */
     SettingsPanel auto_terminal; /* terminal panel of the Auto layout */
     SettingsPanel auto_preview;  /* preview panel of the Auto layout */
     SettingsPanel auto_tagbar;   /* editor tagbar of the Auto layout */

@@ -99,6 +99,7 @@ latex_root:
 latex_synctex:
 task_parse:
 task_def:
+task_choice:task_def,app_paths
 task_config:task_def,i18n
 task_detect:task_def,task_config
 preview_cache:

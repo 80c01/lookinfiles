@@ -135,7 +135,7 @@ tous d’eux-mêmes.
 | Touche | Action |
 |---|---|
 | `F7` | Lance la tâche choisie en dernier dans ce projet (au début la première de la liste : `make`, `cargo build`, `npm run build`…) ; depuis l’onglet Build, la tâche qu’il montre |
-| `Shift+F7` | Choisit la tâche dans une liste (taper pour filtrer, `Enter` la lance) ; elle devient celle que `F7` lance dans ce projet |
+| `Shift+F7` | Choisit la tâche dans une liste (taper pour filtrer, `Enter` la lance) ; elle devient celle que `F7` lance dans ce projet, aussi aux sessions suivantes |
 | `Ctrl+F7` | Arrête la tâche et ce qu’elle a lancé (tué au bout de trois secondes) |
 | `F8` / `Shift+F8` | Erreur ou avertissement suivant / précédent de l’onglet Build, ouvert dans un onglet d’édition (tant que l’onglet Build est ouvert ; sinon les diagnostics du fichier) |
 
@@ -152,7 +152,10 @@ programme comme source ; il ne s’ouvre pas tout seul : `Ctrl+Shift+M`
 depuis un onglet d’édition) et parcourus avec les touches
 des diagnostics, jusqu’à la tâche suivante ; sur une ligne où le serveur de
 langage signale le même genre de problème, seul celui du serveur est gardé.
-La tâche ne reçoit
-aucune entrée, et les fichiers non enregistrés ne le sont pas avant (la
-ligne de message dit combien il y en a). Les tâches ne tournent pas encore
-sur les machines distantes.
+Avant une tâche, les onglets modifiés des fichiers du projet sont
+enregistrés, pour qu’elle compile ce que vous voyez (un fichier changé sur
+le disque entre-temps demande d’abord ; **Préférences → Éditeur →
+Enregistrer les fichiers du projet avant une tâche** le désactive, la ligne
+de message dit alors combien restent non enregistrés). La tâche ne reçoit
+aucune entrée. Les tâches ne tournent pas encore sur les machines
+distantes.

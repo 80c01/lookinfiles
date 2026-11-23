@@ -570,6 +570,10 @@ Layers, from bottom to top
   carriage return dropped, repeats kept once.
 - `task_def` — a task (`TaskDef`): label, the command of a named task,
   argv, folder, environment added, matcher.
+- `task_choice` — the task chosen last in each project (Shift+F7), kept in
+  `tasks.ini` of the configuration folder: a group per project folder
+  (label, folder, argv, env); `task_run` loads it at first use and writes
+  it on each choice.
 - `task_config` — the project's own tasks in `.lookinfiles/tasks.toml`: a
   small TOML reader (`[[task]]` tables, strings, booleans, arrays and
   inline tables of strings) with the line of each mistake; a `command` runs
@@ -1589,7 +1593,9 @@ Layers, from bottom to top
   list) run with `GSubprocess` in its own process group (Stop reaches what
   it started: SIGTERM, then SIGKILL), no input, stdout and stderr merged
   and read asynchronously in 64 KiB pieces, each line given to
-  `task_parse` and to the Build page; at the end its messages with a file
+  `task_parse` and to the Build page; before it, the project's edited tabs
+  are saved (`settings.task_save_first`, through `editor_watch_before_save()`
+  and `editor_tab_write()`); at the end its messages with a file
   go to `code_intel_set_task_diagnostics()` (cleared when the next task
   starts). One task at a time (a new one drops
   the running one); not on remote machines yet.

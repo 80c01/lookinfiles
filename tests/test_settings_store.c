@@ -28,6 +28,7 @@ static void test_missing_file(void) {
     g_assert_false(s.preview_tagbar);
     g_assert_true(s.minimap);
     g_assert_true(s.update_preview);
+    g_assert_true(s.task_save_first);
     g_assert_cmpint(s.auto_terminal, ==, SETTINGS_PANEL_KEEP);
     g_assert_cmpint(s.auto_preview, ==, SETTINGS_PANEL_KEEP);
     g_assert_cmpint(s.auto_tagbar, ==, SETTINGS_PANEL_KEEP);
@@ -61,6 +62,7 @@ static void test_save_load(void) {
     s.preview_tagbar = TRUE;
     s.minimap = FALSE;
     s.update_preview = FALSE;
+    s.task_save_first = FALSE;
     s.auto_terminal = SETTINGS_PANEL_SHOW;
     s.auto_preview = SETTINGS_PANEL_HIDE;
     s.auto_tagbar = SETTINGS_PANEL_HIDE;
@@ -92,6 +94,7 @@ static void test_save_load(void) {
     g_assert_true(r.preview_tagbar);
     g_assert_false(r.minimap);
     g_assert_false(r.update_preview);
+    g_assert_false(r.task_save_first);
     g_assert_cmpint(r.auto_terminal, ==, SETTINGS_PANEL_SHOW);
     g_assert_cmpint(r.auto_preview, ==, SETTINGS_PANEL_HIDE);
     g_assert_cmpint(r.auto_tagbar, ==, SETTINGS_PANEL_HIDE);

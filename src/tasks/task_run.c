@@ -4,6 +4,10 @@
 #include "core/i18n.h"
 #include "core/vfs.h"
 #include "code/code_intel.h"
+#include "editor/editor.h"
+#include "editor/editor_modes.h"
+#include "editor/editor_watch.h"
+#include "tasks/task_choice.h"
 #include "tasks/task_detect.h"
 #include "tasks/task_page.h"
 #include "tasks/task_parse.h"
@@ -45,6 +49,7 @@ typedef struct Run {
 struct TaskRun {
     GHashTable* chosen;    /* project folder -> TaskDef* chosen last there */
     TaskDef* last;         /* the task run last (Run Again) */
+    gchar* last_project;   /* its project's folder */
     Run* current;          /* the task running, or NULL */
     GCancellable* finding; /* the search for the project's tasks, or NULL */
 };
@@ -52,7 +57,9 @@ struct TaskRun {
 static struct TaskRun* run_state(AppData* app) {
     if (app->task_run == NULL) {
         app->task_run = g_new0(struct TaskRun, 1);
-        app->task_run->chosen = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)task_def_free);
+        gchar* path = task_choice_path();
+        app->task_run->chosen = task_choice_load(path); /* the choices of the last sessions */
+        g_free(path);
     }
     return app->task_run;
 }
@@ -284,17 +291,49 @@ static void child_setup(gpointer data) {
 }
 #endif
 
+/* tab edits a file under dir and is not saved */
+static gboolean unsaved_tab_under(const EditorTab* tab, const gchar* dir) {
+    if (tab == NULL || tab->path == NULL || tab->buffer == NULL || tab->is_buffer) return FALSE;
+    if (!gtk_text_buffer_get_modified(tab->buffer)) return FALSE;
+    gsize len = strlen(dir);
+    return strncmp(tab->path, dir, len) == 0 && tab->path[len] == G_DIR_SEPARATOR;
+}
+
 /* Unsaved editor tabs of files under dir */
 static guint unsaved_under(AppData* app, const gchar* dir) {
     guint n = 0;
-    gsize len = strlen(dir);
     for (GList* l = app->editors; l != NULL; l = l->next) {
-        EditorTab* tab = l->data;
-        if (tab == NULL || tab->path == NULL || tab->buffer == NULL || tab->is_buffer) continue;
-        if (!gtk_text_buffer_get_modified(tab->buffer)) continue;
-        if (strncmp(tab->path, dir, len) == 0 && tab->path[len] == G_DIR_SEPARATOR) n++;
+        if (unsaved_tab_under(l->data, dir)) n++;
     }
     return n;
+}
+
+/* Save the edited tabs of files under dir, as Ctrl+S does (a file changed
+ * on disk meanwhile asks first) without moving the focus; returns how many
+ * were saved */
+static guint save_under(AppData* app, const gchar* dir) {
+    guint saved = 0;
+    GList* tabs = g_list_copy(app->editors); /* a reload may change the list */
+    for (GList* l = tabs; l != NULL; l = l->next) {
+        EditorTab* tab = l->data;
+        /* The views of a file share its buffer: saved once */
+        if (g_list_find(app->editors, tab) == NULL || !unsaved_tab_under(tab, dir)) continue;
+        if (editor_watch_before_save(app, tab) != EDITOR_WATCH_SAVE_OK) continue;
+        GError* error = NULL;
+        if (editor_tab_write(tab, tab->path, &error)) {
+            gtk_text_buffer_set_modified(tab->buffer, FALSE);
+            editor_tab_label_update(tab);
+            saved++;
+        } else {
+            gchar* msg = g_strdup_printf(_("Cannot save %s: %s"), tab->name, error->message);
+            notice(app, msg);
+            g_free(msg);
+            g_error_free(error);
+        }
+    }
+    g_list_free(tabs);
+    if (saved > 0) app_emit(app, APP_EVENT_FILES_CHANGED);
+    return saved;
 }
 
 /* Stop the running task and leave it: its page says it was stopped */
@@ -310,11 +349,17 @@ static void drop_current(AppData* app, gboolean quiet) {
     run_unref(r);
 }
 
-static void start_run(AppData* app, const TaskDef* def) {
+/* Run def, a task of the project in folder project */
+static void start_run(AppData* app, const TaskDef* def, const gchar* project) {
     struct TaskRun* st = run_state(app);
     drop_current(app, FALSE);
     task_def_free(st->last);
     st->last = task_def_copy(def);
+    if (st->last_project != project) {
+        g_free(st->last_project);
+        st->last_project = g_strdup(project);
+    }
+    guint saved = app->settings.task_save_first ? save_under(app, project) : 0;
     code_intel_set_task_diagnostics(app, NULL); /* the last task's messages are old now */
 
     GtkWidget* page = task_page_begin(app, def->label, def->dir);
@@ -386,10 +431,13 @@ static void start_run(AppData* app, const TaskDef* def) {
     run_ref(r);
     read_next(r);
 
-    guint unsaved = unsaved_under(app, def->dir);
+    guint unsaved = unsaved_under(app, project);
     gchar* msg = unsaved > 0 ? g_strdup_printf(ngettext("Running %1$s… (%2$u unsaved file)",
                                                          "Running %1$s… (%2$u unsaved files)", unsaved),
                                                def->label, unsaved)
+                 : saved > 0 ? g_strdup_printf(ngettext("Running %1$s… (%2$u file saved)",
+                                                        "Running %1$s… (%2$u files saved)", saved),
+                                               def->label, saved)
                              : g_strdup_printf(_("Running %s…"), def->label);
     notice(app, msg);
     g_free(msg);
@@ -488,10 +536,21 @@ static void run_selected(Picker* p) {
     if (c == NULL) return;
     AppData* app = p->app;
     TaskDef* def = task_def_copy(c->def);
-    g_hash_table_replace(run_state(app)->chosen, g_strdup(p->project), task_def_copy(def));
+    gchar* project = g_strdup(p->project);
+    struct TaskRun* st = run_state(app);
+    g_hash_table_replace(st->chosen, g_strdup(project), task_def_copy(def));
+    /* Kept for the next sessions */
+    gchar* path = task_choice_path();
+    GError* error = NULL;
+    if (!task_choice_save(path, st->chosen, &error)) {
+        g_printerr("[ Task choice not saved: %s ]\n", error->message);
+        g_error_free(error);
+    }
+    g_free(path);
     app_dialog_destroy(APP_DIALOG(p->dialog)); /* frees p */
-    start_run(app, def);
+    start_run(app, def, project);
     task_def_free(def);
+    g_free(project);
 }
 
 static void on_response(AppDialog* dialog, gint response, gpointer data) {
@@ -706,9 +765,10 @@ static void on_found(GObject* source, GAsyncResult* result, gpointer data) {
     const TaskDef* chosen = g_hash_table_lookup(st->chosen, job->project);
     const TaskDef* def = g_ptr_array_index(job->tasks, 0);
     for (guint i = 0; chosen != NULL && i < job->tasks->len; i++) {
-        if (task_def_equal(g_ptr_array_index(job->tasks, i), chosen)) def = chosen;
+        /* The task as found now: its matcher too, which is not kept */
+        if (task_def_equal(g_ptr_array_index(job->tasks, i), chosen)) def = g_ptr_array_index(job->tasks, i);
     }
-    start_run(app, def);
+    start_run(app, def, job->project);
 }
 
 /* The folder whose project F7 builds: the focused editor tab's file's, else
@@ -755,7 +815,9 @@ static void run_last(AppData* app) {
         return;
     }
     TaskDef* def = task_def_copy(st->last);
-    start_run(app, def);
+    gchar* project = g_strdup(st->last_project);
+    start_run(app, def, project);
+    g_free(project);
     task_def_free(def);
 }
 
@@ -794,6 +856,7 @@ void task_run_free(AppData* app) {
     }
     drop_current(app, TRUE);
     task_def_free(st->last);
+    g_free(st->last_project);
     g_hash_table_unref(st->chosen);
     g_free(st);
     app->task_run = NULL;

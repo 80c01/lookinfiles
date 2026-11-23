@@ -129,7 +129,7 @@ The builds use every processor: `<n>` is their number for `make` and
 | Key | Action |
 |---|---|
 | `F7` | Run the task chosen last in this project (at first the first one of the list: `make`, `cargo build`, `npm run build`...); from the Build tab, the task it shows |
-| `Shift+F7` | Choose the task in a list (type to filter, `Enter` runs it); it becomes the one `F7` runs in this project |
+| `Shift+F7` | Choose the task in a list (type to filter, `Enter` runs it); it becomes the one `F7` runs in this project, also in the next sessions |
 | `Ctrl+F7` | Stop the task and what it started (killed after three seconds) |
 | `F8` / `Shift+F8` | Next / previous error or warning of the Build tab, opened in an editor tab (while the Build tab is open; otherwise the diagnostics of the file) |
 
@@ -145,6 +145,9 @@ counted and listed in the **Problems** tab (the program as their source;
 it does not open by itself: `Ctrl+Shift+M` from an editor tab) and stepped
 through with the keys of the diagnostics, until
 the next task; on a line where the language server reports the same kind of
-problem, only the server's is kept. The task gets no input, and files left unsaved are not saved first
-(the message line says how many there are). Tasks do not run on remote
-machines yet.
+problem, only the server's is kept. Before a task, the edited tabs of the
+project's files are saved, so that it builds what you see (a file changed
+on disk meanwhile asks first; **Preferences → Editor → Save the project's
+files before a task** turns it off, the message line then says how many are
+left unsaved). The task gets no input. Tasks do not run on remote machines
+yet.

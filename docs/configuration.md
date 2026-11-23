@@ -14,6 +14,7 @@ Settings and data are kept in `~/.config/lookinfiles/`
 | `session.ini` | The workspaces of the last session (folders, expanded folders, selection, sort, explorer view (files, bookmarks, notes, remote), open files and notes (text and Canvas), browser, Video and Jupyter tabs, and their notebooks and splits, panels and split sizes, terminal panes), reopened by a launch without argument |
 | `recent.ini` | Recent folders and files (`Alt+R`, and first in `Ctrl+P` when nothing is typed) |
 | `lsp.ini` | Language server commands for code navigation (optional, see below) |
+| `tasks.ini` | The task chosen last in each project (`Shift+F7`), run by `F7`: a group per project folder |
 | `jupyter.ini` | The Python chosen for the notebooks of a folder and of its subfolders (**Python Interpreter…** of a notebook's kernel menu): a group per folder, `python=<path>` |
 | `settings.ini` | Your preferences (written by the Preferences dialog, `Ctrl+,`, see [Preferences](#preferences)) |
 | `theme.ini` | The chosen theme and your fonts (written by Preferences → Appearance, `Alt+T`) |
@@ -54,6 +55,9 @@ color-column=81    # default; 0: no line
 tagbar=false       # new code and Markdown tabs show the tagbar
 minimap=true       # editor tabs, the preview and Help show the minimap
 update-preview=true # saving, selecting or focusing an editor tab shows its file in the preview
+
+[Tasks]
+save-first=true    # F7 saves the edited files of the project before its task (default)
 
 [Preview]
 tagbar=false       # previews with headings or symbols show the tagbar (o in the preview; new workspaces)

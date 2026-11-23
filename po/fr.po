@@ -13830,6 +13830,18 @@ msgstr "une clé avant le premier [[task]]"
 msgid "Tasks file left out: %s"
 msgstr "Fichier de tâches ignoré : %s"
 
+msgid "Save the project's files _before a task (F7)"
+msgstr "Enregistrer les fichiers du projet _avant une tâche (F7)"
+
+msgid "F7 and Shift+F7 first save the edited tabs of files under the task's project, so that it builds what you see"
+msgstr "F7 et Shift+F7 enregistrent d’abord les onglets modifiés des fichiers du projet de la tâche, pour qu’elle compile ce que vous voyez"
+
+#, c-format
+msgid "Running %1$s… (%2$u file saved)"
+msgid_plural "Running %1$s… (%2$u files saved)"
+msgstr[0] "%1$s en cours… (%2$u fichier enregistré)"
+msgstr[1] "%1$s en cours… (%2$u fichiers enregistrés)"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 
