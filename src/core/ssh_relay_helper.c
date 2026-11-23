@@ -390,6 +390,42 @@ static gpointer helper_win_resize_thread(gpointer data) {
     return NULL;
 }
 
+#define CONSOLE_UNITS 4096 /* UTF-16 units per console read: at most 3 UTF-8 bytes each */
+
+/* Read the console as UTF-16 and give UTF-8 in out (CONSOLE_UNITS * 3
+ * bytes at least): ReadFile() in the UTF-8 code page gives NUL bytes for
+ * non-ASCII keys on many Windows versions (an accent typed in the terminal
+ * would be lost). A high surrogate at the end waits in *pending for its
+ * pair. The byte count (0: nothing yet), -1 on error. */
+static gssize read_console_utf8(HANDLE h, gunichar2* pending, guint8* out) {
+    gunichar2 w[CONSOLE_UNITS + 1];
+    gsize start = 0;
+    if (*pending != 0) {
+        w[0] = *pending;
+        start = 1;
+        *pending = 0;
+    }
+    DWORD n = 0;
+    if (!ReadConsoleW(h, w + start, CONSOLE_UNITS, &n, NULL)) return -1;
+    gsize units = start + n;
+    if (units > 0 && w[units - 1] >= 0xD800 && w[units - 1] <= 0xDBFF) {
+        *pending = w[units - 1];
+        units--;
+    }
+    gsize len = 0;
+    for (gsize i = 0; i < units; i++) {
+        gunichar c = w[i];
+        if (c >= 0xD800 && c <= 0xDBFF && i + 1 < units && w[i + 1] >= 0xDC00 && w[i + 1] <= 0xDFFF) {
+            c = 0x10000 + ((c - 0xD800) << 10) + (w[i + 1] - 0xDC00);
+            i++;
+        } else if (c >= 0xD800 && c <= 0xDFFF) {
+            c = 0xFFFD; /* a lone surrogate */
+        }
+        len += (gsize)g_unichar_to_utf8(c, (gchar*)out + len);
+    }
+    return (gssize)len;
+}
+
 static gpointer helper_stdin_thread(gpointer data) {
     HelperIo* io = data;
     HANDLE dup = NULL;
@@ -403,10 +439,19 @@ static gpointer helper_stdin_thread(gpointer data) {
     DWORD cmode = 0;
     gboolean is_console = (hin != NULL && hin != INVALID_HANDLE_VALUE && GetConsoleMode(hin, &cmode));
     guint8 buf[RELAY_MAX_FRAME];
+    G_STATIC_ASSERT(CONSOLE_UNITS * 4 <= RELAY_MAX_FRAME); /* a surrogate pair: 2 units, 4 bytes */
+    gunichar2 pending = 0;
     guint64 total = 0;
     while (!g_atomic_int_get(&io->stop)) {
         DWORD nread = 0;
-        BOOL ok = ReadFile(hin, buf, sizeof buf, &nread, NULL);
+        BOOL ok;
+        if (is_console) {
+            gssize got = read_console_utf8(hin, &pending, buf);
+            ok = got >= 0;
+            nread = got > 0 ? (DWORD)got : 0;
+        } else {
+            ok = ReadFile(hin, buf, sizeof buf, &nread, NULL);
+        }
         if (g_atomic_int_get(&io->stop)) break;
         if (ok && nread > 0) {
             total += nread;

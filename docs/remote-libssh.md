@@ -199,7 +199,10 @@ The link must never repeat this: one channel's full buffer stops reading
      both console code pages are set to `CP_UTF8`, `Ctrl+C` is ignored
      locally so `0x03` reaches the remote shell, and all settings are
      saved and restored on exit. Output writes use `WriteFile()` via
-     `std_handle()`, and 0-byte console reads do not send EOF.
+     `std_handle()`; a console is read with `ReadConsoleW()` and converted
+     to UTF-8 (`ReadFile()` in the UTF-8 code page gives NUL bytes for
+     non-ASCII keys on many Windows versions), and 0-byte console reads do
+     not send EOF.
 5. **Switch.** Done: on Windows the link is used when built with libssh,
    Linux keeps the OpenSSH master, `LOOKINFILES_SSH_LIBSSH` selects either
    (`ssh_link_enabled()`); `ssh_session_shares_connection()` (master or
