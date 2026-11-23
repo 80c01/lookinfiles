@@ -559,13 +559,15 @@ static void test_session_argv_dispatch(void) {
     g_ptr_array_unref(argv);
     ssh_session_on_master_missing(NULL, NULL);
 
-    /* 4. Non-private runtime directory (app_runtime_dir() returns NULL) -> falls back to ssh */
+    /* 4. Non-private runtime directory (app_runtime_dir() returns NULL) -> falls back to ssh,
+     * never asking (BatchMode=yes): a program restarted in a loop must not prompt each time */
     gchar* rdir = app_runtime_dir();
     g_assert_nonnull(rdir);
     g_assert_cmpint(chmod(rdir, 0755), ==, 0);
     g_assert_null(app_runtime_dir());
     argv = ssh_session_argv(&f.target, 0);
     g_assert_cmpstr(argv->pdata[0], ==, "ssh");
+    g_assert_true(has_arg(argv, "BatchMode=yes"));
     g_ptr_array_unref(argv);
     g_assert_cmpint(chmod(rdir, 0700), ==, 0);
     g_free(rdir);

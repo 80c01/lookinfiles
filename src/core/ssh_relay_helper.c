@@ -307,7 +307,25 @@ gboolean ssh_relay_is_helper(int argc, char** argv) {
     return argc >= 4 && argv != NULL && g_strcmp0(argv[1], "--ssh-channel") == 0;
 }
 
+static int helper_run(int argc, char** argv);
+
 int ssh_relay_helper_main(int argc, char** argv) {
+#ifdef G_OS_WIN32
+    /* main()'s argv is in the ANSI code page: an accent in the command (a
+     * folder name) would reach the server as invalid UTF-8. The wide
+     * command line, as UTF-8, is what ssh.exe gets too. */
+    gchar** wargv = g_win32_get_command_line();
+    int rc = helper_run((int)g_strv_length(wargv), wargv);
+    g_strfreev(wargv);
+    (void)argc;
+    (void)argv;
+    return rc;
+#else
+    return helper_run(argc, argv);
+#endif
+}
+
+static int helper_run(int argc, char** argv) {
     if (!ssh_relay_is_helper(argc, argv)) {
         fprintf(stderr, "lookinfiles relay: bad arguments\n");
         return 255;
@@ -472,20 +490,27 @@ int ssh_relay_helper_main(int argc, char** argv) {
     /* Stop stdin thread cleanly */
     g_atomic_int_set(&io.stop, 1);
 #ifdef G_OS_WIN32
-    for (int tries = 0; tries < 50; tries++) {
+    gboolean stdin_done = io.stdin_done_event == NULL;
+    for (int tries = 0; tries < 50 && !stdin_done; tries++) {
         g_mutex_lock(&io.win_mu);
         if (io.stdin_thread_handle != NULL) CancelSynchronousIo(io.stdin_thread_handle);
         g_mutex_unlock(&io.win_mu);
-        if (io.stdin_done_event == NULL ||
-            WaitForSingleObject(io.stdin_done_event, 10) == WAIT_OBJECT_0) {
-            break;
-        }
+        stdin_done = WaitForSingleObject(io.stdin_done_event, 10) == WAIT_OBJECT_0;
+    }
+    if (resize_th != NULL) g_thread_join(resize_th);
+    if (restore_console) SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), saved_mode);
+    if (!stdin_done) {
+        /* Its ReadFile() could not be cancelled: never wait for it (the
+         * kernel or language server would seem to hang); the process ends
+         * with its exit status, which ends the thread too. io stays valid:
+         * nothing below is freed before ExitProcess(). */
+        fflush(NULL);
+        if (!got_exit) fprintf(stderr, "lookinfiles relay: connection lost\n");
+        ExitProcess((UINT)exit_code);
     }
     g_thread_join(stdin_th);
     if (io.stdin_done_event != NULL) CloseHandle(io.stdin_done_event);
-    if (resize_th != NULL) g_thread_join(resize_th);
     g_mutex_clear(&io.win_mu);
-    if (restore_console) SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), saved_mode);
 #else
     if (io.stop_pipe[1] >= 0) {
         char b = 1;

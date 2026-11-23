@@ -211,6 +211,9 @@ GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
                 GPtrArray* relay = ssh_relay_argv(link, (flags & SSH_ARGV_TTY) != 0);
                 ssh_link_unref(link);
                 if (relay != NULL) return relay;
+                /* No relay (no runtime directory...): ssh then, but never
+                 * asking, or a program restarted in a loop would ask each time */
+                force_batch = TRUE;
             } else {
                 if (missing_func != NULL) report_missing(t);
                 force_batch = TRUE;
