@@ -168,7 +168,10 @@ Settled here so that every step is written the same way.
   until its own I/O clears it, and libssh reads the socket itself, so the
   source stayed ready for ever (one core at 100 %, the connection never
   progressing; seen on the user's machine). Unix: a plain `GPollFD`.
-  Windows: a `WSAEVENT` wakes the loop, `WSAPoll()` gives the real state.
+  Windows: a thread waits in `WSAPoll()` and wakes the loop; never
+  `WSAEventSelect()`, which forces the socket non-blocking: libssh switches
+  it back to blocking once the TCP connection is made, that fails, and the
+  session stays "connecting" until the timeout (seen on the user's machine).
   Ask for "writable" only when libssh has bytes to send or the TCP
   connection is still being made: a connected socket is always writable.
 - **Keep-alive.** A 15 s timeout on the link context calls
