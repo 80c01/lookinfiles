@@ -103,20 +103,14 @@ The link must never repeat this: one channel's full buffer stops reading
 3. **Programs that want a command line** (kernels, language servers):
    they start a local process from `ssh_session_argv()` /
    `vfs_command_argv()`. Give them a relay instead of `ssh.exe`:
-   `lookinfiles --ssh-channel` (found as `ssh_askpass` finds the program).
-   It connects to the running instance on a loopback port with a 128-bit
-   token (the `ssh_askpass_serve()` pattern, its own service), sends the
-   machine id and the command, then copies its stdin/stdout/stderr to an
-   `exec` channel the instance opened, and exits with the channel's
-   status. The callers do not change: `ssh_session_argv()` returns the
-   relay's argv when the link is in use. The relay must never read or
-   write a secret.
-4. **Terminal.** Same relay with a pty channel (`--ssh-channel --tty`):
-   window size passed at start and on resize (a control message on the
-   loopback socket). Optional: a terminal may also keep using `ssh.exe`
-   (one prompt per terminal, acceptable). Flow control matters here: the
-   instance stops reading the channel while the relay's socket is full,
-   it never blocks.
+   `lookinfiles --ssh-channel <port> <ticket>`, which copies its
+   stdin/stdout/stderr to an `exec` channel the instance opened and exits
+   with the channel's status. The callers do not change:
+   `ssh_session_argv()` returns the relay's argv when the link is in use.
+   Protocol: see "Relay protocol" below.
+4. **Terminal.** The same relay with a pty channel (the ticket says so).
+   Optional: a terminal may also keep using `ssh.exe` (one prompt per
+   terminal, acceptable).
 5. **Switch.** On Windows, the link is used when built with libssh. On
    Linux, keep the OpenSSH master by default; a setting (or environment
    variable for testing) may select libssh there too, so both platforms
@@ -181,6 +175,70 @@ Settled here so that every step is written the same way.
   `ssh_channel.c` are not built, the dispatch code is under `#ifdef`, and
   `test_ssh_link` / `test_ssh_channel` are not in `TESTS` (the test server
   needs `libssh/server.h`, part of `libssh-dev` and the MSYS2 package).
+
+### Relay protocol (steps 3 and 4)
+
+- **Module.** `core/ssh_relay` (layer 1), both sides: the server in the
+  instance and the helper. Rule: `ssh_relay:ssh_target,ssh_link,ssh_channel,i18n`;
+  `ssh_session` includes `ssh_relay` (for the argv), never the opposite.
+  `main.c` checks `ssh_relay_is_helper(argc, argv)` before any GTK call and
+  returns `ssh_relay_helper_main(argc, argv)`, as it does for askpass. The
+  program path is the one given to `ssh_askpass_serve()`.
+- **Ticket, not environment.** Language servers (`lsp_client.c`) and
+  kernels (`ipynb_kernel.c`) build their own `GSubprocessLauncher`, and
+  the terminal spawns through VTE/ConPTY: a variable set with
+  `ssh_session_set_env()` would not reach the relay. So every call of
+  `ssh_session_argv()` that goes through a link registers a **ticket** in
+  the instance: 128 random bits (hex), bound to the link, the command
+  line and the tty flag, **single use**, dropped after 60 s if unused.
+  The argv is `<program> --ssh-channel <port> <ticket>`: the relay never
+  chooses the command, so a ticket cannot run anything else. Callers that
+  run the same argv twice must call `ssh_session_argv()` again (check
+  `ipynb_run` and `code_intel` rebuild it at each start). On Linux a
+  command line is readable by other local users (`/proc/*/cmdline`): a
+  ticket seen there can be raced once; this is why the relay is the
+  default only on Windows (to verify there: other users' command lines
+  are not readable without admin rights).
+- **Server.** `ssh_relay_serve()` listens on `127.0.0.1`, port 0 (chosen
+  by the system), started with the first link, stopped with the last. It
+  runs on the link thread side: accepting, reading and writing are async,
+  and no write ever blocks.
+- **Handshake.** The relay connects and sends three text lines:
+  `LOOKIN-RELAY 1`, the ticket, then `<rows> <cols>` (the size of its
+  terminal, `0 0` without a tty). The instance compares the ticket in
+  constant time (as `same_secret()`), consumes it, opens the channel
+  (`exec`, or `pty` of that size then `exec`/`shell`), and answers one line:
+  `OK` or `ERR <message>` (then closes). Any other first line, a bad,
+  used or expired ticket: `ERR` and close.
+- **Frames** after `OK`, both ways: 1 byte type, 4 bytes length (big
+  endian), payload of at most 32 KiB.
+  - relay to instance: `I` stdin data; `E` stdin closed (empty); `W`
+    window size (4 bytes: rows, cols, two big-endian `uint16`).
+  - instance to relay: `O` stdout data; `R` stderr data; `X` exit status
+    (4 bytes, big-endian signed; -1 when killed or unknown), then the
+    instance closes the socket.
+  - socket closed without `X` (link lost, instance gone): the relay prints
+    `lookinfiles relay: connection lost` on stderr and exits 255, as ssh.
+- **Flow control (instance side).** Stop reading the channel while more
+  than 256 KiB wait for the relay's socket; stop reading the socket while
+  the channel does not accept more (libssh's partial write in
+  non-blocking mode). Each direction waits on its own, the link thread
+  never does.
+- **Relay side.** A separate process with nothing else to do: blocking I/O
+  is fine there (one thread stdin to socket, the main one socket to
+  stdout/stderr). With a tty: raw mode (Linux `cfmakeraw()`, restored at
+  exit; Windows console mode with `ENABLE_VIRTUAL_TERMINAL_INPUT`, without
+  line input, echo and processed input). Without a tty on Windows: stdin and
+  stdout in binary mode (`_setmode(_O_BINARY)`). Window size: Linux
+  `SIGWINCH` + `TIOCGWINSZ`; Windows has no signal, so poll
+  `GetConsoleScreenBufferInfo()` every 250 ms (ConPTY updates it on
+  resize) and send `W` when it changes.
+- **Never a secret** goes through the relay: the link is authenticated
+  before the ticket is issued. The relay writes no log.
+- **Tests** (`tests/test_ssh_relay.c`, against the libssh test server):
+  frames round-trip, exit status passed on, stderr kept apart, ticket used
+  twice / expired / wrong refused, a relay that stops reading does not
+  stall another channel of the same link, link lost gives exit 255.
 
 ### Tests (`tests/test_ssh_link.c`, `tests/test_ssh_channel.c`)
 
