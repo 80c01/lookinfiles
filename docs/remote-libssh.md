@@ -162,11 +162,15 @@ Settled here so that every step is written the same way.
   complete in the caller's thread-default context (the `vfs` thread for
   SFTP); the sync methods wait on a `GCond` and are refused on the main
   thread (`g_return_val_if_fail`).
-- **Socket polling.** Wrap the session socket with
-  `g_socket_new_from_fd(ssh_get_fd())` and watch it with
-  `g_socket_create_source()`: a raw `GPollFD` on a SOCKET does not work
-  with `g_poll()` on Windows. The `GSocket` must not close the fd (libssh
-  owns it).
+- **Socket polling.** `core/ssh_watch` (`ssh_watch_new()`), a
+  level-triggered source that never closes the socket. Not
+  `g_socket_create_source()`: on Windows a `GSocket` remembers an event
+  until its own I/O clears it, and libssh reads the socket itself, so the
+  source stayed ready for ever (one core at 100 %, the connection never
+  progressing; seen on the user's machine). Unix: a plain `GPollFD`.
+  Windows: a `WSAEVENT` wakes the loop, `WSAPoll()` gives the real state.
+  Ask for "writable" only when libssh has bytes to send or the TCP
+  connection is still being made: a connected socket is always writable.
 - **Keep-alive.** A 15 s timeout on the link context calls
   `ssh_send_keepalive()`; a missing reply counts as a miss, 3 misses = lost
   (libssh has no keep-alive of its own).
