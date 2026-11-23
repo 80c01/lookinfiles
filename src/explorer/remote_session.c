@@ -4,6 +4,9 @@
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "core/ssh_askpass.h"
+#ifdef HAVE_LIBSSH
+#include "core/ssh_link.h"
+#endif
 #include "core/ssh_session.h"
 #include "core/vfs.h"
 #include "widgets/dialog.h"
@@ -14,63 +17,74 @@ typedef struct {
     gchar* id;
     gchar* label;       /* the machine's name, for the messages */
     SshMaster* master;  /* NULL when none */
+#ifdef HAVE_LIBSSH
+    SshLink* link;      /* NULL when none */
+#endif
     gboolean starting;
     gboolean failed;    /* refused or failed: opened again only by the next connect */
     gchar* error;       /* why it failed */
-    GPtrArray* waiters; /* GMainLoop* of remote_session_mount() calls waiting for it */
+    GPtrArray* waiters; /* GMainLoop* of remote_session_connect() calls waiting for it */
 } MasterEntry;
 
 static AppData* session_app;
 static GHashTable* masters;    /* machine id -> MasterEntry* */
 static GHashTable* connecting; /* ids of the machines being connected */
 
+static gboolean use_libssh(void) {
+#ifdef HAVE_LIBSSH
+    return ssh_link_enabled();
+#else
+    return FALSE;
+#endif
+}
+
 /* ------------------------------------------------------------------------- */
 /* ssh prompts                                                               */
 /* ------------------------------------------------------------------------- */
 
+typedef void (*PromptReplyFunc)(gpointer request, const gchar* answer);
+
 typedef struct {
-    SshAskpassRequest* request;
-    SshAskpassKind kind;
+    gpointer request;
+    PromptReplyFunc reply;
+    gboolean confirm;
     GtkWidget* entry; /* the secret typed, NULL for a question */
-    gchar* prompt;
 } Prompt;
 
 static void on_prompt_response(AppDialog* dlg, gint response, gpointer data) {
     Prompt* p = data;
-    if (p->kind == SSH_ASKPASS_CONFIRM) {
-        ssh_askpass_reply(p->request, response == APP_RESPONSE_YES ? "yes" : NULL);
+    if (p->confirm) {
+        p->reply(p->request, response == APP_RESPONSE_YES ? "yes" : NULL);
     } else {
         const gchar* secret = response == APP_RESPONSE_OK ? gtk_editable_get_text(GTK_EDITABLE(p->entry)) : NULL;
-        ssh_askpass_reply(p->request, secret);
+        p->reply(p->request, secret);
         gtk_editable_set_text(GTK_EDITABLE(p->entry), ""); /* the secret is not kept */
     }
-    g_free(p->prompt);
     g_free(p);
     app_dialog_destroy(dlg);
 }
 
-/* A prompt of ssh (in English, as ssh writes it): a dialog over the window */
-static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar* prompt, gpointer data) {
-    AppData* app = data;
+/* Shared prompt dialog body for ssh_askpass (on_ask) and ssh_link (on_link_ask) */
+static void show_prompt_dialog(AppData* app, gboolean notice, gboolean confirm, const gchar* prompt,
+                               gpointer request, PromptReplyFunc reply) {
     gchar* text = g_utf8_make_valid(prompt != NULL ? prompt : "", -1);
     g_strstrip(text);
-    if (kind == SSH_ASKPASS_NOTICE) {
+    if (notice) {
         app_notice(app, text, FALSE);
         g_free(text);
         return;
     }
     if (app == NULL || app->window == NULL) {
-        ssh_askpass_reply(request, NULL);
+        reply(request, NULL);
         g_free(text);
         return;
     }
-    gboolean question = kind == SSH_ASKPASS_CONFIRM;
-    GtkWidget* dlg = question
+    GtkWidget* dlg = confirm
                          ? app_dialog_new(_("SSH Confirmation"), app->window, _("_No"), APP_RESPONSE_NO,
                                           _("_Yes"), APP_RESPONSE_YES, NULL)
                          : app_dialog_new(_("SSH Authentication"), app->window, _("_Cancel"),
                                           APP_RESPONSE_CANCEL, _("_OK"), APP_RESPONSE_OK, NULL);
-    app_dialog_set_default_response(APP_DIALOG(dlg), question ? APP_RESPONSE_YES : APP_RESPONSE_OK);
+    app_dialog_set_default_response(APP_DIALOG(dlg), confirm ? APP_RESPONSE_YES : APP_RESPONSE_OK);
     app_dialog_set_width(APP_DIALOG(dlg), 440);
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_top(box, 14);
@@ -86,9 +100,9 @@ static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar*
 
     Prompt* p = g_new0(Prompt, 1);
     p->request = request;
-    p->kind = kind;
-    p->prompt = g_strdup(text);
-    if (!question) {
+    p->reply = reply;
+    p->confirm = confirm;
+    if (!confirm) {
         p->entry = gtk_password_entry_new();
         gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(p->entry), TRUE);
         g_object_set(p->entry, "activates-default", TRUE, NULL);
@@ -99,6 +113,27 @@ static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar*
     if (p->entry != NULL) gtk_widget_grab_focus(p->entry);
     g_free(text);
 }
+
+static void reply_askpass(gpointer request, const gchar* answer) {
+    ssh_askpass_reply(request, answer);
+}
+
+/* A prompt of ssh (in English, as ssh writes it): a dialog over the window */
+static void on_ask(SshAskpassRequest* request, SshAskpassKind kind, const gchar* prompt, gpointer data) {
+    show_prompt_dialog(data, kind == SSH_ASKPASS_NOTICE, kind == SSH_ASKPASS_CONFIRM, prompt,
+                       request, reply_askpass);
+}
+
+#ifdef HAVE_LIBSSH
+static void reply_link(gpointer request, const gchar* answer) {
+    ssh_link_reply(request, answer);
+}
+
+static void on_link_ask(SshLinkAsk* ask, SshLinkAskKind kind, const gchar* prompt, gpointer data) {
+    show_prompt_dialog(data, kind == SSH_LINK_ASK_NOTICE, kind == SSH_LINK_ASK_CONFIRM, prompt,
+                       ask, reply_link);
+}
+#endif
 
 /* This program's path for SSH_ASKPASS, NULL when unknown. Caller frees. */
 static gchar* program_path(const gchar* argv0) {
@@ -142,9 +177,23 @@ static void wake_waiters(MasterEntry* e) {
     g_ptr_array_set_size(e->waiters, 0);
 }
 
+static gboolean entry_is_up(const MasterEntry* e) {
+    if (e == NULL) return FALSE;
+#ifdef HAVE_LIBSSH
+    if (use_libssh()) return ssh_link_is_up(e->link);
+#endif
+    return ssh_master_is_up(e->master);
+}
+
 static void entry_free(gpointer data) {
     MasterEntry* e = data;
     if (e->master != NULL) ssh_master_stop(e->master); /* no ready() after this */
+#ifdef HAVE_LIBSSH
+    if (e->link != NULL) {
+        ssh_link_close(e->link); /* leaves the registry at once; no ready() after this */
+        ssh_link_unref(e->link);
+    }
+#endif
     wake_waiters(e);
     g_ptr_array_unref(e->waiters);
     g_free(e->error);
@@ -153,15 +202,12 @@ static void entry_free(gpointer data) {
     g_free(e);
 }
 
-static void on_master_ready(SshMaster* m, gboolean ok, const gchar* text, gpointer data) {
-    MasterEntry* e = data;
+static void entry_finish_ready(MasterEntry* e, gboolean ok, const gchar* text) {
     e->starting = FALSE;
     if (!ok) {
         e->failed = TRUE; /* not opened again in the background: that would ask again and again */
         g_free(e->error);
         e->error = g_strdup(text != NULL ? text : "");
-        e->master = NULL;
-        ssh_master_stop(m);
         if (e->waiters->len == 0 && session_app != NULL) { /* opened in the background */
             gchar* msg = g_strdup_printf(_("Cannot open the SSH connection to %s: %s"), e->label, e->error);
             app_notice(session_app, msg, FALSE);
@@ -171,12 +217,33 @@ static void on_master_ready(SshMaster* m, gboolean ok, const gchar* text, gpoint
     wake_waiters(e);
 }
 
+static void on_master_ready(SshMaster* m, gboolean ok, const gchar* text, gpointer data) {
+    MasterEntry* e = data;
+    if (!ok) {
+        e->master = NULL;
+        ssh_master_stop(m);
+    }
+    entry_finish_ready(e, ok, text);
+}
+
+#ifdef HAVE_LIBSSH
+static void on_link_ready(SshLink* link, gboolean ok, const gchar* text, gpointer data) {
+    MasterEntry* e = data;
+    if (!ok) {
+        e->link = NULL;
+        ssh_link_close(link);
+        ssh_link_unref(link);
+    }
+    entry_finish_ready(e, ok, text);
+}
+#endif
+
 static const gchar* machine_name(const RemoteMachine* rm) {
     return (rm->name != NULL && rm->name[0] != '\0') ? rm->name : rm->host;
 }
 
-/* The master connection of rm, being opened unless it is open (or, when not
- * explicit, unless its last opening failed) */
+/* The master connection (or libssh link) of rm, being opened unless it is
+ * open (or, when not explicit, unless its last opening failed) */
 static MasterEntry* open_master(RemoteMachine* rm, gboolean explicit) {
     if (masters == NULL) masters = g_hash_table_new_full(g_str_hash, g_str_equal, NULL, entry_free);
     MasterEntry* e = g_hash_table_lookup(masters, rm->id);
@@ -188,12 +255,22 @@ static MasterEntry* open_master(RemoteMachine* rm, gboolean explicit) {
     }
     g_free(e->label);
     e->label = g_strdup(machine_name(rm));
-    if (e->starting || ssh_master_is_up(e->master) || (e->failed && !explicit)) return e;
-    if (e->master != NULL) ssh_master_stop(e->master); /* it dropped */
+    if (e->starting || entry_is_up(e) || (e->failed && !explicit)) return e;
     e->failed = FALSE;
     g_clear_pointer(&e->error, g_free);
     e->starting = TRUE;
     SshTarget t = remote_machine_target(rm);
+#ifdef HAVE_LIBSSH
+    if (use_libssh()) {
+        if (e->link != NULL) {
+            ssh_link_close(e->link); /* it dropped */
+            ssh_link_unref(e->link);
+        }
+        e->link = ssh_link_connect(&t, on_link_ask, session_app, on_link_ready, e);
+        return e;
+    }
+#endif
+    if (e->master != NULL) ssh_master_stop(e->master); /* it dropped */
     e->master = ssh_master_start(&t, on_master_ready, e); /* ready() comes from the main loop */
     return e;
 }
@@ -215,9 +292,9 @@ static void on_master_missing(const SshTarget* t, gpointer data) {
 }
 
 void remote_session_open_master(RemoteMachine* rm) {
-    /* Without multiplexing there is no master: the files' session opens
-     * again by itself (vfs.h) */
-    if (rm != NULL && rm->id != NULL && ssh_session_can_multiplex()) open_master(rm, TRUE);
+    /* Without multiplexing or libssh there is no shared connection: the files'
+     * session opens again by itself (vfs.h) */
+    if (rm != NULL && rm->id != NULL && (use_libssh() || ssh_session_can_multiplex())) open_master(rm, TRUE);
 }
 
 /* Without multiplexing: the SFTP session opened by a worker (it logs in,
@@ -282,7 +359,7 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mo
     g_free(notice);
 
     gboolean ok;
-    if (ssh_session_can_multiplex()) {
+    if (use_libssh() || ssh_session_can_multiplex()) {
         MasterEntry* e = open_master(rm, TRUE);
         if (e->starting) {
             GMainLoop* loop = g_main_loop_new(NULL, FALSE);
@@ -291,7 +368,7 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mo
             g_main_loop_unref(loop);
         }
         e = masters != NULL ? g_hash_table_lookup(masters, id) : NULL; /* gone if the application quit */
-        ok = e != NULL && ssh_master_is_up(e->master);
+        ok = entry_is_up(e);
         if (!ok) *error_text = g_strdup(e != NULL && e->error != NULL ? e->error : "");
     } else {
         /* No master to share (Windows): a check of its own would ask for the

@@ -60,10 +60,13 @@ done
 RULES="
 app_paths:
 remote_mounts:app_paths
-ssh_session:app_paths,i18n
+ssh_target:
+ssh_channel:i18n
+ssh_link:ssh_target,ssh_channel,i18n
+ssh_session:app_paths,i18n,ssh_target,ssh_link,ssh_channel
 ssh_askpass:ssh_session
 sftp_proto:i18n
-sftp_client:sftp_proto,ssh_session,i18n
+sftp_client:sftp_proto,ssh_session,ssh_link,ssh_channel,i18n
 vfs:sftp_client,sftp_proto,ssh_session,i18n
 vfs_cache:vfs,app_paths,i18n
 vfs_watch:vfs

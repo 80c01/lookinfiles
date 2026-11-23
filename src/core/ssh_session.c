@@ -2,6 +2,9 @@
 #include "core/ssh_session.h"
 #include "core/app_paths.h"
 #include "core/i18n.h"
+#ifdef HAVE_LIBSSH
+#include "core/ssh_link.h"
+#endif
 
 #include <glib/gstdio.h>
 #include <string.h>
@@ -180,8 +183,20 @@ static gboolean call_missing(gpointer data) {
 
 GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
     if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX)) && missing_func != NULL) {
-        gchar* sock = ssh_session_control_path(t);
-        if (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS)) {
+        gboolean missing = FALSE;
+#ifdef HAVE_LIBSSH
+        if (ssh_link_enabled()) {
+            SshLink* link = ssh_link_lookup(t);
+            missing = (link == NULL);
+            if (link != NULL) ssh_link_unref(link);
+        } else
+#endif
+        {
+            gchar* sock = ssh_session_control_path(t);
+            missing = (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS));
+            g_free(sock);
+        }
+        if (missing) {
             MissingCall* m = g_new0(MissingCall, 1);
             m->host = g_strdup(t->host);
             m->user = g_strdup(t->user);
@@ -189,7 +204,6 @@ GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
             m->identity = g_strdup(t->identity_file);
             g_main_context_invoke(NULL, call_missing, m); /* at once on the main thread, else queued there */
         }
-        g_free(sock);
     }
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(argv, g_strdup(program != NULL ? program : SSH_DEFAULT_PROGRAM));

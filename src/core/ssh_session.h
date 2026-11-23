@@ -13,15 +13,9 @@
  * ssh_session_set_env() (the password prompt, ssh_askpass.h), have no
  * controlling terminal, and die with the application (Linux). GIO only, no
  * widgets; unit-tested with a fake ssh program. */
-#include <gio/gio.h>
+#include "core/ssh_target.h"
 
-/* Where to connect (strings owned by the caller) */
-typedef struct {
-    const gchar* host;          /* host name, IP or ~/.ssh/config Host */
-    const gchar* user;          /* NULL or "": from ~/.ssh/config or the local user */
-    gint port;                  /* 0 or 22: the default */
-    const gchar* identity_file; /* NULL or "": the usual keys */
-} SshTarget;
+#include <gio/gio.h>
 
 typedef enum {
     SSH_ARGV_TTY = 1 << 0,    /* -t: an interactive terminal (with SSH_ARGV_NO_MUX) */

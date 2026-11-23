@@ -1,6 +1,10 @@
 /* SFTP v3 client over a pair of streams (see sftp_client.h). */
 #include "core/sftp_client.h"
 #include "core/i18n.h"
+#ifdef HAVE_LIBSSH
+#include "core/ssh_channel.h"
+#include "core/ssh_link.h"
+#endif
 
 #include <string.h>
 
@@ -22,6 +26,9 @@ struct SftpClient {
     GInputStream* in;
     GOutputStream* out;
     GSubprocess* proc; /* ssh, or NULL */
+#ifdef HAVE_LIBSSH
+    SshChannel* channel; /* libssh channel, or NULL */
+#endif
     GCancellable* io;
     GMainContext* context;  /* where the client was made: its callbacks run there */
     gboolean ready;         /* the server's VERSION came */
@@ -49,6 +56,9 @@ static void client_unref(SftpClient* c) {
     g_clear_object(&c->in);
     g_clear_object(&c->out);
     g_clear_object(&c->proc);
+#ifdef HAVE_LIBSSH
+    g_clear_object(&c->channel);
+#endif
     g_clear_object(&c->io);
     g_main_context_unref(c->context);
     g_clear_error(&c->error);
@@ -95,6 +105,9 @@ static void lose(SftpClient* c, GError* err) {
     }
     g_hash_table_unref(pending);
     if (c->proc != NULL) g_subprocess_force_exit(c->proc);
+#ifdef HAVE_LIBSSH
+    if (c->channel != NULL) ssh_channel_force_close(c->channel);
+#endif
     client_unref(c);
 }
 
@@ -252,6 +265,28 @@ SftpClient* sftp_client_new(GInputStream* in, GOutputStream* out) {
 }
 
 SftpClient* sftp_client_spawn(const SshTarget* target, GError** error) {
+#ifdef HAVE_LIBSSH
+    SshLink* link = ssh_link_lookup(target);
+    if (link != NULL) {
+        SshChannel* ch = ssh_link_open_channel(link, SSH_CHANNEL_KIND_SUBSYSTEM, "sftp", 0, 0, error);
+        ssh_link_unref(link);
+        if (ch == NULL) return NULL;
+        SftpClient* c = sftp_client_new(g_io_stream_get_input_stream(G_IO_STREAM(ch)),
+                                        g_io_stream_get_output_stream(G_IO_STREAM(ch)));
+        c->channel = ch;
+        g_input_stream_read_async(ssh_channel_get_stderr(ch), c->err_buf, sizeof c->err_buf,
+                                  G_PRIORITY_DEFAULT, c->io, on_err, client_ref(c));
+        return c;
+    }
+    if (ssh_link_enabled()) {
+        /* Notify the application to open the link (same rule as master-missing) */
+        GPtrArray* argv = ssh_session_argv(target, 0);
+        g_ptr_array_unref(argv);
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED,
+                            _("the SSH connection to the machine is not open"));
+        return NULL;
+    }
+#endif
     gchar* sock = ssh_session_control_path(target);
     GPtrArray* argv = ssh_session_argv(target, 0); /* asks for the master when it is not open */
     gboolean no_master = sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS);
