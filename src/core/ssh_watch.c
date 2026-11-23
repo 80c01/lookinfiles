@@ -1,5 +1,5 @@
 /* Level-triggered socket source (see ssh_watch.h). */
-#ifdef G_OS_WIN32
+#ifdef _WIN32 /* not G_OS_WIN32: GLib, which defines it, is not included yet */
 #include <winsock2.h> /* before any header that may pull windows.h */
 #endif
 #include "core/ssh_watch.h"
