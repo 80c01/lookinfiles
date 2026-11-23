@@ -340,6 +340,11 @@ static void start_run(AppData* app, const TaskDef* def) {
         g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                                   G_SUBPROCESS_FLAGS_STDERR_MERGE);
     g_subprocess_launcher_set_cwd(launcher, def->dir);
+    for (gchar** e = def->env; e != NULL && *e != NULL; e++) {
+        gchar** kv = g_strsplit(*e, "=", 2);
+        if (kv[0] != NULL && kv[1] != NULL) g_subprocess_launcher_setenv(launcher, kv[0], kv[1], TRUE);
+        g_strfreev(kv);
+    }
 #ifdef G_OS_UNIX
     g_subprocess_launcher_set_child_setup(launcher, child_setup, NULL, NULL);
 #endif
@@ -372,6 +377,7 @@ static void start_run(AppData* app, const TaskDef* def) {
     r->in = g_object_ref(g_subprocess_get_stdout_pipe(proc));
     r->cancellable = g_cancellable_new();
     r->parser = task_parser_new(def->dir);
+    if (def->matcher != NULL) task_parser_add_matcher(r->parser, def->matcher); /* checked when read */
     r->page = page;
     r->partial = g_string_new(NULL);
     r->started = g_get_monotonic_time();
@@ -458,6 +464,11 @@ static gboolean filter_func(gpointer item, gpointer data) {
     gchar* low = g_utf8_strdown(TASK_CHOICE(item)->def->label, -1);
     gboolean match = strstr(low, p->needle) != NULL;
     g_free(low);
+    if (!match && TASK_CHOICE(item)->def->detail != NULL) {
+        low = g_utf8_strdown(TASK_CHOICE(item)->def->detail, -1);
+        match = strstr(low, p->needle) != NULL;
+        g_free(low);
+    }
     return match;
 }
 
@@ -546,8 +557,10 @@ static void on_choice_bind(GtkSignalListItemFactory* f, GtkListItem* item, gpoin
     (void)f;
     const gchar* project = data;
     TaskChoice* c = gtk_list_item_get_item(item);
-    /* The folder only when it is not the project's (a Cargo workspace) */
-    const gchar* where = g_strcmp0(c->def->dir, project) != 0 ? c->def->dir : "";
+    /* A named task's command; the folder when it is not the project's */
+    const gchar* where = c->def->detail != NULL               ? c->def->detail
+                         : g_strcmp0(c->def->dir, project) != 0 ? c->def->dir
+                                                                : "";
     gchar* markup = g_markup_printf_escaped("<b>%s</b>  <span foreground=\"%s\">%s</span>", c->def->label,
                                             palette_color(PAL_FG_SUBTLE), where);
     gtk_label_set_markup(GTK_LABEL(gtk_list_item_get_child(item)), markup);
@@ -640,6 +653,7 @@ typedef struct {
     gboolean choose; /* Shift+F7: ask which task */
     gchar* project;  /* found: the project's folder, or NULL */
     GPtrArray* tasks;
+    gchar* problem;  /* what is wrong with its tasks file, or NULL */
 } FindJob;
 
 static void find_job_free(gpointer data) {
@@ -647,6 +661,7 @@ static void find_job_free(gpointer data) {
     g_clear_object(&job->cancellable);
     g_free(job->start);
     g_free(job->project);
+    g_free(job->problem);
     if (job->tasks != NULL) g_ptr_array_unref(job->tasks);
     g_free(job);
 }
@@ -656,7 +671,7 @@ static void find_thread(GTask* task, gpointer source, gpointer data, GCancellabl
     (void)cancellable;
     FindJob* job = data;
     job->project = task_detect_project_dir(job->start);
-    if (job->project != NULL) job->tasks = task_detect(job->project);
+    if (job->project != NULL) job->tasks = task_detect(job->project, &job->problem);
     g_task_return_boolean(task, TRUE);
 }
 
@@ -668,6 +683,13 @@ static void on_found(GObject* source, GAsyncResult* result, gpointer data) {
     AppData* app = job->app;
     struct TaskRun* st = run_state(app);
     g_clear_object(&st->finding);
+    if (job->problem != NULL) {
+        /* Said, and the other tasks still offered */
+        gchar* msg = g_strdup_printf(_("Tasks file left out: %s"), job->problem);
+        notice(app, msg);
+        g_free(msg);
+        if (job->tasks == NULL || job->tasks->len == 0) return;
+    }
     if (job->project == NULL || job->tasks == NULL || job->tasks->len == 0) {
         gchar* msg = g_strdup_printf(_("No build file in %s or above (Makefile, Cargo.toml, package.json, go.mod…)"),
                                      job->start);

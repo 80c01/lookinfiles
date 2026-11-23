@@ -34,6 +34,7 @@ struct TaskParser {
     GRegex* re_tsc2;    /* file:line:col - error TS1: text */
     GRegex* re_eslint;  /*   line:col  error  text */
     GRegex* re_frame;   /*   File "x.py", line 12 */
+    GPtrArray* matchers; /* GRegex* of task_parser_add_matcher() */
 };
 
 static void message_free(gpointer m) {
@@ -55,6 +56,7 @@ TaskParser* task_parser_new(const gchar* dir) {
     p->dirs = g_ptr_array_new_with_free_func(g_free);
     p->messages = g_ptr_array_new_with_free_func(message_free);
     p->seen = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    p->matchers = g_ptr_array_new_with_free_func((GDestroyNotify)g_regex_unref);
     p->re_dir = regex("^(?:\\S*?make(?:\\.exe)?(?:\\[\\d+\\])?|ninja): (Entering|Leaving) directory [`'\xe2\x80\x98\"](.*)['\xe2\x80\x99\"]$");
     p->re_place = regex("^\\s*((?:[A-Za-z]:)?[^\\s:\"'()<>|*?]+):(\\d+):(?:(\\d+):)?\\s*"
                         "(?:(fatal error|error|warning|note|remark)\\s*:\\s*)?(.*)$");
@@ -75,6 +77,7 @@ void task_parser_free(TaskParser* p) {
     g_ptr_array_unref(p->dirs);
     g_ptr_array_unref(p->messages);
     g_hash_table_unref(p->seen);
+    g_ptr_array_unref(p->matchers);
     g_free(p->rust_text);
     if (p->panic != NULL) message_free(p->panic);
     g_free(p->eslint_file);
@@ -271,6 +274,57 @@ static gboolean feed_place(TaskParser* p, const gchar* text, guint out_line, gui
     return ok;
 }
 
+gboolean task_parser_add_matcher(TaskParser* p, const gchar* pattern) {
+    GRegex* re = pattern != NULL ? g_regex_new(pattern, G_REGEX_OPTIMIZE, 0, NULL) : NULL;
+    if (re == NULL) return FALSE;
+    if (g_regex_get_string_number(re, "file") < 0 || g_regex_get_string_number(re, "line") < 0) {
+        g_regex_unref(re);
+        return FALSE;
+    }
+    g_ptr_array_add(p->matchers, re);
+    return TRUE;
+}
+
+static gint named_int(GMatchInfo* mi, const gchar* name) {
+    gchar* s = g_match_info_fetch_named(mi, name);
+    gint v = s != NULL && s[0] != '\0' ? (gint)g_ascii_strtoll(s, NULL, 10) : 0;
+    g_free(s);
+    return v;
+}
+
+/* The matchers of the task: TRUE when one took text */
+static gboolean feed_matchers(TaskParser* p, const gchar* text, guint out_line, guint* added) {
+    for (guint i = 0; i < p->matchers->len; i++) {
+        GMatchInfo* mi = NULL;
+        if (!match(g_ptr_array_index(p->matchers, i), text, &mi)) continue;
+        gchar* file = g_match_info_fetch_named(mi, "file");
+        gint line = named_int(mi, "line");
+        gboolean ok = file != NULL && file[0] != '\0' && line > 0;
+        if (ok) {
+            gchar* word = g_match_info_fetch_named(mi, "severity");
+            gchar* body = g_match_info_fetch_named(mi, "message");
+            gchar* lower = word != NULL ? g_ascii_strdown(word, -1) : NULL;
+            TaskMsgKind kind = lower == NULL || lower[0] == '\0'   ? TASK_MSG_ERROR
+                               : g_str_has_prefix(lower, "warn")    ? TASK_MSG_WARNING
+                               : g_str_has_prefix(lower, "note") || g_str_has_prefix(lower, "info") ||
+                                       g_str_has_prefix(lower, "hint") || g_str_has_prefix(lower, "remark")
+                                   ? TASK_MSG_NOTE
+                                   : TASK_MSG_ERROR;
+            if (add_message(p, kind, file, line, named_int(mi, "column"), body != NULL && body[0] != '\0' ? body : text,
+                            out_line)) {
+                (*added)++;
+            }
+            g_free(lower);
+            g_free(body);
+            g_free(word);
+        }
+        g_free(file);
+        g_match_info_free(mi);
+        if (ok) return TRUE;
+    }
+    return FALSE;
+}
+
 guint task_parser_feed(TaskParser* p, const gchar* raw) {
     gchar* text = task_parse_clean_line(raw);
     guint out_line = p->line_no++;
@@ -280,6 +334,12 @@ guint task_parser_feed(TaskParser* p, const gchar* raw) {
     /* A panic's text is the line after it */
     if (p->panic != NULL) {
         added += flush_panic(p, text);
+        g_free(text);
+        return added;
+    }
+
+    /* The task's own matchers come first */
+    if (feed_matchers(p, text, out_line, &added)) {
         g_free(text);
         return added;
     }

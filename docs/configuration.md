@@ -19,6 +19,9 @@ Settings and data are kept in `~/.config/lookinfiles/`
 | `theme.ini` | The chosen theme and your fonts (written by Preferences → Appearance, `Alt+T`) |
 | `themes/` | Your themes, one `.ini` file each (see [Themes](#themes)) |
 
+A project can also define its own build and test tasks in
+`.lookinfiles/tasks.toml` at its root (see [Project tasks](#project-tasks)).
+
 Remote machines are mounted under `$XDG_RUNTIME_DIR/lookinfiles/remotes/`
 (`/tmp/lookinfiles-<uid>/remotes/` without `$XDG_RUNTIME_DIR`), never under
 `~/.cache`; mounts left by a crash are unmounted at the next start.
@@ -96,6 +99,39 @@ rust=none
 
 The status bar shows what serves the current editor tab: the server name,
 `ctags` or `built-in index`.
+
+## Project tasks
+
+`F7` / `Shift+F7` run the tasks found from a project's build files (see
+[Build and test tasks](user-guide/code-navigation.md#build-and-test-tasks)).
+`.lookinfiles/tasks.toml` at the root of the project adds its own, listed
+first; the file alone also makes its folder a project:
+
+```toml
+[[task]]
+name = "fast tests"                   # required: shown in the lists
+command = "./run_tests.sh --fast"     # through the shell (sh -c; cmd /c on Windows)
+cwd = "tests"                         # folder, relative to the project (default: the project)
+env = { CC = "clang", V = "1" }       # variables added to the environment
+default = true                        # what F7 runs before any choice (else the first task)
+
+[[task]]
+name = "install"
+args = ["make", "-C", "build", "install"]   # the program and its arguments, no shell
+matcher = '^(?<file>[^:]+):(?<line>\d+): (?<severity>\w+): (?<message>.*)$'
+```
+
+A task has a `name` and either `command` or `args`. `matcher` is a regular
+expression (PCRE, as GLib's) tried on each line of the output before the
+built-in ones: the groups `file` and `line` are required, `column`,
+`severity` (`error`, `warning`, `note`...; an error when missing) and
+`message` (the whole line when missing) are optional; relative files are
+read from the task's folder. The file is a small part of TOML: comments,
+`[[task]]` tables, strings (`"..."` with escapes, `'...'` as written),
+`true` / `false`, arrays of strings (also over several lines) and inline
+tables of strings. A mistake (unknown key, missing command, bad matcher...)
+is said on the message line with its line number, and the file's tasks are
+left out until it is fixed; the others are still offered.
 
 ## Themes
 

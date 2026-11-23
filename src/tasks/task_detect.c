@@ -1,5 +1,6 @@
 /* The build and test tasks of a project (see task_detect.h) */
 #include "tasks/task_detect.h"
+#include "tasks/task_config.h"
 #include <string.h>
 
 /* Make targets offered at most */
@@ -10,33 +11,8 @@
 /* The files that make a folder a project's */
 static const gchar* const MARKERS[] = {
     "Makefile", "makefile", "GNUmakefile", "Cargo.toml", "package.json", "go.mod", "CMakeLists.txt",
-    "meson.build", "build.ninja", "pyproject.toml", "setup.py", "pytest.ini",
+    "meson.build", "build.ninja", "pyproject.toml", "setup.py", "pytest.ini", ".lookinfiles/tasks.toml",
 };
-
-TaskDef* task_def_new(const gchar* label, const gchar* const* argv, const gchar* dir) {
-    TaskDef* def = g_new0(TaskDef, 1);
-    def->label = g_strdup(label);
-    def->argv = g_strdupv((gchar**)argv);
-    def->dir = g_strdup(dir);
-    return def;
-}
-
-TaskDef* task_def_copy(const TaskDef* def) {
-    return def != NULL ? task_def_new(def->label, (const gchar* const*)def->argv, def->dir) : NULL;
-}
-
-void task_def_free(TaskDef* def) {
-    if (def == NULL) return;
-    g_free(def->label);
-    g_strfreev(def->argv);
-    g_free(def->dir);
-    g_free(def);
-}
-
-gboolean task_def_equal(const TaskDef* a, const TaskDef* b) {
-    if (a == NULL || b == NULL) return a == b;
-    return g_strcmp0(a->dir, b->dir) == 0 && g_strv_equal((const gchar* const*)a->argv, (const gchar* const*)b->argv);
-}
 
 static gboolean has_file(const gchar* dir, const gchar* name) {
     gchar* path = g_build_filename(dir, name, NULL);
@@ -361,9 +337,30 @@ static void add_python(GPtrArray* tasks, const gchar* dir) {
 #endif
 }
 
-GPtrArray* task_detect(const gchar* dir) {
+/* The project's own tasks (.lookinfiles/tasks.toml) */
+static void add_config(GPtrArray* tasks, const gchar* dir, gchar** problem) {
+    gchar* path = task_config_path(dir);
+    gchar* text = NULL;
+    if (g_file_get_contents(path, &text, NULL, NULL)) {
+        GError* error = NULL;
+        GPtrArray* own = task_config_parse(text, dir, &error);
+        if (own != NULL) {
+            for (guint i = 0; i < own->len; i++) g_ptr_array_add(tasks, task_def_copy(g_ptr_array_index(own, i)));
+            g_ptr_array_unref(own);
+        } else if (problem != NULL) {
+            *problem = g_strdup_printf("%s: %s", path, error->message);
+        }
+        g_clear_error(&error);
+        g_free(text);
+    }
+    g_free(path);
+}
+
+GPtrArray* task_detect(const gchar* dir, gchar** problem) {
     GPtrArray* tasks = g_ptr_array_new_with_free_func((GDestroyNotify)task_def_free);
+    if (problem != NULL) *problem = NULL;
     if (dir == NULL) return tasks;
+    add_config(tasks, dir, problem);
     add_make(tasks, dir);
     add_cargo(tasks, dir);
     add_cmake_meson_ninja(tasks, dir);

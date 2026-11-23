@@ -98,7 +98,9 @@ latex_log:
 latex_root:
 latex_synctex:
 task_parse:
-task_detect:
+task_def:
+task_config:task_def,i18n
+task_detect:task_def,task_config
 preview_cache:
 path_kind:
 pane_geometry:

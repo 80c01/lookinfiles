@@ -41,6 +41,12 @@ typedef struct TaskParser TaskParser;
 TaskParser* task_parser_new(const gchar* dir);
 void task_parser_free(TaskParser* p);
 
+/* A regular expression tried on each line before the built-in ones, with
+ * the named groups file and line (required), column, severity ("error",
+ * "warning", "note"...) and message (the whole line when missing). FALSE
+ * when it does not compile or lacks file or line. */
+gboolean task_parser_add_matcher(TaskParser* p, const gchar* pattern);
+
 /* Read the next line of the output (without its newline; any encoding is
  * made valid UTF-8). Returns how many messages it added. */
 guint task_parser_feed(TaskParser* p, const gchar* line);

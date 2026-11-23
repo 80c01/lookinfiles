@@ -561,13 +561,22 @@ Layers, from bottom to top
   class warnings, bad boxes; lines wrapped at 79 characters joined, the file
   of a message from the `(./file.tex ... )` nesting, repeats kept once.
 - `task_parse` — the messages in the output of a build or test command, one
-  line at a time (`TaskParser`, `TaskMessage`): gcc / clang / go / pytest
+  line at a time (`TaskParser`, `TaskMessage`): a task's own matchers
+  first (`task_parser_add_matcher()`, named groups), then gcc / clang / go / pytest
   `file:line[:col]:` (also behind the linker), rustc heads and their `-->`
   location, panics, tsc (and MSVC), eslint's stylish rows, Python
   tracebacks (the last frame in the project); relative files resolved in
   the folder `make` / `ninja` entered; ANSI escapes and progress before a
   carriage return dropped, repeats kept once.
-- `task_detect` — the tasks of a project (`TaskDef`: label, argv, folder):
+- `task_def` — a task (`TaskDef`): label, the command of a named task,
+  argv, folder, environment added, matcher.
+- `task_config` — the project's own tasks in `.lookinfiles/tasks.toml`: a
+  small TOML reader (`[[task]]` tables, strings, booleans, arrays and
+  inline tables of strings) with the line of each mistake; a `command` runs
+  through the shell, `args` directly; a matcher must compile and name the
+  groups `file` and `line`.
+- `task_detect` — the tasks of a project (`TaskDef`): the project's own
+  (`task_config`) first, then those of its build files:
   the nearest folder holding a build file (`task_detect_project_dir()`, not
   above home), then make targets (`.PHONY`; `-j` and `cmake --build
   --parallel` with every processor), cargo (from the workspace's

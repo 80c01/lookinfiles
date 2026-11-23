@@ -219,6 +219,27 @@ static void test_go(void) {
     task_parser_free(p);
 }
 
+static void test_matcher(void) {
+    TaskParser* p = task_parser_new("/proj");
+    g_assert_false(task_parser_add_matcher(p, "("));
+    g_assert_false(task_parser_add_matcher(p, "^(?<file>.*)$"));
+    g_assert_true(task_parser_add_matcher(p, "^\\[(?<severity>\\w+)\\] (?<file>\\S+) line (?<line>\\d+)(?:, col (?<column>\\d+))?: (?<message>.*)$"));
+    task_parser_feed(p, "[WARN] lib/a.lua line 4, col 2: shadowed name");
+    task_parser_feed(p, "[ERROR] lib/b.lua line 9: nil call");
+    task_parser_feed(p, "src/c.c:1:2: error: still the built-in ones");
+    task_parser_finish(p);
+    g_assert_cmpuint(n_msgs(p), ==, 3);
+    g_assert_cmpint(msg(p, 0)->kind, ==, TASK_MSG_WARNING);
+    g_assert_cmpstr(msg(p, 0)->file, ==, "/proj/lib/a.lua");
+    g_assert_cmpint(msg(p, 0)->line, ==, 4);
+    g_assert_cmpint(msg(p, 0)->column, ==, 2);
+    g_assert_cmpstr(msg(p, 0)->text, ==, "shadowed name");
+    g_assert_cmpint(msg(p, 1)->kind, ==, TASK_MSG_ERROR);
+    g_assert_cmpint(msg(p, 1)->column, ==, 0);
+    g_assert_cmpstr(msg(p, 2)->file, ==, "/proj/src/c.c");
+    task_parser_free(p);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/task_parse/gcc", test_gcc);
@@ -231,5 +252,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/task_parse/eslint", test_eslint);
     g_test_add_func("/task_parse/python", test_python);
     g_test_add_func("/task_parse/go", test_go);
+    g_test_add_func("/task_parse/matcher", test_matcher);
     return g_test_run();
 }

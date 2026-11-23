@@ -13746,6 +13746,90 @@ msgid_plural "Running %1$s… (%2$u unsaved files)"
 msgstr[0] "%1$s en cours… (%2$u fichier non enregistré)"
 msgstr[1] "%1$s en cours… (%2$u fichiers non enregistrés)"
 
+#, c-format
+msgid "line %1$d: %2$s"
+msgstr "ligne %1$d : %2$s"
+
+msgid "a string was expected"
+msgstr "une chaîne était attendue"
+
+msgid "the string is not closed on its line"
+msgstr "la chaîne n’est pas fermée sur sa ligne"
+
+msgid "bad \\u escape"
+msgstr "échappement \\u incorrect"
+
+msgid "unknown escape in the string"
+msgstr "échappement inconnu dans la chaîne"
+
+msgid "a key was expected"
+msgstr "une clé était attendue"
+
+msgid "an array holds strings only"
+msgstr "un tableau ne contient que des chaînes"
+
+msgid "a comma or ] was expected in the array"
+msgstr "une virgule ou ] était attendue dans le tableau"
+
+msgid "= was expected after the key"
+msgstr "= était attendu après la clé"
+
+msgid "a comma or } was expected in the table"
+msgstr "une virgule ou } était attendue dans la table"
+
+msgid "a value was expected (a string, true, false, [...] or {...})"
+msgstr "une valeur était attendue (une chaîne, true, false, [...] ou {...})"
+
+#, c-format
+msgid "unknown key %s (name, command, args, cwd, env, matcher, default)"
+msgstr "clé inconnue %s (name, command, args, cwd, env, matcher, default)"
+
+msgid "an array of strings"
+msgstr "un tableau de chaînes"
+
+msgid "a table of strings"
+msgstr "une table de chaînes"
+
+msgid "true or false"
+msgstr "true ou false"
+
+msgid "a string"
+msgstr "une chaîne"
+
+#, c-format
+msgid "%1$s must be %2$s"
+msgstr "%1$s doit être %2$s"
+
+#, c-format
+msgid "%s is given twice"
+msgstr "%s est donné deux fois"
+
+msgid "the task has no name"
+msgstr "la tâche n’a pas de nom"
+
+msgid "give the task either command or args"
+msgstr "donnez à la tâche soit command, soit args"
+
+msgid "the command is empty"
+msgstr "la commande est vide"
+
+#, c-format
+msgid "the matcher is not a valid regular expression: %s"
+msgstr "le matcher n’est pas une expression régulière valide : %s"
+
+msgid "the matcher needs the groups (?<file>...) and (?<line>...)"
+msgstr "le matcher doit avoir les groupes (?<file>...) et (?<line>...)"
+
+msgid "only [[task]] tables are known"
+msgstr "seules les tables [[task]] sont connues"
+
+msgid "a key before the first [[task]]"
+msgstr "une clé avant le premier [[task]]"
+
+#, c-format
+msgid "Tasks file left out: %s"
+msgstr "Fichier de tâches ignoré : %s"
+
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
 
