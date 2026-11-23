@@ -109,3 +109,39 @@ utilisé et tenu à jour dans `~/.cache/lookinfiles/tags/`. Il ajoute aussi
 Objective-C, PHP, Perl, Kotlin, Swift, Scala, Dart, Haskell, Elixir,
 Erlang, Julia, R et Tcl. L’[onglet Diagnostics](lookinfiles:diagnostics#ctags)
 indique s’il est trouvé.
+
+## Tâches de compilation et de test
+
+`F7` compile le projet du fichier de l’onglet d’édition qui a le focus
+(sinon du dossier de l’explorateur) : le dossier le plus proche au-dessus
+qui contient un fichier de compilation. Les tâches viennent de ces
+fichiers :
+
+| Fichier | Tâches |
+|---|---|
+| `Makefile` | `make`, puis `make <cible>` (les cibles `.PHONY`, sinon les règles au nom simple) |
+| `Cargo.toml` | `cargo build`, `check`, `test`, `clippy`, `run` (dans le dossier du workspace pour une crate membre) |
+| `package.json` | `npm run <script>` pour chaque script (`pnpm`, `yarn` ou `bun` quand leur fichier de verrou est là) |
+| `go.mod` | `go build ./...`, `go test ./...`, `go vet ./...` |
+| `CMakeLists.txt` | `cmake --build build` (un dossier de compilation configuré), sinon `cmake -B build` |
+| `meson.build`, `build.ninja` | `ninja -C build` et `meson test -C build`, sinon `meson setup build` ; `ninja` |
+| `pyproject.toml`, `setup.py`, `pytest.ini` | `pytest` |
+
+| Touche | Action |
+|---|---|
+| `F7` | Lance la tâche choisie en dernier dans ce projet (au début la première de la liste : `make`, `cargo build`, `npm run build`…) ; depuis l’onglet Build, la tâche qu’il montre |
+| `Maj+F7` | Choisit la tâche dans une liste (taper pour filtrer, `Entrée` la lance) ; elle devient celle que `F7` lance dans ce projet |
+| `Ctrl+F7` | Arrête la tâche et ce qu’elle a lancé (tué au bout de trois secondes) |
+| `F8` / `Maj+F8` | Erreur ou avertissement suivant / précédent de l’onglet Build, ouvert dans un onglet d’édition (tant que l’onglet Build est ouvert ; sinon les diagnostics du fichier) |
+
+L’onglet **Build** montre les messages en haut (erreurs, avertissements et
+notes, dans l’ordre de la sortie ; `Entrée` ou un double clic ouvre
+l’endroit) et la sortie en bas, au fur et à mesure. Son en-tête dit ce qui
+tourne, dans quel dossier, les nombres et le temps pris, avec les boutons
+**Relancer** et **Arrêter**. Les messages de gcc, clang, l’éditeur de
+liens, rustc et cargo, tsc, eslint, go, pytest et des traces Python sont
+reconnus, et les dossiers où entrent `make -C` et `ninja -C` sont suivis.
+Une seule tâche tourne à la fois : une autre l’arrête. La tâche ne reçoit
+aucune entrée, et les fichiers non enregistrés ne le sont pas avant (la
+ligne de message dit combien il y en a). Les tâches ne tournent pas encore
+sur les machines distantes.

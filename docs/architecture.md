@@ -33,6 +33,7 @@ The directories group modules by feature, not by layer:
 | `games/` | games mode |
 | `jupyter/` | Jupyter notebooks edited cell by cell: the notebook model and its tab |
 | `latex/` | LaTeX documents compiled on save: log messages, main document, SyncTeX, the LaTeX tab |
+| `tasks/` | build and test tasks (F7): the tasks of a project, the messages of their output, the Build tab |
 | `terminal/` | terminal panes and the built-in terminal |
 | `workspace/` | workspaces, layouts, session |
 | `clock/` | the clock and the timers of the top bar |
@@ -559,6 +560,18 @@ Layers, from bottom to top
   errors (`-file-line-error` or `!` with its `l.12` source), LaTeX / package /
   class warnings, bad boxes; lines wrapped at 79 characters joined, the file
   of a message from the `(./file.tex ... )` nesting, repeats kept once.
+- `task_parse` — the messages in the output of a build or test command, one
+  line at a time (`TaskParser`, `TaskMessage`): gcc / clang / go / pytest
+  `file:line[:col]:` (also behind the linker), rustc heads and their `-->`
+  location, panics, tsc (and MSVC), eslint's stylish rows, Python
+  tracebacks (the last frame in the project); relative files resolved in
+  the folder `make` / `ninja` entered; ANSI escapes and progress before a
+  carriage return dropped, repeats kept once.
+- `task_detect` — the tasks of a project (`TaskDef`: label, argv, folder):
+  the nearest folder holding a build file (`task_detect_project_dir()`, not
+  above home), then make targets (`.PHONY`), cargo (from the workspace's
+  folder), npm / pnpm / yarn / bun scripts, go, CMake, Meson, Ninja,
+  pytest; the first one is the default. Reads files: worker threads.
 - `latex_synctex` — SyncTeX: the `.synctex.gz` of a PDF
   (`latex_synctex_file()`), the page and height of the first place in the
   output of `synctex view` (`latex_synctex_parse_view()`).
@@ -1556,6 +1569,22 @@ Layers, from bottom to top
   and `monitor_file()`, so zoom and reloads are of the PDF), or
   `APP_EVENT_PREVIEW_STALE` when it is shown already and the messages given to `latex_errors`. One compilation at a
   time: a save meanwhile compiles again when it ends.
+- `task_run` — F7 / Shift+F7 / Ctrl+F7: the project of the focused editor
+  tab's file (else the explorer's folder) found in a worker
+  (`task_detect`), the task chosen last there (Shift+F7: an `AppDialog`
+  list) run with `GSubprocess` in its own process group (Stop reaches what
+  it started: SIGTERM, then SIGKILL), no input, stdout and stderr merged
+  and read asynchronously in 64 KiB pieces, each line given to
+  `task_parse` and to the Build page. One task at a time (a new one drops
+  the running one); not on remote machines yet.
+- `task_page` — the Build page of the preview notebook (`app->build_page`,
+  after the LaTeX page): a header (task, folder, counts, time, Run Again /
+  Stop / Close), the messages in a `GtkListView` above (`Enter` opens one
+  with `editor_open_at()` and scrolls the output to its line) and the
+  output below (shown every 100 ms, at most 20000 lines), in a split.
+  `task_page_step()` is F8 / Shift+F8 while it is open. One page per
+  workspace (`VirtualLayout.build_page`); a run keeps a reference on the
+  page it writes to. A movable page (drag, tab menu), like an editor tab.
 - `latex_sync` — the PDF preview follows the cursor of a focused `.tex`
   editor tab (SyncTeX forward search): after a pause, `synctex view` runs
   asynchronously and `pdf_preview_show_point()` scrolls to the place, at

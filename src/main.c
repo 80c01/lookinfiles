@@ -73,6 +73,7 @@
 #include "code/code_problems.h"
 #include "code/code_nav.h"
 #include "latex/latex_build.h"
+#include "tasks/task_run.h"
 #include "latex/latex_sync.h"
 #include "editor/editor_modes.h"
 #include <stdio.h>
@@ -818,6 +819,7 @@ int main(int argc, char** argv) {
     editor_save_all_buffers(app);
     code_intel_shutdown(app);   /* language servers: shutdown, exit */
     latex_build_free(app);      /* a running compilation stopped */
+    task_run_free(app);         /* a running task stopped */
     latex_sync_free(app);
     fs_watch_free(app);
     editor_watch_free(app);

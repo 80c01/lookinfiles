@@ -17,6 +17,7 @@
 #include "chrome/themes.h"
 #include "widgets/panels.h"
 #include "core/app_events.h"
+#include "core/i18n.h"
 #include "workspace/workspace.h"
 #include "explorer/file_list.h"
 #include "terminal/terminal.h"
@@ -35,6 +36,8 @@
 #include "code/code_refs.h"
 #include "code/code_workspace_symbols.h"
 #include "latex/latex_errors.h"
+#include "tasks/task_page.h"
+#include "tasks/task_run.h"
 #include "workspace/session.h"
 
 
@@ -183,7 +186,7 @@ void close_shown_tab(AppData* app) {
         if (launcher_tab_close_shown(app) || canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || diagnostics_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app)) {
             return;
         }
-        if (code_problems_close_shown(app) || code_refs_close_shown(app) || latex_errors_close_shown(app)) {
+        if (code_problems_close_shown(app) || code_refs_close_shown(app) || latex_errors_close_shown(app) || task_page_close_shown(app)) {
             return;
         }
     }
@@ -271,6 +274,26 @@ gboolean on_window_key_press(GtkEventControllerKey* controller, guint keyval,
     if (keyval == GDK_KEY_F1 && (state & (GDK_CONTROL_MASK | GDK_ALT_MASK | GDK_SHIFT_MASK)) == 0) {
         help_guide_show(app, NULL);
         return TRUE;
+    }
+
+    /* F7: run the project's task again, Shift+F7: choose one, Ctrl+F7:
+     * stop it; F8 / Shift+F8: next / previous message of the Build tab (an
+     * editor tab steps through its diagnostics when the tab is closed).
+     * Terminals keep their function keys. */
+    if ((keyval == GDK_KEY_F7 || keyval == GDK_KEY_F8) && !(state & GDK_ALT_MASK) && !focus_in_terminal(app)) {
+        gboolean ctrl = (state & GDK_CONTROL_MASK) != 0;
+        gboolean shift = (state & GDK_SHIFT_MASK) != 0;
+        if (keyval == GDK_KEY_F7) {
+            if (ctrl && !shift) {
+                if (!task_run_stop(app)) app_notice(app, _("No task is running"), FALSE);
+            } else if (shift && !ctrl) {
+                task_run_choose(app);
+            } else if (!ctrl) {
+                task_run_again(app);
+            }
+            return TRUE;
+        }
+        if (!ctrl && task_page_step(app, !shift)) return TRUE;
     }
 
 #ifdef HAVE_VTE

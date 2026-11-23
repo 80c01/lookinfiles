@@ -133,6 +133,7 @@ typedef struct {
     GtkWidget* disk_usage_page;    /* its Disk Usage tab while another workspace is shown (owned ref, disk_usage_tab.c) */
     GtkWidget* refs_page;          /* its References tab while another workspace is shown (owned ref, code_refs.c) */
     GtkWidget* latex_page;         /* its LaTeX tab while another workspace is shown (owned ref, latex_errors.c) */
+    GtkWidget* build_page;         /* its Build tab while another workspace is shown (owned ref, task_page.c) */
     GtkWidget* problems_page;      /* its Problems tab while another workspace is shown (owned ref, code_problems.c) */
     GtkWidget* deep_search_page;   /* its Deep Search tab while another workspace is shown (owned ref, deep_search_tab.c) */
     GPtrArray* browser_pages;      /* its browser tabs while another workspace is shown (owned refs, browser.c) */
@@ -239,6 +240,8 @@ typedef struct AppData {
     GtkWidget* latex_page;          /* LaTeX page (compilation messages, latex_errors.c), or NULL */
     struct LatexBuild* latex_build; /* compilation of saved LaTeX documents (latex_build.c), or NULL */
     struct LatexSync* latex_sync;   /* PDF preview following a LaTeX source (latex_sync.c), or NULL */
+    GtkWidget* build_page;          /* Build page (output and messages of a task, task_page.c), or NULL */
+    struct TaskRun* task_run;       /* build and test tasks (task_run.c), or NULL */
     GPtrArray* canvas_pages;        /* Canvas tabs of every workspace (roots, not referenced; canvas_view.c), or NULL */
     GPtrArray* video_pages;         /* Video tabs of every workspace (roots, not referenced; video_tab.c), or NULL */
     GPtrArray* ipynb_pages;         /* Jupyter notebook tabs of every workspace (roots, not referenced; ipynb_tab.c), or NULL */

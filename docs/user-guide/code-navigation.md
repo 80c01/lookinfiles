@@ -105,3 +105,37 @@ and kept up to date in `~/.cache/lookinfiles/tags/`. It also adds
 Objective-C, PHP, Perl, Kotlin, Swift, Scala, Dart, Haskell, Elixir,
 Erlang, Julia, R and Tcl. The [Diagnostics tab](lookinfiles:diagnostics#ctags)
 says whether it is found.
+
+## Build and test tasks
+
+`F7` builds the project of the focused editor tab's file (else of the
+explorer's folder): the nearest folder above it holding a build file. The
+tasks come from those files:
+
+| Build file | Tasks |
+|---|---|
+| `Makefile` | `make`, then `make <target>` (the `.PHONY` targets, else the rules with a plain name) |
+| `Cargo.toml` | `cargo build`, `check`, `test`, `clippy`, `run` (in the workspace's folder for a member crate) |
+| `package.json` | `npm run <script>` for each script (`pnpm`, `yarn` or `bun` when their lock file is there) |
+| `go.mod` | `go build ./...`, `go test ./...`, `go vet ./...` |
+| `CMakeLists.txt` | `cmake --build build` (a configured build folder), else `cmake -B build` |
+| `meson.build`, `build.ninja` | `ninja -C build` and `meson test -C build`, else `meson setup build`; `ninja` |
+| `pyproject.toml`, `setup.py`, `pytest.ini` | `pytest` |
+
+| Key | Action |
+|---|---|
+| `F7` | Run the task chosen last in this project (at first the first one of the list: `make`, `cargo build`, `npm run build`...); from the Build tab, the task it shows |
+| `Shift+F7` | Choose the task in a list (type to filter, `Enter` runs it); it becomes the one `F7` runs in this project |
+| `Ctrl+F7` | Stop the task and what it started (killed after three seconds) |
+| `F8` / `Shift+F8` | Next / previous error or warning of the Build tab, opened in an editor tab (while the Build tab is open; otherwise the diagnostics of the file) |
+
+The **Build** tab shows the messages above (errors, warnings and notes, in
+the order of the output; `Enter` or a double click opens the place) and the
+output below, as it comes. Its header says what runs, in which folder, the
+counts and how long it took, with **Run Again** and **Stop** buttons. The
+messages of gcc, clang, the linker, rustc and cargo, tsc, eslint, go,
+pytest and Python tracebacks are recognized, and the folders `make -C` and
+`ninja -C` enter are followed. One task runs at a time: another one stops
+it. The task gets no input, and files left unsaved are not saved first
+(the message line says how many there are). Tasks do not run on remote
+machines yet.

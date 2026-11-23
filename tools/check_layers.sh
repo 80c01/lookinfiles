@@ -97,6 +97,8 @@ line_diff:
 latex_log:
 latex_root:
 latex_synctex:
+task_parse:
+task_detect:
 preview_cache:
 path_kind:
 pane_geometry:
@@ -430,7 +432,7 @@ done
 DIR_DEPS="
 canvas:core,editor,explorer,theme,widgets
 clock:core,theme
-chrome:canvas,clock,code,core,diskuse,editor,explorer,games,git,jupyter,latex,markup,media,notes,preview,search,sysmon,terminal,theme,widgets,workspace
+chrome:canvas,clock,code,core,diskuse,editor,explorer,games,git,jupyter,latex,markup,media,notes,preview,search,sysmon,tasks,terminal,theme,widgets,workspace
 code:core,editor,formats,git,markup,preview,theme,widgets
 core:explorer,git,notes,terminal
 diskuse:core,explorer,git,theme,widgets
@@ -450,11 +452,12 @@ org:core,editor,markup,media,preview,theme
 preview:canvas,chrome,code,core,diskuse,editor,explorer,formats,games,git,mail,markup,media,notes,office,org,search,theme,widgets
 search:code,core,editor,explorer,theme,widgets
 sysmon:core,git,theme,widgets
+tasks:core,editor,git,theme,widgets
 terminal:core,editor,explorer,theme,widgets,workspace
 theme:core
 vim:theme
 widgets:code,core,explorer,git,preview,theme
-workspace:canvas,chrome,code,core,diskuse,editor,explorer,games,git,jupyter,latex,media,preview,search,sysmon,terminal,theme,widgets
+workspace:canvas,chrome,code,core,diskuse,editor,explorer,games,git,jupyter,latex,media,preview,search,sysmon,tasks,terminal,theme,widgets
 "
 for d in src/*/; do
     dir=$(basename "$d")

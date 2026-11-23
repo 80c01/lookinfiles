@@ -15,6 +15,7 @@
 #include "code/code_problems.h"
 #include "code/code_refs.h"
 #include "latex/latex_errors.h"
+#include "tasks/task_page.h"
 #include "search/deep_search_tab.h"
 
 enum { RESPONSE_SAVE = 1, RESPONSE_DELETE = 2 };
@@ -152,6 +153,7 @@ static const ToolTab TOOL_TABS[] = {
     {"references", G_STRUCT_OFFSET(AppData, refs_page), refs_open, refs_close},
     {"search", G_STRUCT_OFFSET(AppData, search_page), search_open, search_close},
     {"latex", G_STRUCT_OFFSET(AppData, latex_page), latex_errors_open, latex_errors_close},
+    {"build", G_STRUCT_OFFSET(AppData, build_page), task_page_open, task_page_close},
     {"deep-search", G_STRUCT_OFFSET(AppData, deep_search_page), deep_search_tab_open, deep_search_tab_close},
 };
 

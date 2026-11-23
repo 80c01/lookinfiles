@@ -1991,10 +1991,11 @@ msgstr ""
 
 #: src/chrome/help.c:293
 msgid ""
-"Problems panel (LSP diagnostics) / next / previous diagnostic in the file"
+"Problems panel (LSP diagnostics) / next / previous diagnostic in the file "
+"(F8: the Build tab's messages while it is open)"
 msgstr ""
 "Onglet Problèmes (diagnostics LSP) / diagnostic suivant / précédent dans le "
-"fichier"
+"fichier (F8 : les messages de l’onglet Build tant qu’il est ouvert)"
 
 #: src/chrome/help.c:294
 msgid ""
@@ -13628,6 +13629,122 @@ msgstr "libssh intégré"
 
 msgid "the ssh program"
 msgstr "le programme ssh"
+
+msgid "Run the project's task chosen last (at first make, cargo build, npm run build...): output and messages in the Build tab (Enter opens one)"
+msgstr "Lance la tâche du projet choisie en dernier (au début make, cargo build, npm run build…) : sortie et messages dans l’onglet Build (Entrée en ouvre un)"
+
+msgid "Choose the task to run among the project's (Makefile, Cargo.toml, package.json, go.mod...)"
+msgstr "Choisit la tâche à lancer parmi celles du projet (Makefile, Cargo.toml, package.json, go.mod…)"
+
+msgid "Stop the running task"
+msgstr "Arrête la tâche en cours"
+
+msgid "While the Build tab is open: next / previous error or warning of the task, opened in an editor tab"
+msgstr "Tant que l’onglet Build est ouvert : erreur ou avertissement suivant / précédent de la tâche, ouvert dans un onglet d’édition"
+
+msgid "No task is running"
+msgstr "Aucune tâche ne tourne"
+
+msgid "Run Again (F7)"
+msgstr "Relancer (F7)"
+
+msgid "Stop (Ctrl+F7)"
+msgstr "Arrêter (Ctrl+F7)"
+
+msgid "Close Build"
+msgstr "Fermer Build"
+
+msgid "Build"
+msgstr "Build"
+
+#, c-format
+msgid "running… %s"
+msgstr "en cours… %s"
+
+msgid "running…"
+msgstr "en cours…"
+
+msgid "(the rest of the output is not shown)"
+msgstr "(la suite de la sortie n’est pas montrée)"
+
+msgid "stopped"
+msgstr "arrêtée"
+
+msgid "done"
+msgstr "terminée"
+
+#, c-format
+msgid "failed (exit status %d)"
+msgstr "échec (code de sortie %d)"
+
+msgid "failed"
+msgstr "échec"
+
+msgid "No task run yet — press F7 to build the project"
+msgstr "Aucune tâche lancée — F7 compile le projet"
+
+#, c-format
+msgid "%s stopped"
+msgstr "%s arrêtée"
+
+#, c-format
+msgid "%s failed (Build tab)"
+msgstr "%s a échoué (onglet Build)"
+
+#, c-format
+msgid "%s done"
+msgstr "%s terminée"
+
+#, c-format
+msgid "%s: program not found (install it or add it to PATH)"
+msgstr "%s : programme introuvable (installez-le ou ajoutez-le au PATH)"
+
+#, c-format
+msgid "%1$s did not start: %2$s"
+msgstr "%1$s n’a pas démarré : %2$s"
+
+#, c-format
+msgid "Running %s…"
+msgstr "%s en cours…"
+
+#, c-format
+msgid "Run a Task of %s"
+msgstr "Lancer une tâche de %s"
+
+msgid "_Run"
+msgstr "_Lancer"
+
+msgid "Filter the tasks"
+msgstr "Filtrer les tâches"
+
+#, c-format
+msgid "In %s"
+msgstr "Dans %s"
+
+#, c-format
+msgid "No build file in %s or above (Makefile, Cargo.toml, package.json, go.mod…)"
+msgstr "Aucun fichier de compilation dans %s ni au-dessus (Makefile, Cargo.toml, package.json, go.mod…)"
+
+msgid "Tasks do not run on remote machines yet"
+msgstr "Les tâches ne tournent pas encore sur les machines distantes"
+
+#, c-format
+msgid "%1$s: %2$u error (Build tab)"
+msgid_plural "%1$s: %2$u errors (Build tab)"
+msgstr[0] "%1$s : %2$u erreur (onglet Build)"
+msgstr[1] "%1$s : %2$u erreurs (onglet Build)"
+
+#, c-format
+msgid "%1$s done: %2$u warning (Build tab)"
+msgid_plural "%1$s done: %2$u warnings (Build tab)"
+msgstr[0] "%1$s terminée : %2$u avertissement (onglet Build)"
+msgstr[1] "%1$s terminée : %2$u avertissements (onglet Build)"
+
+#, c-format
+msgid "Running %1$s… (%2$u unsaved file)"
+msgid_plural "Running %1$s… (%2$u unsaved files)"
+msgstr[0] "%1$s en cours… (%2$u fichier non enregistré)"
+msgstr[1] "%1$s en cours… (%2$u fichiers non enregistrés)"
 
 #~ msgid "Changes: preview the selected file"
 #~ msgstr "Modifications : afficher le fichier sélectionné dans l’aperçu"
