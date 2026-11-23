@@ -4,6 +4,7 @@
 #include "core/i18n.h"
 #ifdef HAVE_LIBSSH
 #include "core/ssh_link.h"
+#include "core/ssh_link_exec.h"
 #endif
 
 #include <glib/gstdio.h>
@@ -181,6 +182,17 @@ static gboolean call_missing(gpointer data) {
     return G_SOURCE_REMOVE;
 }
 
+/* Tell the application that t has no shared connection */
+static void report_missing(const SshTarget* t) {
+    if (missing_func == NULL) return;
+    MissingCall* m = g_new0(MissingCall, 1);
+    m->host = g_strdup(t->host);
+    m->user = g_strdup(t->user);
+    m->port = t->port;
+    m->identity = g_strdup(t->identity_file);
+    g_main_context_invoke(NULL, call_missing, m); /* at once on the main thread, else queued there */
+}
+
 GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
     if (!(flags & (SSH_ARGV_MASTER | SSH_ARGV_NO_MUX)) && missing_func != NULL) {
         gboolean missing = FALSE;
@@ -196,14 +208,7 @@ GPtrArray* ssh_session_argv(const SshTarget* t, SshArgvFlags flags) {
             missing = (sock != NULL && !g_file_test(sock, G_FILE_TEST_EXISTS));
             g_free(sock);
         }
-        if (missing) {
-            MissingCall* m = g_new0(MissingCall, 1);
-            m->host = g_strdup(t->host);
-            m->user = g_strdup(t->user);
-            m->port = t->port;
-            m->identity = g_strdup(t->identity_file);
-            g_main_context_invoke(NULL, call_missing, m); /* at once on the main thread, else queued there */
-        }
+        if (missing) report_missing(t);
     }
     GPtrArray* argv = g_ptr_array_new_with_free_func(g_free);
     g_ptr_array_add(argv, g_strdup(program != NULL ? program : SSH_DEFAULT_PROGRAM));
@@ -504,9 +509,32 @@ GSubprocess* ssh_spawn(const SshTarget* t, const gchar* command, GError** error)
                                          G_SUBPROCESS_FLAGS_STDERR_SILENCE, error);
 }
 
+#ifdef HAVE_LIBSSH
+/* The machine's libssh link, or NULL (error set, the application told)
+ * when libssh is in use but the link is not open: never an ssh program
+ * logging in by itself, once per command */
+static SshLink* command_link(const SshTarget* t, GError** error) {
+    SshLink* link = ssh_link_lookup(t);
+    if (link == NULL) {
+        report_missing(t);
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED, _("the SSH connection to the machine is not open"));
+    }
+    return link;
+}
+#endif
+
 gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GBytes* input, GCancellable* cancel, gint* status,
                        GBytes** out, GError** error) {
     *out = NULL;
+#ifdef HAVE_LIBSSH
+    if (ssh_link_enabled()) {
+        SshLink* link = command_link(t, error);
+        if (link == NULL) return FALSE;
+        gboolean ok = ssh_link_exec(link, command != NULL ? command : "true", input, cancel, status, out, NULL, error);
+        ssh_link_unref(link);
+        return ok;
+    }
+#endif
     GSubprocess* p = spawn_command(t, command, G_SUBPROCESS_FLAGS_STDIN_PIPE | G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                                                    G_SUBPROCESS_FLAGS_STDERR_PIPE, error);
     if (p == NULL) return FALSE;
@@ -533,8 +561,87 @@ gboolean ssh_exec_sync(const SshTarget* t, const gchar* command, GBytes* input, 
     return ok;
 }
 
+#ifdef HAVE_LIBSSH
+typedef struct {
+    SshLink* link;
+    gchar* command;
+    GBytes* input;
+    gint status;
+    GBytes* out;
+    GBytes* err;
+    SshExecFunc done;
+    gpointer data;
+} LinkExec;
+
+static void link_exec_free(gpointer data) {
+    LinkExec* x = data;
+    ssh_link_unref(x->link);
+    g_free(x->command);
+    g_bytes_unref(x->input);
+    if (x->out != NULL) g_bytes_unref(x->out);
+    if (x->err != NULL) g_bytes_unref(x->err);
+    g_free(x);
+}
+
+static void link_exec_thread(GTask* task, gpointer source, gpointer data, GCancellable* cancel) {
+    (void)source;
+    LinkExec* x = data;
+    GError* error = NULL;
+    if (ssh_link_exec(x->link, x->command, x->input, cancel, &x->status, &x->out, &x->err, &error)) {
+        g_task_return_boolean(task, TRUE);
+    } else {
+        g_task_return_error(task, error);
+    }
+}
+
+static void on_link_exec_done(GObject* source, GAsyncResult* res, gpointer data) {
+    (void)source;
+    (void)data;
+    LinkExec* x = g_task_get_task_data(G_TASK(res));
+    GError* error = NULL;
+    gboolean ok = g_task_propagate_boolean(G_TASK(res), &error);
+    gchar* out_text = bytes_text(ok ? x->out : NULL);
+    gchar* err_text = bytes_text(ok ? x->err : NULL);
+    if (x->done != NULL) x->done(ok ? x->status : -1, out_text, err_text, error, x->data);
+    g_free(out_text);
+    g_free(err_text);
+    g_clear_error(&error);
+}
+
+/* ssh_exec_async() on the link's exec channel, run by a worker thread */
+static void link_exec_async(const SshTarget* t, const gchar* command, const gchar* input, GCancellable* cancel,
+                            SshExecFunc done, gpointer data) {
+    GError* error = NULL;
+    SshLink* link = command_link(t, &error);
+    if (link == NULL) {
+        ExecRun* run = g_new0(ExecRun, 1);
+        run->done = done;
+        run->data = data;
+        run->error = error;
+        g_idle_add(on_exec_spawn_failed, run);
+        return;
+    }
+    LinkExec* x = g_new0(LinkExec, 1);
+    x->link = link;
+    x->command = g_strdup(command != NULL ? command : "true");
+    x->input = g_bytes_new(input, input != NULL ? strlen(input) : 0);
+    x->done = done;
+    x->data = data;
+    GTask* task = g_task_new(NULL, cancel, on_link_exec_done, NULL);
+    g_task_set_task_data(task, x, link_exec_free);
+    g_task_run_in_thread(task, link_exec_thread);
+    g_object_unref(task);
+}
+#endif
+
 void ssh_exec_async(const SshTarget* t, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data) {
+#ifdef HAVE_LIBSSH
+    if (ssh_link_enabled()) {
+        link_exec_async(t, command, input, cancel, done, data);
+        return;
+    }
+#endif
     GPtrArray* argv = ssh_session_argv(t, 0); /* asks for the master when it is not open */
     g_ptr_array_add(argv, g_strdup(command != NULL ? command : "true"));
     GError* error = NULL;

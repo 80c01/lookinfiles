@@ -85,7 +85,9 @@ typedef void (*SshExecFunc)(gint status, const gchar* out, const gchar* err, con
  * target, with input (may be NULL) on its standard input; done() is called
  * in the main loop. Never blocks. With multiplexing, only through an open
  * master: else it fails at once (G_IO_ERROR_NOT_CONNECTED) and the master
- * is asked for (ssh_session_on_master_missing()). */
+ * is asked for (ssh_session_on_master_missing()). With libssh
+ * (ssh_link_enabled()), on an exec channel of the machine's link, the same
+ * way: no ssh program, never a login of its own. */
 void ssh_exec_async(const SshTarget* target, const gchar* command, const gchar* input,
                     GCancellable* cancel, SshExecFunc done, gpointer data);
 /* The same, waiting for the end (worker threads only), input (NULL: none)

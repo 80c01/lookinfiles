@@ -3,6 +3,8 @@
  * keyboard-interactive auth, registry, keep-alive, connection loss, SFTP. */
 #include "core/sftp_client.h"
 #include "core/ssh_link.h"
+#include "core/ssh_link_exec.h"
+#include "core/ssh_session.h"
 
 #define SSH_TEST_SERVER_WITH_SFTP
 #include "ssh_test_server.h"
@@ -582,7 +584,116 @@ static void test_connection_lost_fails_channels(void) {
     g_free(tmp);
 }
 
+typedef struct {
+    SshLink* link;
+    GBytes* input;
+    gboolean ok;
+    gint status;
+    GBytes* out;
+} EchoRun;
+
+static gpointer echo_worker(gpointer data) {
+    EchoRun* e = data;
+    e->ok = ssh_link_exec(e->link, "echo", e->input, NULL, &e->status, &e->out, NULL, NULL);
+    return NULL;
+}
+
+typedef struct {
+    gboolean done;
+    gint status;
+    gchar* out;
+    gchar* err;
+} AsyncExec;
+
+static void on_exec_async(gint status, const gchar* out, const gchar* err, const GError* error, gpointer data) {
+    g_assert_true(g_main_context_is_owner(g_main_context_default()));
+    AsyncExec* a = data;
+    g_assert_no_error(error);
+    a->status = status;
+    a->out = g_strdup(out);
+    a->err = g_strdup(err);
+    a->done = TRUE;
+}
+
+static void test_exec_over_link(void) {
+    gchar* tmp = g_dir_make_tmp("ssh-link-exec-XXXXXX", NULL);
+    gchar* kh = g_build_filename(tmp, "known_hosts", NULL);
+    ssh_link_set_test_options("", kh, FALSE, FALSE);
+    ssh_link_set_keepalive_ms(0);
+    SshTestServer* srv = ssh_test_server_start("bob", "hunter2");
+    SshTarget t = { .host = "127.0.0.1", .user = "bob", .port = srv->port };
+    AskFixture ask = { .accept_hostkey = TRUE, .secret = "hunter2" };
+    gboolean ok = FALSE;
+    SshLink* link = connect_wait(&t, &ask, &ok, NULL);
+    g_assert_true(ok);
+
+    /* From the main thread: stdout and stderr apart, the exit status */
+    gint status = -1;
+    GBytes* out = NULL;
+    GBytes* err = NULL;
+    GError* error = NULL;
+    g_assert_true(ssh_link_exec(link, "hello", NULL, NULL, &status, &out, &err, &error));
+    g_assert_no_error(error);
+    g_assert_cmpint(status, ==, 0);
+    g_assert_cmpmem(g_bytes_get_data(out, NULL), g_bytes_get_size(out), "hello stdout\n", 13);
+    g_assert_cmpmem(g_bytes_get_data(err, NULL), g_bytes_get_size(err), "hello stderr\n", 13);
+    g_bytes_unref(out);
+    g_bytes_unref(err);
+    g_assert_true(ssh_link_exec(link, "exit42", NULL, NULL, &status, &out, NULL, &error));
+    g_assert_cmpint(status, ==, 42);
+    g_bytes_unref(out);
+    g_assert_false(ssh_link_exec(link, "no-such-command", NULL, NULL, &status, &out, NULL, &error));
+    g_assert_nonnull(error);
+    g_assert_null(out);
+    g_clear_error(&error);
+
+    /* From a worker: an input larger than the channel window, echoed back
+     * while it is still being written */
+    gsize big = 3u * 1024u * 1024u;
+    guint8* data = g_malloc(big);
+    for (gsize i = 0; i < big; i++) data[i] = (guint8)(i * 7u);
+    EchoRun e = { .link = link, .input = g_bytes_new_take(data, big) };
+    GThread* th = g_thread_new("echo", echo_worker, &e);
+    g_thread_join(th);
+    g_assert_true(e.ok);
+    g_assert_cmpint(e.status, ==, 0);
+    g_assert_true(g_bytes_equal(e.out, e.input));
+    g_bytes_unref(e.out);
+    g_bytes_unref(e.input);
+
+    /* Through ssh_session (libssh on, see main()): the link's channel */
+    g_assert_true(ssh_exec_sync(&t, "exit42", NULL, NULL, &status, &out, &error));
+    g_assert_no_error(error);
+    g_assert_cmpint(status, ==, 42);
+    g_bytes_unref(out);
+    AsyncExec a = { 0 };
+    ssh_exec_async(&t, "hello", NULL, NULL, on_exec_async, &a);
+    while (!a.done) g_main_context_iteration(NULL, TRUE);
+    g_assert_cmpint(a.status, ==, 0);
+    g_assert_cmpstr(a.out, ==, "hello stdout\n");
+    g_assert_cmpstr(a.err, ==, "hello stderr\n");
+    g_free(a.out);
+    g_free(a.err);
+    guint logins = srv->auth_success_count;
+
+    ssh_link_close(link);
+    ssh_link_unref(link);
+    /* No link: refused at once, never an ssh program logging in */
+    g_assert_false(ssh_exec_sync(&t, "hello", NULL, NULL, &status, &out, &error));
+    g_assert_error(error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED);
+    g_clear_error(&error);
+    g_assert_cmpuint(srv->auth_success_count, ==, logins);
+    ask_fixture_clear(&ask);
+
+    ssh_test_server_stop(srv);
+    ssh_link_set_test_options(NULL, NULL, TRUE, TRUE);
+    rm_rf(tmp);
+    g_free(kh);
+    g_free(tmp);
+}
+
 int main(int argc, char** argv) {
+    g_setenv("LOOKINFILES_SSH_LIBSSH", "1", TRUE); /* before any thread */
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ssh_link/unknown_then_known_host_key", test_unknown_then_known_host_key);
     g_test_add_func("/ssh_link/changed_host_key_refused", test_changed_host_key_refused);
@@ -593,5 +704,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/ssh_link/sftp_over_link", test_sftp_over_link);
     g_test_add_func("/ssh_link/keepalive_alive_and_lost", test_keepalive_alive_and_lost);
     g_test_add_func("/ssh_link/connection_lost_fails_channels", test_connection_lost_fails_channels);
+    g_test_add_func("/ssh_link/exec_over_link", test_exec_over_link);
     return g_test_run();
 }
