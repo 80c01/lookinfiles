@@ -37,13 +37,11 @@ static AppData* session_app;
 static GHashTable* masters;    /* machine id -> MasterEntry* */
 static GHashTable* connecting; /* ids of the machines being connected */
 
-static gboolean use_libssh(void) {
 #ifdef HAVE_LIBSSH
+static gboolean use_libssh(void) {
     return ssh_link_enabled();
-#else
-    return FALSE;
-#endif
 }
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* ssh prompts                                                               */
