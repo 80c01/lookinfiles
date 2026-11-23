@@ -541,6 +541,11 @@ static void on_checked(GObject* source, GAsyncResult* res, gpointer data) {
     CheckJob* job = g_task_get_task_data(G_TASK(res));
     DiagTab* st = g_object_get_data(G_OBJECT(job->page), PAGE_KEY);
     if (st == NULL || job->generation != st->generation) return;
+    /* With libssh the ssh program is not used: not missing */
+    DiagItem* ssh = diagnostics_find(job->items, "ssh");
+    if (ssh != NULL && ssh->found == NULL && ssh_session_transport(NULL) == SSH_TRANSPORT_LIBSSH) {
+        ssh->found = g_strdup(_("Not needed: remote machines use the built-in libssh"));
+    }
     show_results(st, g_steal_pointer(&job->items), g_steal_pointer(&job->relevant), job->family, job->os_name);
 }
 

@@ -13582,6 +13582,9 @@ msgstr "OpenSSH (connexion maître partagée)"
 msgid "OpenSSH (separate connections)"
 msgstr "OpenSSH (connexions séparées)"
 
+msgid "Not needed: remote machines use the built-in libssh"
+msgstr "Inutile : les machines distantes utilisent libssh intégré"
+
 #: src/core/diagnostics.c
 msgid "Shared SSH connections (libssh)"
 msgstr "Connexions SSH partagées (libssh)"
