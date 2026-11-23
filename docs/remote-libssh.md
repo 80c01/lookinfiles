@@ -1,12 +1,13 @@
 # Plan: one SSH connection per machine on Windows (libssh)
 
-Status: **in progress**. Steps 1, 2 and 3 are done and tested by the user
-on Windows (files, previews, Git tab, System Monitor, notebook kernels and
-language servers: one password, no `ssh.exe`). Step 4 (remote terminals
-over the relay, with the `-mconsole` `lookinfiles-relay.exe` helper on
-Windows and full ConPTY console setup) is implemented and ready to test on
-Windows. **Next: test step 4 on Windows**, then step 6. Part of step 5
-is done too (see there).
+Status: **in progress**. Steps 1 to 4 are done and tested by the user on
+Windows (files, previews, Git tab, System Monitor, notebook kernels,
+language servers and terminals: one password, no `ssh.exe`; terminals
+checked for colours, full-screen programs, typed accents, resizing and
+Ctrl+C). Kernels, language servers and terminals go through the loopback
+relay over the link (terminals with the `-mconsole`
+`lookinfiles-relay.exe`). **Next: step 6** (diagnostics and docs); the
+Preferences setting of step 5 is optional.
 
 ### Where things are (read before step 4)
 
@@ -173,7 +174,7 @@ The link must never repeat this: one channel's full buffer stops reading
    command and exits with the channel's status. The callers do not change:
    `ssh_session_argv()` returns the relay's argv when the link is in use.
    Protocol: see "Relay protocol" below.
-4. **Terminal** (implemented, awaiting Windows test). The same relay with
+4. **Terminal** (done and tested on Windows). The same relay with
    a pty channel (the ticket says so).
    `terminal.c` asks `SSH_ARGV_TTY | SSH_ARGV_NO_MUX`: with a link,
    `NO_MUX` no longer means "a connection of its own" but "never through
