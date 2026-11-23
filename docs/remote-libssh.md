@@ -1,9 +1,57 @@
 # Plan: one SSH connection per machine on Windows (libssh)
 
-Status: **in progress**. Steps 1 and 2 are done: `ssh_exec_sync()` and
-`ssh_exec_async()` run on exec channels (`core/ssh_link_exec`), and
-`ssh_spawn()` / `vfs_spawn()` return an `SshProcess` (`core/ssh_process`).
-Next: step 3 (kernels, language servers still start `ssh.exe`).
+Status: **in progress**. Steps 1 and 2 are done and tested by the user on
+Windows (files, previews, Git tab, System Monitor: one password, no
+`ssh.exe`). Part of step 5 is done too (see there). Next: step 3; kernels,
+language servers and terminals still start `ssh.exe`.
+
+### Where things are (read before step 3)
+
+| Module                | What it does                                                      |
+| --------------------- | ----------------------------------------------------------------- |
+| `core/ssh_target.h`   | `SshTarget` (header only)                                         |
+| `core/ssh_link`       | the connection, its thread, auth, keep-alive, registry, channels  |
+| `core/ssh_channel`    | a channel as a `GIOStream` + stderr + exit status                 |
+| `core/ssh_watch`      | the socket poll source (Unix `GPollFD`, Windows `WSAPoll` thread) |
+| `core/ssh_trace`      | debug log to the file named by `LOOKINFILES_SSH_LOG`              |
+| `core/ssh_link_exec`  | `ssh_link_exec()`: a command's stdout, stderr, status             |
+| `core/ssh_process`    | `SshProcess`: a streamed command, `GSubprocess` or channel        |
+| `core/ssh_session`    | dispatch: link or `ssh` program (`ssh_exec_*`, `ssh_spawn`, argv) |
+| `core/sftp_client`    | `sftp_client_spawn()`: an `sftp` subsystem channel on the link    |
+| `explorer/remote_session` | opens / closes the link, its prompts (`on_link_ask()`)        |
+
+- **Switch**: `ssh_link_enabled()`: on by default on Windows, off on Linux;
+  `LOOKINFILES_SSH_LIBSSH=1` (or `0`) forces it. To try the libssh path on
+  Linux, run with `LOOKINFILES_SSH_LIBSSH=1`.
+- **No link, no login**: when libssh is in use and the machine has no open
+  link, the commands fail at once with `G_IO_ERROR_NOT_CONNECTED` and the
+  application is told (`report_missing()` in `ssh_session.c`); they never
+  start an `ssh` program that would log in by itself.
+- **Size**: `ssh_link.c` (≈1 190 lines) and `ssh_channel.c` (≈1 160) are at
+  the 1 200-line limit of `AGENTS.md`. Put new code in new modules
+  (`ssh_relay`...); if a change to them is needed, split them first, in a
+  commit of its own that changes no behaviour.
+
+### Lessons from the Windows tests (keep them)
+
+- **Trace.** `LOOKINFILES_SSH_LOG=ssh.log ./lookinfiles.exe` writes the
+  link's states and libssh's messages (identical lines collapsed, socket
+  events sampled). New code on the link path logs its states and return
+  codes with `ssh_trace()`, **never** a secret, a ticket or file data. Ask
+  the user for `head -100 ssh.log`, not the whole file.
+- **Local paths on Windows** have `\` separators (`g_build_filename()`):
+  compare paths with the mounts as `vfs.c` does (`local_key()`), and send
+  the server `/` only.
+- **"Main thread"** is tested with
+  `g_main_context_is_owner(g_main_context_default())`, true only while the
+  main loop runs. A unit test that checks a main-thread rule must
+  `g_main_context_acquire(NULL)` first (see `test_spawn_over_link`).
+- **Main-thread waits.** The main thread may wait for a channel (the link
+  is already authenticated, it is quick: `vfs` `no_login`, `ssh_link_exec()`
+  joins a worker); it must never wait for a login.
+- **Each step**: the user tests it on Windows (MSYS2 UCRT64, libssh 0.12)
+  before the next; what only runs on Windows is at least compiled with
+  MinGW (`-fsyntax-only`) before it is handed over.
 
 ## The problem
 
@@ -89,15 +137,15 @@ The link must never repeat this: one channel's full buffer stops reading
 
 ### Wiring (step by step, each a commit that builds and passes)
 
-1. **Link + SFTP.** `sftp_client_spawn()` gets a libssh path: when the
+1. **Link + SFTP** (done). `sftp_client_spawn()` gets a libssh path: when the
    machine has an `SshLink`, open a `subsystem sftp` channel and call
    `sftp_client_new(in, out)` on its streams (the client already takes any
    pair of streams; nothing else in `vfs` changes). `remote_session_connect()`
    opens the link instead of `ssh_master_start()` when libssh is in use.
    Result: browsing, previews, save: one password.
-2. **Remote commands.** `ssh_exec_sync()` / `ssh_exec_async()` /
-   `ssh_spawn()` open an `exec` channel. `ssh_spawn()` returns a
-   `GSubprocess` today: change it (and `vfs_spawn()`) to return a small
+2. **Remote commands** (done). `ssh_exec_sync()` / `ssh_exec_async()` /
+   `ssh_spawn()` open an `exec` channel. `ssh_spawn()` returned a
+   `GSubprocess`: changed it (and `vfs_spawn()`) to return a small
    `SshProcess` interface (stdout stream, stdin stream, wait/exit status,
    force-exit) implemented both by a `GSubprocess` and by a channel; the
    few callers (`git_mirror`, `deep_search`, `disk_scan`) adapt.
@@ -106,21 +154,23 @@ The link must never repeat this: one channel's full buffer stops reading
 3. **Programs that want a command line** (kernels, language servers):
    they start a local process from `ssh_session_argv()` /
    `vfs_command_argv()`. Give them a relay instead of `ssh.exe`:
-   `lookinfiles --ssh-channel <port> <id>`, which copies its
-   stdin/stdout/stderr to an `exec` channel the instance opened and exits
-   with the channel's status. The callers do not change:
+   `lookinfiles --ssh-channel <port> <id> <command>`, which copies its
+   stdin/stdout/stderr to an `exec` channel the instance opens for that
+   command and exits with the channel's status. The callers do not change:
    `ssh_session_argv()` returns the relay's argv when the link is in use.
    Protocol: see "Relay protocol" below.
 4. **Terminal.** The same relay with a pty channel (the ticket says so).
-   Optional: a terminal may also keep using `ssh.exe` (one prompt per
-   terminal, acceptable).
-5. **Switch.** On Windows, the link is used when built with libssh. On
-   Linux, keep the OpenSSH master by default; a setting (or environment
-   variable for testing) may select libssh there too, so both platforms
-   can run the same code later. `ssh_session_can_multiplex()` becomes
-   "is there a shared connection" (master or link), so the Windows
-   special cases added in 04e79cf (`connect_files()`, the `no_login` guard
-   in `vfs.c`) become the fallback for builds without libssh.
+   `terminal.c` asks `SSH_ARGV_TTY | SSH_ARGV_NO_MUX`: with a link,
+   `NO_MUX` no longer means "a connection of its own" but "never through
+   the OpenSSH master"; the freeze lesson is kept by the relay's flow
+   control (a terminal not read stops its own channel only). Optional: a
+   terminal may keep using `ssh.exe` (one prompt per terminal).
+5. **Switch.** Done: on Windows the link is used when built with libssh,
+   Linux keeps the OpenSSH master, `LOOKINFILES_SSH_LIBSSH` selects either
+   (`ssh_link_enabled()`); `ssh_session_shares_connection()` (master or
+   link) gates `connect_files()` and the `no_login` guard of `vfs.c`, the
+   fallback for builds without libssh. Left: a setting in Preferences
+   instead of the variable (optional).
 6. **Diagnostics and docs.** The Diagnostics tab says which transport a
    machine uses; `docs/packaging.md` lists the libssh DLLs (libssh,
    its crypto library, zlib) for the Windows bundle; `make deps` lists
@@ -130,11 +180,13 @@ The link must never repeat this: one channel's full buffer stops reading
 
 Settled here so that every step is written the same way.
 
-- **Modules and layers.** `SshTarget` moves to a header-only
-  `core/ssh_target.h` (`ssh_session.h` includes it: callers do not change).
-  Rules in `tools/check_layers.sh`: `ssh_channel:i18n`,
-  `ssh_link:ssh_target,ssh_channel,i18n`, and `ssh_session` gains
-  `ssh_target,ssh_link,ssh_channel`. `ssh_link` never includes
+- **Modules and layers.** `SshTarget` is in the header-only
+  `core/ssh_target.h`. Rules in `tools/check_layers.sh` (now):
+  `ssh_channel:i18n`, `ssh_link:ssh_target,ssh_channel,ssh_watch,ssh_trace,i18n`,
+  `ssh_link_exec:ssh_link,ssh_channel,i18n`, `ssh_process:ssh_channel`,
+  `ssh_session:...,ssh_link,ssh_channel,ssh_link_exec,ssh_process`. A new
+  module gets its rule there and its objects in `LIBSSH_SRCS` /
+  `LIBSSH_OBJS` of the Makefile when it needs libssh. `ssh_link` never includes
   `ssh_session` nor `ssh_askpass` (both would make a cycle): the dispatch
   "link or `ssh` program" lives in `ssh_session` and `sftp_client`.
 - **Finding a machine's link.** A registry inside `ssh_link`:
@@ -151,14 +203,12 @@ Settled here so that every step is written the same way.
   (`g_main_context_invoke()` on the default context). In `remote_session.c`
   the dialog body of `on_ask()` becomes a static helper taking a reply
   callback, shared by `on_ask()` and the new `on_link_ask()`.
-- **`SshProcess`.** The three `ssh_spawn()` / `vfs_spawn()` callers
-  (`git_mirror`, `deep_search`, `disk_scan`) use only stdin pipe, stdout
-  pipe, `force_exit` and `wait`. `SshProcess` is a plain opaque struct in
-  `ssh_session` with exactly `ssh_process_get_stdin()`,
-  `ssh_process_get_stdout()`, `ssh_process_force_exit()`,
-  `ssh_process_wait()` (returns the exit status, cancellable) and
-  `ssh_process_free()`, wrapping either a `GSubprocess` or a channel. No
-  GObject, no GInterface.
+- **`SshProcess`** (done, `core/ssh_process`). A plain opaque struct with
+  `ssh_process_get_stdin()`, `ssh_process_get_stdout()`,
+  `ssh_process_force_exit()`, `ssh_process_wait()` (the exit status, -1
+  unknown) and `ssh_process_free()`, wrapping a `GSubprocess` or a channel
+  (whose stderr a thread reads and drops). Worker threads only:
+  `ssh_spawn()` refuses the main thread.
 - **Threads.** Every libssh call runs on the link thread, none elsewhere
   (a libssh session is not thread-safe). Channel streams are `GIOStream`
   subclasses whose async methods post the request to the link thread and
@@ -189,7 +239,8 @@ Settled here so that every step is written the same way.
 ### Relay protocol (steps 3 and 4)
 
 - **Module.** `core/ssh_relay` (layer 1), both sides: the server in the
-  instance and the helper. Rule: `ssh_relay:ssh_target,ssh_link,ssh_channel,app_paths,i18n`;
+  instance and the helper. Rule:
+  `ssh_relay:ssh_target,ssh_link,ssh_channel,ssh_trace,app_paths,i18n`;
   `ssh_session` includes `ssh_relay` (for the argv), never the opposite.
   `main.c` checks `ssh_relay_is_helper(argc, argv)` before any GTK call and
   returns `ssh_relay_helper_main(argc, argv)`, as it does for askpass. The
@@ -201,28 +252,44 @@ Settled here so that every step is written the same way.
   a command line is readable by other local users (`/proc/*/cmdline` on
   Linux): no secret may go there. So every call of `ssh_session_argv()`
   that goes through a link registers a **ticket** in the instance:
-  - 128 random bits (hex), bound to the link, the command line and the
-    tty flag; **single use**; dropped after 60 s if unused.
+  - 128 random bits (hex), bound to the link and the tty flag; **single
+    use**; dropped after 60 s if unused.
   - Written to `app_runtime_dir()/relay/<id>` (the directory `0700`, the
     file created `0600` with `O_CREAT | O_EXCL`; on Windows the directory
     is under the user's profile). `<id>` is a counter, not a secret.
-  - The argv is `<program> --ssh-channel <port> <id>`. The relay reads the
-    file, **deletes it at once**, then sends the ticket. The instance also
+  - The argv is `<program> --ssh-channel <port> <id>`, and the callers
+    append the remote command after it, as they do after `ssh ... host`
+    today (`ipynb_run`, `vfs_command_argv()`, `terminal.c`: the command is
+    not known when `ssh_session_argv()` runs). The relay takes its
+    arguments after `<id>` as that command (none: a login shell), reads
+    the file, **deletes it at once**, then sends the ticket and the
+    command. The instance also
     deletes the file when the ticket is used or expires, and every
     remaining one at exit.
   - No private runtime directory (`app_runtime_dir()` returns NULL): no
     relay, the machine uses the `ssh` program.
-  The relay never chooses the command, so a ticket cannot run anything
-  else; another user sees only the id, which opens nothing. Callers that
+  - Libssh in use but **no open link**: `ssh_session_argv()` reports the
+    machine missing and returns the `ssh` argv with `BatchMode=yes`, so
+    that a kernel or language server restarted in a loop fails at once
+    instead of asking for a password each time.
+  - Windows: `g_open()` ignores the mode; the directory under the user's
+    profile is private by its ACL, which is enough.
+  Whoever can read the ticket file is the user (`0600`, private
+  directory), who may run any command on the machine anyway; another user
+  sees only the id and the command, which open nothing. Callers that
   run the same argv twice must call `ssh_session_argv()` again (check
   `ipynb_run` and `code_intel` rebuild it at each start).
 - **Server.** `ssh_relay_serve()` listens on `127.0.0.1`, port 0 (chosen
   by the system), started with the first link, stopped with the last. It
-  runs on the link thread side: accepting, reading and writing are async,
-  and no write ever blocks.
-- **Handshake.** The relay connects and sends three text lines:
-  `LOOKIN-RELAY 1`, the ticket, then `<rows> <cols>` (the size of its
-  terminal, `0 0` without a tty). The instance compares the ticket in
+  runs on a thread of its own with its own `GMainContext` (as `vfs`), not
+  in `ssh_link.c`: the channels' async calls complete in that context.
+  Accepting, reading and writing are async, and no write ever blocks.
+- **Handshake.** The relay connects and sends four text lines:
+  `LOOKIN-RELAY 1`, the ticket, `<rows> <cols>` (the size of its
+  terminal, `0 0` without a tty), then the command (its arguments after
+  `<id>` joined by spaces, as ssh does; an empty line: a login shell,
+  `shell` channel). The command line has no newline (the callers' commands
+  are one shell line); one with a newline is refused (`ERR`). The instance compares the ticket in
   constant time (as `same_secret()`), consumes it, opens the channel
   (`exec`, or `pty` of that size then `exec`/`shell`), and answers one line:
   `OK` or `ERR <message>` (then closes). Any other first line, a bad,
@@ -252,9 +319,12 @@ Settled here so that every step is written the same way.
   resize) and send `W` when it changes.
 - **Never a secret** goes through the relay: the link is authenticated
   before the ticket is issued. The relay writes no log.
-- **Tests** (`tests/test_ssh_relay.c`, against the libssh test server):
-  frames round-trip, exit status passed on, stderr kept apart, ticket used
-  twice / expired / wrong refused, ticket file `0600` and gone after use, a relay that stops reading does not
+- **Tests** (`tests/test_ssh_relay.c`, against the libssh test server in
+  `tests/ssh_test_server.h`, which has fixed commands `hello`, `exit42`,
+  `echo`, `flood`, `hang` and a pty shell): frames round-trip, exit status
+  passed on, stderr kept apart, ticket used
+  twice / expired / wrong refused, ticket file `0600` and gone after use,
+  a relay that stops reading does not
   stall another channel of the same link, link lost gives exit 255.
 
 ### Tests (`tests/test_ssh_link.c`, `tests/test_ssh_channel.c`)
