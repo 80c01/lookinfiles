@@ -4,52 +4,56 @@
 #endif
 #include "core/ssh_watch.h"
 
+#ifdef G_OS_WIN32
+/* Waits for the socket on a thread of its own and wakes the source's
+ * context. Shared by the source and the thread (refs). */
+typedef struct {
+    gint refs;
+    SOCKET sock;
+    gint want;  /* GIOCondition, atomic: G_IO_IN / G_IO_OUT */
+    gint stop;  /* atomic */
+    GMutex mu;  /* guards the fields below */
+    GCond cond;
+    gboolean armed;    /* the thread may wait for the socket again */
+    gboolean fired;    /* it saw the socket ready since the last prepare */
+    GMainContext* ctx; /* the source's, known from its first prepare */
+} Waiter;
+
+#define WAIT_SLICE_MS 100 /* how soon the thread sees a new condition or stop */
+#endif
+
 typedef struct {
     GSource source;
-    GPollFD pfd;
     GIOCondition want;
     GIOCondition state; /* last reported */
 #ifdef G_OS_WIN32
-    SOCKET sock;
-    WSAEVENT event;
+    Waiter* waiter;
+#else
+    GPollFD pfd;
 #endif
 } SshWatch;
 
 #ifdef G_OS_WIN32
-/* socket -> event of its latest watch. A watch replaced from its own
- * callback is finalized after the new one registered: it must not undo
- * that registration. */
-static GMutex current_mu;
-static GHashTable* current;
-
-static void set_current(SOCKET sock, WSAEVENT event) {
-    g_mutex_lock(&current_mu);
-    if (current == NULL) current = g_hash_table_new_full(g_int64_hash, g_int64_equal, g_free, NULL);
-    gint64* key = g_new(gint64, 1);
-    *key = (gint64)sock;
-    g_hash_table_replace(current, key, event);
-    g_mutex_unlock(&current_mu);
+static void waiter_unref(Waiter* w) {
+    if (!g_atomic_int_dec_and_test(&w->refs)) return;
+    if (w->ctx != NULL) g_main_context_unref(w->ctx);
+    g_mutex_clear(&w->mu);
+    g_cond_clear(&w->cond);
+    g_free(w);
 }
 
-/* Forget sock if event is still its latest: whether to unregister */
-static gboolean drop_current(SOCKET sock, WSAEVENT event) {
-    gint64 key = (gint64)sock;
-    gboolean latest = FALSE;
-    g_mutex_lock(&current_mu);
-    if (current != NULL && g_hash_table_lookup(current, &key) == event) {
-        g_hash_table_remove(current, &key);
-        latest = TRUE;
-    }
-    g_mutex_unlock(&current_mu);
-    return latest;
-}
-
-/* The socket's state now (WSAPoll() does not wait with 0) */
-static GIOCondition socket_state(SshWatch* w) {
-    WSAPOLLFD p = {.fd = w->sock, .events = 0, .revents = 0};
-    if (w->want & G_IO_IN) p.events |= POLLRDNORM;
-    if (w->want & G_IO_OUT) p.events |= POLLWRNORM;
-    if (WSAPoll(&p, 1, 0) <= 0) return 0;
+/* The socket's state (WSAPoll() does not wait with timeout 0). Not
+ * WSAEventSelect(): it forces the socket non-blocking for as long as it is
+ * registered, and libssh switches the socket back to blocking once
+ * connected; that call then fails and the session never leaves the
+ * "connecting" state. WSAPoll() leaves the socket's mode alone. */
+static GIOCondition poll_socket(SOCKET sock, GIOCondition want, gint timeout_ms) {
+    WSAPOLLFD p = {.fd = sock, .events = 0, .revents = 0};
+    if (want & G_IO_IN) p.events |= POLLRDNORM;
+    if (want & G_IO_OUT) p.events |= POLLWRNORM;
+    int r = WSAPoll(&p, 1, timeout_ms);
+    if (r == SOCKET_ERROR) return G_IO_ERR;
+    if (r == 0) return 0;
     GIOCondition c = 0;
     if (p.revents & POLLRDNORM) c |= G_IO_IN;
     if (p.revents & POLLWRNORM) c |= G_IO_OUT;
@@ -58,25 +62,60 @@ static GIOCondition socket_state(SshWatch* w) {
     return c;
 }
 
+static gpointer waiter_main(gpointer data) {
+    Waiter* w = data;
+    for (;;) {
+        g_mutex_lock(&w->mu);
+        while (!w->armed && !g_atomic_int_get(&w->stop)) g_cond_wait(&w->cond, &w->mu);
+        g_mutex_unlock(&w->mu);
+        if (g_atomic_int_get(&w->stop)) break;
+        GIOCondition ready = poll_socket(w->sock, (GIOCondition)g_atomic_int_get(&w->want), WAIT_SLICE_MS);
+        if (g_atomic_int_get(&w->stop)) break;
+        if (ready == 0) continue;
+        /* Once, until the source has looked: a socket nobody reads must not spin */
+        g_mutex_lock(&w->mu);
+        w->armed = FALSE;
+        w->fired = TRUE;
+        GMainContext* ctx = w->ctx != NULL ? g_main_context_ref(w->ctx) : NULL;
+        g_mutex_unlock(&w->mu);
+        if (ctx != NULL) {
+            g_main_context_wakeup(ctx);
+            g_main_context_unref(ctx);
+        }
+    }
+    waiter_unref(w);
+    return NULL;
+}
+
 static gboolean watch_prepare(GSource* source, gint* timeout) {
     SshWatch* w = (SshWatch*)source;
+    Waiter* t = w->waiter;
+    g_mutex_lock(&t->mu);
+    if (t->ctx == NULL) t->ctx = g_main_context_ref(g_source_get_context(source));
+    if (t->fired) { /* seen: the thread may wait again */
+        t->fired = FALSE;
+        t->armed = TRUE;
+        g_cond_signal(&t->cond);
+    }
+    g_mutex_unlock(&t->mu);
     *timeout = -1;
-    w->state = socket_state(w);
+    w->state = poll_socket(t->sock, w->want, 0);
     return w->state != 0;
 }
 
 static gboolean watch_check(GSource* source) {
     SshWatch* w = (SshWatch*)source;
-    WSANETWORKEVENTS events;
-    WSAEnumNetworkEvents(w->sock, w->event, &events); /* resets the event */
-    w->state = socket_state(w);
+    w->state = poll_socket(w->waiter->sock, w->want, 0);
     return w->state != 0;
 }
 
 static void watch_finalize(GSource* source) {
-    SshWatch* w = (SshWatch*)source;
-    if (drop_current(w->sock, w->event)) WSAEventSelect(w->sock, NULL, 0); /* stays non-blocking */
-    WSACloseEvent(w->event);
+    Waiter* t = ((SshWatch*)source)->waiter;
+    g_atomic_int_set(&t->stop, 1);
+    g_mutex_lock(&t->mu);
+    g_cond_signal(&t->cond);
+    g_mutex_unlock(&t->mu);
+    waiter_unref(t); /* the thread drops its own ref within WAIT_SLICE_MS */
 }
 #else
 static gboolean watch_prepare(GSource* source, gint* timeout) {
@@ -105,31 +144,45 @@ static GSourceFuncs watch_funcs = {watch_prepare, watch_check, watch_dispatch, w
 
 GSource* ssh_watch_new(gint64 fd, GIOCondition cond) {
     if (fd < 0) return NULL;
-#ifdef G_OS_WIN32
-    WSAEVENT event = WSACreateEvent();
-    if (event == WSA_INVALID_EVENT) return NULL;
-    long mask = FD_CLOSE | (cond & G_IO_IN ? FD_READ : 0) | (cond & G_IO_OUT ? FD_WRITE | FD_CONNECT : 0);
-    if (WSAEventSelect((SOCKET)fd, event, mask) != 0) {
-        WSACloseEvent(event);
-        return NULL;
-    }
-    set_current((SOCKET)fd, event);
-#endif
     GSource* source = g_source_new(&watch_funcs, sizeof(SshWatch));
     SshWatch* w = (SshWatch*)source;
     w->want = cond & (G_IO_IN | G_IO_OUT);
 #ifdef G_OS_WIN32
-    w->sock = (SOCKET)fd;
-    w->event = event;
-    w->pfd.fd = (gintptr)event; /* GLib waits on the event handle */
-    w->pfd.events = G_IO_IN;
+    Waiter* t = g_new0(Waiter, 1);
+    t->refs = 2; /* the source and the thread */
+    t->sock = (SOCKET)fd;
+    t->want = (gint)w->want;
+    t->armed = TRUE;
+    g_mutex_init(&t->mu);
+    g_cond_init(&t->cond);
+    w->waiter = t;
+    GThread* thread = g_thread_try_new("ssh-watch", waiter_main, t, NULL);
+    if (thread == NULL) {
+        t->refs = 1;
+        g_source_unref(source); /* finalize drops the last ref */
+        return NULL;
+    }
+    g_thread_unref(thread);
 #else
     w->pfd.fd = (gint)fd;
     w->pfd.events = (gushort)(w->want | G_IO_HUP | G_IO_ERR);
-#endif
     g_source_add_poll(source, &w->pfd);
+#endif
     g_source_set_name(source, "ssh_watch");
     return source;
+}
+
+void ssh_watch_set_condition(GSource* source, GIOCondition cond) {
+    if (source == NULL) return;
+    SshWatch* w = (SshWatch*)source;
+    w->want = cond & (G_IO_IN | G_IO_OUT);
+#ifdef G_OS_WIN32
+    g_atomic_int_set(&w->waiter->want, (gint)w->want); /* prepare polls the new one at once */
+#else
+    w->pfd.events = (gushort)(w->want | G_IO_HUP | G_IO_ERR);
+#endif
+    GMainContext* ctx = g_source_get_context(source);
+    if (ctx != NULL) g_main_context_wakeup(ctx); /* NULL: not attached yet */
 }
 
 GIOCondition ssh_watch_state(GSource* source) {

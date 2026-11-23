@@ -91,9 +91,31 @@ static void test_writable_and_hangup(void) {
     g_object_unref(b);
 }
 
+static void test_change_condition(void) {
+    GSocket *a, *b;
+    pair(&a, &b);
+    GMainContext* ctx = g_main_context_new();
+    Count c = {0};
+    GSource* src = ssh_watch_new(g_socket_get_fd(b), G_IO_IN);
+    g_source_set_callback(src, on_ready, &c, NULL);
+    g_source_attach(src, ctx);
+    g_assert_cmpint(spin(ctx, &c), ==, 0);              /* idle, nothing to read */
+    ssh_watch_set_condition(src, G_IO_IN | G_IO_OUT);
+    g_assert_cmpint(spin(ctx, &c), >, 0);               /* writable now asked */
+    g_assert_true(ssh_watch_state(src) & G_IO_OUT);
+    ssh_watch_set_condition(src, G_IO_IN);
+    g_assert_cmpint(spin(ctx, &c), ==, 0);              /* quiet again */
+    g_source_destroy(src);
+    g_source_unref(src);
+    g_main_context_unref(ctx);
+    g_object_unref(a);
+    g_object_unref(b);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ssh_watch/readable_until_drained", test_readable_until_drained);
     g_test_add_func("/ssh_watch/writable_and_hangup", test_writable_and_hangup);
+    g_test_add_func("/ssh_watch/change_condition", test_change_condition);
     return g_test_run();
 }

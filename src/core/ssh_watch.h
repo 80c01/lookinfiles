@@ -5,8 +5,11 @@
  * (libssh): ready while the socket is readable / writable as asked, never
  * closes it. Not GSocket: on Windows a GSocket remembers an event until its
  * own I/O clears it, so a socket read by libssh stays "ready" for ever (a
- * core at 100 %, the connection never progressing). Unix: a plain GPollFD.
- * Windows: a WSAEVENT to wake the loop, WSAPoll() for the real state.
+ * core at 100 %, the connection never progressing). Not WSAEventSelect()
+ * either: it forces the socket non-blocking and libssh, switching it back
+ * to blocking once connected, then fails (the session never connects).
+ * Unix: a plain GPollFD. Windows: a thread waits in WSAPoll() and wakes the
+ * source's context; prepare and check ask WSAPoll() for the real state.
  * GLib only, no widgets; unit-tested. */
 #include <glib.h>
 
@@ -15,6 +18,8 @@
  * g_source_set_callback() (a GSourceFunc), attach, destroy and unref as any
  * source. NULL when the socket cannot be watched. */
 GSource* ssh_watch_new(gint64 fd, GIOCondition cond);
+/* Watch for another condition from now on (no new source, no new thread) */
+void ssh_watch_set_condition(GSource* source, GIOCondition cond);
 /* What the socket reported when the source last woke (for debug logs) */
 GIOCondition ssh_watch_state(GSource* source);
 

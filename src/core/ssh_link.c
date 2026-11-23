@@ -222,11 +222,14 @@ static void update_socket_watch(SshLink* link) {
     gboolean tcp_pending = link->state == LINK_CONNECTING && flags == 0 && link->sc.in_bytes == 0;
     if ((flags & SSH_WRITE_PENDING) != 0 || tcp_pending) cond |= G_IO_OUT;
     if (link->sock_src != NULL && link->sock_cond == cond) return;
-
-    clear_source(&link->sock_src);
     ssh_trace("watch fd=%" G_GINT64_FORMAT " in=%d out=%d poll_flags=0x%x state=%d sock_in=%" G_GUINT64_FORMAT,
               (gint64)fd, (cond & G_IO_IN) != 0, (cond & G_IO_OUT) != 0, (unsigned)flags, (int)link->state,
               (guint64)link->sc.in_bytes);
+    if (link->sock_src != NULL) { /* same socket, other condition */
+        ssh_watch_set_condition(link->sock_src, cond);
+        link->sock_cond = cond;
+        return;
+    }
     link->sock_src = ssh_watch_new((gint64)fd, cond);
     if (link->sock_src == NULL) {
         ssh_trace("watch failed on fd=%" G_GINT64_FORMAT, (gint64)fd);
