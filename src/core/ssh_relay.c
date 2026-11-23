@@ -414,6 +414,9 @@ typedef struct {
     gboolean err_eof;
     gboolean exit_done;
     gint exit_status;
+    guint64 out_total; /* bytes of the command's stdout / stderr / stdin (the trace) */
+    guint64 err_total;
+    guint64 in_total;
     gboolean channel_error;
     gboolean close_after_drain;
     gboolean draining_exit;
@@ -562,7 +565,10 @@ static void maybe_finish_exit(RelayConn* c) {
     if (!c->out_eof || !c->err_eof || !c->exit_done) return;
     guint8 payload[4];
     put_be32(payload, (guint32)(gint32)c->exit_status);
-    ssh_trace("relay: channel exit id=%s status=%d", c->ticket_id ? c->ticket_id : "-", c->exit_status);
+    ssh_trace("relay: channel exit id=%s status=%d stdout=%" G_GUINT64_FORMAT " stderr=%" G_GUINT64_FORMAT
+              " stdin=%" G_GUINT64_FORMAT "%s",
+              c->ticket_id ? c->ticket_id : "-", c->exit_status, c->out_total, c->err_total, c->in_total,
+              c->ch_in_closed ? " (stdin ended)" : "");
     c->draining_exit = TRUE;
     c->close_after_drain = TRUE;
     queue_sock_bytes(c, build_frame('X', payload, 4));
@@ -580,6 +586,8 @@ static void on_ch_read_done(GObject* src, GAsyncResult* res, RelayConn* c, gbool
         return;
     }
     if (n > 0) {
+        if (is_stderr) c->err_total += (guint64)n;
+        else c->out_total += (guint64)n;
         queue_sock_bytes(c, build_frame(is_stderr ? 'R' : 'O',
                                         is_stderr ? c->err_buf : c->out_buf, (guint32)n));
         maybe_read_channel(c);
@@ -713,6 +721,7 @@ static void dispatch_frame(RelayConn* c) {
         if (c->ch_in_closed || c->frame_len == 0) {
             read_next_frame(c);
         } else {
+            c->in_total += c->frame_len;
             c->ch_write_off = 0;
             pump_ch_write(c);
         }

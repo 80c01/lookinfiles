@@ -14,6 +14,7 @@
 #ifdef HAVE_LIBSSH
 
 #include "core/app_paths.h"
+#include "core/ssh_trace.h"
 
 #include <glib/gstdio.h>
 #include <stdio.h>
@@ -90,14 +91,26 @@ static gboolean write_fd_all(int fd, const void* buf, gsize len) {
     return TRUE;
 }
 
+#ifdef G_OS_WIN32
+/* The handle of C file descriptor fd (0, 1, 2), else the standard handle
+ * which: GLib passes a child's pipes as C descriptors, so in a GUI program
+ * such as this one GetStdHandle() alone may give none (stdin then seemed
+ * to end at once: the remote command got EOF before its first line) */
+static HANDLE std_handle(int fd, DWORD which) {
+    HANDLE h = (HANDLE)_get_osfhandle(fd);
+    if (h == NULL || h == INVALID_HANDLE_VALUE || h == (HANDLE)(intptr_t)-2) h = GetStdHandle(which);
+    return h;
+}
+#endif
+
 static gboolean helper_get_winsize(gint* out_rows, gint* out_cols) {
     *out_rows = 0;
     *out_cols = 0;
 #ifdef G_OS_WIN32
-    HANDLE hin = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
     DWORD mode = 0;
     if (hin == INVALID_HANDLE_VALUE || !GetConsoleMode(hin, &mode)) return FALSE;
-    HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE hout = std_handle(1, STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO info;
     if (hout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hout, &info)) {
         *out_cols = (gint)(info.srWindow.Right - info.srWindow.Left + 1);
@@ -256,15 +269,20 @@ static gpointer helper_stdin_thread(gpointer data) {
     io->stdin_thread_handle = dup;
     g_mutex_unlock(&io->win_mu);
 
-    HANDLE hin = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
     guint8 buf[RELAY_MAX_FRAME];
+    guint64 total = 0;
     while (!g_atomic_int_get(&io->stop)) {
         DWORD nread = 0;
         BOOL ok = ReadFile(hin, buf, sizeof buf, &nread, NULL);
         if (g_atomic_int_get(&io->stop)) break;
         if (ok && nread > 0) {
+            total += nread;
             if (!helper_send_frame(io, 'I', buf, (guint32)nread)) break;
         } else {
+            /* 109 (ERROR_BROKEN_PIPE): the normal end of a pipe */
+            ssh_trace("relay helper: stdin ended after %" G_GUINT64_FORMAT " bytes (error %lu)", total,
+                      ok ? 0UL : (unsigned long)GetLastError());
             helper_send_frame(io, 'E', NULL, 0);
             break;
         }
@@ -339,6 +357,7 @@ static int helper_run(int argc, char** argv) {
         fprintf(stderr, "lookinfiles relay: bad port\n");
         return 255;
     }
+    ssh_trace_setup(); /* LOOKINFILES_SSH_LOG, as the instance */
     gchar* ticket = read_and_delete_ticket(argv[3]);
     if (ticket == NULL) {
         fprintf(stderr, "lookinfiles relay: missing ticket\n");
@@ -418,7 +437,7 @@ static int helper_run(int argc, char** argv) {
     DWORD saved_mode = 0;
     gboolean restore_console = FALSE;
     if (use_tty) {
-        HANDLE hin = GetStdHandle(STD_INPUT_HANDLE);
+        HANDLE hin = std_handle(0, STD_INPUT_HANDLE);
         if (hin != INVALID_HANDLE_VALUE && GetConsoleMode(hin, &saved_mode)) {
             DWORD raw = (saved_mode | ENABLE_VIRTUAL_TERMINAL_INPUT) &
                         ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
@@ -457,6 +476,8 @@ static int helper_run(int argc, char** argv) {
     /* Main thread: socket frames -> stdout / stderr / exit status */
     gint exit_code = 255;
     gboolean got_exit = FALSE;
+    guint64 out_total = 0;
+    guint64 err_total = 0;
     guint8 hdr[5];
     guint8 buf[RELAY_MAX_FRAME];
     for (;;) {
@@ -474,9 +495,17 @@ static int helper_run(int argc, char** argv) {
             }
         }
         if (type == 'O') {
-            if (len > 0 && !write_fd_all(1, buf, len)) break;
+            out_total += len;
+            if (len > 0 && !write_fd_all(1, buf, len)) {
+                ssh_trace("relay helper: cannot write stdout");
+                break;
+            }
         } else if (type == 'R') {
-            if (len > 0 && !write_fd_all(2, buf, len)) break;
+            err_total += len;
+            if (len > 0 && !write_fd_all(2, buf, len)) {
+                ssh_trace("relay helper: cannot write stderr");
+                break;
+            }
         } else if (type == 'X' && len == 4) {
             gint32 st = (gint32)get_be32(buf);
             exit_code = st < 0 ? 255 : (gint)st;
@@ -486,6 +515,10 @@ static int helper_run(int argc, char** argv) {
             break;
         }
     }
+
+    ssh_trace("relay helper: end, stdout %" G_GUINT64_FORMAT " bytes, stderr %" G_GUINT64_FORMAT
+              " bytes, exit %d%s",
+              out_total, err_total, exit_code, got_exit ? "" : " (no exit status)");
 
     /* Stop stdin thread cleanly */
     g_atomic_int_set(&io.stop, 1);
@@ -498,7 +531,7 @@ static int helper_run(int argc, char** argv) {
         stdin_done = WaitForSingleObject(io.stdin_done_event, 10) == WAIT_OBJECT_0;
     }
     if (resize_th != NULL) g_thread_join(resize_th);
-    if (restore_console) SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), saved_mode);
+    if (restore_console) SetConsoleMode(std_handle(0, STD_INPUT_HANDLE), saved_mode);
     if (!stdin_done) {
         /* Its ReadFile() could not be cancelled: never wait for it (the
          * kernel or language server would seem to hang); the process ends
