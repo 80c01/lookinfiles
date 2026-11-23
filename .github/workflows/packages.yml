@@ -159,6 +159,7 @@ jobs:
             mingw-w64-ucrt-x86_64-sqlite3
             mingw-w64-ucrt-x86_64-libarchive
             mingw-w64-ucrt-x86_64-zstd
+            mingw-w64-ucrt-x86_64-libssh
             diffutils
             make
             unzip
@@ -171,6 +172,7 @@ jobs:
         run: |
           sh packaging/windows/fetch_webview2.sh
           make deps | grep 'Browser tabs.*yes'
+          make deps | grep 'Shared SSH connections.*yes'
 
       # The single-file .exe embeds the portable zip, which it builds first
       - name: Build Windows packages
@@ -179,6 +181,8 @@ jobs:
           ./packaging/windows/build_windows_exe.sh artifacts/
           cp build/lookinfiles-*-windows-x86_64.zip artifacts/
           unzip -l artifacts/lookinfiles-*-windows-x86_64.zip | grep WebView2Loader.dll
+          unzip -l artifacts/lookinfiles-*-windows-x86_64.zip | grep lookinfiles-relay.exe
+          unzip -l artifacts/lookinfiles-*-windows-x86_64.zip | grep 'libssh.*\.dll'
 
       - name: Upload Windows packages
         uses: actions/upload-artifact@v7
