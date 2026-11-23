@@ -36,11 +36,7 @@ void ssh_trace_setup(void) {
     const gchar* path = g_getenv("LOOKINFILES_SSH_LOG");
     if (path != NULL && path[0] != '\0') {
         log_file = g_fopen(path, "a");
-        if (log_file != NULL) {
-            ssh_set_log_callback(on_libssh_log);
-            ssh_set_log_level(SSH_LOG_DEBUG);
-            write_line("---- ssh log started");
-        }
+        if (log_file != NULL) write_line("---- ssh log started");
     }
     g_once_init_leave(&once, 1);
 }
@@ -57,4 +53,31 @@ void ssh_trace(const gchar* format, ...) {
     va_end(args);
     write_line(text);
     g_free(text);
+}
+
+void ssh_trace_thread(void) {
+    if (log_file == NULL) return;
+    ssh_set_log_callback(on_libssh_log);
+    ssh_set_log_level(SSH_LOG_DEBUG);
+}
+
+void ssh_trace_session(ssh_session session) {
+    if (log_file == NULL || session == NULL) return;
+    char *host = NULL, *user = NULL, *proxy = NULL;
+    unsigned int port = 0;
+    ssh_options_get(session, SSH_OPTIONS_HOST, &host);
+    ssh_options_get(session, SSH_OPTIONS_USER, &user);
+    ssh_options_get(session, SSH_OPTIONS_PROXYCOMMAND, &proxy);
+    ssh_options_get_port(session, &port);
+    ssh_trace("connect %s@%s port %u proxy=%s (libssh %s)", user != NULL ? user : "?", host != NULL ? host : "?",
+              port, proxy != NULL ? proxy : "none", ssh_version(0));
+    ssh_string_free_char(host);
+    ssh_string_free_char(user);
+    ssh_string_free_char(proxy);
+}
+
+gboolean ssh_trace_sample(guint* counter) {
+    if (log_file == NULL) return FALSE;
+    guint n = (guint)g_atomic_int_add((gint*)counter, 1) + 1;
+    return n <= 300 || n % 1000 == 0;
 }

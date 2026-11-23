@@ -15,5 +15,7 @@
  * g_source_set_callback() (a GSourceFunc), attach, destroy and unref as any
  * source. NULL when the socket cannot be watched. */
 GSource* ssh_watch_new(gint64 fd, GIOCondition cond);
+/* What the socket reported when the source last woke (for debug logs) */
+GIOCondition ssh_watch_state(GSource* source);
 
 #endif /* SSH_WATCH_H */

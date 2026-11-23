@@ -219,14 +219,14 @@ static void update_socket_watch(SshLink* link) {
     /* Writable is asked for only when libssh has bytes to send, or while the
      * TCP connection is still being made (nothing received yet): a connected
      * socket is always writable, so asking more would spin */
-    gboolean tcp_pending = link->state == LINK_CONNECTING && flags == 0 && link->rc.in_bytes == 0;
+    gboolean tcp_pending = link->state == LINK_CONNECTING && flags == 0 && link->sc.in_bytes == 0;
     if ((flags & SSH_WRITE_PENDING) != 0 || tcp_pending) cond |= G_IO_OUT;
     if (link->sock_src != NULL && link->sock_cond == cond) return;
 
     clear_source(&link->sock_src);
-    ssh_trace("watch fd=%" G_GINT64_FORMAT " in=%d out=%d poll_flags=0x%x state=%d in_bytes=%" G_GUINT64_FORMAT,
-            (gint64)fd, (cond & G_IO_IN) != 0, (cond & G_IO_OUT) != 0, (unsigned)flags, (int)link->state,
-            (guint64)link->rc.in_bytes);
+    ssh_trace("watch fd=%" G_GINT64_FORMAT " in=%d out=%d poll_flags=0x%x state=%d sock_in=%" G_GUINT64_FORMAT,
+              (gint64)fd, (cond & G_IO_IN) != 0, (cond & G_IO_OUT) != 0, (unsigned)flags, (int)link->state,
+              (guint64)link->sc.in_bytes);
     link->sock_src = ssh_watch_new((gint64)fd, cond);
     if (link->sock_src == NULL) {
         ssh_trace("watch failed on fd=%" G_GINT64_FORMAT, (gint64)fd);
@@ -882,7 +882,8 @@ static gboolean on_ask_replied_on_link(gpointer data) {
 static void drive_connect(SshLink* link) {
     if (link->state != LINK_CONNECTING || link->session == NULL) return;
     int rc = ssh_connect(link->session);
-    ssh_trace("ssh_connect rc=%d fd=%" G_GINT64_FORMAT, rc, (gint64)ssh_get_fd(link->session));
+    static guint calls;
+    if (rc != SSH_AGAIN || ssh_trace_sample(&calls)) ssh_trace("ssh_connect rc=%d", rc);
     if (rc == SSH_AGAIN) { update_socket_watch(link); return; }
     clear_source(&link->connect_timer);
     clear_source(&link->retry_timer);
@@ -906,10 +907,11 @@ static gboolean on_retry_timer(gpointer data) {
 
 static gboolean on_socket_ready(gpointer data) {
     SshLink* link = data;
-    if (ssh_trace_enabled()) {
-        static guint calls; /* spinning shows as a fast count */
-        if (++calls <= 200 || calls % 1000 == 0) ssh_trace("socket ready #%u state=%d", calls, (int)link->state);
-    }
+    static guint calls; /* spinning shows as a fast count */
+    if (ssh_trace_sample(&calls))
+        ssh_trace("socket ready #%u state=%d ready=0x%x poll_flags=0x%x sock_in=%" G_GUINT64_FORMAT, calls,
+                  (int)link->state, (unsigned)ssh_watch_state(link->sock_src),
+                  (unsigned)ssh_get_poll_flags(link->session), (guint64)link->sc.in_bytes);
     if (link->state == LINK_CONNECTING) drive_connect(link);
     else if (link->state == LINK_AUTH) drive_auth(link);
     else if (link->state == LINK_READY) link_pump_ready(link);
@@ -951,19 +953,7 @@ static gboolean on_start_on_link(gpointer data) {
     }
     ssh_options_set(s, SSH_OPTIONS_TIMEOUT, &timeout);
     ssh_options_set(s, SSH_OPTIONS_NODELAY, &yes);
-    if (ssh_trace_enabled()) {
-        char *h = NULL, *u = NULL, *proxy = NULL;
-        unsigned int port = 0;
-        ssh_options_get(s, SSH_OPTIONS_HOST, &h);
-        ssh_options_get(s, SSH_OPTIONS_USER, &u);
-        ssh_options_get(s, SSH_OPTIONS_PROXYCOMMAND, &proxy);
-        ssh_options_get_port(s, &port);
-        ssh_trace("connect %s@%s port %u proxy=%s (libssh %s)", u != NULL ? u : "?", h != NULL ? h : "?", port,
-                proxy != NULL ? proxy : "none", ssh_version(0));
-        ssh_string_free_char(h);
-        ssh_string_free_char(u);
-        ssh_string_free_char(proxy);
-    }
+    ssh_trace_session(s);
 
     memset(&link->sc, 0, sizeof link->sc);
     memset(&link->rc, 0, sizeof link->rc);
@@ -990,6 +980,7 @@ static gboolean on_close_on_link(gpointer data) {
 static gpointer link_thread_main(gpointer data) {
     SshLink* link = data;
     g_main_context_push_thread_default(link->ctx);
+    ssh_trace_thread();
     g_main_context_invoke(link->ctx, on_start_on_link, link);
     g_main_loop_run(link->loop);
     while (g_main_context_iteration(link->ctx, FALSE)) {}

@@ -8,6 +8,7 @@ typedef struct {
     GSource source;
     GPollFD pfd;
     GIOCondition want;
+    GIOCondition state; /* last reported */
 #ifdef G_OS_WIN32
     SOCKET sock;
     WSAEVENT event;
@@ -58,15 +59,18 @@ static GIOCondition socket_state(SshWatch* w) {
 }
 
 static gboolean watch_prepare(GSource* source, gint* timeout) {
+    SshWatch* w = (SshWatch*)source;
     *timeout = -1;
-    return socket_state((SshWatch*)source) != 0;
+    w->state = socket_state(w);
+    return w->state != 0;
 }
 
 static gboolean watch_check(GSource* source) {
     SshWatch* w = (SshWatch*)source;
     WSANETWORKEVENTS events;
     WSAEnumNetworkEvents(w->sock, w->event, &events); /* resets the event */
-    return socket_state(w) != 0;
+    w->state = socket_state(w);
+    return w->state != 0;
 }
 
 static void watch_finalize(GSource* source) {
@@ -82,7 +86,9 @@ static gboolean watch_prepare(GSource* source, gint* timeout) {
 }
 
 static gboolean watch_check(GSource* source) {
-    return ((SshWatch*)source)->pfd.revents != 0;
+    SshWatch* w = (SshWatch*)source;
+    w->state = (GIOCondition)w->pfd.revents;
+    return w->state != 0;
 }
 
 static void watch_finalize(GSource* source) {
@@ -124,4 +130,8 @@ GSource* ssh_watch_new(gint64 fd, GIOCondition cond) {
     g_source_add_poll(source, &w->pfd);
     g_source_set_name(source, "ssh_watch");
     return source;
+}
+
+GIOCondition ssh_watch_state(GSource* source) {
+    return source != NULL ? ((SshWatch*)source)->state : 0;
 }
