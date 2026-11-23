@@ -14,6 +14,14 @@
 #include "git/git_state.h"
 #include <string.h>
 
+#ifdef HAVE_LIBSSH
+#include "core/ssh_trace.h"
+/* Why a remote server does not start, in LOOKINFILES_SSH_LOG */
+#define REMOTE_TRACE(...) ssh_trace(__VA_ARGS__)
+#else
+#define REMOTE_TRACE(...) ((void)0)
+#endif
+
 #define RESTART_DELAY_US (60 * G_USEC_PER_SEC)
 #define SYNC_DELAY_MS 600
 #define SYNC_TIMER_KEY "code-intel-sync"
@@ -154,11 +162,17 @@ static gchar* server_key(CodeIntel* ci, EditorTab* tab, gchar*** argv_out, gchar
  * machine's folder here and there. NULL when it cannot start. */
 static LspClient* start_remote(CodeIntel* ci, gchar** lines, const gchar* root, AppData* app) {
     gchar* mount = vfs_mount_of(root);
-    if (mount == NULL) return NULL;
+    if (mount == NULL) {
+        REMOTE_TRACE("lsp: the project is on no mounted machine");
+        return NULL;
+    }
     const gchar* there = g_hash_table_lookup(ci->remote_roots, mount);
     if (there == NULL) {
-        gchar* abs = vfs_remote_absolute(mount, NULL, NULL); /* one round trip, once per machine */
+        GError* error = NULL;
+        gchar* abs = vfs_remote_absolute(mount, NULL, &error); /* one round trip, once per machine */
         if (abs == NULL) {
+            REMOTE_TRACE("lsp: the machine's folder is unknown: %s", error != NULL ? error->message : "-");
+            g_clear_error(&error);
             g_free(mount);
             return NULL;
         }
@@ -168,7 +182,11 @@ static LspClient* start_remote(CodeIntel* ci, gchar** lines, const gchar* root, 
     gchar* script = lsp_config_launch_script(lines);
     gchar* q = ssh_session_quote(script);
     gchar* command = g_strdup_printf("exec \"${SHELL:-/bin/sh}\" -lc %s", q);
-    GPtrArray* argv = vfs_command_argv(root, command, NULL);
+    GError* error = NULL;
+    GPtrArray* argv = vfs_command_argv(root, command, &error);
+    REMOTE_TRACE("lsp: starting a remote server (%u command lines)%s%s", lines != NULL ? g_strv_length(lines) : 0,
+                 error != NULL ? ": " : "", error != NULL ? error->message : "");
+    g_clear_error(&error);
     LspClient* client = NULL;
     if (argv != NULL) {
         g_ptr_array_add(argv, NULL);
@@ -188,7 +206,12 @@ static Server* server_for(AppData* app, EditorTab* tab, gboolean start) {
     gchar** argv = NULL;
     gchar* root = NULL;
     gchar* key = server_key(ci, tab, &argv, &root);
-    if (key == NULL) return NULL;
+    if (key == NULL) {
+        if (start && tab != NULL && vfs_is_remote(tab->path)) {
+            REMOTE_TRACE("lsp: no server for this remote file (language %d)", (gint)tab_lang(tab));
+        }
+        return NULL;
+    }
     Server* s = g_hash_table_lookup(ci->servers, key);
     if (s != NULL && lsp_client_get_state(s->client) == LSP_CLIENT_FAILED) {
         if (s->failed_at == 0) s->failed_at = g_get_monotonic_time();
@@ -202,6 +225,9 @@ static Server* server_for(AppData* app, EditorTab* tab, gboolean start) {
         s = NULL;
     }
     if (s == NULL && start) {
+        if (vfs_is_remote(tab->path) && !vfs_is_remote(root)) {
+            REMOTE_TRACE("lsp: the project of a remote file is not on its machine");
+        }
         LspClient* client = vfs_is_remote(root) ? start_remote(ci, argv, root, app)
                                                 : lsp_client_new(argv, root, on_server_state, app, NULL);
         lsp_client_set_notify_func(client, on_server_notify, app);
@@ -604,6 +630,11 @@ gchar* code_intel_server_status(AppData* app, EditorTab* tab, guint* errors, gui
         count_diagnostics(app, tab, errors, warnings);
         return g_strdup(_("built-in"));
     }
+    /* A server that could not start or stopped: say so, not nothing */
+    gchar* key = tab != NULL && tab->path != NULL ? server_key(intel_of(app), tab, NULL, NULL) : NULL;
+    Server* failed = key != NULL ? g_hash_table_lookup(intel_of(app)->servers, key) : NULL;
+    g_free(key);
+    if (failed != NULL) return g_strdup_printf(_("%s (not running)"), failed->name);
     return NULL;
 }
 
