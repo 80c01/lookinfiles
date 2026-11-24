@@ -6,8 +6,9 @@
  * the Git tab and the result pages. Each check shows what was found or, when
  * it is missing, the command that installs it on this system (its package
  * manager), with a Copy button. Sections: the libraries built in (installed
- * then built again), the programs, the language servers (those of the
- * languages of the folder shown first, the others folded). The checks run
+ * then built again), the programs, the compilers and build tools (with
+ * their versions), the language servers (the missing compilers and servers
+ * of languages the folder shown does not use folded). The checks run
  * in a worker thread; Check Again runs them again. A dropdown of the header
  * (shown when there are remote machines) checks a remote machine instead:
  * one command over its master connection (ssh_exec_async()), its install

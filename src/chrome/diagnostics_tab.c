@@ -24,8 +24,8 @@
 
 typedef enum { ROW_HEADER, ROW_ITEM, ROW_MORE } RowKind;
 
-/* A line of the list: a section title, a check, or the fold of the other
- * language servers */
+/* A line of the list: a section title, a check, or the fold of a section's
+ * other checks (language servers, compilers) */
 G_DECLARE_FINAL_TYPE(DiagRow, diag_row, DIAG, ROW, GObject)
 struct _DiagRow {
     GObject parent;
@@ -33,6 +33,7 @@ struct _DiagRow {
     gchar* title;   /* section title, fold text */
     DiagItem* item; /* the check (owned by the tab's items) */
     gchar* command; /* install command, or NULL */
+    DiagSection section; /* the section folded (ROW_MORE) */
 };
 G_DEFINE_TYPE(DiagRow, diag_row, G_TYPE_OBJECT)
 
@@ -72,9 +73,9 @@ typedef struct {
     GtkWidget* list;   /* GtkListView */
     GListStore* store; /* DiagRow */
     GPtrArray* items;  /* DiagItem of the last checks, or NULL */
-    GHashTable* relevant; /* ids of the language servers of the folder's languages */
+    GHashTable* relevant; /* ids of the language servers and compilers of the folder's languages */
     DiagFamily family;
-    gboolean others_shown; /* the other language servers are unfolded */
+    guint unfolded;    /* bits (1 << DiagSection) of the sections whose other checks are shown */
     gboolean busy;
     gchar* select_id;  /* check to select once the checks are done, or NULL */
     guint generation;  /* bumped by each check: older results are dropped */
@@ -180,9 +181,10 @@ static void on_terminal_clicked(GtkButton* button, gpointer data) {
 static void fill_store(DiagTab* st);
 
 static void on_more_clicked(GtkButton* button, gpointer data) {
-    (void)button;
     DiagTab* st = data;
-    st->others_shown = !st->others_shown;
+    DiagRow* row = g_object_get_data(G_OBJECT(button), ROW_KEY);
+    if (row == NULL) return;
+    st->unfolded ^= 1u << row->section;
     fill_store(st);
 }
 
@@ -275,6 +277,7 @@ static void on_bind(GtkSignalListItemFactory* factory, GtkListItem* li, gpointer
     gtk_widget_set_visible(term, FALSE);
 #endif
     g_object_set_data(G_OBJECT(term), ROW_KEY, row);
+    g_object_set_data(G_OBJECT(more), ROW_KEY, row);
     if (is_item && row->command != NULL) {
         gchar* typed = typed_command(data, row->command);
         gtk_widget_set_sensitive(term, typed != NULL);
@@ -312,16 +315,30 @@ static const gchar* section_title(DiagSection section) {
         return _("Built In");
     case DIAG_SECTION_PROGRAMS:
         return _("Programs");
+    case DIAG_SECTION_COMPILERS:
+        return _("Compilers and Build Tools");
     case DIAG_SECTION_LANG_SERVERS:
         return _("Language Servers");
     }
     return "";
 }
 
-/* A language server shown unfolded: found, or a language of the folder */
-static gboolean lang_server_shown(DiagTab* st, const DiagItem* item) {
+/* A check shown without unfolding its section: any but a missing language
+ * server or compiler that the folder's languages do not need */
+static gboolean item_shown(DiagTab* st, const DiagItem* item) {
+    if (item->section != DIAG_SECTION_LANG_SERVERS && item->section != DIAG_SECTION_COMPILERS) return TRUE;
     return item->found != NULL || !item->checked ||
            (st->relevant != NULL && g_hash_table_contains(st->relevant, item->id));
+}
+
+/* The fold of a section: "Show 3 other languages" / "Hide the other tools" */
+static gchar* fold_text(DiagSection section, gboolean unfolded, guint hidden) {
+    if (section == DIAG_SECTION_COMPILERS) {
+        return unfolded ? g_strdup(_("Hide the other tools"))
+                        : g_strdup_printf(ngettext("Show %u other tool", "Show %u other tools", hidden), hidden);
+    }
+    return unfolded ? g_strdup(_("Hide the other languages"))
+                    : g_strdup_printf(ngettext("Show %u other language", "Show %u other languages", hidden), hidden);
 }
 
 static void select_row(DiagTab* st) {
@@ -340,17 +357,21 @@ static void select_row(DiagTab* st) {
     }
 }
 
-/* The rows of st->items: sections in order, the other language servers folded */
+/* The rows of st->items: sections in order, the other language servers and
+ * compilers folded */
 static void fill_store(DiagTab* st) {
     g_list_store_remove_all(st->store);
     if (st->items == NULL) return;
+    /* A folded check to select is unfolded to be seen */
+    DiagItem* wanted = diagnostics_find(st->items, st->select_id);
+    if (wanted != NULL && !item_shown(st, wanted)) st->unfolded |= 1u << wanted->section;
     for (gint section = DIAG_SECTION_CONNECTION; section <= DIAG_SECTION_LANG_SERVERS; section++) {
         gboolean titled = FALSE;
         guint hidden = 0;
         for (guint i = 0; i < st->items->len; i++) {
             DiagItem* item = g_ptr_array_index(st->items, i);
             if ((gint)item->section != section) continue;
-            if (section == DIAG_SECTION_LANG_SERVERS && !lang_server_shown(st, item)) {
+            if (!item_shown(st, item)) {
                 hidden++;
                 continue;
             }
@@ -370,18 +391,17 @@ static void fill_store(DiagTab* st) {
             g_list_store_append(st->store, head);
             g_object_unref(head);
         }
-        gchar* text = st->others_shown
-                          ? g_strdup(_("Hide the other languages"))
-                          : g_strdup_printf(ngettext("Show %u other language", "Show %u other languages", hidden),
-                                            hidden);
+        gboolean unfolded = (st->unfolded & (1u << section)) != 0;
+        gchar* text = fold_text(section, unfolded, hidden);
         DiagRow* more = row_new(ROW_MORE, text, NULL, st->family);
+        more->section = section;
         g_free(text);
         g_list_store_append(st->store, more);
         g_object_unref(more);
-        if (!st->others_shown) continue;
+        if (!unfolded) continue;
         for (guint i = 0; i < st->items->len; i++) {
             DiagItem* item = g_ptr_array_index(st->items, i);
-            if ((gint)item->section != section || lang_server_shown(st, item)) continue;
+            if ((gint)item->section != section || item_shown(st, item)) continue;
             DiagRow* row = row_new(ROW_ITEM, NULL, item, st->family);
             g_list_store_append(st->store, row);
             g_object_unref(row);
@@ -426,8 +446,8 @@ static void add_lang_servers(GPtrArray* items, const gchar* ini) {
     }
 }
 
-/* Ids of the language servers of the languages of dir's files (dir and its
- * subfolders, a bounded number of entries) */
+/* Ids of the language servers and compilers of the languages of dir's files
+ * (dir and its subfolders, a bounded number of entries) */
 static GHashTable* folder_languages(const gchar* dir) {
     GHashTable* ids = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     if (dir == NULL) return ids;
@@ -452,6 +472,8 @@ static GHashTable* folder_languages(const gchar* dir) {
             CodeLang lang = code_lang_family(code_lang_from_name(name));
             const gchar* key = lang != CODE_LANG_NONE ? lsp_config_key(lang) : NULL;
             if (key != NULL) g_hash_table_add(ids, g_strconcat("lsp-", key, NULL));
+            const gchar* tool = diagnostics_build_tool_of(name);
+            if (tool != NULL) g_hash_table_add(ids, g_strdup(tool));
         }
         g_dir_close(gd);
     }
@@ -502,7 +524,7 @@ static void show_info(DiagTab* st, const gchar* os_name) {
     guint missing = 0;
     for (guint i = 0; st->items != NULL && i < st->items->len; i++) {
         DiagItem* item = g_ptr_array_index(st->items, i);
-        if (item->found == NULL && (item->section != DIAG_SECTION_LANG_SERVERS || lang_server_shown(st, item))) {
+        if (item->found == NULL && item_shown(st, item)) {
             missing++;
         }
     }
@@ -879,8 +901,6 @@ void diagnostics_tab_show(AppData* app, const gchar* id) {
     if (id != NULL) {
         g_free(st->select_id);
         st->select_id = g_strdup(id);
-        /* A folded language server is unfolded to be seen */
-        if (g_str_has_prefix(id, "lsp-")) st->others_shown = TRUE;
         if (!st->busy) fill_store(st);
     }
     /* The preview panel holds the tab: show it when hidden */

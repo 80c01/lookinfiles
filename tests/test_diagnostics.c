@@ -174,8 +174,84 @@ static void test_remote_command_runs(void) {
     diagnostics_remote_apply(items, out, NULL);
     g_assert_nonnull(diagnostics_find(items, "lsp-shell")->found);
     g_assert_nonnull(diagnostics_find(items, "grep")->found);
+    /* make builds these tests: found with its version, as on this computer */
+    gchar* make = g_find_program_in_path("make");
+    if (make != NULL) {
+        const gchar* found = diagnostics_find(items, "make")->found;
+        g_assert_nonnull(found);
+        g_assert_true(g_str_has_prefix(found, "make "));
+        g_assert_nonnull(strstr(found, make));
+        GPtrArray* local = diagnostics_items(FALSE);
+        diagnostics_check_local(local);
+        g_assert_cmpstr(diagnostics_find(local, "make")->found, ==, found);
+        g_ptr_array_unref(local);
+    }
+    g_free(make);
     g_free(out);
     g_free(cmd);
+    g_ptr_array_unref(items);
+}
+
+static void test_parse_version(void) {
+    static const gchar* const CASES[][2] = {
+        {"gcc (Ubuntu 13.2.0-23ubuntu4) 13.2.0", "13.2.0"},
+        {"Ubuntu clang version 18.1.3 (1ubuntu1)", "18.1.3"},
+        {"Apple clang version 15.0.0 (clang-1500.1.0.2.5)", "15.0.0"},
+        {"cargo 1.75.0 (1d8b05cdd 2023-11-20)", "1.75.0"},
+        {"go version go1.22.2 linux/amd64", "1.22.2"},
+        {"v20.10.0", "20.10.0"},
+        {"javac 21.0.1", "21.0.1"},
+        {"8.0.100", "8.0.100"},
+        {"GNU Make 4.3", "4.3"},
+        {"cmake version 3.28.3", "3.28.3"},
+        {"no version here", NULL},
+        {"", NULL},
+    };
+    for (gsize i = 0; i < G_N_ELEMENTS(CASES); i++) {
+        gchar* v = diagnostics_parse_version(CASES[i][0]);
+        g_assert_cmpstr(v, ==, CASES[i][1]);
+        g_free(v);
+    }
+    g_assert_null(diagnostics_parse_version(NULL));
+}
+
+static void test_build_tool_of(void) {
+    g_assert_cmpstr(diagnostics_build_tool_of("main.c"), ==, "c");
+    g_assert_cmpstr(diagnostics_build_tool_of("view.hpp"), ==, "c");
+    g_assert_cmpstr(diagnostics_build_tool_of("Makefile"), ==, "make");
+    g_assert_cmpstr(diagnostics_build_tool_of("CMakeLists.txt"), ==, "cmake");
+    g_assert_cmpstr(diagnostics_build_tool_of("meson.build"), ==, "meson");
+    g_assert_cmpstr(diagnostics_build_tool_of("Cargo.toml"), ==, "rust");
+    g_assert_cmpstr(diagnostics_build_tool_of("go.mod"), ==, "go");
+    g_assert_cmpstr(diagnostics_build_tool_of("App.java"), ==, "java");
+    g_assert_cmpstr(diagnostics_build_tool_of("app.csproj"), ==, "dotnet");
+    g_assert_cmpstr(diagnostics_build_tool_of("index.ts"), ==, "node");
+    g_assert_null(diagnostics_build_tool_of("notes.txt"));
+    g_assert_null(diagnostics_build_tool_of(".c"));
+    g_assert_null(diagnostics_build_tool_of(NULL));
+}
+
+/* Compilers: every program found, with its version */
+static void test_compilers(void) {
+    GPtrArray* items = diagnostics_items(TRUE);
+    DiagItem* c = diagnostics_find(items, "c");
+    g_assert_nonnull(c);
+    g_assert_cmpint(c->section, ==, DIAG_SECTION_COMPILERS);
+    gchar* cmd = diagnostics_install_command(c, DIAG_FAMILY_APT);
+    g_assert_cmpstr(cmd, ==, "sudo apt install build-essential");
+    g_free(cmd);
+    const gchar* out = "@@versions\n"
+                       "gcc\t/usr/bin/gcc\tgcc (Debian 14.2.0-19) 14.2.0\n"
+                       "clang\t/usr/bin/clang\tDebian clang version 19.1.7 (3)\n"
+                       "go\t/usr/local/go/bin/go\tgo version go1.24.1 linux/amd64\n"
+                       "cmake\t/usr/bin/cmake\t\n"
+                       "@@path\n@@end\n";
+    diagnostics_remote_apply(items, out, NULL);
+    g_assert_cmpstr(c->found, ==, "gcc 14.2.0 (/usr/bin/gcc) · clang 19.1.7 (/usr/bin/clang)");
+    g_assert_cmpstr(diagnostics_find(items, "go")->found, ==, "go 1.24.1 (/usr/local/go/bin/go)");
+    g_assert_cmpstr(diagnostics_find(items, "cmake")->found, ==, "cmake (/usr/bin/cmake)");
+    g_assert_null(diagnostics_find(items, "rust")->found);
+    g_assert_true(diagnostics_find(items, "rust")->checked);
     g_ptr_array_unref(items);
 }
 
@@ -189,5 +265,8 @@ int main(int argc, char** argv) {
     g_test_add_func("/diagnostics/check_local", test_check_local);
     g_test_add_func("/diagnostics/remote_parse", test_remote_parse);
     g_test_add_func("/diagnostics/remote_command_runs", test_remote_command_runs);
+    g_test_add_func("/diagnostics/parse_version", test_parse_version);
+    g_test_add_func("/diagnostics/build_tool_of", test_build_tool_of);
+    g_test_add_func("/diagnostics/compilers", test_compilers);
     return g_test_run();
 }

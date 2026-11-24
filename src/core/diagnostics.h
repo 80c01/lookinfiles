@@ -16,6 +16,7 @@ typedef enum {
     DIAG_SECTION_CONNECTION = 0, /* how this machine is reached (remote only) */
     DIAG_SECTION_BUILT_IN,       /* libraries of this build (local only) */
     DIAG_SECTION_PROGRAMS,       /* programs looked for in PATH */
+    DIAG_SECTION_COMPILERS,      /* compilers and build tools, with their versions */
     DIAG_SECTION_LANG_SERVERS    /* language servers (docs/code-nav.md) */
 } DiagSection;
 
@@ -36,6 +37,8 @@ typedef struct {
     gchar* feature;   /* what it gives, in English (translated with _() when shown),
                        * or a language name for a language server */
     gchar** programs; /* programs that serve it, any one is enough (NULL: built in) */
+    gchar* version_arg; /* argument printing a program's version ("--version"): found then
+                         * lists every program found with its version (NULL: the first path) */
     gchar* found;     /* what was found (a program's path, "built in"), NULL when missing */
     gboolean checked; /* found is meaningful */
 } DiagItem;
@@ -87,6 +90,15 @@ DiagFamily diagnostics_local_family(void);
  * NULL when it is found or nothing is known. Built-in libraries: the
  * development package to install before building again. Caller frees. */
 gchar* diagnostics_install_command(const DiagItem* item, DiagFamily family);
+
+/* The version in the first line a program prints for its version
+ * ("gcc (Ubuntu 13.2.0-4ubuntu3) 13.2.0" -> "13.2.0", "go version go1.22.2
+ * linux/amd64" -> "1.22.2", "v20.10.0" -> "20.10.0"), or NULL. Caller frees. */
+gchar* diagnostics_parse_version(const gchar* line);
+
+/* The compiler or build tool item ("c", "make", "rust"...) a file of this
+ * name needs, or NULL: what unfolds a missing one in the tab */
+const gchar* diagnostics_build_tool_of(const gchar* name);
 
 /* Pretty name of the system (PRETTY_NAME, else NAME, of os_release), or NULL.
  * Caller frees. */

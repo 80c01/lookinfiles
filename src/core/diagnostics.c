@@ -47,6 +47,16 @@ static const Packages PACKAGES[] = {
     {"git", "git", "git", "git", "git", "git", "git", NULL},
     {"find", "findutils", "findutils", "findutils", "findutils", "findutils", NULL, NULL},
     {"grep", "grep", "grep", "grep", "grep", "grep", NULL, NULL},
+    /* Compilers and build tools */
+    {"c", "build-essential", "gcc gcc-c++", "base-devel", "gcc gcc-c++", "build-base", NULL, NULL},
+    {"make", "make", "make", "make", "make", "make", "make", NULL},
+    {"cmake", "cmake", "cmake", "cmake", "cmake", "cmake", "cmake", NULL},
+    {"meson", "meson ninja-build", "meson ninja-build", "meson ninja", "meson ninja", "meson", "meson", NULL},
+    {"rust", "cargo", "cargo", "rust", "cargo", "cargo", "rust", NULL},
+    {"go", "golang-go", "golang", "go", "go", "go", "go", NULL},
+    {"java", "default-jdk", "java-latest-openjdk-devel", "jdk-openjdk", NULL, NULL, "openjdk", NULL},
+    {"dotnet", "dotnet-sdk-8.0", "dotnet-sdk-8.0", "dotnet-sdk", NULL, NULL, NULL, NULL},
+    {"node", "nodejs npm", "nodejs npm", "nodejs npm", "nodejs npm", "nodejs npm", "node", NULL},
     /* Language servers, by program */
     {"clangd", "clangd", "clang-tools-extra", "clang", NULL, "clang-extra-tools", "llvm", NULL},
     {"pylsp", "python3-pylsp", "python3-lsp-server", "python-lsp-server", NULL, NULL, NULL,
@@ -83,32 +93,44 @@ typedef struct {
     const gchar* feature;
     const gchar* programs[4]; /* none: built in, or a check of its own (jupyter, find) */
     gint where;
+    const gchar* version_arg; /* compilers: what prints their version */
 } Check;
 
 static const Check CHECKS[] = {
-    {"vte", DIAG_SECTION_BUILT_IN, N_("Embedded terminal"), {NULL}, WHERE_LOCAL},
-    {"gtksourceview", DIAG_SECTION_BUILT_IN, N_("Syntax highlighting in the editor"), {NULL}, WHERE_LOCAL},
-    {"poppler", DIAG_SECTION_BUILT_IN, N_("PDF preview"), {NULL}, WHERE_LOCAL},
-    {"sqlite", DIAG_SECTION_BUILT_IN, N_("Database preview"), {NULL}, WHERE_LOCAL},
-    {"libarchive", DIAG_SECTION_BUILT_IN, N_("7z, RAR, xz, zstd and ISO archives"), {NULL}, WHERE_LOCAL},
-    {"zstd", DIAG_SECTION_BUILT_IN, N_("Zstandard pages of Parquet files"), {NULL}, WHERE_LOCAL},
-    {"libjpeg", DIAG_SECTION_BUILT_IN, N_("Fast JPEG photo preview"), {NULL}, WHERE_LOCAL},
-    {"webkit", DIAG_SECTION_BUILT_IN, N_("Browser tabs"), {NULL}, WHERE_LOCAL},
-    {"gstreamer", DIAG_SECTION_BUILT_IN, N_("Audio and subtitle tracks of videos"), {NULL}, WHERE_LOCAL},
-    {"libssh", DIAG_SECTION_BUILT_IN, N_("Shared SSH connections (libssh)"), {NULL}, WHERE_LOCAL},
+    {"vte", DIAG_SECTION_BUILT_IN, N_("Embedded terminal"), {NULL}, WHERE_LOCAL, NULL},
+    {"gtksourceview", DIAG_SECTION_BUILT_IN, N_("Syntax highlighting in the editor"), {NULL}, WHERE_LOCAL, NULL},
+    {"poppler", DIAG_SECTION_BUILT_IN, N_("PDF preview"), {NULL}, WHERE_LOCAL, NULL},
+    {"sqlite", DIAG_SECTION_BUILT_IN, N_("Database preview"), {NULL}, WHERE_LOCAL, NULL},
+    {"libarchive", DIAG_SECTION_BUILT_IN, N_("7z, RAR, xz, zstd and ISO archives"), {NULL}, WHERE_LOCAL, NULL},
+    {"zstd", DIAG_SECTION_BUILT_IN, N_("Zstandard pages of Parquet files"), {NULL}, WHERE_LOCAL, NULL},
+    {"libjpeg", DIAG_SECTION_BUILT_IN, N_("Fast JPEG photo preview"), {NULL}, WHERE_LOCAL, NULL},
+    {"webkit", DIAG_SECTION_BUILT_IN, N_("Browser tabs"), {NULL}, WHERE_LOCAL, NULL},
+    {"gstreamer", DIAG_SECTION_BUILT_IN, N_("Audio and subtitle tracks of videos"), {NULL}, WHERE_LOCAL, NULL},
+    {"libssh", DIAG_SECTION_BUILT_IN, N_("Shared SSH connections (libssh)"), {NULL}, WHERE_LOCAL, NULL},
     {"ctags", DIAG_SECTION_PROGRAMS, N_("Code outline and Go to Definition without a language server"),
-     {"ctags", "universal-ctags", "ctags-universal", NULL}, WHERE_LOCAL},
-    {"latex", DIAG_SECTION_PROGRAMS, N_("LaTeX builds"), {"latexmk", "tectonic", "pdflatex", NULL}, WHERE_LOCAL},
-    {"gs", DIAG_SECTION_PROGRAMS, N_("PostScript and EPS preview"), {"gs", NULL}, WHERE_LOCAL},
-    {"dvips", DIAG_SECTION_PROGRAMS, N_("DVI preview"), {"dvips", NULL}, WHERE_LOCAL},
-    {"ssh", DIAG_SECTION_PROGRAMS, N_("Remote machines"), {"ssh", NULL}, WHERE_LOCAL},
-    {"python", DIAG_SECTION_PROGRAMS, N_("Python for Jupyter notebooks"), {"python3", "python", NULL}, WHERE_BOTH},
+     {"ctags", "universal-ctags", "ctags-universal", NULL}, WHERE_LOCAL, NULL},
+    {"latex", DIAG_SECTION_PROGRAMS, N_("LaTeX builds"), {"latexmk", "tectonic", "pdflatex", NULL}, WHERE_LOCAL,
+     NULL},
+    {"gs", DIAG_SECTION_PROGRAMS, N_("PostScript and EPS preview"), {"gs", NULL}, WHERE_LOCAL, NULL},
+    {"dvips", DIAG_SECTION_PROGRAMS, N_("DVI preview"), {"dvips", NULL}, WHERE_LOCAL, NULL},
+    {"ssh", DIAG_SECTION_PROGRAMS, N_("Remote machines"), {"ssh", NULL}, WHERE_LOCAL, NULL},
+    {"python", DIAG_SECTION_PROGRAMS, N_("Python for Jupyter notebooks"), {"python3", "python", NULL}, WHERE_BOTH,
+     NULL},
     {"jupyter", DIAG_SECTION_PROGRAMS, N_("Running notebook cells (jupyter_client, ipykernel)"), {NULL},
-     WHERE_BOTH},
-    {"git", DIAG_SECTION_PROGRAMS, N_("Git tab and Git badges"), {"git", NULL}, WHERE_REMOTE},
-    {"grep", DIAG_SECTION_PROGRAMS, N_("Search in files"), {"grep", NULL}, WHERE_REMOTE},
+     WHERE_BOTH, NULL},
+    {"git", DIAG_SECTION_PROGRAMS, N_("Git tab and Git badges"), {"git", NULL}, WHERE_REMOTE, NULL},
+    {"grep", DIAG_SECTION_PROGRAMS, N_("Search in files"), {"grep", NULL}, WHERE_REMOTE, NULL},
     {"find", DIAG_SECTION_PROGRAMS, N_("Deep Search, Disk Usage and the Git tab (GNU find)"), {NULL},
-     WHERE_REMOTE},
+     WHERE_REMOTE, NULL},
+    {"c", DIAG_SECTION_COMPILERS, N_("C and C++"), {"gcc", "clang", NULL}, WHERE_BOTH, "--version"},
+    {"make", DIAG_SECTION_COMPILERS, N_("Make"), {"make", NULL}, WHERE_BOTH, "--version"},
+    {"cmake", DIAG_SECTION_COMPILERS, N_("CMake"), {"cmake", NULL}, WHERE_BOTH, "--version"},
+    {"meson", DIAG_SECTION_COMPILERS, N_("Meson and Ninja"), {"meson", "ninja", NULL}, WHERE_BOTH, "--version"},
+    {"rust", DIAG_SECTION_COMPILERS, N_("Rust (Cargo)"), {"cargo", "rustc", NULL}, WHERE_BOTH, "--version"},
+    {"go", DIAG_SECTION_COMPILERS, N_("Go"), {"go", NULL}, WHERE_BOTH, "version"},
+    {"java", DIAG_SECTION_COMPILERS, N_("Java (JDK)"), {"javac", NULL}, WHERE_BOTH, "-version"},
+    {"dotnet", DIAG_SECTION_COMPILERS, N_(".NET (C#)"), {"dotnet", NULL}, WHERE_BOTH, "--version"},
+    {"node", DIAG_SECTION_COMPILERS, N_("Node.js (npm)"), {"node", "npm", NULL}, WHERE_BOTH, "--version"},
 };
 
 static void item_free(gpointer data) {
@@ -116,6 +138,7 @@ static void item_free(gpointer data) {
     g_free(item->id);
     g_free(item->feature);
     g_strfreev(item->programs);
+    g_free(item->version_arg);
     g_free(item->found);
     g_free(item);
 }
@@ -130,6 +153,7 @@ GPtrArray* diagnostics_items(gboolean remote) {
         item->section = c->section;
         item->feature = g_strdup(c->feature);
         if (c->programs[0] != NULL) item->programs = g_strdupv((gchar**)c->programs);
+        item->version_arg = g_strdup(c->version_arg);
         g_ptr_array_add(items, item);
     }
     return items;
@@ -253,6 +277,106 @@ static gchar* local_kernel_python(void) {
     return python;
 }
 
+gchar* diagnostics_parse_version(const gchar* line) {
+    if (line == NULL) return NULL;
+    gchar** words = g_strsplit_set(line, " \t\r\n", -1);
+    gchar* version = NULL;
+    gint depth = 0; /* inside parentheses: "(Ubuntu 13.2.0-4ubuntu3)" is not the version */
+    for (gsize i = 0; words[i] != NULL && version == NULL; i++) {
+        const gchar* w = words[i];
+        gint opened = depth;
+        for (const gchar* c = w; *c != '\0'; c++) {
+            if (*c == '(') depth++;
+            else if (*c == ')' && depth > 0) depth--;
+        }
+        if (opened > 0 || w[0] == '(') continue;
+        if (g_str_has_prefix(w, "go") && g_ascii_isdigit(w[2])) w += 2;
+        else if (w[0] == 'v' && g_ascii_isdigit(w[1])) w += 1;
+        if (!g_ascii_isdigit(w[0]) || strchr(w, '.') == NULL) continue;
+        gsize len = strlen(w);
+        while (len > 0 && strchr(",;:)", w[len - 1]) != NULL) len--;
+        version = g_strndup(w, len);
+    }
+    g_strfreev(words);
+    return version;
+}
+
+const gchar* diagnostics_build_tool_of(const gchar* name) {
+    static const struct {
+        const gchar* pattern; /* a file name, or "*.ext" */
+        const gchar* id;
+    } TOOLS[] = {
+        {"*.c", "c"},        {"*.h", "c"},          {"*.cc", "c"},           {"*.cpp", "c"},
+        {"*.cxx", "c"},      {"*.hpp", "c"},        {"*.hh", "c"},           {"*.m", "c"},
+        {"Makefile", "make"}, {"makefile", "make"}, {"GNUmakefile", "make"}, {"*.mk", "make"},
+        {"CMakeLists.txt", "cmake"}, {"*.cmake", "cmake"}, {"meson.build", "meson"},
+        {"*.rs", "rust"},    {"Cargo.toml", "rust"}, {"*.go", "go"},         {"go.mod", "go"},
+        {"*.java", "java"},  {"pom.xml", "java"},   {"build.gradle", "java"}, {"*.cs", "dotnet"},
+        {"*.csproj", "dotnet"}, {"*.sln", "dotnet"}, {"*.fs", "dotnet"},     {"package.json", "node"},
+        {"*.js", "node"},    {"*.mjs", "node"},     {"*.cjs", "node"},       {"*.ts", "node"},
+        {"*.jsx", "node"},   {"*.tsx", "node"},
+    };
+    if (name == NULL) return NULL;
+    const gchar* dot = strrchr(name, '.');
+    for (gsize i = 0; i < G_N_ELEMENTS(TOOLS); i++) {
+        const gchar* p = TOOLS[i].pattern;
+        if (p[0] == '*' ? dot != NULL && dot != name && strcmp(dot, p + 1) == 0 : strcmp(name, p) == 0) {
+            return TOOLS[i].id;
+        }
+    }
+    return NULL;
+}
+
+/* "gcc 13.2.0 (/usr/bin/gcc)", or "gcc (/usr/bin/gcc)" without a version */
+static void append_tool(GString* s, const gchar* program, const gchar* path, const gchar* version_line) {
+    gchar* version = diagnostics_parse_version(version_line);
+    if (s->len > 0) g_string_append(s, " · ");
+    g_string_append(s, program);
+    if (version != NULL) g_string_append_printf(s, " %s", version);
+    g_string_append_printf(s, " (%s)", path);
+    g_free(version);
+}
+
+/* First non-blank line of text, or NULL. Caller frees. */
+static gchar* first_line(const gchar* text) {
+    gchar** lines = g_strsplit(text != NULL ? text : "", "\n", -1);
+    gchar* line = NULL;
+    for (gsize i = 0; lines[i] != NULL && line == NULL; i++) {
+        gchar* l = g_strstrip(g_strdup(lines[i]));
+        if (l[0] != '\0') line = l;
+        else g_free(l);
+    }
+    g_strfreev(lines);
+    return line;
+}
+
+/* Every program of a compiler item found in PATH, with its version, or NULL */
+static gchar* local_tools(const DiagItem* item) {
+    GString* s = g_string_new(NULL);
+    for (gsize i = 0; item->programs != NULL && item->programs[i] != NULL; i++) {
+        gchar* path = g_find_program_in_path(item->programs[i]);
+        if (path == NULL) continue;
+        gchar* argv[] = {path, item->version_arg, NULL};
+        gchar* out = NULL;
+        gchar* err = NULL;
+        gchar* line = NULL;
+        if (g_spawn_sync(NULL, argv, NULL, G_SPAWN_DEFAULT, NULL, NULL, &out, &err, NULL, NULL)) {
+            line = first_line(out);
+            if (line == NULL) line = first_line(err); /* javac -version before Java 9 */
+        }
+        append_tool(s, item->programs[i], path, line);
+        g_free(line);
+        g_free(out);
+        g_free(err);
+        g_free(path);
+    }
+    if (s->len == 0) {
+        g_string_free(s, TRUE);
+        return NULL;
+    }
+    return g_string_free(s, FALSE);
+}
+
 void diagnostics_check_local(GPtrArray* items) {
     for (guint i = 0; items != NULL && i < items->len; i++) {
         DiagItem* item = g_ptr_array_index(items, i);
@@ -262,6 +386,8 @@ void diagnostics_check_local(GPtrArray* items) {
             item->found = built_in(item->id) ? g_strdup(_("built in")) : NULL;
         } else if (strcmp(item->id, "jupyter") == 0) {
             item->found = local_kernel_python();
+        } else if (item->version_arg != NULL) {
+            item->found = local_tools(item);
         } else {
             item->found = first_in_path(item->programs);
         }
@@ -275,6 +401,21 @@ gchar* diagnostics_remote_command(GPtrArray* items) {
                               "echo @@find; find --version | head -n 1; "
                               "echo @@jupyter; for p in python3 python; do if command -v $p >/dev/null; then ");
     g_string_append_printf(s, "$p -c '%s' && command -v $p; break; fi; done; ", KERNEL_IMPORT);
+    g_string_append(s, "echo @@versions; ");
+    for (guint i = 0; items != NULL && i < items->len; i++) {
+        DiagItem* item = g_ptr_array_index(items, i);
+        if (item->version_arg == NULL) continue;
+        gchar* arg = g_shell_quote(item->version_arg);
+        for (gsize j = 0; item->programs != NULL && item->programs[j] != NULL; j++) {
+            gchar* q = g_shell_quote(item->programs[j]);
+            g_string_append_printf(s,
+                                   "if command -v %1$s >/dev/null; then v=$(%1$s %2$s 2>&1 | head -n 1); "
+                                   "printf '%%s\\t%%s\\t%%s\\n' %1$s \"$(command -v %1$s)\" \"$v\"; fi; ",
+                                   q, arg);
+            g_free(q);
+        }
+        g_free(arg);
+    }
     g_string_append(s, "echo @@path; for p in");
     GHashTable* seen = g_hash_table_new(g_str_hash, g_str_equal);
     for (guint i = 0; items != NULL && i < items->len; i++) {
@@ -321,6 +462,28 @@ static gchar* section_text(GHashTable* sec, const gchar* name) {
     return s;
 }
 
+/* The programs of a compiler item in the "@@versions" lines (program, path,
+ * version line, tab-separated), or NULL */
+static gchar* remote_tools(const DiagItem* item, const gchar* versions) {
+    GString* s = g_string_new(NULL);
+    gchar** lines = g_strsplit(versions != NULL ? versions : "", "\n", -1);
+    for (gsize i = 0; item->programs != NULL && item->programs[i] != NULL; i++) {
+        for (gsize j = 0; lines[j] != NULL; j++) {
+            gchar** f = g_strsplit(lines[j], "\t", 3);
+            gboolean match = f[0] != NULL && f[1] != NULL && f[1][0] != '\0' && strcmp(f[0], item->programs[i]) == 0;
+            if (match) append_tool(s, f[0], f[1], f[2]);
+            g_strfreev(f);
+            if (match) break;
+        }
+    }
+    g_strfreev(lines);
+    if (s->len == 0) {
+        g_string_free(s, TRUE);
+        return NULL;
+    }
+    return g_string_free(s, FALSE);
+}
+
 void diagnostics_remote_apply(GPtrArray* items, const gchar* output, gchar** os_release) {
     GHashTable* sec = sections(output);
     /* program -> path (absent or "" when missing) */
@@ -337,11 +500,14 @@ void diagnostics_remote_apply(GPtrArray* items, const gchar* output, gchar** os_
     g_strfreev(lines);
     gchar* find = section_text(sec, "find");
     gchar* jupyter = section_text(sec, "jupyter");
+    const gchar* versions = g_hash_table_lookup(sec, "versions");
     for (guint i = 0; items != NULL && i < items->len; i++) {
         DiagItem* item = g_ptr_array_index(items, i);
         if (item->section == DIAG_SECTION_CONNECTION) continue;
         g_clear_pointer(&item->found, g_free);
-        if (strcmp(item->id, "find") == 0) {
+        if (item->version_arg != NULL) {
+            item->found = remote_tools(item, versions);
+        } else if (strcmp(item->id, "find") == 0) {
             if (find != NULL && strstr(find, "GNU") != NULL) item->found = g_strdup(find);
         } else if (strcmp(item->id, "jupyter") == 0) {
             if (jupyter != NULL) item->found = g_strdup(jupyter);

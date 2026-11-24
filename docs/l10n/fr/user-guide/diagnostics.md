@@ -20,6 +20,15 @@ le bouton **+** au bout de la barre d’onglets : **+** → **Diagnostics**.
   DVI), `ssh` (machines distantes), Python et ses modules `jupyter_client`
   et `ipykernel` (exécution des cellules des notebooks). Ils fonctionnent
   dès qu’ils sont installés, sans redémarrer.
+- **Compilateurs et outils de compilation** : ce qu’utilisent les
+  [tâches de compilation](code-navigation.md#tâches-de-compilation-et-de-test) (`F7`) et vos propres compilations :
+  les compilateurs C et C++ (`gcc`, `clang`), Make, CMake, Meson et Ninja,
+  Rust (`cargo`, `rustc`), Go, Java (`javac`), .NET et Node.js (`node`,
+  `npm`). Chacun de ceux trouvés montre sa version et son chemin (tous les
+  compilateurs trouvés : `gcc 14.2.0 (/usr/bin/gcc) · clang 19.1.7
+  (/usr/bin/clang)`). Un outil absent n’est listé que si le dossier affiché
+  a des fichiers de son langage (un `Makefile`, des fichiers `.rs`…) ;
+  **Afficher N autres outils** déplie les autres.
 - **Serveurs de langage** : le serveur de chaque langage
   (voir [la navigation dans le code](code-navigation.md)). Ceux des langages
   du dossier affiché viennent en premier ; **Afficher N autres langages**
@@ -61,7 +70,8 @@ machine distante doit être connectée ; ses vérifications sont celles dont
 LookinFiles a besoin là-bas : Python et les modules du noyau pour ses
 notebooks, `git` pour l’onglet Git, `grep` pour la recherche dans les
 fichiers, GNU `find` (Linux) pour la Recherche approfondie, l’Espace disque
-et l’onglet Git, et les serveurs de langage. Les commandes d’installation
+et l’onglet Git, les compilateurs et outils de compilation (pour les tâches
+lancées là-bas), et les serveurs de langage. Les commandes d’installation
 sont celles du système de cette machine : lancez-les là-bas, dans un
 terminal connecté à elle.
 

@@ -13402,6 +13402,57 @@ msgstr[0] "Afficher %u autre langage"
 msgstr[1] "Afficher %u autres langages"
 
 #: src/chrome/diagnostics_tab.c
+msgid "Compilers and Build Tools"
+msgstr "Compilateurs et outils de compilation"
+
+#: src/chrome/diagnostics_tab.c
+msgid "Hide the other tools"
+msgstr "Masquer les autres outils"
+
+#: src/chrome/diagnostics_tab.c
+#, c-format
+msgid "Show %u other tool"
+msgid_plural "Show %u other tools"
+msgstr[0] "Afficher %u autre outil"
+msgstr[1] "Afficher %u autres outils"
+
+#: src/core/diagnostics.c
+msgid "C and C++"
+msgstr "C et C++"
+
+#: src/core/diagnostics.c
+msgid "Make"
+msgstr "Make"
+
+#: src/core/diagnostics.c
+msgid "CMake"
+msgstr "CMake"
+
+#: src/core/diagnostics.c
+msgid "Meson and Ninja"
+msgstr "Meson et Ninja"
+
+#: src/core/diagnostics.c
+msgid "Rust (Cargo)"
+msgstr "Rust (Cargo)"
+
+#: src/core/diagnostics.c
+msgid "Go"
+msgstr "Go"
+
+#: src/core/diagnostics.c
+msgid "Java (JDK)"
+msgstr "Java (JDK)"
+
+#: src/core/diagnostics.c
+msgid ".NET (C#)"
+msgstr ".NET (C#)"
+
+#: src/core/diagnostics.c
+msgid "Node.js (npm)"
+msgstr "Node.js (npm)"
+
+#: src/chrome/diagnostics_tab.c
 msgid "This computer"
 msgstr "Cet ordinateur"
 

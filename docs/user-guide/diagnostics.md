@@ -18,6 +18,14 @@ and what is missing, with the command that installs each missing piece.
   EPS preview), `dvips` (DVI preview), `ssh` (remote machines), Python and
   its `jupyter_client` and `ipykernel` modules (running notebook cells).
   These work as soon as they are installed, without restarting.
+- **Compilers and Build Tools**: what the [build tasks](code-navigation.md#build-and-test-tasks) (`F7`)
+  and your own builds use: the C and C++ compilers (`gcc`, `clang`), Make,
+  CMake, Meson and Ninja, Rust (`cargo`, `rustc`), Go, Java (`javac`), .NET
+  and Node.js (`node`, `npm`). Each one found shows its version and path
+  (every compiler found: `gcc 14.2.0 (/usr/bin/gcc) · clang 19.1.7
+  (/usr/bin/clang)`). A missing one is listed only when the folder shown
+  has files of its language (a `Makefile`, `.rs` files...); **Show N other
+  tools** unfolds the others.
 - **Language Servers**: the server of each language (see
   [code navigation](code-navigation.md)). Those of the languages of the
   folder shown come first; **Show N other languages** unfolds the others.
@@ -54,8 +62,8 @@ workspace comes first). It shows which SSH transport the machine uses
 its program checks, the remote machine must be connected; its checks are
 those LookinFiles needs there: Python and the kernel modules for its
 notebooks, `git` for the Git tab, `grep` for Search in Files, GNU `find`
-(Linux) for Deep Search, Disk Usage and the Git tab, and the language
-servers. The install commands are those of that machine's system: run them
+(Linux) for Deep Search, Disk Usage and the Git tab, the compilers and
+build tools (for tasks run there), and the language servers. The install commands are those of that machine's system: run them
 there, in a terminal connected to it.
 
 ## Notebooks and virtual environments
