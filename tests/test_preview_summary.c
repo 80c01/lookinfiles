@@ -75,6 +75,29 @@ static void test_local(void) {
     g_free(s);
 }
 
+static void test_disk(void) {
+    DiskVolume v = {0};
+    v.name = "USB KEY";
+    v.path = "/media/ann/USB KEY";
+    v.device = "/dev/sdb1";
+    v.kind = DISK_VOLUME_REMOVABLE;
+    v.can_eject = TRUE;
+    gchar* s = preview_summary_disk(&v);
+    g_assert_nonnull(strstr(s, "Disk: USB KEY\n"));
+    g_assert_nonnull(strstr(s, "Removable disk"));
+    g_assert_cmpint(column_of(s, "Device:", "/dev/sdb1"), ==, column_of(s, "Kind:", "Removable"));
+    g_free(s);
+    v.path = NULL;
+    v.device = NULL;
+    v.can_eject = FALSE;
+    s = preview_summary_disk(&v);
+    g_assert_nonnull(strstr(s, "Not mounted"));
+    g_assert_null(strstr(s, "Mount Folder:"));
+    g_assert_null(strstr(s, "Device:"));
+    g_free(s);
+    g_assert_null(preview_summary_disk(NULL));
+}
+
 static void test_notebook(void) {
     ExplorerRow* root = explorer_row_new_root();
     ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
@@ -260,6 +283,7 @@ int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_summary/remote", test_remote);
     g_test_add_func("/preview_summary/local", test_local);
+    g_test_add_func("/preview_summary/disk", test_disk);
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);

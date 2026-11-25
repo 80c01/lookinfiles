@@ -153,6 +153,7 @@ static void remote_refresh_select(AppData* app, const gchar* type, const gchar* 
             explorer_tree_set_expanded(app->tree, child, TRUE);
         }
     }
+    local_machine_restore_expanded(app, root);
     tree_nav_unblock_selection_handler(app);
 
     ExplorerRow* row = NULL;
@@ -183,6 +184,9 @@ void remote_refresh(AppData* app) {
 }
 
 gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded) {
+    if (local_machine_row_toggled(row, expanded)) {
+        return TRUE;
+    }
     if (app == NULL || !explorer_row_is(row, "remote_folder")) {
         return FALSE;
     }
@@ -196,6 +200,9 @@ gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
 
 /* Collapse every folder if one is expanded, else expand them all */
 gboolean remote_any_expanded(AppData* app) {
+    if (local_machine_any_expanded()) {
+        return TRUE;
+    }
     for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         if (((RemoteFolder*)l->data)->expanded) {
             return TRUE;
@@ -205,10 +212,11 @@ gboolean remote_any_expanded(AppData* app) {
 }
 
 void remote_toggle_collapse_expand(AppData* app) {
-    if (app == NULL || remote_folder_list(app) == NULL) {
+    if (app == NULL) {
         return;
     }
     gboolean expand = !remote_any_expanded(app);
+    local_machine_set_expanded(expand);
     for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         ((RemoteFolder*)l->data)->expanded = expand;
     }
@@ -217,7 +225,9 @@ void remote_toggle_collapse_expand(AppData* app) {
     /* Keep a visible row selected when collapsing */
     RemoteMachine* rm = remote_get_selected(app);
     RemoteFolder* parent = remote_machine_folder(app, rm);
-    if (!expand && parent != NULL) {
+    if (!expand && local_machine_owns_selected(app)) {
+        remote_refresh_select(app, LOCAL_MACHINE_ROW, "");
+    } else if (!expand && parent != NULL) {
         remote_refresh_select(app, "remote_folder", parent->id);
     } else {
         remote_refresh(app);
@@ -731,8 +741,8 @@ void remote_disconnect_selected(AppData* app) {
 }
 
 void remote_toggle_connect_selected(AppData* app) {
-    if (local_machine_selected(app)) {
-        local_machine_open(app);
+    if (local_machine_owns_selected(app)) {
+        local_machine_toggle_selected(app);
         return;
     }
     RemoteMachine* rm = remote_get_selected(app);
@@ -753,8 +763,8 @@ void remote_toggle_connect_selected(AppData* app) {
 }
 
 void remote_activate_selected(AppData* app) {
-    if (local_machine_selected(app)) {
-        local_machine_open(app);
+    if (local_machine_owns_selected(app)) {
+        local_machine_activate_selected(app);
         return;
     }
     if (remote_get_selected_folder(app) != NULL) {
@@ -802,8 +812,8 @@ void remote_open_terminal(AppData* app, RemoteMachine* rm) {
 }
 
 void remote_open_terminal_selected(AppData* app) {
-    if (local_machine_selected(app)) {
-        local_machine_open_terminal(app);
+    if (local_machine_owns_selected(app)) {
+        local_machine_terminal_selected(app);
         return;
     }
     RemoteMachine* rm = remote_get_selected(app);
@@ -898,6 +908,7 @@ static void on_remote_ctx_action(GtkButton* btn, gpointer user_data) {
     case 8: remote_new_folder_dialog(app); break;
     case 9: remote_activate_selected(app); break;
     case 10: remote_toggle_collapse_expand(app); break;
+    case 11: remote_toggle_connect_selected(app); break;
     default: break;
     }
 }
@@ -942,6 +953,8 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
     RemoteMachine* rm = remote_get_selected(app);
     RemoteFolder* folder = remote_get_selected_folder(app);
     gboolean local = local_machine_selected(app);
+    const DiskVolume* disk = local_machine_selected_disk(app);
+    gboolean disks = explorer_row_is(tree_nav_selected(app), LOCAL_DISKS_ROW);
 
     GtkWidget* popover = gtk_popover_new();
     gtk_widget_set_parent(popover, GTK_WIDGET(app->tree_view));
@@ -977,6 +990,31 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
         gtk_box_append(GTK_BOX(box), sep);
     }
 
+    if (disk != NULL) {
+        add_menu_item(box, popover, app, disk->path != NULL ? _("Open in Explorer") : _("Mount and Open"),
+                      "Enter", 9);
+        if (disk->path != NULL && disk->can_eject) {
+            add_menu_item(box, popover, app, _("Eject"), "c", 11);
+        } else if (disk->path != NULL && disk->can_unmount) {
+            add_menu_item(box, popover, app, _("Unmount"), "c", 11);
+        } else if (disk->path == NULL) {
+            add_menu_item(box, popover, app, _("Mount"), "c", 11);
+        }
+        if (disk->path != NULL) {
+            add_menu_item(box, popover, app, _("Open Terminal Here"), "t", 3);
+        }
+
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(GTK_BOX(box), sep);
+    }
+
+    if (disks) {
+        add_menu_item(box, popover, app, _("Expand / Collapse"), "Enter", 9);
+
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(GTK_BOX(box), sep);
+    }
+
     if (folder != NULL) {
         add_menu_item(box, popover, app, _("Expand / Collapse"), "Enter", 9);
         add_menu_item(box, popover, app, _("Edit Folder…"), "F2", 4);
@@ -989,9 +1027,7 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
     add_menu_item(box, popover, app, folder != NULL ? _("Add Machine Here…") : _("Add Remote Machine…"), "a", 6);
     add_menu_item(box, popover, app, _("New Folder…"), "Shift+A", 8);
     add_menu_item(box, popover, app, _("Re-scan ~/.ssh/config"), "F5", 7);
-    if (remote_folder_list(app) != NULL) {
-        add_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, 10);
-    }
+    add_menu_item(box, popover, app, _("Collapse / Expand All"), NULL, 10);
 
     gtk_popover_set_child(GTK_POPOVER(popover), box);
     gtk_popover_popup(GTK_POPOVER(popover));

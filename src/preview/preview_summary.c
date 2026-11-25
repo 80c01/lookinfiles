@@ -129,6 +129,37 @@ GPtrArray* preview_summary_local_lines(const gchar* host, const gchar* user, con
     return lines;
 }
 
+GPtrArray* preview_summary_disk_lines(const DiskVolume* v) {
+    if (v == NULL) {
+        return NULL;
+    }
+    static const SummaryShortcut keys[] = {
+        {NC_("key", "Enter / Double-click"), N_("Browse the disk in Explorer (mounted first if needed)")},
+        {"c", N_("Mount / unmount the disk (eject a removable one)")},
+        {"t", N_("Open a terminal in the disk")},
+    };
+    GPtrArray* lines = lines_new();
+    gchar* title = g_strdup_printf(_("Disk: %s"), v->name != NULL ? v->name : "");
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup(disk_volume_glyph(v->kind));
+    g_free(title);
+
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Kind"), disk_volume_kind_name(v->kind));
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Status"),
+             v->path != NULL ? _("Mounted") : _("Not mounted"));
+    if (v->path != NULL) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Mount Folder"), v->path);
+    }
+    if (v->device != NULL && v->device[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Device"), v->device);
+    }
+    if (v->can_eject) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Eject"), _("Yes (c ejects it)"));
+    }
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
+}
+
 /* Human-readable note format from the note row badge ("md", "org" or empty) */
 static const gchar* note_format_name(const gchar* badge_text) {
     return note_type_name(note_type_from_badge(badge_text));
@@ -392,7 +423,8 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     gboolean is_bm_folder = explorer_row_is(row, "bm_folder");
     gboolean is_trash = explorer_row_is(row, "trash");
     gboolean is_remote_folder = explorer_row_is(row, "remote_folder");
-    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder) {
+    gboolean is_disks = explorer_row_is(row, "machine_disks");
+    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder && !is_disks) {
         return NULL;
     }
 
@@ -414,6 +446,10 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
         title = g_strdup_printf(_("Remote Folder: %s"), name);
         count_label = _("Machines");
         list_title = _("Machines");
+    } else if (is_disks) {
+        title = g_strdup(_("Disks"));
+        count_label = _("Disks");
+        list_title = _("Disks");
     } else {
         title = g_strdup(_("Trash"));
         count_label = _("Notes");
@@ -450,6 +486,11 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
             {"F2 / r / e", N_("Edit folder (name and icon)")},
             {"d / Delete", N_("Delete folder")},
             {"Shift+K / Shift+J", N_("Move folder up / down")},
+        };
+        add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    } else if (is_disks) {
+        static const SummaryShortcut keys[] = {
+            {"Enter / l", N_("Expand / collapse the list")},
         };
         add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
     } else if (is_remote_folder) {
@@ -568,6 +609,10 @@ gchar* preview_summary_remote(const RemoteMachine* rm) {
 gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* home,
                              const gchar* system, gboolean current) {
     return to_text_and_free(preview_summary_local_lines(host, user, home, system, current));
+}
+
+gchar* preview_summary_disk(const DiskVolume* v) {
+    return to_text_and_free(preview_summary_disk_lines(v));
 }
 
 gchar* preview_summary_container(ExplorerRow* row) {

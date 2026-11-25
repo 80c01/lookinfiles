@@ -29,7 +29,13 @@ La vue liste :
 - cet ordinateur, toujours en premier (son nom, puis **Cet ordinateur** et
   votre nom d’utilisateur, en vert tant que l’espace de travail courant le
   parcourt) : `Enter` ou `c` revient à ses fichiers, `t` ouvre un terminal
-  dessus ;
+  dessus. En dessous, **Disques** liste ses disques : le système de
+  fichiers, les partitions, les clés USB, les disques optiques et les
+  dossiers réseau qui ont un dossier local (les lettres de lecteur sous
+  Windows), les disques pas encore montés marqués *non monté*. La liste suit
+  les disques branchés ou retirés. Sur un disque, `Enter` le parcourt (en le
+  montant d’abord si besoin), `c` le monte ou le démonte (éjecte un disque
+  amovible, pour le retirer sans risque), `t` ouvre un terminal dedans ;
 - chaque `Host` de votre `~/.ssh/config` (`F5` relit le fichier) ;
 - les machines ajoutées à la main.
 

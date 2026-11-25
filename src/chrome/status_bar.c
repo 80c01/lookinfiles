@@ -551,6 +551,12 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     if (g_strcmp0(type, "local_machine") == 0) {
         return g_strdup(_("Local Machine"));
     }
+    if (g_strcmp0(type, "machine_disks") == 0) {
+        return g_strdup(_("Disks"));
+    }
+    if (g_strcmp0(type, "disk") == 0) {
+        return g_strdup(_("Disk"));
+    }
     if (g_strcmp0(type, "remote_folder") == 0) {
         return g_strdup(_("Remote Folder"));
     }

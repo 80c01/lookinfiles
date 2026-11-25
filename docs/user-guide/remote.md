@@ -26,7 +26,13 @@ The view lists:
 
 - this computer, always first (its name, then **This computer** and your
   user name, in green while the current workspace browses it): `Enter` or
-  `c` goes back to its files, `t` opens a terminal on it;
+  `c` goes back to its files, `t` opens a terminal on it. Below it,
+  **Disks** lists its disks: the file system, partitions, USB keys, optical
+  discs and network folders that have a local folder (drive letters on
+  Windows), the disks not mounted yet marked *not mounted*. The list follows
+  the disks you plug in or remove. On a disk, `Enter` browses it (mounting
+  it first if needed), `c` mounts or unmounts it (ejects a removable one, so
+  that it can be removed safely), `t` opens a terminal in it;
 - every `Host` of your `~/.ssh/config` (`F5` reads the file again);
 - the machines you added by hand.
 

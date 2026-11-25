@@ -48,6 +48,10 @@ Layers, from bottom to top
 - `app_paths` — application name (`APP_NAME`), config, cache and runtime directories
   (`app_config_dir()`, `app_cache_dir()`, `app_runtime_dir()`: never hard-code the
   directory name; the runtime one is private, 0700, and never under the cache).
+- `disk_volumes` — the disks of this computer from a `GVolumeMonitor`
+  (mounted volumes with a local path, volumes that can be mounted, `/` on
+  Unix), their kind (system, fixed, removable, optical, network) and order;
+  no file system access.
 - `remote_mounts` — the folder a remote machine's files are seen at
   (`app_runtime_dir()/remotes/<id>`, empty: nothing is mounted there; never
   under `~/.cache`), and the startup cleanup of the sshfs mounts earlier
@@ -1088,7 +1092,10 @@ Layers, from bottom to top
   SFTP (`vfs_rename()`) and a delete is for good (`file_moves_delete_remote()`,
   `vfs_delete_tree()`: no trash there, not undone); `file_moves_exists()`.
 - `local_machine` — the row of this computer at the top of the Machines view
-  (`remote`): back to local files (`local_machine_open()`), a local terminal.
+  (`remote`) and its **Disks** (`disk_volumes`): back to local files
+  (`local_machine_open()`), a local terminal; a disk opened, mounted,
+  unmounted or ejected through its `GMount` / `GVolume`; the view redrawn
+  (`APP_EVENT_FILES_CHANGED`) on the volume monitor's signals.
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and Machines views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
   `remote_store`; the master connection (`remote_session_connect()`),
