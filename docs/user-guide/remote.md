@@ -51,6 +51,21 @@ by default). **Save & Connect** connects right away.
 | `d` or `Delete` | Delete it from the list |
 | `F5` | Read `~/.ssh/config` again |
 
+## The disks of a machine
+
+Expand a connected machine to see its **Disks**: the file system `/`,
+partitions, USB disks and network shares mounted there (listed with
+`findmnt`, or `df` on macOS and BSD, in the background), with their
+folder and free space. A machine not connected shows *Not connected —
+Enter to connect*. `Enter` or `c` on a disk browses it, `t` opens an SSH
+terminal in it; `F5` lists the disks again.
+
+A disk outside the machine's **Remote Directory** (`/mnt/data` when it is
+`~`) is opened through a second SFTP session of the same connection (no new
+login): its files are written `machine:/mnt/data/...`, and everything works
+there as in the remote directory. These disk sessions end when the machine
+disconnects.
+
 The folders of a connected machine are listed over SFTP, through the SSH
 connection already open (no new login); text files are previewed and opened
 in the editor the same way. A slow network

@@ -48,6 +48,8 @@ Layers, from bottom to top
 - `app_paths` — application name (`APP_NAME`), config, cache and runtime directories
   (`app_config_dir()`, `app_cache_dir()`, `app_runtime_dir()`: never hard-code the
   directory name; the runtime one is private, 0700, and never under the cache).
+- `remote_disks` — the disks of a remote machine from `findmnt -P` (else
+  `df -P`) output (`REMOTE_DISKS_COMMAND`): kept, kind, order; pure.
 - `disk_volumes` — the disks of this computer from a `GVolumeMonitor`
   (mounted volumes with a local path, volumes that can be mounted, `/` on
   Unix), their kind (system, fixed, removable, optical, network) and order;
@@ -963,7 +965,10 @@ Layers, from bottom to top
   the only way to change the explorer view (`make check` rejects other writes
   of `app->sidebar_view` outside the workspace switch).
 - `remote_store` — `RemoteMachine` list and `RemoteFolder`s, `remotes.xml`, `~/.ssh/config`
-  discovery, lookups (unit-tested).
+  discovery, lookups (unit-tested). A machine has one mount (`mount_point`,
+  `remote_path`) plus one per disk opened outside it
+  (`remote_machine_disk_local()`, `disk_mounts`); `remote_machine_mount_nth()`
+  walks them, and `remote_path` and `remote_session` use every one.
 - `remote_path` — paths of a connected machine written as the user knows
   them, `<machine>:<remote path>`, instead of the local folder they are seen
   at: shown by `remote_path_display()`, read back by `remote_path_parse()`
@@ -1096,6 +1101,10 @@ Layers, from bottom to top
   (`local_machine_open()`), a local terminal; a disk opened, mounted,
   unmounted or ejected through its `GMount` / `GVolume`; the view redrawn
   (`APP_EVENT_FILES_CHANGED`) on the volume monitor's signals.
+- `machine_disks` — the Disks rows of the remote machines in the Machines
+  view: listed on a worker thread (`vfs_exec()`) when a connected machine is
+  first expanded, kept until it disconnects or F5; a disk opened through
+  `remote_machine_disk_local()`.
 - `bookmarks`, `notes`, `remote` — the bookmarks, notes and Machines views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
   `remote_store`; the master connection (`remote_session_connect()`),

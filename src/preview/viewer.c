@@ -33,6 +33,7 @@
 #include "core/path_kind.h"
 #include "explorer/remote.h"
 #include "explorer/local_machine.h"
+#include "explorer/machine_disks.h"
 #include "explorer/archive_tree.h"
 #include "org/orgmode.h"
 #include "org/org_fold.h"
@@ -1062,13 +1063,21 @@ static void show_selected_row(AppData* app) {
     gboolean is_remote = (g_strcmp0(type, "remote") == 0);
     gboolean is_local_machine = (g_strcmp0(type, LOCAL_MACHINE_ROW) == 0);
     gboolean is_disk = (g_strcmp0(type, LOCAL_DISK_ROW) == 0);
+    gboolean is_remote_disk = (g_strcmp0(type, MACHINE_DISK_ROW) == 0);
+    /* "Not connected", "Loading…": the machine's summary */
+    gboolean is_hint = (g_strcmp0(type, MACHINE_HINT_ROW) == 0);
     gchar* summary = NULL;
     GPtrArray* summary_lines = NULL; /* drawn by summary_view, except for Canvas notes */
     gboolean is_canvas = full != NULL && note_type_from_filename(full) == NOTE_TYPE_CANVAS;
     if (is_game) {
         summary = games_get_preview_summary(row);
-    } else if (is_remote) {
+    } else if (is_remote || is_hint) {
         summary_lines = preview_summary_remote_lines(remote_find_by_id(app, full));
+    } else if (is_remote_disk) {
+        const gchar* id = machine_disks_selected_machine(app);
+        RemoteMachine* rm = remote_find_by_id(app, id);
+        summary_lines = preview_summary_remote_disk_lines(rm != NULL ? (rm->name != NULL ? rm->name : rm->host) : NULL,
+                                                          machine_disks_find(id, full));
     } else if (is_local_machine) {
         gchar* system = g_get_os_info(G_OS_INFO_KEY_PRETTY_NAME);
         summary_lines = preview_summary_local_lines(g_get_host_name(), g_get_user_name(), g_get_home_dir(),
@@ -1091,7 +1100,7 @@ static void show_selected_row(AppData* app) {
     if (is_bookmark && bm_kind == PATH_KIND_UNKNOWN && !bookmark_target_is_uri(full)) {
         summary = g_strdup_printf(_("%s\n%s\n\n(waiting for the file system…)\n"), name, full);
     }
-    if (is_remote || is_local_machine || is_disk || summary != NULL || summary_lines != NULL) {
+    if (is_remote || is_hint || is_remote_disk || is_local_machine || is_disk || summary != NULL || summary_lines != NULL) {
         preview_media_leave_players(app);
         if (app->preview_cancellable != NULL) {
             g_cancellable_cancel(app->preview_cancellable);

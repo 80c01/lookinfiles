@@ -129,6 +129,43 @@ GPtrArray* preview_summary_local_lines(const gchar* host, const gchar* user, con
     return lines;
 }
 
+GPtrArray* preview_summary_remote_disk_lines(const gchar* machine, const RemoteDisk* d) {
+    if (d == NULL) {
+        return NULL;
+    }
+    static const SummaryShortcut keys[] = {
+        {NC_("key", "Enter / c / Double-click"), N_("Browse the disk in Explorer")},
+        {"t", N_("Open an SSH terminal in the disk")},
+    };
+    GPtrArray* lines = lines_new();
+    gchar* title = g_strdup_printf(_("Disk: %s"), d->name != NULL ? d->name : "");
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup(disk_volume_glyph(d->kind));
+    g_free(title);
+
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Kind"), disk_volume_kind_name(d->kind));
+    if (machine != NULL && machine[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Machine"), machine);
+    }
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Mount Folder"), d->target);
+    if (d->source != NULL && d->source[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Device"), d->source);
+    }
+    if (d->fstype != NULL && d->fstype[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("File System"), d->fstype);
+    }
+    if (d->size > 0) {
+        gchar* size = g_format_size(d->size);
+        gchar* avail = g_format_size(d->avail);
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Size"), size);
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Free"), avail);
+        g_free(size);
+        g_free(avail);
+    }
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
+}
+
 GPtrArray* preview_summary_disk_lines(const DiskVolume* v) {
     if (v == NULL) {
         return NULL;
@@ -423,7 +460,7 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     gboolean is_bm_folder = explorer_row_is(row, "bm_folder");
     gboolean is_trash = explorer_row_is(row, "trash");
     gboolean is_remote_folder = explorer_row_is(row, "remote_folder");
-    gboolean is_disks = explorer_row_is(row, "machine_disks");
+    gboolean is_disks = explorer_row_is(row, "machine_disks") || explorer_row_is(row, "remote_disks");
     if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder && !is_disks) {
         return NULL;
     }
@@ -609,6 +646,10 @@ gchar* preview_summary_remote(const RemoteMachine* rm) {
 gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* home,
                              const gchar* system, gboolean current) {
     return to_text_and_free(preview_summary_local_lines(host, user, home, system, current));
+}
+
+gchar* preview_summary_remote_disk(const gchar* machine, const RemoteDisk* d) {
+    return to_text_and_free(preview_summary_remote_disk_lines(machine, d));
 }
 
 gchar* preview_summary_disk(const DiskVolume* v) {

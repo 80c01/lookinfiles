@@ -1,6 +1,7 @@
 /* The connection to remote machines: master SSH connections, ssh prompts
  * as dialogs, files over SFTP through the master (see remote_session.h). */
 #include "explorer/remote_session.h"
+#include "explorer/remote_store.h"
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "core/ssh_askpass.h"
@@ -431,7 +432,8 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mo
 }
 
 void remote_session_close(RemoteMachine* rm) {
-    if (rm != NULL && rm->mount_point != NULL) vfs_unmount(rm->mount_point);
+    const gchar* local;
+    for (guint i = 0; remote_machine_mount_nth(rm, i, &local, NULL); i++) vfs_unmount(local);
     if (masters != NULL && rm != NULL && rm->id != NULL) g_hash_table_remove(masters, rm->id);
 #ifdef HAVE_LIBSSH
     maybe_stop_relay();
@@ -441,5 +443,6 @@ void remote_session_close(RemoteMachine* rm) {
 void remote_session_files_open(RemoteMachine* rm) {
     if (rm == NULL || rm->mount_point == NULL || rm->host == NULL) return;
     SshTarget t = remote_machine_target(rm);
-    vfs_mount(rm->mount_point, &t, rm->remote_path);
+    const gchar *local, *root;
+    for (guint i = 0; remote_machine_mount_nth(rm, i, &local, &root); i++) vfs_mount(local, &t, root);
 }

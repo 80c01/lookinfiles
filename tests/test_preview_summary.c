@@ -98,6 +98,30 @@ static void test_disk(void) {
     g_assert_null(preview_summary_disk(NULL));
 }
 
+static void test_remote_disk(void) {
+    RemoteDisk d = {0};
+    d.target = "/mnt/data";
+    d.name = "data";
+    d.source = "/dev/sdb1";
+    d.fstype = "xfs";
+    d.size = 2000000000;
+    d.avail = 1000000000;
+    d.kind = DISK_VOLUME_FIXED;
+    gchar* s = preview_summary_remote_disk("box", &d);
+    g_assert_nonnull(strstr(s, "Disk: data\n"));
+    g_assert_nonnull(strstr(s, "box"));
+    g_assert_nonnull(strstr(s, "xfs"));
+    g_assert_cmpint(column_of(s, "Mount Folder:", "/mnt/data"), ==, column_of(s, "Device:", "/dev/sdb1"));
+    g_assert_nonnull(strstr(s, "Free:"));
+    g_free(s);
+    d.size = 0;
+    s = preview_summary_remote_disk(NULL, &d);
+    g_assert_null(strstr(s, "Free:"));
+    g_assert_null(strstr(s, "Machine:"));
+    g_free(s);
+    g_assert_null(preview_summary_remote_disk("box", NULL));
+}
+
 static void test_notebook(void) {
     ExplorerRow* root = explorer_row_new_root();
     ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
@@ -284,6 +308,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_summary/remote", test_remote);
     g_test_add_func("/preview_summary/local", test_local);
     g_test_add_func("/preview_summary/disk", test_disk);
+    g_test_add_func("/preview_summary/remote_disk", test_remote_disk);
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);

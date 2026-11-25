@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <glib/gstdio.h>
 
 /* Machines and folders of the remote view, private to this file */
 struct RemoteStore {
@@ -54,7 +55,102 @@ void remote_machine_free(RemoteMachine* rm) {
     g_free(rm->identity_file);
     g_free(rm->mount_point);
     g_free(rm->folder_id);
+    remote_machine_clear_disk_mounts(rm);
     g_free(rm);
+}
+
+static void disk_mount_free(gpointer data) {
+    RemoteDiskMount* d = data;
+    if (d->local != NULL) {
+        g_rmdir(d->local); /* empty: its files were only read over SFTP */
+    }
+    g_free(d->local);
+    g_free(d->root);
+    g_free(d);
+}
+
+void remote_machine_clear_disk_mounts(RemoteMachine* rm) {
+    if (rm != NULL) {
+        g_clear_pointer(&rm->disk_mounts, g_ptr_array_unref);
+    }
+}
+
+/* root without its trailing '/' (but "/") */
+static gchar* strip_root(const gchar* root) {
+    gchar* r = g_strdup(root);
+    gsize n = strlen(r);
+    while (n > 1 && r[n - 1] == '/') r[--n] = '\0';
+    return r;
+}
+
+gchar* remote_machine_disk_local(RemoteMachine* rm, const gchar* root) {
+    if (rm == NULL || rm->mount_point == NULL || root == NULL || root[0] != '/') {
+        return NULL;
+    }
+    gchar* r = strip_root(root);
+    /* Inside the folder already mounted: no new mount */
+    const gchar* base = rm->remote_path;
+    if (base != NULL && base[0] == '/') {
+        gchar* b = strip_root(base);
+        gsize n = strlen(b);
+        gboolean inside = strcmp(b, "/") == 0 || (strncmp(r, b, n) == 0 && (r[n] == '\0' || r[n] == '/'));
+        gchar* local = NULL;
+        if (inside) {
+            const gchar* rest = (strcmp(b, "/") == 0) ? r : r + n;
+            while (*rest == '/') rest++;
+            local = (*rest == '\0') ? g_strdup(rm->mount_point) : g_build_filename(rm->mount_point, rest, NULL);
+        }
+        g_free(b);
+        if (local != NULL) {
+            g_free(r);
+            return local;
+        }
+    }
+    for (guint i = 0; rm->disk_mounts != NULL && i < rm->disk_mounts->len; i++) {
+        RemoteDiskMount* d = g_ptr_array_index(rm->disk_mounts, i);
+        if (strcmp(d->root, r) == 0) {
+            g_free(r);
+            return g_strdup(d->local);
+        }
+    }
+    /* A folder of its own, named after the machine and the disk (the same
+     * each time), never below nor a prefix of mount_point */
+    gchar* hash = g_compute_checksum_for_string(G_CHECKSUM_SHA1, r, -1);
+    hash[12] = '\0';
+    gchar* name = g_strdup_printf("disk-%s-%s", hash, rm->id);
+    gchar* local = remote_mounts_dir(name);
+    g_free(name);
+    g_free(hash);
+    if (local == NULL) {
+        g_free(r);
+        return NULL;
+    }
+    if (rm->disk_mounts == NULL) {
+        rm->disk_mounts = g_ptr_array_new_with_free_func(disk_mount_free);
+    }
+    RemoteDiskMount* d = g_new0(RemoteDiskMount, 1);
+    d->local = g_strdup(local);
+    d->root = r;
+    g_ptr_array_add(rm->disk_mounts, d);
+    return local;
+}
+
+gboolean remote_machine_mount_nth(const RemoteMachine* rm, guint i, const gchar** local, const gchar** root) {
+    if (rm == NULL || rm->mount_point == NULL) {
+        return FALSE;
+    }
+    if (i == 0) {
+        if (local != NULL) *local = rm->mount_point;
+        if (root != NULL) *root = rm->remote_path;
+        return TRUE;
+    }
+    if (rm->disk_mounts == NULL || i - 1 >= rm->disk_mounts->len) {
+        return FALSE;
+    }
+    RemoteDiskMount* d = g_ptr_array_index(rm->disk_mounts, i - 1);
+    if (local != NULL) *local = d->local;
+    if (root != NULL) *root = d->root;
+    return TRUE;
 }
 
 static void remote_folder_free(RemoteFolder* folder) {

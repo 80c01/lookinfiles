@@ -210,7 +210,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Diff tab"), NC_("key", "Ctrl+Alt+Arrow / right-click tab"), N_("Move the Diff tab to another pane, as an editor tab"), 0},
     {N_("Machines view"), "Enter / c", N_("Connect selected machine and browse it in Explorer (this computer: back to its files)"), 0},
     {N_("Machines view"), "t", N_("Open SSH terminal to selected machine (this computer: a local terminal; a disk: a terminal in it)"), 0},
-    {N_("Machines view"), "Enter / c", N_("On a disk: browse it (mounted first if needed) / mount, unmount or eject it"), 0},
+    {N_("Machines view"), "Enter / c", N_("On a disk: browse it (mounted first if needed) / mount, unmount or eject it (a remote machine's disk: browse it)"), 0},
     {N_("Machines view"), "a / Shift+A", N_("Add remote machine (inside the selected folder) / new folder"), 0},
     {N_("Machines view"), "F2 / r / e", N_("Edit selected machine (also its folder) or folder (name and icon)"), 0},
     {N_("Machines view"), "d / Delete", N_("Delete selected machine, or folder (its machines move to the top level)"), 0},

@@ -24,8 +24,9 @@ gboolean remote_session_connect(AppData* app, RemoteMachine* rm, const gchar* mo
 /* Open the master connection of rm in the background unless it is open (it
  * may have dropped) */
 void remote_session_open_master(RemoteMachine* rm);
-/* Read the files of rm, seen at rm->mount_point, over SFTP through its
- * master connection (vfs.h) */
+/* Read the files of rm, seen at rm->mount_point (and its disks at their
+ * mounts, remote_machine_disk_local()), over SFTP through its master
+ * connection (vfs.h) */
 void remote_session_files_open(RemoteMachine* rm);
 /* Close the SFTP session and the master connection of rm */
 void remote_session_close(RemoteMachine* rm);

@@ -3,6 +3,7 @@
 #include "core/app_events.h"
 #include "core/i18n.h"
 #include "explorer/remote_store.h"
+#include "core/remote_path.h"
 #include "core/ssh_session.h"
 #ifdef HAVE_LIBSSH
 #include "core/ssh_trace.h"
@@ -176,6 +177,18 @@ static gchar* user_shell(void) {
 #endif
 }
 
+/* A remote folder ("~/a b", "/mnt/x") for a remote shell's cd: quoted, the
+ * leading "~" left out of the quotes so that the shell expands it. Caller frees. */
+static gchar* remote_shell_dir(const gchar* dir) {
+    if (g_str_has_prefix(dir, "~/")) {
+        gchar* q = g_shell_quote(dir + 2);
+        gchar* out = g_strconcat("~/", q, NULL);
+        g_free(q);
+        return out;
+    }
+    return g_shell_quote(dir);
+}
+
 /* Shell in cwd (NULL: the explorer's directory), or ssh to the active remote */
 static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
     RemoteMachine* rm = remote_get_active_machine(app);
@@ -188,10 +201,21 @@ static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
         const gchar* label = (rm->name != NULL && rm->name[0] != '\0') ? rm->name : rm->host;
         g_object_set_data_full(G_OBJECT(term), REMOTE_LABEL_KEY, g_strdup(label), g_free);
 
-        if (rm->remote_path != NULL && rm->remote_path[0] != '\0' &&
-            g_strcmp0(rm->remote_path, "~") != 0 && g_strcmp0(rm->remote_path, "") != 0) {
-            g_ptr_array_add(args, g_strdup_printf("cd %s 2>/dev/null; exec $SHELL -l", rm->remote_path));
+        /* In the folder asked for when it is on the machine (a disk of it:
+         * remote_path_locate()), else in its remote directory */
+        gchar* remote_dir = NULL;
+        if (cwd != NULL) {
+            remote_path_locate(app, cwd, NULL, &remote_dir, NULL);
         }
+        if (remote_dir == NULL && rm->remote_path != NULL) {
+            remote_dir = g_strdup(rm->remote_path);
+        }
+        if (remote_dir != NULL && remote_dir[0] != '\0' && g_strcmp0(remote_dir, "~") != 0) {
+            gchar* quoted = remote_shell_dir(remote_dir);
+            g_ptr_array_add(args, g_strdup_printf("cd %s 2>/dev/null; exec $SHELL -l", quoted));
+            g_free(quoted);
+        }
+        g_free(remote_dir);
 #ifdef HAVE_LIBSSH
         if (args->len > 0 && args->pdata[0] != NULL) {
             gchar* prog = g_path_get_basename(args->pdata[0]);

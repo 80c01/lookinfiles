@@ -17,6 +17,7 @@
 #include "explorer/nav_history.h"
 #include "explorer/nav_keys.h"
 #include "explorer/remote.h"
+#include "explorer/remote_store.h"
 #include "search/search.h"
 #include "chrome/sidebar.h"
 #include "terminal/terminal.h"
@@ -547,18 +548,32 @@ void update_path_label(AppData* app) {
                                     app->base_dir[home_len] == '/' ||
                                     app->base_dir[home_len] == '\\'));
 
+            /* The mount of the active machine the folder is in: its own
+             * folder (index 0) or one of its disks */
             RemoteMachine* act_rm = remote_get_active_machine(app);
-            gboolean is_remote_mount = (act_rm != NULL && act_rm->mount_point != NULL &&
-                                        g_str_has_prefix(app->base_dir, act_rm->mount_point));
+            const gchar* act_mount = NULL;
+            const gchar* act_root = NULL;
+            guint act_index = 0;
+            for (guint i = 0; act_rm != NULL && remote_machine_mount_nth(act_rm, i, &act_mount, &act_root); i++) {
+                gsize n = strlen(act_mount);
+                if (strncmp(app->base_dir, act_mount, n) == 0 &&
+                    (app->base_dir[n] == '\0' || app->base_dir[n] == '/' || app->base_dir[n] == '\\')) {
+                    act_index = i;
+                    break;
+                }
+                act_mount = NULL;
+            }
+            gboolean is_remote_mount = (act_mount != NULL);
 
             gchar* accum = NULL;
             const gchar* rest = NULL;
             if (is_remote_mount) {
-                gsize mount_len = strlen(act_rm->mount_point);
-                gchar* root_title = g_strdup(act_rm->name ? act_rm->name : act_rm->host);
-                BreadcrumbSeg root_seg = { root_title, g_strdup(act_rm->mount_point), "remote-connected" };
+                gsize mount_len = strlen(act_mount);
+                const gchar* label = act_rm->name ? act_rm->name : act_rm->host;
+                gchar* root_title = (act_index == 0) ? g_strdup(label) : g_strdup_printf("%s:%s", label, act_root);
+                BreadcrumbSeg root_seg = { root_title, g_strdup(act_mount), "remote-connected" };
                 g_array_append_val(segs, root_seg);
-                accum = g_strdup(act_rm->mount_point);
+                accum = g_strdup(act_mount);
                 rest = app->base_dir + mount_len;
             } else if (under_home) {
                 BreadcrumbSeg root_seg = { g_strdup("~"), g_strdup(home), "home" };

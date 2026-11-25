@@ -2,6 +2,7 @@
 #include "explorer/remote_mounts.h"
 #include "explorer/remote_session.h"
 #include "explorer/local_machine.h"
+#include "explorer/machine_disks.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
 #include "widgets/dialog.h"
@@ -39,7 +40,7 @@ static RemoteFolder* remote_context_folder(AppData* app) {
 
 /* ------------------------------------------------------------------------- */
 
-static void remote_append_machine_row(ExplorerRow* parent, RemoteMachine* rm) {
+static void remote_append_machine_row(ExplorerRow* parent, AppData* app, RemoteMachine* rm) {
     gchar* target = NULL;
     if (rm->user != NULL && rm->user[0] != '\0') {
         target = g_strdup_printf("%s@%s", rm->user, rm->host);
@@ -58,9 +59,10 @@ static void remote_append_machine_row(ExplorerRow* parent, RemoteMachine* rm) {
 
     /* The row path holds the machine id (see remote_get_selected()) */
     const gchar* name = rm->name ? rm->name : rm->host;
-    ExplorerRow* row = explorer_row_append(parent, "remote", name, name, rm->id);
+    ExplorerRow* row = explorer_row_append_container(parent, "remote", name, name, rm->id);
     explorer_row_set_glyph(row, rm->is_connected ? "remote-connected" : "remote");
     explorer_row_set_badge(row, status_markup);
+    machine_disks_append(row, app, rm);
 
     g_free(target);
     g_free(status_markup);
@@ -94,7 +96,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
         for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
             RemoteMachine* rm = (RemoteMachine*)l->data;
             if (rm != NULL && remote_machine_folder(app, rm) == folder) {
-                remote_append_machine_row(row, rm);
+                remote_append_machine_row(row, app, rm);
             }
         }
         if (n == 0) {
@@ -105,7 +107,7 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
     for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
         RemoteMachine* rm = (RemoteMachine*)l->data;
         if (rm != NULL && remote_machine_folder(app, rm) == NULL) {
-            remote_append_machine_row(root, rm);
+            remote_append_machine_row(root, app, rm);
         }
     }
 }
@@ -116,6 +118,7 @@ void remote_rescan(AppData* app) {
         return;
     }
     remote_reload_ssh_config(app);
+    machine_disks_forget(NULL);
     remote_refresh(app);
 }
 
@@ -154,6 +157,7 @@ static void remote_refresh_select(AppData* app, const gchar* type, const gchar* 
         }
     }
     local_machine_restore_expanded(app, root);
+    machine_disks_restore_expanded(app, root);
     tree_nav_unblock_selection_handler(app);
 
     ExplorerRow* row = NULL;
@@ -184,7 +188,7 @@ void remote_refresh(AppData* app) {
 }
 
 gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded) {
-    if (local_machine_row_toggled(row, expanded)) {
+    if (local_machine_row_toggled(row, expanded) || machine_disks_row_toggled(app, row, expanded)) {
         return TRUE;
     }
     if (app == NULL || !explorer_row_is(row, "remote_folder")) {
@@ -200,7 +204,7 @@ gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
 
 /* Collapse every folder if one is expanded, else expand them all */
 gboolean remote_any_expanded(AppData* app) {
-    if (local_machine_any_expanded()) {
+    if (local_machine_any_expanded() || machine_disks_any_expanded()) {
         return TRUE;
     }
     for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
@@ -217,6 +221,7 @@ void remote_toggle_collapse_expand(AppData* app) {
     }
     gboolean expand = !remote_any_expanded(app);
     local_machine_set_expanded(expand);
+    machine_disks_set_expanded(app, expand);
     for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         ((RemoteFolder*)l->data)->expanded = expand;
     }
@@ -225,8 +230,13 @@ void remote_toggle_collapse_expand(AppData* app) {
     /* Keep a visible row selected when collapsing */
     RemoteMachine* rm = remote_get_selected(app);
     RemoteFolder* parent = remote_machine_folder(app, rm);
+    const gchar* disk_machine = machine_disks_selected_machine(app);
     if (!expand && local_machine_owns_selected(app)) {
         remote_refresh_select(app, LOCAL_MACHINE_ROW, "");
+    } else if (!expand && disk_machine != NULL) {
+        gchar* id = g_strdup(disk_machine);
+        remote_refresh_select(app, "remote", id);
+        g_free(id);
     } else if (!expand && parent != NULL) {
         remote_refresh_select(app, "remote_folder", parent->id);
     } else {
@@ -675,6 +685,7 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     }
 
     rm->is_connected = TRUE;
+    machine_disks_forget(rm->id);
     g_free(rm->mount_point);
     rm->mount_point = mount_dir;
     remote_session_files_open(rm);
@@ -703,6 +714,8 @@ gboolean remote_disconnect_machine(AppData* app, RemoteMachine* rm) {
         remote_mounts_unmount(rm->mount_point);
     }
     remote_session_close(rm);
+    remote_machine_clear_disk_mounts(rm);
+    machine_disks_forget(rm->id);
     rm->is_connected = FALSE;
 
     if (app != NULL && g_strcmp0(app->current_remote_id, rm->id) == 0) {
@@ -745,6 +758,10 @@ void remote_toggle_connect_selected(AppData* app) {
         local_machine_toggle_selected(app);
         return;
     }
+    if (machine_disks_owns_selected(app)) {
+        remote_activate_selected(app);
+        return;
+    }
     RemoteMachine* rm = remote_get_selected(app);
     if (rm == NULL) {
         return;
@@ -765,6 +782,13 @@ void remote_toggle_connect_selected(AppData* app) {
 void remote_activate_selected(AppData* app) {
     if (local_machine_owns_selected(app)) {
         local_machine_activate_selected(app);
+        return;
+    }
+    if (machine_disks_owns_selected(app)) {
+        if (!machine_disks_activate_selected(app)) {
+            /* A hint row: connect its machine */
+            remote_connect_machine(app, remote_find_by_id(app, machine_disks_selected_machine(app)));
+        }
         return;
     }
     if (remote_get_selected_folder(app) != NULL) {
@@ -814,6 +838,10 @@ void remote_open_terminal(AppData* app, RemoteMachine* rm) {
 void remote_open_terminal_selected(AppData* app) {
     if (local_machine_owns_selected(app)) {
         local_machine_terminal_selected(app);
+        return;
+    }
+    if (explorer_row_is(tree_nav_selected(app), MACHINE_DISK_ROW)) {
+        machine_disks_terminal_selected(app);
         return;
     }
     RemoteMachine* rm = remote_get_selected(app);
@@ -1008,7 +1036,15 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
         gtk_box_append(GTK_BOX(box), sep);
     }
 
-    if (disks) {
+    if (explorer_row_is(tree_nav_selected(app), MACHINE_DISK_ROW)) {
+        add_menu_item(box, popover, app, _("Open in Explorer"), "Enter", 9);
+        add_menu_item(box, popover, app, _("Open SSH Terminal Here"), "t", 3);
+
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(GTK_BOX(box), sep);
+    }
+
+    if (disks || explorer_row_is(tree_nav_selected(app), MACHINE_DISKS_ROW)) {
         add_menu_item(box, popover, app, _("Expand / Collapse"), "Enter", 9);
 
         GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);

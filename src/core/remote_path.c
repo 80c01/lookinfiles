@@ -125,30 +125,38 @@ gchar* remote_path_display(AppData* app, const gchar* path) {
     if (path == NULL) return NULL;
     for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
         RemoteMachine* rm = l->data;
-        if (!rm->is_connected || rm->mount_point == NULL) continue;
-        gchar* shown = remote_path_map_to_display(path, rm->mount_point, machine_label(rm), rm->remote_path);
-        if (shown != NULL) return shown;
+        if (!rm->is_connected) continue;
+        const gchar *local, *root;
+        for (guint i = 0; remote_machine_mount_nth(rm, i, &local, &root); i++) {
+            gchar* shown = remote_path_map_to_display(path, local, machine_label(rm), root);
+            if (shown != NULL) return shown;
+        }
     }
     return g_strdup(path);
 }
 
-/* The connected machine path is on, at its mount or below */
-static RemoteMachine* machine_of(AppData* app, const gchar* path, gboolean* is_root) {
+/* The connected machine path is on, at one of its mounts or below; *index
+ * the mount (remote_machine_mount_nth()), *is_root whether path is it */
+static RemoteMachine* machine_of(AppData* app, const gchar* path, gboolean* is_root, guint* index) {
     if (path == NULL) return NULL;
     gchar* p = sep_key(path);
     RemoteMachine* found = NULL;
     for (GList* l = remote_machine_list(app); l != NULL && found == NULL; l = l->next) {
         RemoteMachine* rm = l->data;
-        if (!rm->is_connected || rm->mount_point == NULL) continue;
-        gchar* m = sep_key(rm->mount_point);
-        gsize n = mount_len(m);
-        if (under_mount(p, m, n)) {
-            const gchar* rest = p + n;
-            while (*rest == '/') rest++;
-            if (is_root != NULL) *is_root = rest[0] == '\0';
-            found = rm;
+        if (!rm->is_connected) continue;
+        const gchar* local;
+        for (guint i = 0; found == NULL && remote_machine_mount_nth(rm, i, &local, NULL); i++) {
+            gchar* m = sep_key(local);
+            gsize n = mount_len(m);
+            if (under_mount(p, m, n)) {
+                const gchar* rest = p + n;
+                while (*rest == '/') rest++;
+                if (is_root != NULL) *is_root = rest[0] == '\0';
+                if (index != NULL) *index = i;
+                found = rm;
+            }
+            g_free(m);
         }
-        g_free(m);
     }
     g_free(p);
     return found;
@@ -157,15 +165,22 @@ static RemoteMachine* machine_of(AppData* app, const gchar* path, gboolean* is_r
 gchar* remote_path_display_name(AppData* app, const gchar* path) {
     if (path == NULL) return NULL;
     gboolean root = FALSE;
-    RemoteMachine* rm = machine_of(app, path, &root);
-    if (rm != NULL && root) return g_strdup(machine_label(rm));
+    guint index = 0;
+    RemoteMachine* rm = machine_of(app, path, &root, &index);
+    if (rm != NULL && root && index == 0) return g_strdup(machine_label(rm));
+    if (rm != NULL && root) {
+        const gchar* disk = NULL;
+        remote_machine_mount_nth(rm, index, NULL, &disk);
+        return g_path_get_basename(disk); /* a disk: "data" for /mnt/data */
+    }
     return g_path_get_basename(path);
 }
 
 gchar* remote_path_display_parent(AppData* app, const gchar* path) {
     gboolean root = FALSE;
-    if (machine_of(app, path, &root) == NULL) return NULL;
-    if (root) return g_strdup("");
+    guint index = 0;
+    if (machine_of(app, path, &root, &index) == NULL) return NULL;
+    if (root && index == 0) return g_strdup("");
     gchar* shown = remote_path_display(app, path);
     gchar* slash = strrchr(shown, '/');
     gchar* colon = strchr(shown, ':');
@@ -185,15 +200,18 @@ gboolean remote_path_locate(AppData* app, const gchar* path, SshTarget* target, 
     if (path == NULL) return FALSE;
     for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
         RemoteMachine* rm = l->data;
-        if (!rm->is_connected || rm->mount_point == NULL || rm->host == NULL) continue;
+        if (!rm->is_connected || rm->host == NULL) continue;
         const gchar* label = machine_label(rm);
-        gchar* shown = remote_path_map_to_display(path, rm->mount_point, label, rm->remote_path);
-        if (shown == NULL) continue;
-        if (target != NULL) *target = remote_machine_target(rm);
-        if (remote != NULL) *remote = g_strdup(shown + strlen(label) + 1); /* after "<name>:" */
-        if (machine != NULL) *machine = g_strdup(label);
-        g_free(shown);
-        return TRUE;
+        const gchar *local, *root;
+        for (guint i = 0; remote_machine_mount_nth(rm, i, &local, &root); i++) {
+            gchar* shown = remote_path_map_to_display(path, local, label, root);
+            if (shown == NULL) continue;
+            if (target != NULL) *target = remote_machine_target(rm);
+            if (remote != NULL) *remote = g_strdup(shown + strlen(label) + 1); /* after "<name>:" */
+            if (machine != NULL) *machine = g_strdup(label);
+            g_free(shown);
+            return TRUE;
+        }
     }
     return FALSE;
 }
@@ -211,10 +229,23 @@ gboolean remote_path_parse(AppData* app, const gchar* text, gchar** out_local) {
     if (out_local != NULL) *out_local = NULL;
     for (GList* l = remote_machine_list(app); l != NULL; l = l->next) {
         RemoteMachine* rm = l->data;
-        if (!rm->is_connected || rm->mount_point == NULL) continue;
-        if (remote_path_map_from_display(text, rm->mount_point, machine_label(rm), rm->remote_path, out_local)) {
-            return TRUE;
+        if (!rm->is_connected) continue;
+        /* The machine is named: the first mount whose folder holds the path,
+         * else TRUE with *out_local NULL (outside every mounted folder) */
+        gboolean named = FALSE;
+        const gchar *local, *root;
+        for (guint i = 0; remote_machine_mount_nth(rm, i, &local, &root); i++) {
+            gchar* found = NULL;
+            if (remote_path_map_from_display(text, local, machine_label(rm), root, &found)) {
+                named = TRUE;
+                if (found != NULL) {
+                    if (out_local != NULL) *out_local = found;
+                    else g_free(found);
+                    return TRUE;
+                }
+            }
         }
+        if (named) return TRUE;
     }
     return FALSE;
 }

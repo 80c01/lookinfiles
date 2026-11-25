@@ -20,7 +20,16 @@ typedef struct {
     gboolean is_connected; /* whether currently mounted */
     gboolean from_ssh_config; /* whether parsed from ~/.ssh/config */
     gchar* folder_id;      /* RemoteFolder id, NULL at the top level */
+    GPtrArray* disk_mounts; /* RemoteDiskMount*: folders of the machine outside remote_path
+                             * (its disks) seen at other local folders, NULL for none */
 } RemoteMachine;
+
+/* A disk of a connected machine opened outside its remote_path: the
+ * remote folder root is seen at the local folder local (vfs_mount()) */
+typedef struct {
+    gchar* local;
+    gchar* root;
+} RemoteDiskMount;
 
 /* Folder grouping machines in the remote view (one level, no nesting) */
 typedef struct {
@@ -64,6 +73,17 @@ guint remote_folder_count(AppData* app, const RemoteFolder* folder);
 void remote_machine_set_folder(RemoteMachine* rm, const RemoteFolder* folder);
 /* Where ssh connects for rm (strings owned by rm) */
 SshTarget remote_machine_target(const RemoteMachine* rm);
+/* The local folder where the remote folder root of rm is seen: its own
+ * mount for a disk (made and remembered here, mounted by
+ * remote_session_files_open()), or below rm->mount_point when root is
+ * inside remote_path. NULL when rm has no mount point. Caller frees. */
+gchar* remote_machine_disk_local(RemoteMachine* rm, const gchar* root);
+/* Forget the disk mounts of rm (at disconnect; their folders removed) */
+void remote_machine_clear_disk_mounts(RemoteMachine* rm);
+/* Mount i of rm: 0 its mount_point and remote_path, then its disk mounts.
+ * FALSE past the last one (or for a machine without a mount point). */
+gboolean remote_machine_mount_nth(const RemoteMachine* rm, guint i, const gchar** local, const gchar** root);
+
 /* Machine of the current workspace connection (app->current_remote_id), NULL if local */
 RemoteMachine* remote_get_active_machine(AppData* app);
 

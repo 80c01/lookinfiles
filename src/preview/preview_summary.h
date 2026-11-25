@@ -11,6 +11,7 @@
 #include "core/app_types.h"
 #include "explorer/explorer_row.h"
 #include "core/disk_volumes.h"
+#include "core/remote_disks.h"
 #include "explorer/remote_store.h"
 #include "search/deep_search_store.h"
 
@@ -47,9 +48,13 @@ GPtrArray* preview_summary_local_lines(const gchar* host, const gchar* user, con
 /* Lines of a disk of the Machines view: kind, mount state, folder,
  * device and keys. NULL for NULL. Unref the array. */
 GPtrArray* preview_summary_disk_lines(const DiskVolume* v);
+/* Lines of a disk of a remote machine (machine: its name, NULL for none):
+ * kind, folder, device, file system, size, free space and keys. NULL for
+ * NULL. Unref the array. */
+GPtrArray* preview_summary_remote_disk_lines(const gchar* machine, const RemoteDisk* d);
 
 /* Lines of a container row ("notebook", "bm_folder", "trash",
- * "remote_folder", "machine_disks") built from its children, or of a row on a Canvas note
+ * "remote_folder", "machine_disks", "remote_disks") built from its children, or of a row on a Canvas note
  * (preview_summary_canvas_lines()). NULL for other rows. Unref the array. */
 GPtrArray* preview_summary_container_lines(ExplorerRow* row);
 
@@ -74,6 +79,7 @@ gchar* preview_summary_remote(const RemoteMachine* rm);
 gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* home,
                              const gchar* system, gboolean current);
 gchar* preview_summary_disk(const DiskVolume* v);
+gchar* preview_summary_remote_disk(const gchar* machine, const RemoteDisk* d);
 gchar* preview_summary_container(ExplorerRow* row);
 gchar* preview_summary_canvas(const gchar* name, const gchar* path);
 gchar* preview_summary_search(const gchar* name, const SavedDeepSearch* saved);

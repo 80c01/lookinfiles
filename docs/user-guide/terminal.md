@@ -38,7 +38,9 @@ The borders between panes can be dragged like every other border.
 
 While you browse a connected [remote machine](remote.md), the **Terminal**
 button shows the machine's name and opens an SSH terminal to it. In the
-Machines view, `t` opens an SSH terminal to the selected machine.
+Machines view, `t` opens an SSH terminal to the selected machine, or in
+the selected disk. **Open Terminal Here** on a folder of the machine opens
+the SSH terminal in that folder.
 
 ## Workspaces
 

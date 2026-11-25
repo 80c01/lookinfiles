@@ -55,6 +55,22 @@ connecter** se connecte tout de suite.
 | `d` ou `Delete` | La supprimer de la liste |
 | `F5` | Relire `~/.ssh/config` |
 
+## Les disques d’une machine
+
+Dépliez une machine connectée pour voir ses **Disques** : le système de
+fichiers `/`, les partitions, les disques USB et les partages réseau
+montés dessus (listés avec `findmnt`, ou `df` sous macOS et BSD, en
+arrière-plan), avec leur dossier et leur espace libre. Une machine non
+connectée affiche *Non connectée — Entrée pour se connecter*. `Enter` ou
+`c` sur un disque le parcourt, `t` ouvre un terminal SSH dedans ; `F5`
+relit la liste des disques.
+
+Un disque hors du **Dossier distant** de la machine (`/mnt/data` quand il
+vaut `~`) s’ouvre par une deuxième session SFTP de la même connexion (sans
+nouvelle connexion) : ses fichiers s’écrivent `machine:/mnt/data/...`, et
+tout y marche comme dans le dossier distant. Ces sessions de disque se
+ferment quand la machine se déconnecte.
+
 Les dossiers d’une machine connectée sont listés en SFTP, par la connexion
 SSH déjà ouverte (sans nouvelle authentification) ; les fichiers texte sont
 prévisualisés et ouverts dans l’éditeur de la même façon. Un réseau lent fait attendre le listage ou le fichier, pas

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-25 06:37+0000\n"
+"POT-Creation-Date: 2026-11-25 06:50+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -39,10 +39,10 @@ msgstr "_Réinitialiser"
 #: src/editor/editor_watch.c:731 src/editor/editor_watch.c:737
 #: src/editor/editor_watch.c:779 src/explorer/bookmark_dialog.c:204
 #: src/explorer/bookmarks.c:595 src/explorer/file_actions.c:44
-#: src/explorer/file_actions.c:242 src/explorer/remote.c:337
-#: src/explorer/remote.c:404 src/explorer/remote.c:471
-#: src/explorer/remote.c:501 src/explorer/remote.c:578
-#: src/explorer/remote_session.c:90 src/jupyter/ipynb_run.c:510
+#: src/explorer/file_actions.c:242 src/explorer/remote.c:347
+#: src/explorer/remote.c:414 src/explorer/remote.c:481
+#: src/explorer/remote.c:511 src/explorer/remote.c:588
+#: src/explorer/remote_session.c:91 src/jupyter/ipynb_run.c:510
 #: src/jupyter/ipynb_save.c:113 src/jupyter/ipynb_save.c:151
 #: src/jupyter/ipynb_save.c:208 src/notes/notes_dialogs.c:113
 #: src/notes/notes_dialogs.c:294 src/notes/notes_dialogs.c:378
@@ -743,7 +743,7 @@ msgstr ""
 "reste dans l’explorateur)"
 
 #: src/chrome/help.c:53 src/chrome/help.c:114 src/chrome/help.c:206
-#: src/preview/preview_summary.c:137
+#: src/preview/preview_summary.c:174
 msgctxt "key"
 msgid "Enter / Double-click"
 msgstr "Enter / double-clic"
@@ -1707,12 +1707,15 @@ msgstr ""
 msgid ""
 "Open SSH terminal to selected machine (this computer: a local terminal; a "
 "disk: a terminal in it)"
-msgstr "Ouvrir un terminal SSH vers la machine sélectionnée (cet ordinateur : un terminal local ; un disque : un terminal dedans)"
+msgstr ""
+"Ouvrir un terminal SSH vers la machine sélectionnée (cet ordinateur : un "
+"terminal local ; un disque : un terminal dedans)"
 
 #: src/chrome/help.c:213
 msgid ""
-"On a disk: browse it (mounted first if needed) / mount, unmount or eject it"
-msgstr "Sur un disque : le parcourir (monté d’abord si besoin) / le monter, le démonter ou l’éjecter"
+"On a disk: browse it (mounted first if needed) / mount, unmount or eject it "
+"(a remote machine's disk: browse it)"
+msgstr "Sur un disque : le parcourir (monté d’abord si besoin) / le monter, le démonter ou l’éjecter (disque d’une machine distante : le parcourir)"
 
 #: src/chrome/help.c:214
 msgid "Add remote machine (inside the selected folder) / new folder"
@@ -1731,7 +1734,7 @@ msgstr ""
 "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au "
 "premier niveau)"
 
-#: src/chrome/help.c:217 src/explorer/remote.c:1029
+#: src/chrome/help.c:217 src/explorer/remote.c:1065
 #: src/preview/preview_summary.c:82
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
@@ -3038,7 +3041,7 @@ msgstr "Afficher les raccourcis clavier (?)"
 msgid "Close Help"
 msgstr "Fermer l’aide"
 
-#: src/chrome/help_guide.c:642 src/chrome/topbar.c:788
+#: src/chrome/help_guide.c:642 src/chrome/topbar.c:803
 msgid "Help"
 msgstr "Aide"
 
@@ -3122,7 +3125,7 @@ msgstr "Applications"
 msgid "Editor"
 msgstr "Éditeur"
 
-#: src/chrome/new_tab_menu.c:87 src/chrome/topbar.c:742 src/chrome/topbar.c:786
+#: src/chrome/new_tab_menu.c:87 src/chrome/topbar.c:757 src/chrome/topbar.c:801
 #: src/formats/card_view.c:589 src/workspace/layout_store.c:215
 msgid "Terminal"
 msgstr "Terminal"
@@ -3745,7 +3748,7 @@ msgid "Path of the value at the cursor (y copies it)"
 msgstr "Chemin de la valeur sous le curseur (y le copie)"
 
 #: src/chrome/status_bar.c:537 src/explorer/bookmark_dialog.c:265
-#: src/explorer/bookmarks.c:204 src/preview/preview_summary.c:308
+#: src/explorer/bookmarks.c:204 src/preview/preview_summary.c:345
 #: src/search/deep_search_bookmark.c:68 src/search/deep_search_list.c:410
 #: src/search/deep_search_tab.c:889
 msgid "Folder"
@@ -3773,8 +3776,8 @@ msgid "Local Machine"
 msgstr "Machine locale"
 
 #: src/chrome/status_bar.c:555 src/explorer/local_machine.c:97
-#: src/preview/preview_summary.c:450 src/preview/preview_summary.c:451
-#: src/preview/preview_summary.c:452
+#: src/explorer/machine_disks.c:173 src/preview/preview_summary.c:487
+#: src/preview/preview_summary.c:488 src/preview/preview_summary.c:489
 msgid "Disks"
 msgstr "Disques"
 
@@ -3787,7 +3790,7 @@ msgid "Remote Folder"
 msgstr "Dossier distant"
 
 #: src/chrome/status_bar.c:564 src/notes/notes.c:186
-#: src/preview/preview_summary.c:454
+#: src/preview/preview_summary.c:491
 msgid "Trash"
 msgstr "Corbeille"
 
@@ -3889,8 +3892,8 @@ msgid "Modified %s"
 msgstr "Modifié le %s"
 
 #: src/chrome/themes.c:212 src/explorer/bookmarks.c:957
-#: src/explorer/file_actions.c:97 src/explorer/remote.c:606
-#: src/explorer/remote.c:658 src/notes/notes_dialogs.c:409
+#: src/explorer/file_actions.c:97 src/explorer/remote.c:616
+#: src/explorer/remote.c:668 src/notes/notes_dialogs.c:409
 #: src/search/deep_search_bookmark.c:122 src/search/deep_search_bookmark.c:141
 #: src/workspace/layouts.c:322 src/workspace/layouts.c:573
 #: src/workspace/session_bookmark.c:62 src/workspace/session_bookmark.c:80
@@ -3903,8 +3906,8 @@ msgid "Save Theme As"
 msgstr "Enregistrer le thème sous"
 
 #: src/chrome/themes.c:237 src/editor/editor_watch.c:732
-#: src/explorer/bookmarks.c:624 src/explorer/remote.c:339
-#: src/explorer/remote.c:405 src/explorer/remote.c:555
+#: src/explorer/bookmarks.c:624 src/explorer/remote.c:349
+#: src/explorer/remote.c:415 src/explorer/remote.c:565
 #: src/jupyter/ipynb_save.c:152 src/notes/notes_actions.c:357
 #: src/notes/notes_actions.c:427 src/search/deep_search_bookmark.c:50
 #: src/workspace/layouts.c:372 src/workspace/session_bookmark.c:14
@@ -4012,8 +4015,8 @@ msgstr ""
 "l’enregistrer l’applique (vos thèmes seulement)"
 
 #: src/chrome/themes.c:619 src/chrome/themes.c:791 src/explorer/bookmarks.c:595
-#: src/explorer/file_actions.c:416 src/explorer/remote.c:472
-#: src/explorer/remote.c:579 src/notes/notes_actions.c:570
+#: src/explorer/file_actions.c:416 src/explorer/remote.c:482
+#: src/explorer/remote.c:589 src/notes/notes_actions.c:570
 #: src/workspace/layouts.c:549 src/workspace/layouts.c:571
 #: src/workspace/layouts.c:644
 msgid "_Delete"
@@ -4050,7 +4053,7 @@ msgid "Theme from Image"
 msgstr "Thème depuis une image"
 
 #: src/chrome/themes.c:682 src/explorer/bookmarks.c:790
-#: src/explorer/file_actions.c:243 src/explorer/remote.c:540
+#: src/explorer/file_actions.c:243 src/explorer/remote.c:550
 #: src/notes/notes_actions.c:124 src/notes/notes_actions.c:253
 msgid "_Create"
 msgstr "_Créer"
@@ -4081,63 +4084,63 @@ msgstr "Supprimer le thème « %1$s » et son fichier %2$s ?"
 msgid "Delete Theme"
 msgstr "Supprimer le thème"
 
-#: src/chrome/topbar.c:375
+#: src/chrome/topbar.c:376
 msgid "Back (Shift+H) — Right-Click: Folders Before"
 msgstr "Précédent (Maj+H) — clic droit : dossiers précédents"
 
-#: src/chrome/topbar.c:377
+#: src/chrome/topbar.c:378
 msgid "Forward (Shift+L) — Right-Click: Folders After"
 msgstr "Suivant (Maj+L) — clic droit : dossiers suivants"
 
-#: src/chrome/topbar.c:408
+#: src/chrome/topbar.c:409
 msgid "Previous Layout (Alt+Shift+Left)"
 msgstr "Disposition précédente (Alt+Shift+Left)"
 
-#: src/chrome/topbar.c:410
+#: src/chrome/topbar.c:411
 msgid "Next Layout (Alt+Shift+Right)"
 msgstr "Disposition suivante (Alt+Shift+Right)"
 
-#: src/chrome/topbar.c:457
+#: src/chrome/topbar.c:458
 msgid "Global Mode"
 msgstr "Mode global"
 
-#: src/chrome/topbar.c:486
+#: src/chrome/topbar.c:487
 msgid "Global Mode: Keys of the Explorer and Preview, Mode of New Editor Tabs"
 msgstr ""
 "Mode global : touches de l’explorateur et de l’aperçu, mode des nouveaux "
 "onglets d’édition"
 
-#: src/chrome/topbar.c:702
+#: src/chrome/topbar.c:717
 msgid "Main"
 msgstr "Principal"
 
-#: src/chrome/topbar.c:703
+#: src/chrome/topbar.c:718
 msgid "Show / Hide Main Panel (Preview and Editor Tabs)"
 msgstr "Afficher / masquer le panneau principal (aperçu et onglets d’édition)"
 
-#: src/chrome/topbar.c:705 src/chrome/topbar.c:784 src/main.c:478
+#: src/chrome/topbar.c:720 src/chrome/topbar.c:799 src/main.c:478
 #: src/workspace/layout_store.c:53
 msgid "Preview"
 msgstr "Aperçu"
 
-#: src/chrome/topbar.c:706 src/chrome/topbar.c:784
+#: src/chrome/topbar.c:721 src/chrome/topbar.c:799
 msgid "Show / Hide Preview Panel"
 msgstr "Afficher / masquer le panneau Aperçu"
 
-#: src/chrome/topbar.c:720
+#: src/chrome/topbar.c:735
 msgid "Merge Tabs into Main Panel"
 msgstr "Fusionner les onglets dans le panneau principal"
 
-#: src/chrome/topbar.c:724 src/chrome/topbar.c:838
+#: src/chrome/topbar.c:739 src/chrome/topbar.c:853
 msgid "Split Preview Tab from Main Panel"
 msgstr "Séparer l’onglet Aperçu du panneau principal"
 
-#: src/chrome/topbar.c:734
+#: src/chrome/topbar.c:749
 #, c-format
 msgid "SSH: %s"
 msgstr "SSH : %s"
 
-#: src/chrome/topbar.c:737
+#: src/chrome/topbar.c:752
 #, c-format
 msgid ""
 "Connected to remote machine: %s (%s). Click to toggle SSH terminal (Ctrl+T)"
@@ -4145,27 +4148,27 @@ msgstr ""
 "Connecté à la machine distante : %s (%s). Cliquer pour afficher ou masquer "
 "le terminal SSH (Ctrl+T)"
 
-#: src/chrome/topbar.c:743
+#: src/chrome/topbar.c:758
 msgid "Show / Hide Terminal Panel (Ctrl+T)"
 msgstr "Afficher / masquer le panneau Terminal (Ctrl+T)"
 
-#: src/chrome/topbar.c:782 src/workspace/layout_store.c:50
+#: src/chrome/topbar.c:797 src/workspace/layout_store.c:50
 msgid "Explorer"
 msgstr "Explorateur"
 
-#: src/chrome/topbar.c:782
+#: src/chrome/topbar.c:797
 msgid "Show / Hide Explorer Panel"
 msgstr "Afficher / masquer le panneau Explorateur"
 
-#: src/chrome/topbar.c:786
+#: src/chrome/topbar.c:801
 msgid "Show / Hide Terminal Panel"
 msgstr "Afficher / masquer le panneau Terminal"
 
-#: src/chrome/topbar.c:789
+#: src/chrome/topbar.c:804
 msgid "User Guide (F1) — Right-Click: Keyboard Shortcuts (?)"
 msgstr "Guide d’utilisation (F1) — clic droit : raccourcis clavier (?)"
 
-#: src/chrome/topbar.c:840
+#: src/chrome/topbar.c:855
 msgid "Swap Preview and Editor Panels"
 msgstr "Échanger les panneaux Aperçu et Édition"
 
@@ -5187,7 +5190,8 @@ msgstr[1] "%s fichiers"
 msgid "%s (%s)"
 msgstr "%s (%s)"
 
-#: src/core/disk_volumes.c:169
+#: src/core/disk_volumes.c:169 src/core/remote_disks.c:140
+#: src/preview/preview_summary.c:155
 msgid "File System"
 msgstr "Système de fichiers"
 
@@ -5661,7 +5665,7 @@ msgstr "Exclure du calcul"
 #: src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
 #: src/git/git_repo_view.c:97 src/office/office97.c:73
 #: src/preview/preview_formats.c:365 src/preview/preview_formats.c:366
-#: src/preview/preview_summary.c:310 src/search/deep_search_bookmark.c:62
+#: src/preview/preview_summary.c:347 src/search/deep_search_bookmark.c:62
 #: src/search/deep_search_list.c:409 src/search/deep_search_tab.c:901
 #: src/workspace/session_bookmark.c:26
 msgid "Name"
@@ -5676,15 +5680,15 @@ msgstr "Part"
 #: src/formats/torrent_info.c:371 src/git/git_code_view.c:200
 #: src/mail/mail_store.c:107 src/office/office97.c:73
 #: src/preview/preview_formats.c:365 src/preview/preview_formats.c:366
-#: src/preview/preview_formats.c:920 src/preview/preview_summary.c:332
-#: src/search/deep_search_list.c:411 src/search/deep_search_tab.c:943
-#: src/widgets/histogram.c:95
+#: src/preview/preview_formats.c:920 src/preview/preview_summary.c:160
+#: src/preview/preview_summary.c:369 src/search/deep_search_list.c:411
+#: src/search/deep_search_tab.c:943 src/widgets/histogram.c:95
 msgid "Size"
 msgstr "Taille"
 
 #: src/diskuse/disk_usage_list.c:422 src/diskuse/disk_usage_stats.c:135
 #: src/formats/torrent_info.c:334 src/git/git_code_view.c:197
-#: src/preview/preview_summary.c:326 src/search/deep_search_tab.c:937
+#: src/preview/preview_summary.c:363 src/search/deep_search_tab.c:937
 #: src/widgets/histogram.c:94
 msgid "Files"
 msgstr "Fichiers"
@@ -5717,7 +5721,7 @@ msgstr "La carte arrive une fois le dossier lu"
 #: src/diskuse/disk_usage_map.c:174 src/diskuse/disk_usage_wheel.c:162
 #: src/formats/sqlite_view.c:158 src/jupyter/ipynb_fold.c:247
 #: src/office/spreadsheet.c:712 src/preview/preview_formats.c:273
-#: src/preview/preview_summary.c:240 src/preview/preview_summary.c:471
+#: src/preview/preview_summary.c:277 src/preview/preview_summary.c:508
 #: src/sysmon/sysmon_tab.c:307
 msgid "(empty)"
 msgstr "(vide)"
@@ -5731,7 +5735,7 @@ msgid "On disk"
 msgstr "Sur le disque"
 
 #: src/diskuse/disk_usage_stats.c:136 src/mail/mail_dir.c:205
-#: src/preview/preview_summary.c:328 src/search/deep_search_tab.c:937
+#: src/preview/preview_summary.c:365 src/search/deep_search_tab.c:937
 msgid "Folders"
 msgstr "Dossiers"
 
@@ -6521,7 +6525,7 @@ msgstr "impossible de lire l’archive"
 
 #: src/explorer/archive_tree.c:183 src/explorer/archive_tree.c:220
 #: src/explorer/bookmarks.c:320 src/explorer/file_list.c:363
-#: src/explorer/remote.c:101 src/notes/notes.c:163
+#: src/explorer/remote.c:103 src/notes/notes.c:163
 msgid "  (empty)"
 msgstr "  (vide)"
 
@@ -6556,7 +6560,7 @@ msgstr "échec de l’extraction"
 msgid "Saved workspace"
 msgstr "Espace de travail enregistré"
 
-#: src/explorer/bookmark_dialog.c:24 src/preview/preview_summary.c:373
+#: src/explorer/bookmark_dialog.c:24 src/preview/preview_summary.c:410
 msgid "Saved search"
 msgstr "Recherche enregistrée"
 
@@ -6576,8 +6580,8 @@ msgstr "Par défaut, le nom de l’emplacement"
 msgid "Icon"
 msgstr "Icône"
 
-#: src/explorer/bookmark_dialog.c:235 src/preview/preview_summary.c:234
-#: src/preview/preview_summary.c:464
+#: src/explorer/bookmark_dialog.c:235 src/preview/preview_summary.c:271
+#: src/preview/preview_summary.c:501
 msgid "Location"
 msgstr "Emplacement"
 
@@ -6616,7 +6620,7 @@ msgid_plural "Delete the folder “%s” and the %u items it contains?"
 msgstr[0] "Supprimer le dossier « %s » et l’élément qu’il contient ?"
 msgstr[1] "Supprimer le dossier « %s » et les %u éléments qu’il contient ?"
 
-#: src/explorer/bookmarks.c:590 src/explorer/remote.c:576
+#: src/explorer/bookmarks.c:590 src/explorer/remote.c:586
 #, c-format
 msgid "Delete the empty folder “%s”?"
 msgstr "Supprimer le dossier vide « %s » ?"
@@ -6627,7 +6631,7 @@ msgid "Delete the bookmark “%s”?"
 msgstr "Supprimer le signet « %s » ?"
 
 #: src/explorer/bookmarks.c:594 src/explorer/bookmarks.c:1150
-#: src/explorer/file_actions.c:415 src/explorer/remote.c:1021
+#: src/explorer/file_actions.c:415 src/explorer/remote.c:1057
 msgid "Delete Folder"
 msgstr "Supprimer le dossier"
 
@@ -6731,7 +6735,7 @@ msgid "Add Bookmark…"
 msgstr "Ajouter un signet…"
 
 #: src/explorer/bookmarks.c:1162 src/explorer/bookmarks.c:1166
-#: src/explorer/files_menu.c:256 src/explorer/remote.c:1028
+#: src/explorer/files_menu.c:256 src/explorer/remote.c:1064
 msgid "New Folder…"
 msgstr "Nouveau dossier…"
 
@@ -6743,7 +6747,7 @@ msgstr "Enregistrer l’espace de travail comme signet…"
 msgid "Sort A–Z / Z–A"
 msgstr "Trier A–Z / Z–A"
 
-#: src/explorer/bookmarks.c:1171 src/explorer/remote.c:1030
+#: src/explorer/bookmarks.c:1171 src/explorer/remote.c:1066
 #: src/notes/notes.c:614
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
@@ -6913,7 +6917,7 @@ msgid "Open in Browser Tab"
 msgstr "Ouvrir dans un onglet navigateur"
 
 #: src/explorer/files_menu.c:217 src/explorer/files_menu.c:258
-#: src/explorer/remote.c:1004
+#: src/explorer/remote.c:1032
 msgid "Open Terminal Here"
 msgstr "Ouvrir un terminal ici"
 
@@ -6977,116 +6981,143 @@ msgstr "%s peut être retiré sans risque"
 msgid "%s cannot be unmounted"
 msgstr "%s ne peut pas être démonté"
 
-#: src/explorer/remote.c:53
+#: src/explorer/machine_disks.c:83
+msgid "neither findmnt nor df answered on the machine"
+msgstr "ni findmnt ni df n’ont répondu sur la machine"
+
+#. TRANSLATORS: %1$s is a folder, %2$s a size ("12.3 GB")
+#: src/explorer/machine_disks.c:148
+#, c-format
+msgid "%1$s, %2$s free"
+msgstr "%1$s, %2$s libres"
+
+#: src/explorer/machine_disks.c:167
+msgid "Not connected — Enter to connect"
+msgstr "Non connectée — Entrée pour se connecter"
+
+#: src/explorer/machine_disks.c:186
+#, c-format
+msgid "Could not list the disks: %s"
+msgstr "Impossible de lister les disques : %s"
+
+#: src/explorer/machine_disks.c:190
+msgid "Loading…"
+msgstr "Chargement…"
+
+#: src/explorer/machine_disks.c:314
+msgid "Could not create a private folder for the disk"
+msgstr "Impossible de créer un dossier privé pour le disque"
+
+#: src/explorer/remote.c:54
 msgid "Connected"
 msgstr "Connecté"
 
-#: src/explorer/remote.c:78
+#: src/explorer/remote.c:80
 msgid "No remote machines yet — press a to add one"
 msgstr "Aucune machine distante — appuyez sur a pour en ajouter une"
 
-#: src/explorer/remote.c:300
+#: src/explorer/remote.c:310
 msgid "Remote machines (top level)"
 msgstr "Machines distantes (premier niveau)"
 
-#: src/explorer/remote.c:312
+#: src/explorer/remote.c:322
 msgid "Folder:"
 msgstr "Dossier :"
 
-#: src/explorer/remote.c:336
+#: src/explorer/remote.c:346
 msgid "Add Remote Machine (SSH)"
 msgstr "Ajouter une machine distante (SSH)"
 
-#: src/explorer/remote.c:338
+#: src/explorer/remote.c:348
 msgid "_Save & Connect"
 msgstr "Enregistrer et _connecter"
 
-#: src/explorer/remote.c:344 src/explorer/remote.c:413
+#: src/explorer/remote.c:354 src/explorer/remote.c:423
 msgid "Friendly Name:"
 msgstr "Nom affiché :"
 
-#: src/explorer/remote.c:344
+#: src/explorer/remote.c:354
 msgid "Dev Server"
 msgstr "Serveur de dev"
 
-#: src/explorer/remote.c:344
+#: src/explorer/remote.c:354
 msgid "e.g. AWS Production"
 msgstr "ex. Production AWS"
 
-#: src/explorer/remote.c:345 src/explorer/remote.c:414
+#: src/explorer/remote.c:355 src/explorer/remote.c:424
 msgid "Host / IP Address *:"
 msgstr "Hôte / adresse IP * :"
 
-#: src/explorer/remote.c:345
+#: src/explorer/remote.c:355
 msgid "e.g. 192.168.1.100 or dev.example.com"
 msgstr "ex. 192.168.1.100 ou dev.example.com"
 
-#: src/explorer/remote.c:346 src/explorer/remote.c:415
+#: src/explorer/remote.c:356 src/explorer/remote.c:425
 msgid "User:"
 msgstr "Utilisateur :"
 
-#: src/explorer/remote.c:346
+#: src/explorer/remote.c:356
 msgid "e.g. ubuntu, root, dev"
 msgstr "ex. ubuntu, root, dev"
 
-#: src/explorer/remote.c:347 src/explorer/remote.c:416
+#: src/explorer/remote.c:357 src/explorer/remote.c:426
 msgid "Port:"
 msgstr "Port :"
 
-#: src/explorer/remote.c:347
+#: src/explorer/remote.c:357
 msgid "default: 22"
 msgstr "par défaut : 22"
 
-#: src/explorer/remote.c:348 src/explorer/remote.c:417
+#: src/explorer/remote.c:358 src/explorer/remote.c:427
 msgid "Remote Directory:"
 msgstr "Dossier distant :"
 
-#: src/explorer/remote.c:348
+#: src/explorer/remote.c:358
 msgid "default: ~ or /var/www"
 msgstr "par défaut : ~ ou /var/www"
 
-#: src/explorer/remote.c:349 src/explorer/remote.c:418
+#: src/explorer/remote.c:359 src/explorer/remote.c:428
 msgid "Identity Key Path (optional):"
 msgstr "Chemin de la clé d’identité (facultatif) :"
 
-#: src/explorer/remote.c:349
+#: src/explorer/remote.c:359
 msgid "e.g. ~/.ssh/id_ed25519"
 msgstr "ex. ~/.ssh/id_ed25519"
 
-#: src/explorer/remote.c:403
+#: src/explorer/remote.c:413
 msgid "Edit Remote Machine"
 msgstr "Modifier la machine distante"
 
-#: src/explorer/remote.c:468
+#: src/explorer/remote.c:478
 #, c-format
 msgid "Are you sure you want to remove remote machine '%s' (%s)?"
 msgstr "Voulez-vous vraiment retirer la machine distante « %s » (%s) ?"
 
-#: src/explorer/remote.c:470
+#: src/explorer/remote.c:480
 msgid "Remove Remote Machine"
 msgstr "Retirer la machine distante"
 
-#: src/explorer/remote.c:506
+#: src/explorer/remote.c:516
 msgid "Name:"
 msgstr "Nom :"
 
-#: src/explorer/remote.c:506
+#: src/explorer/remote.c:516
 msgid "e.g. Production"
 msgstr "ex. Production"
 
-#: src/explorer/remote.c:509
+#: src/explorer/remote.c:519
 msgid "Icon:"
 msgstr "Icône :"
 
-#: src/explorer/remote.c:540
+#: src/explorer/remote.c:550
 msgid "New Remote Folder"
 msgstr "Nouveau dossier distant"
 
-#: src/explorer/remote.c:555
+#: src/explorer/remote.c:565
 msgid "Edit Remote Folder"
 msgstr "Modifier le dossier distant"
 
-#: src/explorer/remote.c:573
+#: src/explorer/remote.c:583
 #, c-format
 msgid "Delete the folder “%s”? Its %u machine moves to the top level."
 msgid_plural "Delete the folder “%s”? Its %u machines move to the top level."
@@ -7094,15 +7125,15 @@ msgstr[0] "Supprimer le dossier « %s » ? Sa machine remonte au premier niveau
 msgstr[1] ""
 "Supprimer le dossier « %s » ? Ses %u machines remontent au premier niveau."
 
-#: src/explorer/remote.c:577
+#: src/explorer/remote.c:587
 msgid "Delete Remote Folder"
 msgstr "Supprimer le dossier distant"
 
-#: src/explorer/remote.c:624 src/explorer/remote.c:657
+#: src/explorer/remote.c:634 src/explorer/remote.c:667
 msgid "Connection Failed"
 msgstr "Échec de la connexion"
 
-#: src/explorer/remote.c:625
+#: src/explorer/remote.c:635
 msgid ""
 "Could not create a private folder for the machine. Check that "
 "$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other "
@@ -7112,7 +7143,7 @@ msgstr ""
 "$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et est fermé aux "
 "autres utilisateurs."
 
-#: src/explorer/remote.c:661
+#: src/explorer/remote.c:671
 #, c-format
 msgid ""
 "Could not connect to '%s' (%s):\n"
@@ -7123,94 +7154,98 @@ msgstr ""
 "\n"
 "%s"
 
-#: src/explorer/remote.c:972
+#: src/explorer/remote.c:1000
 msgid "Connect (Browse Files)"
 msgstr "Connecter (parcourir les fichiers)"
 
-#: src/explorer/remote.c:974 src/explorer/remote.c:986
-#: src/explorer/remote.c:994
+#: src/explorer/remote.c:1002 src/explorer/remote.c:1014
+#: src/explorer/remote.c:1022 src/explorer/remote.c:1040
 msgid "Open in Explorer"
 msgstr "Ouvrir dans l’explorateur"
 
-#: src/explorer/remote.c:975
+#: src/explorer/remote.c:1003
 msgid "Disconnect"
 msgstr "Déconnecter"
 
-#: src/explorer/remote.c:977
+#: src/explorer/remote.c:1005
 msgid "Open SSH Terminal"
 msgstr "Ouvrir un terminal SSH"
 
-#: src/explorer/remote.c:978
+#: src/explorer/remote.c:1006
 msgid "Edit Machine…"
 msgstr "Modifier la machine…"
 
-#: src/explorer/remote.c:979
+#: src/explorer/remote.c:1007
 msgid "Delete Machine"
 msgstr "Supprimer la machine"
 
-#: src/explorer/remote.c:987
+#: src/explorer/remote.c:1015
 msgid "Open Terminal"
 msgstr "Ouvrir un terminal"
 
-#: src/explorer/remote.c:994
+#: src/explorer/remote.c:1022
 msgid "Mount and Open"
 msgstr "Monter et ouvrir"
 
-#: src/explorer/remote.c:997 src/preview/preview_summary.c:157
+#: src/explorer/remote.c:1025 src/preview/preview_summary.c:194
 msgid "Eject"
 msgstr "Éjecter"
 
-#: src/explorer/remote.c:999
+#: src/explorer/remote.c:1027
 msgid "Unmount"
 msgstr "Démonter"
 
-#: src/explorer/remote.c:1001
+#: src/explorer/remote.c:1029
 msgid "Mount"
 msgstr "Monter"
 
-#: src/explorer/remote.c:1012 src/explorer/remote.c:1019
+#: src/explorer/remote.c:1041
+msgid "Open SSH Terminal Here"
+msgstr "Ouvrir un terminal SSH ici"
+
+#: src/explorer/remote.c:1048 src/explorer/remote.c:1055
 msgid "Expand / Collapse"
 msgstr "Déplier / replier"
 
-#: src/explorer/remote.c:1020
+#: src/explorer/remote.c:1056
 msgid "Edit Folder…"
 msgstr "Modifier le dossier…"
 
-#: src/explorer/remote.c:1027
+#: src/explorer/remote.c:1063
 msgid "Add Machine Here…"
 msgstr "Ajouter une machine ici…"
 
-#: src/explorer/remote.c:1027
+#: src/explorer/remote.c:1063
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 
-#: src/explorer/remote_session.c:88
+#: src/explorer/remote_session.c:89
 msgid "SSH Confirmation"
 msgstr "Confirmation SSH"
 
-#: src/explorer/remote_session.c:88
+#: src/explorer/remote_session.c:89
 msgid "_No"
 msgstr "_Non"
 
-#: src/explorer/remote_session.c:89
+#: src/explorer/remote_session.c:90
 msgid "_Yes"
 msgstr "_Oui"
 
-#: src/explorer/remote_session.c:90
+#: src/explorer/remote_session.c:91
 msgid "SSH Authentication"
 msgstr "Authentification SSH"
 
-#: src/explorer/remote_session.c:91 src/notes/notes_dialogs.c:114
+#: src/explorer/remote_session.c:92 src/notes/notes_dialogs.c:114
 #: src/notes/notes_dialogs.c:295
 msgid "_OK"
 msgstr "_OK"
 
-#: src/explorer/remote_session.c:240
+#: src/explorer/remote_session.c:241
 #, c-format
 msgid "Cannot open the SSH connection to %s: %s"
 msgstr "Impossible d’ouvrir la connexion SSH à %s : %s"
 
-#: src/explorer/remote_session.c:404
+#: src/explorer/remote_session.c:405
 #, c-format
 msgid "Connecting to %s…"
 msgstr "Connexion à %s…"
@@ -7456,12 +7491,12 @@ msgstr "Participants"
 
 #: src/formats/card_view.c:384 src/formats/cert_view.c:597
 #: src/mail/mail_dir.c:212 src/preview/preview_summary.c:90
-#: src/preview/preview_summary.c:121 src/preview/preview_summary.c:148
+#: src/preview/preview_summary.c:121 src/preview/preview_summary.c:185
 msgid "Status"
 msgstr "État"
 
-#: src/formats/card_view.c:390 src/preview/preview_summary.c:438
-#: src/preview/preview_summary.c:439 src/preview/preview_summary.c:455
+#: src/formats/card_view.c:390 src/preview/preview_summary.c:475
+#: src/preview/preview_summary.c:476 src/preview/preview_summary.c:492
 msgid "Notes"
 msgstr "Notes"
 
@@ -7522,8 +7557,8 @@ msgstr[1] ""
 
 #: src/formats/card_view.c:588 src/formats/elf_info.c:640
 #: src/formats/elf_info.c:643 src/formats/parquet_view.c:153
-#: src/formats/sqlite_view.c:222 src/preview/preview_summary.c:326
-#: src/preview/preview_summary.c:328 src/search/deep_search_tab.c:936
+#: src/formats/sqlite_view.c:222 src/preview/preview_summary.c:363
+#: src/preview/preview_summary.c:365 src/search/deep_search_tab.c:936
 msgid "Type"
 msgstr "Type"
 
@@ -8922,7 +8957,7 @@ msgstr "%1$s pages (%2$s Ko), sans limite"
 msgid "Memory"
 msgstr "Mémoire"
 
-#: src/formats/wasm_info.c:297 src/preview/preview_summary.c:231
+#: src/formats/wasm_info.c:297 src/preview/preview_summary.c:268
 msgid "Tables"
 msgstr "Tableaux"
 
@@ -11361,7 +11396,7 @@ msgid "not an EPUB (no package document)"
 msgstr "pas un EPUB (pas de document de paquet)"
 
 #: src/office/epub.c:370 src/office/ole_props.c:246
-#: src/preview/preview_formats.c:334 src/preview/preview_summary.c:444
+#: src/preview/preview_formats.c:334 src/preview/preview_summary.c:481
 msgid "Contents"
 msgstr "Contenu"
 
@@ -12398,6 +12433,7 @@ msgid "Shortcuts"
 msgstr "Raccourcis"
 
 #: src/preview/preview_summary.c:77 src/preview/preview_summary.c:111
+#: src/preview/preview_summary.c:137
 msgctxt "key"
 msgid "Enter / c / Double-click"
 msgstr "Enter / c / Double-clic"
@@ -12502,295 +12538,311 @@ msgid "System"
 msgstr "Système"
 
 #: src/preview/preview_summary.c:137
-msgid "Browse the disk in Explorer (mounted first if needed)"
-msgstr "Parcourir le disque dans l’explorateur (monté d’abord si besoin)"
+msgid "Browse the disk in Explorer"
+msgstr "Parcourir le disque dans l’explorateur"
 
 #: src/preview/preview_summary.c:138
-msgid "Mount / unmount the disk (eject a removable one)"
-msgstr "Monter / démonter le disque (éjecter un disque amovible)"
+msgid "Open an SSH terminal in the disk"
+msgstr "Ouvrir un terminal SSH dans le disque"
 
-#: src/preview/preview_summary.c:139
-msgid "Open a terminal in the disk"
-msgstr "Ouvrir un terminal dans le disque"
-
-#: src/preview/preview_summary.c:142
+#: src/preview/preview_summary.c:141 src/preview/preview_summary.c:179
 #, c-format
 msgid "Disk: %s"
 msgstr "Disque : %s"
 
-#: src/preview/preview_summary.c:147
+#: src/preview/preview_summary.c:146 src/preview/preview_summary.c:184
 msgid "Kind"
 msgstr "Type"
 
-#: src/preview/preview_summary.c:149
-msgid "Mounted"
-msgstr "Monté"
+#: src/preview/preview_summary.c:148
+msgid "Machine"
+msgstr "Machine"
 
-#: src/preview/preview_summary.c:149
-msgid "Not mounted"
-msgstr "Non monté"
-
-#: src/preview/preview_summary.c:151
+#: src/preview/preview_summary.c:150 src/preview/preview_summary.c:188
 msgid "Mount Folder"
 msgstr "Dossier de montage"
 
-#: src/preview/preview_summary.c:154
+#: src/preview/preview_summary.c:152 src/preview/preview_summary.c:191
 msgid "Device"
 msgstr "Périphérique"
 
-#: src/preview/preview_summary.c:157
+#: src/preview/preview_summary.c:161
+msgid "Free"
+msgstr "Libre"
+
+#: src/preview/preview_summary.c:174
+msgid "Browse the disk in Explorer (mounted first if needed)"
+msgstr "Parcourir le disque dans l’explorateur (monté d’abord si besoin)"
+
+#: src/preview/preview_summary.c:175
+msgid "Mount / unmount the disk (eject a removable one)"
+msgstr "Monter / démonter le disque (éjecter un disque amovible)"
+
+#: src/preview/preview_summary.c:176
+msgid "Open a terminal in the disk"
+msgstr "Ouvrir un terminal dans le disque"
+
+#: src/preview/preview_summary.c:186
+msgid "Mounted"
+msgstr "Monté"
+
+#: src/preview/preview_summary.c:186
+msgid "Not mounted"
+msgstr "Non monté"
+
+#: src/preview/preview_summary.c:194
 msgid "Yes (c ejects it)"
 msgstr "Oui (c l’éjecte)"
 
-#: src/preview/preview_summary.c:191
+#: src/preview/preview_summary.c:228
 msgid "Edit the canvas (Canvas tab)"
 msgstr "Modifier le canvas (onglet Canvas)"
 
-#: src/preview/preview_summary.c:192
+#: src/preview/preview_summary.c:229
 msgid "Rename the note"
 msgstr "Renommer la note"
 
-#: src/preview/preview_summary.c:193
+#: src/preview/preview_summary.c:230
 msgid "Move the note to another notebook"
 msgstr "Déplacer la note dans un autre carnet"
 
-#: src/preview/preview_summary.c:194
+#: src/preview/preview_summary.c:231
 msgid "Move the note to the trash"
 msgstr "Mettre la note à la corbeille"
 
-#: src/preview/preview_summary.c:197
+#: src/preview/preview_summary.c:234
 #, c-format
 msgid "Canvas: %s"
 msgstr "Canvas : %s"
 
-#: src/preview/preview_summary.c:225
+#: src/preview/preview_summary.c:262
 msgid "Text boxes"
 msgstr "Zones de texte"
 
-#: src/preview/preview_summary.c:226
+#: src/preview/preview_summary.c:263
 msgid "Pictures"
 msgstr "Images"
 
-#: src/preview/preview_summary.c:228
+#: src/preview/preview_summary.c:265
 msgid "Shapes"
 msgstr "Formes"
 
-#: src/preview/preview_summary.c:246
+#: src/preview/preview_summary.c:283
 msgid "(too large to preview: Enter opens it)"
 msgstr "(trop grand pour l’aperçu : Enter l’ouvre)"
 
-#: src/preview/preview_summary.c:246
+#: src/preview/preview_summary.c:283
 msgid "(unreadable page)"
 msgstr "(page illisible)"
 
 #. TRANSLATORS: a size or date range in a saved search summary, e.g. "10M to 100M"
-#: src/preview/preview_summary.c:257
+#: src/preview/preview_summary.c:294
 #, c-format
 msgid "%1$s to %2$s"
 msgstr "%1$s à %2$s"
 
 #. TRANSLATORS: lower bound of a size or date range, e.g. "from 7d"
-#: src/preview/preview_summary.c:261
+#: src/preview/preview_summary.c:298
 #, c-format
 msgid "from %s"
 msgstr "à partir de %s"
 
 #. TRANSLATORS: upper bound of a size or date range, e.g. "up to 10M"
-#: src/preview/preview_summary.c:265
+#: src/preview/preview_summary.c:302
 #, c-format
 msgid "up to %s"
 msgstr "jusqu’à %s"
 
-#: src/preview/preview_summary.c:274
+#: src/preview/preview_summary.c:311
 msgid "Match case"
 msgstr "Respecter la casse"
 
-#: src/preview/preview_summary.c:275
+#: src/preview/preview_summary.c:312
 msgid "Whole word"
 msgstr "Mot entier"
 
-#: src/preview/preview_summary.c:276
+#: src/preview/preview_summary.c:313
 msgid "Regular expression"
 msgstr "Expression régulière"
 
-#: src/preview/preview_summary.c:277
+#: src/preview/preview_summary.c:314
 msgid "Letters in order"
 msgstr "Lettres dans l’ordre"
 
-#: src/preview/preview_summary.c:294
+#: src/preview/preview_summary.c:331
 msgid "Run this search in Deep Search"
 msgstr "Lancer cette recherche dans la Recherche approfondie"
 
-#: src/preview/preview_summary.c:295
+#: src/preview/preview_summary.c:332
 msgid "Rename or move bookmark"
 msgstr "Renommer ou déplacer le signet"
 
-#: src/preview/preview_summary.c:296
+#: src/preview/preview_summary.c:333
 msgid "Delete bookmark"
 msgstr "Supprimer le signet"
 
-#: src/preview/preview_summary.c:297
+#: src/preview/preview_summary.c:334
 msgid "Move bookmark up / down"
 msgstr "Monter / descendre le signet"
 
-#: src/preview/preview_summary.c:300 src/preview/preview_summary.c:410
+#: src/preview/preview_summary.c:337 src/preview/preview_summary.c:447
 #, c-format
 msgid "Saved Search: %s"
 msgstr "Recherche enregistrée : %s"
 
-#: src/preview/preview_summary.c:307
+#: src/preview/preview_summary.c:344
 msgid "Current folder"
 msgstr "Dossier courant"
 
-#: src/preview/preview_summary.c:313
+#: src/preview/preview_summary.c:350
 msgid "Category"
 msgstr "Catégorie"
 
-#: src/preview/preview_summary.c:315 src/search/deep_search_tab.c:905
+#: src/preview/preview_summary.c:352 src/search/deep_search_tab.c:905
 msgid "Extensions"
 msgstr "Extensions"
 
-#: src/preview/preview_summary.c:318 src/search/deep_search_tab.c:924
+#: src/preview/preview_summary.c:355 src/search/deep_search_tab.c:924
 msgid "Contains"
 msgstr "Contient"
 
-#: src/preview/preview_summary.c:321
+#: src/preview/preview_summary.c:358
 msgid "Options"
 msgstr "Options"
 
-#: src/preview/preview_summary.c:337 src/search/deep_search_tab.c:951
+#: src/preview/preview_summary.c:374 src/search/deep_search_tab.c:951
 msgid "Last change"
 msgstr "Dernière modification"
 
-#: src/preview/preview_summary.c:341 src/search/deep_search_tab.c:960
+#: src/preview/preview_summary.c:378 src/search/deep_search_tab.c:960
 msgid "Exclude"
 msgstr "Exclure"
 
-#: src/preview/preview_summary.c:344 src/search/deep_search_tab.c:963
+#: src/preview/preview_summary.c:381 src/search/deep_search_tab.c:963
 msgid "Depth"
 msgstr "Profondeur"
 
-#: src/preview/preview_summary.c:347 src/search/deep_search_tab.c:968
+#: src/preview/preview_summary.c:384 src/search/deep_search_tab.c:968
 msgid "Hidden entries"
 msgstr "Entrées cachées"
 
-#: src/preview/preview_summary.c:347
+#: src/preview/preview_summary.c:384
 msgid "Yes"
 msgstr "Oui"
 
-#: src/preview/preview_summary.c:350 src/search/deep_search_tab.c:971
+#: src/preview/preview_summary.c:387 src/search/deep_search_tab.c:971
 msgid "This filesystem only"
 msgstr "Ce système de fichiers seulement"
 
-#: src/preview/preview_summary.c:350
+#: src/preview/preview_summary.c:387
 msgid "No"
 msgstr "Non"
 
-#: src/preview/preview_summary.c:370
+#: src/preview/preview_summary.c:407
 #, c-format
 msgid "folder, %u item"
 msgid_plural "folder, %u items"
 msgstr[0] "dossier, %u élément"
 msgstr[1] "dossier, %u éléments"
 
-#: src/preview/preview_summary.c:414
+#: src/preview/preview_summary.c:451
 msgid "(saved search file missing)"
 msgstr "(fichier de recherche enregistrée introuvable)"
 
-#: src/preview/preview_summary.c:437
+#: src/preview/preview_summary.c:474
 #, c-format
 msgid "Notebook: %s"
 msgstr "Carnet : %s"
 
-#: src/preview/preview_summary.c:442
+#: src/preview/preview_summary.c:479
 #, c-format
 msgid "Bookmark Folder: %s"
 msgstr "Dossier de signets : %s"
 
-#: src/preview/preview_summary.c:443
+#: src/preview/preview_summary.c:480
 msgid "Items"
 msgstr "Éléments"
 
-#: src/preview/preview_summary.c:446
+#: src/preview/preview_summary.c:483
 #, c-format
 msgid "Remote Folder: %s"
 msgstr "Dossier distant : %s"
 
-#: src/preview/preview_summary.c:447 src/preview/preview_summary.c:448
+#: src/preview/preview_summary.c:484 src/preview/preview_summary.c:485
 msgid "Machines"
 msgstr "Machines"
 
-#: src/preview/preview_summary.c:456
+#: src/preview/preview_summary.c:493
 msgid "Trashed notes"
 msgstr "Notes à la corbeille"
 
-#: src/preview/preview_summary.c:476
+#: src/preview/preview_summary.c:513
 msgid "New note / new notebook"
 msgstr "Nouvelle note / nouveau carnet"
 
-#: src/preview/preview_summary.c:477
+#: src/preview/preview_summary.c:514
 msgid "Edit notebook (name and icon)"
 msgstr "Modifier le carnet (nom et icône)"
 
-#: src/preview/preview_summary.c:478
+#: src/preview/preview_summary.c:515
 msgid "Delete notebook"
 msgstr "Supprimer le carnet"
 
-#: src/preview/preview_summary.c:479
+#: src/preview/preview_summary.c:516
 msgid "Move notebook up / down"
 msgstr "Monter / descendre le carnet"
 
-#: src/preview/preview_summary.c:484 src/preview/preview_summary.c:498
+#: src/preview/preview_summary.c:521 src/preview/preview_summary.c:535
 msgid "Expand / collapse folder"
 msgstr "Déplier / replier le dossier"
 
-#: src/preview/preview_summary.c:485
+#: src/preview/preview_summary.c:522
 msgid "Add bookmark / new folder here"
 msgstr "Ajouter un signet / un dossier ici"
 
-#: src/preview/preview_summary.c:486 src/preview/preview_summary.c:500
+#: src/preview/preview_summary.c:523 src/preview/preview_summary.c:537
 msgid "Edit folder (name and icon)"
 msgstr "Modifier le dossier (nom et icône)"
 
-#: src/preview/preview_summary.c:487
+#: src/preview/preview_summary.c:524
 msgid "Delete folder"
 msgstr "Supprimer le dossier"
 
-#: src/preview/preview_summary.c:488
+#: src/preview/preview_summary.c:525
 msgid "Move folder up / down"
 msgstr "Monter / descendre le dossier"
 
-#: src/preview/preview_summary.c:493
+#: src/preview/preview_summary.c:530
 msgid "Expand / collapse the list"
 msgstr "Déplier / replier la liste"
 
-#: src/preview/preview_summary.c:499
+#: src/preview/preview_summary.c:536
 msgid "Add machine here / new folder"
 msgstr "Ajouter une machine ici / un dossier"
 
-#: src/preview/preview_summary.c:501
+#: src/preview/preview_summary.c:538
 msgid "Delete folder (its machines move to the top level)"
 msgstr "Supprimer le dossier (ses machines remontent au premier niveau)"
 
-#: src/preview/preview_summary.c:506
+#: src/preview/preview_summary.c:543
 msgid "Restore the selected trashed note to its notebook"
 msgstr "Restaurer la note sélectionnée dans son carnet"
 
-#: src/preview/preview_summary.c:507
+#: src/preview/preview_summary.c:544
 msgid "Delete the selected trashed note permanently"
 msgstr "Supprimer définitivement la note sélectionnée"
 
-#: src/preview/preview_summary.c:508
+#: src/preview/preview_summary.c:545
 msgctxt "key"
 msgid "Trash toolbar button"
 msgstr "Bouton Corbeille de la barre d’outils"
 
-#: src/preview/preview_summary.c:508
+#: src/preview/preview_summary.c:545
 msgid "Empty the trash"
 msgstr "Vider la corbeille"
 
 #. TRANSLATORS: a field label or a list heading followed by a colon, "Host:"
-#: src/preview/preview_summary.c:527
+#: src/preview/preview_summary.c:564
 #, c-format
 msgid "%s:"
 msgstr "%s :"
@@ -12821,17 +12873,17 @@ msgstr ""
 msgid "cannot store the converted file"
 msgstr "impossible d’enregistrer le fichier converti"
 
-#: src/preview/viewer.c:361
+#: src/preview/viewer.c:362
 #, c-format
 msgid "[ Cannot read: %s ]"
 msgstr "[ Lecture impossible : %s ]"
 
-#: src/preview/viewer.c:383
+#: src/preview/viewer.c:384
 #, c-format
 msgid "[ Cannot copy %1$s from the remote machine: %2$s ]"
 msgstr "[ Impossible de copier %1$s depuis la machine distante : %2$s ]"
 
-#: src/preview/viewer.c:739
+#: src/preview/viewer.c:740
 #, c-format
 msgid ""
 "[ PREVIEW ] %1$s (%2$s bytes total)\n"
@@ -12842,7 +12894,7 @@ msgstr ""
 "Gros fichier : %3$u octets affichés, la suite se charge en faisant défiler.\n"
 "\n"
 
-#: src/preview/viewer.c:1092
+#: src/preview/viewer.c:1101
 #, c-format
 msgid ""
 "%s\n"
@@ -13915,16 +13967,16 @@ msgstr ""
 "Aucun fichier de compilation dans %s ni au-dessus (Makefile, Cargo.toml, "
 "package.json, go.mod…)"
 
-#: src/terminal/terminal.c:135
+#: src/terminal/terminal.c:136
 #, c-format
 msgid "Cannot start terminal: %s"
 msgstr "Impossible de démarrer le terminal : %s"
 
-#: src/terminal/terminal.c:145 src/terminal/terminal.c:828
+#: src/terminal/terminal.c:146 src/terminal/terminal.c:852
 msgid "Press Enter to close"
 msgstr "Appuyez sur Entrée pour fermer"
 
-#: src/terminal/terminal.c:824
+#: src/terminal/terminal.c:848
 #, c-format
 msgid "Remote terminal on %s closed (SSH error)"
 msgstr "Terminal distant sur %s fermé (erreur SSH)"
@@ -14467,9 +14519,6 @@ msgstr "Fermer l’espace de travail"
 
 #~ msgid "Close Game (Ctrl+W)"
 #~ msgstr "Fermer le jeu (Ctrl+W)"
-
-#~ msgid "Could not create media stream for file (press 'm' for details)"
-#~ msgstr "Impossible de créer le flux média du fichier (m pour les détails)"
 
 #, c-format
 #~ msgid ""
