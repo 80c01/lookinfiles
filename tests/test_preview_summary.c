@@ -144,6 +144,31 @@ static void test_wsl(void) {
     g_assert_null(preview_summary_wsl(NULL));
 }
 
+static void test_container(void) {
+    Container c = {0};
+    c.id = "0123456789ab";
+    c.name = "web";
+    c.image = "nginx:1.27";
+    c.state = "running";
+    c.status = "Up 3 hours";
+    c.created = "2024-05-03 09:00:00";
+    c.ports = "0.0.0.0:8080->80/tcp";
+    c.running = TRUE;
+    gchar* s = preview_summary_container_info("Docker", "box", &c);
+    g_assert_nonnull(strstr(s, "Container: web\n"));
+    g_assert_nonnull(strstr(s, "nginx:1.27"));
+    g_assert_nonnull(strstr(s, "0.0.0.0:8080->80/tcp"));
+    g_assert_nonnull(strstr(s, "Docker"));
+    g_assert_cmpint(column_of(s, "Image:", "nginx"), ==, column_of(s, "Status:", "Up 3"));
+    g_free(s);
+    c.ports = "";
+    s = preview_summary_container_info(NULL, NULL, &c);
+    g_assert_null(strstr(s, "Ports:"));
+    g_assert_null(strstr(s, "Machine:"));
+    g_free(s);
+    g_assert_null(preview_summary_container_info("Docker", NULL, NULL));
+}
+
 static void test_notebook(void) {
     ExplorerRow* root = explorer_row_new_root();
     ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
@@ -332,6 +357,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_summary/disk", test_disk);
     g_test_add_func("/preview_summary/remote_disk", test_remote_disk);
     g_test_add_func("/preview_summary/wsl", test_wsl);
+    g_test_add_func("/preview_summary/container", test_container);
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);

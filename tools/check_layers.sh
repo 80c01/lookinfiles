@@ -125,6 +125,7 @@ disk_remote:
 disk_volumes:i18n
 remote_disks:disk_volumes,i18n
 wsl_distros:
+containers:
 disk_stats:disk_scan,file_types,i18n
 git_space:git_utils,disk_scan,git_remote,vfs
 git_filter:git_utils,disk_scan
@@ -325,7 +326,7 @@ after_frame:
 explorer_tree:explorer_row,icons
 remote_store:app_types,app_paths,notebook_icons,remote_mounts,ssh_session
 remote_path:app_types,remote_store,ssh_session,app_events,vfs
-preview_summary:app_types,remote_store,disk_volumes,remote_disks,wsl_distros,explorer_row,note_types,canvas_doc,deep_search_store,file_types,i18n
+preview_summary:app_types,remote_store,disk_volumes,remote_disks,wsl_distros,containers,explorer_row,note_types,canvas_doc,deep_search_store,file_types,i18n
 fs_watch:app_types,app_events,git_utils,git_tab,preview_state,vfs,vfs_watch
 preview_state:app_types
 git_state:

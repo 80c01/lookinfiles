@@ -166,6 +166,40 @@ GPtrArray* preview_summary_remote_disk_lines(const gchar* machine, const RemoteD
     return lines;
 }
 
+GPtrArray* preview_summary_container_info_lines(const gchar* engine, const gchar* machine, const Container* c) {
+    if (c == NULL) {
+        return NULL;
+    }
+    static const SummaryShortcut keys[] = {
+        {"Enter / t", N_("Open a terminal in the container")},
+        {"c", N_("Start the container, or stop it when it runs")},
+        {NC_("key", "Right-click"), N_("Start, stop, restart")},
+    };
+    GPtrArray* lines = lines_new();
+    gchar* title = g_strdup_printf(_("Container: %s"), c->name);
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup(c->running ? "container-running" : "container");
+    g_free(title);
+
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Image"), c->image);
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Status"), c->status[0] != '\0' ? c->status : c->state);
+    if (c->ports != NULL && c->ports[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Ports"), c->ports);
+    }
+    if (c->created != NULL && c->created[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Created"), c->created);
+    }
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Id"), c->id);
+    if (engine != NULL) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Engine"), engine);
+    }
+    if (machine != NULL && machine[0] != '\0') {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Machine"), machine);
+    }
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
+}
+
 GPtrArray* preview_summary_wsl_lines(const WslDistro* d) {
     if (d == NULL) {
         return NULL;
@@ -491,7 +525,8 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     gboolean is_remote_folder = explorer_row_is(row, "remote_folder");
     gboolean is_disks = explorer_row_is(row, "machine_disks") || explorer_row_is(row, "remote_disks");
     gboolean is_wsl = explorer_row_is(row, "machine_wsl");
-    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder && !is_disks && !is_wsl) {
+    gboolean is_containers = explorer_row_is(row, "containers");
+    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder && !is_disks && !is_wsl && !is_containers) {
         return NULL;
     }
 
@@ -517,6 +552,10 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
         title = g_strdup(_("Disks"));
         count_label = _("Disks");
         list_title = _("Disks");
+    } else if (is_containers) {
+        title = g_strdup(name);
+        count_label = _("Containers");
+        list_title = _("Containers");
     } else if (is_wsl) {
         title = g_strdup("WSL");
         count_label = _("Distributions");
@@ -559,7 +598,7 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
             {"Shift+K / Shift+J", N_("Move folder up / down")},
         };
         add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
-    } else if (is_disks || is_wsl) {
+    } else if (is_disks || is_wsl || is_containers) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", N_("Expand / collapse the list")},
         };
@@ -684,6 +723,10 @@ gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* 
 
 gchar* preview_summary_remote_disk(const gchar* machine, const RemoteDisk* d) {
     return to_text_and_free(preview_summary_remote_disk_lines(machine, d));
+}
+
+gchar* preview_summary_container_info(const gchar* engine, const gchar* machine, const Container* c) {
+    return to_text_and_free(preview_summary_container_info_lines(engine, machine, c));
 }
 
 gchar* preview_summary_wsl(const WslDistro* d) {

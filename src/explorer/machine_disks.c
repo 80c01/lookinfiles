@@ -247,6 +247,10 @@ gboolean machine_disks_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
     return FALSE;
 }
 
+gboolean machine_disks_is_expanded(const gchar* id) {
+    return md.expanded != NULL && id != NULL && g_hash_table_contains(md.expanded, id);
+}
+
 gboolean machine_disks_any_expanded(void) {
     return md.expanded != NULL && g_hash_table_size(md.expanded) > 0;
 }

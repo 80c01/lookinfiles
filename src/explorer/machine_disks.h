@@ -26,6 +26,8 @@ gboolean machine_disks_row_toggled(AppData* app, ExplorerRow* row, gboolean expa
 /* A machine row is expanded / expand or collapse them all (next redraw) */
 gboolean machine_disks_any_expanded(void);
 void machine_disks_set_expanded(AppData* app, gboolean expanded);
+/* The row of the machine id is expanded */
+gboolean machine_disks_is_expanded(const gchar* id);
 /* Drop the disks listed for the machine id (NULL: every machine) */
 void machine_disks_forget(const gchar* id);
 

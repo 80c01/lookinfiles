@@ -13,6 +13,7 @@
 #include "core/disk_volumes.h"
 #include "core/remote_disks.h"
 #include "core/wsl_distros.h"
+#include "core/containers.h"
 #include "explorer/remote_store.h"
 #include "search/deep_search_store.h"
 
@@ -56,9 +57,13 @@ GPtrArray* preview_summary_remote_disk_lines(const gchar* machine, const RemoteD
 /* Lines of a WSL distribution: state, version, default, folder and keys.
  * NULL for NULL. Unref the array. */
 GPtrArray* preview_summary_wsl_lines(const WslDistro* d);
+/* Lines of a Docker or Podman container (engine "Docker", machine: its
+ * remote machine, NULL here): image, status, ports, creation, id and keys.
+ * NULL for NULL. Unref the array. */
+GPtrArray* preview_summary_container_info_lines(const gchar* engine, const gchar* machine, const Container* c);
 
 /* Lines of a container row ("notebook", "bm_folder", "trash",
- * "remote_folder", "machine_disks", "remote_disks", "machine_wsl") built from its children, or of a row on a Canvas note
+ * "remote_folder", "machine_disks", "remote_disks", "machine_wsl", "containers") built from its children, or of a row on a Canvas note
  * (preview_summary_canvas_lines()). NULL for other rows. Unref the array. */
 GPtrArray* preview_summary_container_lines(ExplorerRow* row);
 
@@ -84,6 +89,7 @@ gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* 
                              const gchar* system, gboolean current);
 gchar* preview_summary_disk(const DiskVolume* v);
 gchar* preview_summary_wsl(const WslDistro* d);
+gchar* preview_summary_container_info(const gchar* engine, const gchar* machine, const Container* c);
 gchar* preview_summary_remote_disk(const gchar* machine, const RemoteDisk* d);
 gchar* preview_summary_container(ExplorerRow* row);
 gchar* preview_summary_canvas(const gchar* name, const gchar* path);

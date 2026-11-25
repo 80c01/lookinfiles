@@ -55,6 +55,24 @@ connecter** se connecte tout de suite.
 | `d` ou `Delete` | La supprimer de la liste |
 | `F5` | Relire `~/.ssh/config` |
 
+## Conteneurs (Docker, Podman)
+
+Sous cet ordinateur et sous chaque machine connectée, une ligne **Docker**
+et une ligne **Podman** listent les conteneurs quand le programme y est
+installé (`docker ps -a` / `podman ps -a`, lu en arrière-plan quand la
+machine est dépliée) : ceux qui tournent d’abord, avec leur image. Une ligne
+le signale quand Docker ne répond pas (démon arrêté, permission refusée).
+
+| Touche | Action |
+|---|---|
+| `Enter` ou `t` | Ouvrir un terminal dans le conteneur (`docker exec -it`, bash sinon sh ; par SSH sur une machine distante) |
+| `c` | Démarrer le conteneur, ou l’arrêter s’il tourne |
+| Clic droit | Démarrer, arrêter, redémarrer, ouvrir un terminal |
+| `F5` | Relire la liste des conteneurs |
+
+Les conteneurs ne se suppriment pas d’ici, et leurs fichiers ne se
+parcourent pas encore.
+
 ## Distributions WSL (Windows)
 
 Sous Windows, une ligne **WSL** sous cet ordinateur liste les

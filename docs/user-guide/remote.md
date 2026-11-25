@@ -51,6 +51,23 @@ by default). **Save & Connect** connects right away.
 | `d` or `Delete` | Delete it from the list |
 | `F5` | Read `~/.ssh/config` again |
 
+## Containers (Docker, Podman)
+
+Below this computer and below each connected machine, a **Docker** and a
+**Podman** row list the containers, when the program is installed there
+(`docker ps -a` / `podman ps -a`, read in the background when the machine is
+expanded): running ones first, with their image. A row says so when Docker
+does not answer (daemon stopped, permission denied).
+
+| Key | Action |
+|---|---|
+| `Enter` or `t` | Open a terminal in the container (`docker exec -it`, bash or else sh; through SSH on a remote machine) |
+| `c` | Start the container, or stop it when it runs |
+| Right click | Start, stop, restart, open a terminal |
+| `F5` | List the containers again |
+
+Containers are not removed from here, and their files are not browsed yet.
+
 ## WSL distributions (Windows)
 
 On Windows, a **WSL** row below this computer lists the installed WSL

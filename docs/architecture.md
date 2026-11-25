@@ -50,6 +50,9 @@ Layers, from bottom to top
   directory name; the runtime one is private, 0700, and never under the cache).
 - `remote_disks` — the disks of a remote machine from `findmnt -P` (else
   `df -P`) output (`REMOTE_DISKS_COMMAND`): kept, kind, order; pure.
+- `containers` — Docker and Podman: the `ps -a --format` command and its
+  reading, start / stop / restart and `exec -it` command lines, as an argv
+  or a shell line for a remote machine; pure.
 - `wsl_distros` — the WSL distributions from `wsl.exe -l -v` and
   `-l --running -q` output (UTF-16 or UTF-8), `\\wsl.localhost\<name>\`,
   the parts of a UNC path (`wsl_unc_root()`); pure.
@@ -1104,6 +1107,10 @@ Layers, from bottom to top
   (`local_machine_open()`), a local terminal; a disk opened, mounted,
   unmounted or ejected through its `GMount` / `GVolume`; the view redrawn
   (`APP_EVENT_FILES_CHANGED`) on the volume monitor's signals.
+- `machine_containers` — the Docker and Podman rows below each machine of
+  the Machines view: listed on a worker thread when the machine is expanded
+  (here, or `vfs_exec()`), actions likewise, then listed again; a terminal
+  through `terminal_open_command()` (`ssh -t` + `docker exec -it` remotely).
 - `machine_wsl` — the WSL row below the local machine (Windows): listed with
   `wsl.exe` on a worker thread, a distribution opened through
   `local_machine_open_dir()`, its terminal through `terminal_open_command()`,

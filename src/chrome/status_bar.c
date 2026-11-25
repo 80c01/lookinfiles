@@ -554,6 +554,12 @@ static gchar* status_type_label(const gchar* name, const gchar* type, FileKind k
     if (g_strcmp0(type, "machine_disks") == 0 || g_strcmp0(type, "remote_disks") == 0) {
         return g_strdup(_("Disks"));
     }
+    if (g_strcmp0(type, "containers") == 0) {
+        return g_strdup(_("Containers"));
+    }
+    if (g_strcmp0(type, "container") == 0) {
+        return g_strdup(_("Container"));
+    }
     if (g_strcmp0(type, "machine_wsl") == 0) {
         return g_strdup("WSL");
     }
