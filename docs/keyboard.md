@@ -317,12 +317,12 @@ mode move in the list)
 | `Enter` / `Space` / click on a bar of a chart | List only the files of that bar (again: every result) |
 | `Ctrl+W` (Notepad), `Ctrl+W c` (Vim), middle click on the tab | Close the Deep Search tab and stop the search (also its cross) |
 
-**Remote view**
+**Machines view**
 
 | Key | Action |
 |---|---|
-| `Enter` / `c` | Connect the machine (SSHFS) and browse it in the explorer / expand the folder |
-| `t` | Open an SSH terminal to the machine |
+| `Enter` / `c` | Connect the machine and browse it in the explorer (this computer: back to its files) / expand the folder |
+| `t` | Open an SSH terminal to the machine (this computer: a local terminal) |
 | `a` / `Shift+A` | Add a machine (inside the selected folder) / a folder |
 | `F2` / `r` / `e` | Edit the selected machine (also its folder) or folder (name and icon) |
 | `d` / `Delete` | Delete the selected machine, or folder (its machines move to the top level) |

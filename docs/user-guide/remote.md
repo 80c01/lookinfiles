@@ -1,6 +1,7 @@
 # Remote machines
 
-The remote view browses the files of SSH machines: LookinFiles reads and
+The Machines view lists this computer and your SSH machines, and browses
+the files of the SSH machines: LookinFiles reads and
 writes them over SFTP through one SSH connection per machine, so the
 explorer, the preview and the editor work on them, with nothing to mount.
 Open it with `Ctrl+Shift+R` (again
@@ -23,6 +24,9 @@ to go back to the files) or the server button at the top of the explorer.
 
 The view lists:
 
+- this computer, always first (its name, then **This computer** and your
+  user name, in green while the current workspace browses it): `Enter` or
+  `c` goes back to its files, `t` opens a terminal on it;
 - every `Host` of your `~/.ssh/config` (`F5` reads the file again);
 - the machines you added by hand.
 

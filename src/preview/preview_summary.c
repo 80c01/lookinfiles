@@ -105,6 +105,30 @@ GPtrArray* preview_summary_remote_lines(const RemoteMachine* rm) {
     return lines;
 }
 
+GPtrArray* preview_summary_local_lines(const gchar* host, const gchar* user, const gchar* home,
+                                      const gchar* system, gboolean current) {
+    static const SummaryShortcut keys[] = {
+        {NC_("key", "Enter / c / Double-click"), N_("Browse the files of this computer in Explorer")},
+        {"t", N_("Open a terminal on this computer")},
+        {"a", N_("Add new remote machine")},
+    };
+    GPtrArray* lines = lines_new();
+    gchar* title = g_strdup_printf(_("Local Machine: %s"), (host != NULL && *host) ? host : _("Unknown"));
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup("computer");
+    g_free(title);
+
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Status"),
+             current ? _("Browsed in this workspace") : _("Available (a remote machine is browsed here)"));
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("User"), (user != NULL && *user) ? user : _("(none)"));
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Home Folder"), (home != NULL && *home) ? home : _("(none)"));
+    if (system != NULL && *system) {
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("System"), system);
+    }
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
+}
+
 /* Human-readable note format from the note row badge ("md", "org" or empty) */
 static const gchar* note_format_name(const gchar* badge_text) {
     return note_type_name(note_type_from_badge(badge_text));
@@ -539,6 +563,11 @@ static gchar* to_text_and_free(GPtrArray* lines) {
 
 gchar* preview_summary_remote(const RemoteMachine* rm) {
     return to_text_and_free(preview_summary_remote_lines(rm));
+}
+
+gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* home,
+                             const gchar* system, gboolean current) {
+    return to_text_and_free(preview_summary_local_lines(host, user, home, system, current));
 }
 
 gchar* preview_summary_container(ExplorerRow* row) {

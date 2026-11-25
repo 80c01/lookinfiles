@@ -376,7 +376,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_btn), FALSE);
     gtk_widget_set_focusable(remote_btn, FALSE);
     gtk_widget_add_css_class(remote_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_btn, _("Remote (Ctrl+Shift+R)"));
+    gtk_widget_set_tooltip_text(remote_btn, _("Machines (Ctrl+Shift+R)"));
     g_signal_connect(remote_btn, "clicked", G_CALLBACK(on_sidebar_remote_clicked), app);
     gtk_box_append(GTK_BOX(title_row), remote_btn);
 
@@ -691,7 +691,7 @@ gboolean sidebar_header_update(AppData* app) {
     } else if (bookmarks) {
         title = _("BOOKMARKS");
     } else if (remote) {
-        title = _("REMOTE");
+        title = _("MACHINES");
     } else if (games) {
         title = _("GAMES");
     }

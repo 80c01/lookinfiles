@@ -35,7 +35,7 @@ l’écran de la machine elle-même.
   demander de mot de passe** : LookinFiles ne peut pas en taper. Utilisez
   une clé SSH, et `ssh-agent` si la clé a une phrase de passe.
 - Vérifiez l’hôte, l’utilisateur, le port et le dossier distant avec `F2`
-  dans la vue distante.
+  dans la vue Machines.
 - Une machine de `~/.ssh/config` utilise les réglages écrits dans ce
   fichier ; appuyez sur `F5` après l’avoir modifié.
 

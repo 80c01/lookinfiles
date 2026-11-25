@@ -33,7 +33,7 @@ Wayland). Over SSH, use `ssh -X` or run it on the machine's own screen.
 - Check that `ssh user@host` works in a terminal **without asking for a
   password**: LookinFiles cannot type one. Use an SSH key, and `ssh-agent`
   if the key has a passphrase.
-- Check the host, user, port and remote directory with `F2` in the remote
+- Check the host, user, port and remote directory with `F2` in the Machines
   view.
 - A machine from `~/.ssh/config` uses the settings written there; press
   `F5` after editing that file.

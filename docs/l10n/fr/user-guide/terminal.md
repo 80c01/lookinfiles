@@ -40,7 +40,7 @@ Les séparations entre panneaux se déplacent comme toutes les autres.
 
 Pendant que vous parcourez une [machine distante](remote.md) connectée, le
 bouton **Terminal** affiche le nom de la machine et ouvre un terminal SSH
-vers elle. Dans la vue distante, `t` ouvre un terminal SSH vers la machine
+vers elle. Dans la vue Machines, `t` ouvre un terminal SSH vers la machine
 sélectionnée.
 
 ## Espaces de travail

@@ -2,7 +2,7 @@
 #define PREVIEW_SUMMARY_H
 
 /* Summaries shown in the preview pane for explorer rows that have no file
- * content: remote machines, notebooks, bookmark folders, the notes trash and
+ * content: the local and remote machines, notebooks, bookmark folders, the notes trash and
  * Canvas notes (directories).
  * A summary is a list of typed lines (title, fields, headings, items, keys)
  * that summary_view draws; preview_summary_to_text() gives its plain-text
@@ -37,6 +37,12 @@ typedef struct {
  * connection details and view shortcuts. NULL for NULL. Unref the array. */
 GPtrArray* preview_summary_remote_lines(const RemoteMachine* rm);
 
+/* Lines of the local machine row of the Machines view: host name, user, home
+ * folder, system (NULL or "": not shown), whether the current workspace
+ * browses it (no remote machine), and the shortcuts. Unref the array. */
+GPtrArray* preview_summary_local_lines(const gchar* host, const gchar* user, const gchar* home,
+                                       const gchar* system, gboolean current);
+
 /* Lines of a container row ("notebook", "bm_folder", "trash",
  * "remote_folder") built from its children, or of a row on a Canvas note
  * (preview_summary_canvas_lines()). NULL for other rows. Unref the array. */
@@ -60,6 +66,8 @@ gchar* preview_summary_to_text(GPtrArray* lines);
 
 /* Plain text of the summaries above. Caller frees. */
 gchar* preview_summary_remote(const RemoteMachine* rm);
+gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* home,
+                             const gchar* system, gboolean current);
 gchar* preview_summary_container(ExplorerRow* row);
 gchar* preview_summary_canvas(const gchar* name, const gchar* path);
 gchar* preview_summary_search(const gchar* name, const SavedDeepSearch* saved);

@@ -1087,7 +1087,9 @@ Layers, from bottom to top
   after the `app_notice()` message). On a remote machine renames go over
   SFTP (`vfs_rename()`) and a delete is for good (`file_moves_delete_remote()`,
   `vfs_delete_tree()`: no trash there, not undone); `file_moves_exists()`.
-- `bookmarks`, `notes`, `remote` — the bookmarks, notes and SSH remote views
+- `local_machine` — the row of this computer at the top of the Machines view
+  (`remote`): back to local files (`local_machine_open()`), a local terminal.
+- `bookmarks`, `notes`, `remote` — the bookmarks, notes and Machines views
   (XML persistence: `bookmarks.xml`, `notes.xml` via `notes_store`; remotes via
   `remote_store`; the master connection (`remote_session_connect()`),
   password dialogs and SFTP files (`vfs_mount()`) in `remote_session`,

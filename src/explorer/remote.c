@@ -1,6 +1,7 @@
 #include "explorer/remote.h"
 #include "explorer/remote_mounts.h"
 #include "explorer/remote_session.h"
+#include "explorer/local_machine.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
 #include "widgets/dialog.h"
@@ -65,12 +66,14 @@ static void remote_append_machine_row(ExplorerRow* parent, RemoteMachine* rm) {
     g_free(status_markup);
 }
 
-/* Folders first (their machines inside), then the machines of the top level */
+/* The local machine, then the folders (their machines inside), then the
+ * remote machines of the top level */
 void remote_append_rows(ExplorerRow* root, AppData* app) {
     if (root == NULL || app == NULL) {
         return;
     }
 
+    local_machine_append_row(root, app);
     if (remote_machine_list(app) == NULL && remote_folder_list(app) == NULL) {
         explorer_row_append(root, "-", "", _("No remote machines yet — press a to add one"), "");
         return;
@@ -728,6 +731,10 @@ void remote_disconnect_selected(AppData* app) {
 }
 
 void remote_toggle_connect_selected(AppData* app) {
+    if (local_machine_selected(app)) {
+        local_machine_open(app);
+        return;
+    }
     RemoteMachine* rm = remote_get_selected(app);
     if (rm == NULL) {
         return;
@@ -746,6 +753,10 @@ void remote_toggle_connect_selected(AppData* app) {
 }
 
 void remote_activate_selected(AppData* app) {
+    if (local_machine_selected(app)) {
+        local_machine_open(app);
+        return;
+    }
     if (remote_get_selected_folder(app) != NULL) {
         explorer_tree_toggle_expanded(app->tree, tree_nav_selected(app));
         return;
@@ -791,6 +802,10 @@ void remote_open_terminal(AppData* app, RemoteMachine* rm) {
 }
 
 void remote_open_terminal_selected(AppData* app) {
+    if (local_machine_selected(app)) {
+        local_machine_open_terminal(app);
+        return;
+    }
     RemoteMachine* rm = remote_get_selected(app);
     if (rm != NULL) {
         remote_open_terminal(app, rm);
@@ -926,6 +941,7 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
 
     RemoteMachine* rm = remote_get_selected(app);
     RemoteFolder* folder = remote_get_selected_folder(app);
+    gboolean local = local_machine_selected(app);
 
     GtkWidget* popover = gtk_popover_new();
     gtk_widget_set_parent(popover, GTK_WIDGET(app->tree_view));
@@ -948,6 +964,14 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
         add_menu_item(box, popover, app, _("Open SSH Terminal"), "t", 3);
         add_menu_item(box, popover, app, _("Edit Machine…"), "F2", 4);
         add_menu_item(box, popover, app, _("Delete Machine"), "Delete", 5);
+
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(GTK_BOX(box), sep);
+    }
+
+    if (local) {
+        add_menu_item(box, popover, app, _("Open in Explorer"), "Enter", 9);
+        add_menu_item(box, popover, app, _("Open Terminal"), "t", 3);
 
         GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_box_append(GTK_BOX(box), sep);

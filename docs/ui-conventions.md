@@ -93,6 +93,6 @@ Check these before adding or changing an action, a tooltip or a dialog:
   make ui-shots` and `LOOKIN_DEBUG_ICONS=1 ./lookin`.
 - **Preview text views** all use `set_view_text_padding()` (10 px sides).
 - **Names**: `Org-mode`, `Markdown`, `Plain Text`, `Canvas`; view titles EXPLORER,
-  BOOKMARKS, NOTES, REMOTE.
+  BOOKMARKS, NOTES, MACHINES.
 - Keep `help.c` (`KEY_HELP`) and `docs/keyboard.md` in sync.
 

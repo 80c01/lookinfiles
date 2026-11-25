@@ -58,6 +58,23 @@ static void test_remote(void) {
     g_assert_null(preview_summary_remote(NULL));
 }
 
+static void test_local(void) {
+    gchar* s = preview_summary_local("box", "ann", "/home/ann", "Debian GNU/Linux 13", TRUE);
+    g_assert_nonnull(strstr(s, "Local Machine: box\n"));
+    g_assert_nonnull(strstr(s, "Browsed in this workspace"));
+    g_assert_nonnull(strstr(s, "Debian GNU/Linux 13"));
+    glong col = column_of(s, "User:", "ann");
+    g_assert_cmpint(col, >, 0);
+    g_assert_cmpint(column_of(s, "Home Folder:", "/home/ann"), ==, col);
+    g_free(s);
+    /* No system line when unknown; another machine browsed */
+    s = preview_summary_local("", NULL, NULL, NULL, FALSE);
+    g_assert_nonnull(strstr(s, "Local Machine: Unknown\n"));
+    g_assert_nonnull(strstr(s, "a remote machine is browsed here"));
+    g_assert_null(strstr(s, "System:"));
+    g_free(s);
+}
+
 static void test_notebook(void) {
     ExplorerRow* root = explorer_row_new_root();
     ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
@@ -242,6 +259,7 @@ static void test_saved_search(void) {
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/preview_summary/remote", test_remote);
+    g_test_add_func("/preview_summary/local", test_local);
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);

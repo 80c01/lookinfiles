@@ -32,6 +32,7 @@
 #include "explorer/bookmark_icons.h"
 #include "core/path_kind.h"
 #include "explorer/remote.h"
+#include "explorer/local_machine.h"
 #include "explorer/archive_tree.h"
 #include "org/orgmode.h"
 #include "org/org_fold.h"
@@ -1059,6 +1060,7 @@ static void show_selected_row(AppData* app) {
     gboolean is_game = (g_strcmp0(type, "game") == 0 || g_strcmp0(type, "game_folder") == 0 ||
                         app->sidebar_view == SIDEBAR_VIEW_GAMES);
     gboolean is_remote = (g_strcmp0(type, "remote") == 0);
+    gboolean is_local_machine = (g_strcmp0(type, LOCAL_MACHINE_ROW) == 0);
     gchar* summary = NULL;
     GPtrArray* summary_lines = NULL; /* drawn by summary_view, except for Canvas notes */
     gboolean is_canvas = full != NULL && note_type_from_filename(full) == NOTE_TYPE_CANVAS;
@@ -1066,6 +1068,11 @@ static void show_selected_row(AppData* app) {
         summary = games_get_preview_summary(row);
     } else if (is_remote) {
         summary_lines = preview_summary_remote_lines(remote_find_by_id(app, full));
+    } else if (is_local_machine) {
+        gchar* system = g_get_os_info(G_OS_INFO_KEY_PRETTY_NAME);
+        summary_lines = preview_summary_local_lines(g_get_host_name(), g_get_user_name(), g_get_home_dir(),
+                                                    system, local_machine_is_current(app));
+        g_free(system);
     } else {
         summary_lines = preview_summary_container_lines(row);
         if (summary_lines != NULL && is_canvas) {
@@ -1081,7 +1088,7 @@ static void show_selected_row(AppData* app) {
     if (is_bookmark && bm_kind == PATH_KIND_UNKNOWN && !bookmark_target_is_uri(full)) {
         summary = g_strdup_printf(_("%s\n%s\n\n(waiting for the file system…)\n"), name, full);
     }
-    if (is_remote || summary != NULL || summary_lines != NULL) {
+    if (is_remote || is_local_machine || summary != NULL || summary_lines != NULL) {
         preview_media_leave_players(app);
         if (app->preview_cancellable != NULL) {
             g_cancellable_cancel(app->preview_cancellable);

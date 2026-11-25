@@ -1,6 +1,7 @@
 # Machines distantes
 
-La vue distante parcourt les fichiers de machines SSH : LookinFiles les lit
+La vue Machines liste cet ordinateur et vos machines SSH, et parcourt les
+fichiers des machines SSH : LookinFiles les lit
 et les écrit en SFTP par une connexion SSH par machine, si bien que
 l’explorateur, l’aperçu et l’éditeur marchent dessus, sans rien monter.
 Ouvrez-la avec
@@ -25,6 +26,10 @@ en haut de l’explorateur.
 
 La vue liste :
 
+- cet ordinateur, toujours en premier (son nom, puis **Cet ordinateur** et
+  votre nom d’utilisateur, en vert tant que l’espace de travail courant le
+  parcourt) : `Enter` ou `c` revient à ses fichiers, `t` ouvre un terminal
+  dessus ;
 - chaque `Host` de votre `~/.ssh/config` (`F5` relit le fichier) ;
 - les machines ajoutées à la main.
 
