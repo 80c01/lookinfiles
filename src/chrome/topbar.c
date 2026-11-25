@@ -3,6 +3,7 @@
 #include "core/i18n.h"
 #include "core/remote_path.h"
 #include "core/vfs.h"
+#include "core/wsl_distros.h"
 #include "theme/icons.h"
 #include "core/app_events.h"
 #include "explorer/file_list.h"
@@ -565,9 +566,27 @@ void update_path_label(AppData* app) {
             }
             gboolean is_remote_mount = (act_mount != NULL);
 
+            /* A UNC folder: "\\host\share" first, "WSL: Ubuntu" for a
+             * distribution's files */
+            gchar* unc_host = NULL;
+            gchar* unc_share = NULL;
+            gsize unc_len = is_remote_mount ? 0 : wsl_unc_root(app->base_dir, &unc_host, &unc_share);
+            g_free(unc_host);
+            g_free(unc_share);
+
             gchar* accum = NULL;
             const gchar* rest = NULL;
-            if (is_remote_mount) {
+            if (unc_len > 0) {
+                gchar* distro = wsl_distro_of_path(app->base_dir);
+                gchar* root_title = (distro != NULL) ? g_strdup_printf("WSL: %s", distro)
+                                                     : g_strndup(app->base_dir, unc_len);
+                gchar* root_path = g_strndup(app->base_dir, unc_len);
+                BreadcrumbSeg root_seg = { root_title, root_path, distro != NULL ? "computer" : "folder-remote" };
+                g_array_append_val(segs, root_seg);
+                accum = g_strdup(root_path);
+                rest = app->base_dir + unc_len;
+                g_free(distro);
+            } else if (is_remote_mount) {
                 gsize mount_len = strlen(act_mount);
                 const gchar* label = act_rm->name ? act_rm->name : act_rm->host;
                 gchar* root_title = (act_index == 0) ? g_strdup(label) : g_strdup_printf("%s:%s", label, act_root);

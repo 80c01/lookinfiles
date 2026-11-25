@@ -55,6 +55,17 @@ connecter** se connecte tout de suite.
 | `d` ou `Delete` | La supprimer de la liste |
 | `F5` | Relire `~/.ssh/config` |
 
+## Distributions WSL (Windows)
+
+Sous Windows, une ligne **WSL** sous cet ordinateur liste les
+distributions WSL installées (sans celles de Docker Desktop), avec leur
+version, si elles tournent, et celle par défaut. `Enter` ou `c` parcourt
+les fichiers d’une distribution (`\\wsl.localhost\<nom>\`, ce qui la
+démarre), `t` ouvre un terminal dedans (`wsl.exe -d <nom>`), et le menu du
+clic droit propose **Arrêter** pour une distribution qui tourne
+(`wsl --terminate`). `F5` relit la liste. Le fil d’Ariane commence par
+**WSL: <nom>** pendant que vous en parcourez une.
+
 ## Les disques d’une machine
 
 Dépliez une machine connectée pour voir ses **Disques** : le système de

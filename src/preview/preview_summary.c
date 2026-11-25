@@ -166,6 +166,35 @@ GPtrArray* preview_summary_remote_disk_lines(const gchar* machine, const RemoteD
     return lines;
 }
 
+GPtrArray* preview_summary_wsl_lines(const WslDistro* d) {
+    if (d == NULL) {
+        return NULL;
+    }
+    static const SummaryShortcut keys[] = {
+        {NC_("key", "Enter / c / Double-click"), N_("Browse the distribution's files in Explorer (starts it)")},
+        {"t", N_("Open a terminal in the distribution")},
+        {NC_("key", "Right-click"), N_("Stop the distribution (wsl --terminate)")},
+    };
+    GPtrArray* lines = lines_new();
+    gchar* title = g_strdup_printf(_("WSL Distribution: %s"), d->name);
+    PreviewSummaryLine* head = add_line(lines, PREVIEW_SUMMARY_TITLE, title, NULL);
+    head->glyph = g_strdup(d->running ? "computer-running" : "computer");
+    g_free(title);
+
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Status"), d->running ? _("Running") : _("Stopped"));
+    if (d->version > 0) {
+        gchar* version = g_strdup_printf("WSL %d", d->version);
+        add_line(lines, PREVIEW_SUMMARY_FIELD, _("Version"), version);
+        g_free(version);
+    }
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Default"), d->is_default ? _("Yes") : _("No"));
+    gchar* path = wsl_distro_path(d->name);
+    add_line(lines, PREVIEW_SUMMARY_FIELD, _("Files"), path);
+    g_free(path);
+    add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
+    return lines;
+}
+
 GPtrArray* preview_summary_disk_lines(const DiskVolume* v) {
     if (v == NULL) {
         return NULL;
@@ -461,7 +490,8 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     gboolean is_trash = explorer_row_is(row, "trash");
     gboolean is_remote_folder = explorer_row_is(row, "remote_folder");
     gboolean is_disks = explorer_row_is(row, "machine_disks") || explorer_row_is(row, "remote_disks");
-    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder && !is_disks) {
+    gboolean is_wsl = explorer_row_is(row, "machine_wsl");
+    if (!is_notebook && !is_bm_folder && !is_trash && !is_remote_folder && !is_disks && !is_wsl) {
         return NULL;
     }
 
@@ -487,6 +517,10 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
         title = g_strdup(_("Disks"));
         count_label = _("Disks");
         list_title = _("Disks");
+    } else if (is_wsl) {
+        title = g_strdup("WSL");
+        count_label = _("Distributions");
+        list_title = _("Distributions");
     } else {
         title = g_strdup(_("Trash"));
         count_label = _("Notes");
@@ -525,7 +559,7 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
             {"Shift+K / Shift+J", N_("Move folder up / down")},
         };
         add_shortcuts(lines, keys, G_N_ELEMENTS(keys));
-    } else if (is_disks) {
+    } else if (is_disks || is_wsl) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", N_("Expand / collapse the list")},
         };
@@ -650,6 +684,10 @@ gchar* preview_summary_local(const gchar* host, const gchar* user, const gchar* 
 
 gchar* preview_summary_remote_disk(const gchar* machine, const RemoteDisk* d) {
     return to_text_and_free(preview_summary_remote_disk_lines(machine, d));
+}
+
+gchar* preview_summary_wsl(const WslDistro* d) {
+    return to_text_and_free(preview_summary_wsl_lines(d));
 }
 
 gchar* preview_summary_disk(const DiskVolume* v) {

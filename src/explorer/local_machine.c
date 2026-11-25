@@ -71,9 +71,9 @@ static void append_disk_row(ExplorerRow* parent, const DiskVolume* v) {
     }
 }
 
-void local_machine_append_row(ExplorerRow* parent, AppData* app) {
+ExplorerRow* local_machine_append_row(ExplorerRow* parent, AppData* app) {
     if (parent == NULL) {
-        return;
+        return NULL;
     }
     ensure_monitor(app);
     g_clear_pointer(&lm.disks, g_ptr_array_unref);
@@ -102,6 +102,7 @@ void local_machine_append_row(ExplorerRow* parent, AppData* app) {
     for (guint i = 0; i < lm.disks->len; i++) {
         append_disk_row(disks, g_ptr_array_index(lm.disks, i));
     }
+    return row;
 }
 
 void local_machine_restore_expanded(AppData* app, ExplorerRow* root) {
@@ -167,8 +168,10 @@ gboolean local_machine_is_current(AppData* app) {
     return app == NULL || app->current_remote_id == NULL;
 }
 
-/* The current workspace has no remote machine any more */
-static void make_local(AppData* app) {
+void local_machine_make_current(AppData* app) {
+    if (app == NULL) {
+        return;
+    }
     g_clear_pointer(&app->current_remote_id, g_free);
     if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
         g_clear_pointer(&app->workspaces[app->current_ws].remote_id, g_free);
@@ -183,9 +186,11 @@ static gchar* local_folder(AppData* app) {
     return g_strdup(g_get_home_dir());
 }
 
-/* Show dir of this computer in the files view */
-static void open_local_dir(AppData* app, const gchar* dir) {
-    make_local(app);
+void local_machine_open_dir(AppData* app, const gchar* dir) {
+    if (app == NULL || dir == NULL) {
+        return;
+    }
+    local_machine_make_current(app);
     explorer_set_view(app, SIDEBAR_VIEW_FILES);
     reload_directory(app, dir);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
@@ -196,12 +201,12 @@ void local_machine_open(AppData* app) {
         return;
     }
     gchar* dir = local_folder(app);
-    open_local_dir(app, dir);
+    local_machine_open_dir(app, dir);
     g_free(dir);
 }
 
 static void open_terminal_in(AppData* app, const gchar* dir) {
-    make_local(app);
+    local_machine_make_current(app);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     terminal_open(app, FALSE, dir);
 }
@@ -243,7 +248,7 @@ static void on_volume_mounted(GObject* source, GAsyncResult* res, gpointer data)
     GFile* root = (mount != NULL) ? g_mount_get_root(mount) : NULL;
     gchar* path = (root != NULL) ? g_file_get_path(root) : NULL;
     if (path != NULL && lm.app != NULL) {
-        open_local_dir(lm.app, path);
+        local_machine_open_dir(lm.app, path);
     }
     g_free(path);
     g_clear_object(&root);
@@ -317,7 +322,7 @@ static void unmount_disk(AppData* app, const DiskVolume* v) {
 
 static void open_disk(AppData* app, const DiskVolume* v) {
     if (v->path != NULL) {
-        open_local_dir(app, v->path);
+        local_machine_open_dir(app, v->path);
     } else {
         mount_disk(v);
     }

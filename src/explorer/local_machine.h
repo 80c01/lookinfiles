@@ -14,8 +14,8 @@
 #define LOCAL_DISKS_ROW "machine_disks"
 #define LOCAL_DISK_ROW "disk" /* path: the DiskVolume id */
 
-/* Append the local machine row, its disks below, to parent */
-void local_machine_append_row(ExplorerRow* parent, AppData* app);
+/* Append the local machine row, its disks below, to parent; returns it */
+ExplorerRow* local_machine_append_row(ExplorerRow* parent, AppData* app);
 /* Expand the rows of the local machine below root left expanded */
 void local_machine_restore_expanded(AppData* app, ExplorerRow* root);
 /* Remember that a row of the local machine was expanded or collapsed;
@@ -43,6 +43,10 @@ gboolean local_machine_is_current(AppData* app);
 void local_machine_open(AppData* app);
 /* Make the current workspace local and open a terminal there */
 void local_machine_open_terminal(AppData* app);
+/* Make the current workspace local (no remote machine) */
+void local_machine_make_current(AppData* app);
+/* Make the current workspace local and show dir in the files view */
+void local_machine_open_dir(AppData* app, const gchar* dir);
 
 /* Keys of the local machine rows: Enter (open the files, the disk, mounted
  * first; expand the Disks row), c (also mount, unmount or eject a disk), t

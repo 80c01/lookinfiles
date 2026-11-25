@@ -56,7 +56,7 @@ static void render_row(GtkWidget* expander, ExplorerRow* row) {
     gboolean has_badge = row->badge[0] != '\0';
     gboolean inline_badge = explorer_row_is(row, "bookmark") || explorer_row_is(row, "remote") ||
                             explorer_row_is(row, "local_machine") || explorer_row_is(row, "disk") ||
-                            explorer_row_is(row, "remote_disk");
+                            explorer_row_is(row, "remote_disk") || explorer_row_is(row, "wsl_distro");
 
     /* Files, notes and links to files show their VS Code file-type icon,
      * other rows a glyph in the same style (folder, trash, server...) */

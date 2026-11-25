@@ -87,6 +87,11 @@ void terminal_refresh_theme(void);
  * VTE, toggles the panel's notice. */
 void terminal_open(AppData* app, gboolean new_row, const gchar* cwd);
 
+/* Show the terminal panel with a new terminal tab running argv (a local
+ * program, found in PATH) in cwd (NULL: the home folder) instead of a
+ * shell: `wsl.exe -d Ubuntu`. Without VTE, as terminal_open(). */
+void terminal_open_command(AppData* app, const gchar* const* argv, const gchar* cwd);
+
 /* Show the terminal panel with a new terminal tab (its shell as
  * terminal_open(): the explorer's directory, or the workspace's remote
  * machine) and text typed at its prompt, not run (no newline added).

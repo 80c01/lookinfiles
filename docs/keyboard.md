@@ -323,6 +323,7 @@ mode move in the list)
 |---|---|
 | `Enter` / `c` | Connect the machine and browse it in the explorer (this computer: back to its files) / expand the folder |
 | `t` | Open an SSH terminal to the machine (this computer: a local terminal; a disk: a terminal in it) |
+| `Enter` / `c`, `t` on a WSL distribution (Windows) | Browse its files / open a terminal in it |
 | `Enter` / `c` on a disk | Browse the disk (mounted first if needed) / mount, unmount or eject it (a remote machine's disk: browse it) |
 | `a` / `Shift+A` | Add a machine (inside the selected folder) / a folder |
 | `F2` / `r` / `e` | Edit the selected machine (also its folder) or folder (name and icon) |

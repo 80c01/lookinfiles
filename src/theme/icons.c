@@ -350,6 +350,7 @@ static const RowGlyph ROW_GLYPHS[] = {
     {"remote", "network-server", "grey_light", "network-server"},
     {"remote-connected", "network-server", "green", "network-server"},
     {"computer", "computer", "grey_light", "network-server"},
+    {"computer-running", "computer", "green", "network-server"},
     {"drive-removable", "drive-removable-media", "grey_light", "folder"},
     {"drive-optical", "drive-optical", "grey_light", "folder"},
     {"folder-remote", "folder-remote", "grey_light", "network-server"},

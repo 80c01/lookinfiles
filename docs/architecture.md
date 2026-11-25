@@ -50,6 +50,9 @@ Layers, from bottom to top
   directory name; the runtime one is private, 0700, and never under the cache).
 - `remote_disks` — the disks of a remote machine from `findmnt -P` (else
   `df -P`) output (`REMOTE_DISKS_COMMAND`): kept, kind, order; pure.
+- `wsl_distros` — the WSL distributions from `wsl.exe -l -v` and
+  `-l --running -q` output (UTF-16 or UTF-8), `\\wsl.localhost\<name>\`,
+  the parts of a UNC path (`wsl_unc_root()`); pure.
 - `disk_volumes` — the disks of this computer from a `GVolumeMonitor`
   (mounted volumes with a local path, volumes that can be mounted, `/` on
   Unix), their kind (system, fixed, removable, optical, network) and order;
@@ -1101,6 +1104,10 @@ Layers, from bottom to top
   (`local_machine_open()`), a local terminal; a disk opened, mounted,
   unmounted or ejected through its `GMount` / `GVolume`; the view redrawn
   (`APP_EVENT_FILES_CHANGED`) on the volume monitor's signals.
+- `machine_wsl` — the WSL row below the local machine (Windows): listed with
+  `wsl.exe` on a worker thread, a distribution opened through
+  `local_machine_open_dir()`, its terminal through `terminal_open_command()`,
+  stopped with `wsl --terminate`.
 - `machine_disks` — the Disks rows of the remote machines in the Machines
   view: listed on a worker thread (`vfs_exec()`) when a connected machine is
   first expanded, kept until it disconnects or F5; a disk opened through
@@ -1725,8 +1732,10 @@ Layers, from bottom to top
 - `terminal` — embedded terminals (VTE, or `term_widget` on Windows) as tabs of terminal notebooks (group
   `TERM_TABS_GROUP`) split by `GtkPaned`s; tabs are dragged between them or
   to a pane edge through `tab_drop` (`Ctrl+T` new tab, `Ctrl+Shift+T` new
-  pane below, `terminal_open()` with a working directory); ssh into the
-  active remote machine (`ssh_session_argv()` with `SSH_ARGV_NO_MUX`: never
+  pane below, `terminal_open()` with a working directory, `terminal_open_command()`
+  running a program instead of the shell); ssh into the
+  active remote machine, in the folder asked for when it is on the machine
+  (`ssh_session_argv()` with `SSH_ARGV_NO_MUX`: never
   through the master connection, which writes to tty clients with blocking
   writes and would stall the SFTP sessions behind an unread terminal); the shell is `$SHELL` (on Windows PowerShell 7,
   Windows PowerShell, then `%COMSPEC%`); `Ctrl+Shift+C` / `Ctrl+Shift+V`

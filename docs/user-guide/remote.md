@@ -51,6 +51,16 @@ by default). **Save & Connect** connects right away.
 | `d` or `Delete` | Delete it from the list |
 | `F5` | Read `~/.ssh/config` again |
 
+## WSL distributions (Windows)
+
+On Windows, a **WSL** row below this computer lists the installed WSL
+distributions (Docker Desktop's own are left out), with their version,
+whether they run, and the default one. `Enter` or `c` browses a
+distribution's files (`\\wsl.localhost\<name>\`, which starts it), `t` opens a
+terminal in it (`wsl.exe -d <name>`), and the right-click menu has
+**Stop** for a running one (`wsl --terminate`). `F5` lists them again.
+The breadcrumbs start with **WSL: <name>** while you browse one.
+
 ## The disks of a machine
 
 Expand a connected machine to see its **Disks**: the file system `/`,

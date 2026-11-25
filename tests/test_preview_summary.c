@@ -122,6 +122,28 @@ static void test_remote_disk(void) {
     g_assert_null(preview_summary_remote_disk("box", NULL));
 }
 
+static void test_wsl(void) {
+    WslDistro d = {0};
+    d.name = "Ubuntu";
+    d.version = 2;
+    d.is_default = TRUE;
+    d.running = TRUE;
+    gchar* s = preview_summary_wsl(&d);
+    g_assert_nonnull(strstr(s, "WSL Distribution: Ubuntu\n"));
+    g_assert_nonnull(strstr(s, "Running"));
+    g_assert_nonnull(strstr(s, "WSL 2"));
+    g_assert_nonnull(strstr(s, "\\\\wsl.localhost\\Ubuntu\\"));
+    g_assert_cmpint(column_of(s, "Status:", "Running"), ==, column_of(s, "Version:", "WSL 2"));
+    g_free(s);
+    d.version = 0;
+    d.running = FALSE;
+    s = preview_summary_wsl(&d);
+    g_assert_null(strstr(s, "Version:"));
+    g_assert_nonnull(strstr(s, "Stopped"));
+    g_free(s);
+    g_assert_null(preview_summary_wsl(NULL));
+}
+
 static void test_notebook(void) {
     ExplorerRow* root = explorer_row_new_root();
     ExplorerRow* nb = add_row(root, "notebook", "General", "/notes/General", "2");
@@ -309,6 +331,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/preview_summary/local", test_local);
     g_test_add_func("/preview_summary/disk", test_disk);
     g_test_add_func("/preview_summary/remote_disk", test_remote_disk);
+    g_test_add_func("/preview_summary/wsl", test_wsl);
     g_test_add_func("/preview_summary/notebook", test_notebook);
     g_test_add_func("/preview_summary/bookmark_folder_and_trash", test_bookmark_folder_and_trash);
     g_test_add_func("/preview_summary/canvas", test_canvas);

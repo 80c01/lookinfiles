@@ -3,6 +3,7 @@
 #include "explorer/remote_session.h"
 #include "explorer/local_machine.h"
 #include "explorer/machine_disks.h"
+#include "explorer/machine_wsl.h"
 #include "core/i18n.h"
 #include "theme/palette.h"
 #include "widgets/dialog.h"
@@ -75,7 +76,8 @@ void remote_append_rows(ExplorerRow* root, AppData* app) {
         return;
     }
 
-    local_machine_append_row(root, app);
+    ExplorerRow* local = local_machine_append_row(root, app);
+    machine_wsl_append(local, app);
     if (remote_machine_list(app) == NULL && remote_folder_list(app) == NULL) {
         explorer_row_append(root, "-", "", _("No remote machines yet — press a to add one"), "");
         return;
@@ -119,6 +121,7 @@ void remote_rescan(AppData* app) {
     }
     remote_reload_ssh_config(app);
     machine_disks_forget(NULL);
+    machine_wsl_forget();
     remote_refresh(app);
 }
 
@@ -157,6 +160,7 @@ static void remote_refresh_select(AppData* app, const gchar* type, const gchar* 
         }
     }
     local_machine_restore_expanded(app, root);
+    machine_wsl_restore_expanded(app, root);
     machine_disks_restore_expanded(app, root);
     tree_nav_unblock_selection_handler(app);
 
@@ -188,7 +192,8 @@ void remote_refresh(AppData* app) {
 }
 
 gboolean remote_handle_row_toggled(AppData* app, ExplorerRow* row, gboolean expanded) {
-    if (local_machine_row_toggled(row, expanded) || machine_disks_row_toggled(app, row, expanded)) {
+    if (local_machine_row_toggled(row, expanded) || machine_wsl_row_toggled(row, expanded) ||
+        machine_disks_row_toggled(app, row, expanded)) {
         return TRUE;
     }
     if (app == NULL || !explorer_row_is(row, "remote_folder")) {
@@ -221,6 +226,7 @@ void remote_toggle_collapse_expand(AppData* app) {
     }
     gboolean expand = !remote_any_expanded(app);
     local_machine_set_expanded(expand);
+    machine_wsl_set_expanded(expand);
     machine_disks_set_expanded(app, expand);
     for (GList* l = remote_folder_list(app); l != NULL; l = l->next) {
         ((RemoteFolder*)l->data)->expanded = expand;
@@ -231,7 +237,7 @@ void remote_toggle_collapse_expand(AppData* app) {
     RemoteMachine* rm = remote_get_selected(app);
     RemoteFolder* parent = remote_machine_folder(app, rm);
     const gchar* disk_machine = machine_disks_selected_machine(app);
-    if (!expand && local_machine_owns_selected(app)) {
+    if (!expand && (local_machine_owns_selected(app) || machine_wsl_owns_selected(app))) {
         remote_refresh_select(app, LOCAL_MACHINE_ROW, "");
     } else if (!expand && disk_machine != NULL) {
         gchar* id = g_strdup(disk_machine);
@@ -754,6 +760,10 @@ void remote_disconnect_selected(AppData* app) {
 }
 
 void remote_toggle_connect_selected(AppData* app) {
+    if (machine_wsl_owns_selected(app)) {
+        machine_wsl_activate_selected(app);
+        return;
+    }
     if (local_machine_owns_selected(app)) {
         local_machine_toggle_selected(app);
         return;
@@ -780,6 +790,10 @@ void remote_toggle_connect_selected(AppData* app) {
 }
 
 void remote_activate_selected(AppData* app) {
+    if (machine_wsl_owns_selected(app)) {
+        machine_wsl_activate_selected(app);
+        return;
+    }
     if (local_machine_owns_selected(app)) {
         local_machine_activate_selected(app);
         return;
@@ -836,6 +850,10 @@ void remote_open_terminal(AppData* app, RemoteMachine* rm) {
 }
 
 void remote_open_terminal_selected(AppData* app) {
+    if (machine_wsl_owns_selected(app)) {
+        machine_wsl_terminal_selected(app);
+        return;
+    }
     if (local_machine_owns_selected(app)) {
         local_machine_terminal_selected(app);
         return;
@@ -937,6 +955,7 @@ static void on_remote_ctx_action(GtkButton* btn, gpointer user_data) {
     case 9: remote_activate_selected(app); break;
     case 10: remote_toggle_collapse_expand(app); break;
     case 11: remote_toggle_connect_selected(app); break;
+    case 12: machine_wsl_stop_selected(app); break;
     default: break;
     }
 }
@@ -1044,7 +1063,20 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
         gtk_box_append(GTK_BOX(box), sep);
     }
 
-    if (disks || explorer_row_is(tree_nav_selected(app), MACHINE_DISKS_ROW)) {
+    const WslDistro* distro = machine_wsl_selected(app);
+    if (distro != NULL) {
+        add_menu_item(box, popover, app, _("Open in Explorer"), "Enter", 9);
+        add_menu_item(box, popover, app, _("Open Terminal"), "t", 3);
+        if (distro->running) {
+            add_menu_item(box, popover, app, _("Stop"), NULL, 12);
+        }
+
+        GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(GTK_BOX(box), sep);
+    }
+
+    if (disks || explorer_row_is(tree_nav_selected(app), MACHINE_DISKS_ROW) ||
+        explorer_row_is(tree_nav_selected(app), MACHINE_WSL_ROW)) {
         add_menu_item(box, popover, app, _("Expand / Collapse"), "Enter", 9);
 
         GtkWidget* sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);

@@ -189,8 +189,19 @@ static gchar* remote_shell_dir(const gchar* dir) {
     return g_shell_quote(dir);
 }
 
+/* The program terminal_open_command() runs in place of the shell, for the
+ * terminal it opens */
+static gchar** pending_argv;
+
 /* Shell in cwd (NULL: the explorer's directory), or ssh to the active remote */
 static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
+    if (pending_argv != NULL) {
+        gchar** argv = g_steal_pointer(&pending_argv);
+        vte_terminal_spawn_async(term, VTE_PTY_DEFAULT, cwd != NULL ? cwd : g_get_home_dir(), argv, NULL,
+                                 G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, -1, NULL, on_spawn_result, app);
+        g_strfreev(argv);
+        return;
+    }
     RemoteMachine* rm = remote_get_active_machine(app);
     if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
         /* Never through the OpenSSH master (its blocking writes to a slow tty
@@ -1022,6 +1033,21 @@ void terminal_open_typed(AppData* app, const gchar* text) {
 #else
     (void)app;
     (void)text;
+#endif
+}
+
+void terminal_open_command(AppData* app, const gchar* const* argv, const gchar* cwd) {
+#ifdef HAVE_VTE
+    if (argv == NULL || argv[0] == NULL) {
+        return;
+    }
+    g_strfreev(pending_argv);
+    pending_argv = g_strdupv((gchar**)argv);
+    open_terminal(app, FALSE, cwd);
+    g_clear_pointer(&pending_argv, g_strfreev); /* used, unless no terminal was made */
+#else
+    (void)argv;
+    terminal_open(app, FALSE, cwd);
 #endif
 }
 
