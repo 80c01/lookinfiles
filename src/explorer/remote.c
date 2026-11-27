@@ -798,14 +798,9 @@ void remote_toggle_connect_selected(AppData* app) {
     if (rm == NULL) {
         return;
     }
+    /* c: connect, or disconnect a connected machine (Enter opens it) */
     if (rm->is_connected) {
-        /* If already connected, either navigate into files or disconnect */
-        if (app->sidebar_view == SIDEBAR_VIEW_REMOTE) {
-            /* Open in files explorer */
-            remote_connect_machine(app, rm);
-        } else {
-            remote_disconnect_machine(app, rm);
-        }
+        remote_disconnect_machine(app, rm);
     } else {
         remote_connect_machine(app, rm);
     }

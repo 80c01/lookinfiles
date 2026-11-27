@@ -321,7 +321,8 @@ mode move in the list)
 
 | Key | Action |
 |---|---|
-| `Enter` / `c` | Connect the machine and browse it in the explorer (this computer: back to its files) / expand the folder |
+| `Enter` | Connect the machine and browse it in the explorer (this computer: back to its files) / expand the folder |
+| `c` | Connect the machine, or disconnect it when it is connected (this computer: back to its files) |
 | `t` | Open an SSH terminal to the machine (this computer: a local terminal; a disk: a terminal in it) |
 | `Enter` / `t`, `c` on a container | Open a terminal in it / start it, or stop it when it runs |
 | `Enter` / `c`, `t` on a WSL distribution (Windows) | Browse its files / open a terminal in it |

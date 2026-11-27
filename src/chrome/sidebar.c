@@ -596,7 +596,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_conn_btn), FALSE);
     gtk_widget_set_focusable(remote_conn_btn, FALSE);
     gtk_widget_add_css_class(remote_conn_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_conn_btn, _("Connect / Disconnect Selected (Enter / c)"));
+    gtk_widget_set_tooltip_text(remote_conn_btn, _("Connect / Disconnect Selected (c)"));
     g_signal_connect(remote_conn_btn, "clicked", G_CALLBACK(on_sidebar_remote_connect_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_conn_btn);
 
