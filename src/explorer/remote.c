@@ -738,9 +738,9 @@ gboolean remote_disconnect_machine(AppData* app, RemoteMachine* rm) {
     }
     remote_session_close(rm);
     remote_machine_clear_disk_mounts(rm);
-    remote_machine_clear_disk_mounts(rm);
     machine_disks_forget(rm->id);
     machine_containers_forget(rm->id);
+    rm->is_connected = FALSE;
 
     if (app != NULL && g_strcmp0(app->current_remote_id, rm->id) == 0) {
         g_free(app->current_remote_id);
