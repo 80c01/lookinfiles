@@ -362,7 +362,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Global"), "Alt+R", N_("Recent folders and files: Enter opens a folder or shows a file (Ctrl+Enter edits it)"), 0},
     {N_("Global"), "Alt+L", N_("Workspace layouts: preview while moving (Alt+L: next), Enter applies, Escape restores; Edit Layouts… saves (not in Emacs editor tabs)"), 0},
     {N_("Global"), "Alt+Shift+Left / Alt+Shift+Right", N_("Previous / next layout in this workspace's layout history (also the arrows around the top-bar layouts button)"), 0},
-    {N_("Global"), NC_("key", "Double-click a split border"), N_("Split it in half; pointing at it shows a bar to collapse either side or put it at 1/3, 1/2, 2/3"), 0},
+    {N_("Global"), NC_("key", "Double-click a split border"), N_("Split it in half (the explorer's border: fit it to its widest name); pointing at it shows a bar to collapse either side or put it at 1/3, 1/2, 2/3 (the explorer: 1/5, 1/4, 1/3, fit to the names)"), 0},
     {N_("Global"), NC_("key", "Click a collapsed split border"), N_("Expand the collapsed panel back (its border shows as a coloured strip)"), 0},
     {N_("Global"), "Ctrl+,", N_("Preferences: appearance, editor (mode, line numbers, wrap of new tabs, column line), window size, Auto layout panels, language servers"), 0},
     {N_("Global"), "Alt+T", N_("Preferences on Appearance: pick a theme (applied as you select it), set your fonts, save, edit or delete your themes"), 0},

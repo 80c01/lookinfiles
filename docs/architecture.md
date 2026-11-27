@@ -558,9 +558,12 @@ Layers, from bottom to top
 - `line_diff` — Myers line diff of a text against its previous version,
   reduced to per-line gutter marks (`LineDiffMark`: added, modified, deleted).
 - `split_ratio` — where a split handle goes for a share of its room
-  (`split_ratio_position()`, kept clear of the sides' minimum sizes), whether
-  a side is collapsed, and the position that expands it back; used by
-  `split_menu`.
+  (`split_ratio_position()`, kept clear of the sides' minimum sizes), the
+  share sets (`SPLIT_SHARES_EVEN` 1/3, 1/2, 2/3; `SPLIT_SHARES_SIDE` 1/5,
+  1/4, 1/3 for the explorer), the fit of a side to its natural width
+  (`split_ratio_fit()`, at most `SPLIT_SIDE_MAX_SHARE`, also the Auto
+  layout's cap), whether a side is collapsed, and the position that expands
+  it back; used by `split_menu`.
 - `pane_geometry` — `pane_find_neighbor()`: the pane next to another one in a
   direction (same row or column only), used to move editor tabs between
   notebooks; `pane_drop_zone()` / `pane_zone_rect()`: the side of a pane a
@@ -929,9 +932,12 @@ Layers, from bottom to top
   handle of a `GtkPaned` wired by `wire_paned_controllers()`, a bar drawn in
   the window overlay (in the middle of the handle, beside its line, so a drag
   still works; hidden a second after the pointer leaves) collapses
-  either side or expands it back, and puts the handle at 1/3, 1/2 or 2/3
-  (`split_ratio`); `split_menu_halve()` is the double click. `panels` gives
-  it the sides allowed (the preview, the explorer and the terminal panel,
+  either side or expands it back, puts the handle at one of three shares
+  (`split_ratio`) and, when the `fit` hook gives a position, fits the start
+  side to its content; `split_menu_reset()` is the double click (the fit, or
+  a half). `panels` gives it the share set and the fit of each handle (the
+  explorer: `SPLIT_SHARES_SIDE` and `panels_explorer_natural_width()`, which
+  the Auto layout also uses), the sides allowed (the preview, the explorer and the terminal panel,
   which have their top-bar toggles, never collapse from a border) and
   records the move. The handle of a collapsed split gets the CSS class
   `collapsed` (a coloured strip in the theme, with a tooltip); a click on it

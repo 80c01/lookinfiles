@@ -22,11 +22,19 @@ struct Panels {
 
 static gint split_menu_sides(GtkWidget* paned, gpointer data);
 static void split_menu_apply(GtkWidget* paned, gint pos, gpointer data);
+static SplitShares split_menu_shares(GtkWidget* paned, gpointer data);
+static gint split_menu_fit(GtkWidget* paned, gpointer data);
 
 static Panels* panels_get(AppData* app) {
     if (app->panels == NULL) {
         app->panels = g_new0(Panels, 1);
-        SplitMenuHooks hooks = {split_menu_sides, split_menu_apply, app};
+        SplitMenuHooks hooks = {
+            .sides = split_menu_sides,
+            .apply = split_menu_apply,
+            .shares = split_menu_shares,
+            .fit = split_menu_fit,
+            .data = app,
+        };
         app->panels->menu = split_menu_new(&hooks);
     }
     return app->panels;
@@ -253,7 +261,7 @@ static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
     }
     split_menu_hide(d->menu);
     if (n_press == 2 && on_own_sep) {
-        split_menu_halve(d->menu, widget); /* double click: a half */
+        split_menu_reset(d->menu, widget); /* double click: fit the explorer, or a half */
         return;
     }
     d->active = TRUE;
@@ -350,6 +358,42 @@ static gint split_menu_sides(GtkWidget* paned, gpointer data) {
     if (paned == app->main_paned) return SPLIT_SIDE_END;    /* the explorer is the start side */
     if (paned == app->right_paned) return SPLIT_SIDE_START; /* the terminal panel is the end side */
     return SPLIT_SIDE_START | SPLIT_SIDE_END;
+}
+
+/* The explorer is a side panel: its useful widths are a fifth to a third */
+static SplitShares split_menu_shares(GtkWidget* paned, gpointer data) {
+    AppData* app = data;
+    return paned == app->main_paned ? SPLIT_SHARES_SIDE : SPLIT_SHARES_EVEN;
+}
+
+/* The explorer fits its widest visible row, at most as wide as the Auto
+ * layout lets it be */
+static gint split_menu_fit(GtkWidget* paned, gpointer data) {
+    AppData* app = data;
+    if (paned != app->main_paned) return -1;
+    return split_ratio_fit(panels_explorer_natural_width(app), get_workspace_total_width(app),
+                           SPLIT_SIDE_MAX_SHARE);
+}
+
+gint panels_explorer_natural_width(AppData* app) {
+    if (app == NULL || app->left_vbox == NULL || !gtk_widget_get_mapped(app->left_vbox)) {
+        return 0;
+    }
+    GtkScrolledWindow* scroll = NULL;
+    for (GtkWidget* c = gtk_widget_get_first_child(app->left_vbox); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        scroll = (scroll == NULL && GTK_IS_SCROLLED_WINDOW(c)) ? GTK_SCROLLED_WINDOW(c) : scroll;
+    }
+    /* The scrolled window reports its child's natural width only when asked */
+    gboolean propagate = (scroll != NULL) && gtk_scrolled_window_get_propagate_natural_width(scroll);
+    if (scroll != NULL) {
+        gtk_scrolled_window_set_propagate_natural_width(scroll, TRUE);
+    }
+    gint natural = 0;
+    gtk_widget_measure(app->left_vbox, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &natural, NULL, NULL);
+    if (scroll != NULL) {
+        gtk_scrolled_window_set_propagate_natural_width(scroll, propagate);
+    }
+    return MAX(natural, 0);
 }
 
 static void split_menu_apply(GtkWidget* paned, gint pos, gpointer data) {

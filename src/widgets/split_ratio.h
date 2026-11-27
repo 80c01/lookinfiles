@@ -9,7 +9,13 @@
 
 /* The shares the menu offers, from the start side */
 #define SPLIT_RATIO_COUNT 3
-extern const gdouble SPLIT_RATIOS[SPLIT_RATIO_COUNT]; /* 1/3, 1/2, 2/3 */
+typedef enum {
+    SPLIT_SHARES_EVEN, /* 1/3, 1/2, 2/3: two sides of the same weight */
+    SPLIT_SHARES_SIDE, /* 1/5, 1/4, 1/3: a side panel at the start (the explorer) */
+} SplitShares;
+
+/* The SPLIT_RATIO_COUNT shares of set, smallest first */
+const gdouble* split_ratio_shares(SplitShares set);
 
 /* A side this close to 0 px (or less) is collapsed */
 #define SPLIT_COLLAPSE_SLACK 2
@@ -40,5 +46,13 @@ SplitSide split_ratio_collapsed(gint pos, gint max);
 /* Position that expands a collapsed split back: the share it had before
  * (before_share, < 0 when unknown), or a half when that was collapsed too */
 gint split_ratio_expand(gint max, gdouble before_share, gint min_start, gint min_end);
+
+/* Largest share of the window the explorer gets when it is fitted to its
+ * content (the fit button of its handle, the Auto layout) */
+#define SPLIT_SIDE_MAX_SHARE 0.40
+
+/* Position that fits the start side to its natural size (natural px), at
+ * most max_share of total; -1 when natural or total is unknown (<= 0) */
+gint split_ratio_fit(gint natural, gint total, gdouble max_share);
 
 #endif /* SPLIT_RATIO_H */

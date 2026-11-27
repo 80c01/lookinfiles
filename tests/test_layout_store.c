@@ -1,5 +1,6 @@
 /* Unit tests for src/workspace/layout_store.c: saved layouts file and terminal pane trees */
 #include "workspace/layout_store.h"
+#include "widgets/split_ratio.h"
 #include "workspace/tab_tree.h"
 
 #include <glib/gstdio.h>
@@ -452,14 +453,14 @@ static void test_grid_size(void) {
     g_assert_true(!a->term_vis && a->preview_vis);
     saved_layout_free(a);
 
-    /* the explorer fitted to its content, at most LAYOUT_EXPLORER_MAX_FRAC */
+    /* the explorer fitted to its content, at most SPLIT_SIDE_MAX_SHARE */
     rules = (AutoRules){-1, -1, -1, 0.10, -1};
     a = layout_store_auto(l, 2, &rules, 1600, 1000);
     g_assert_cmpfloat(a->main_frac, ==, 0.10);
     saved_layout_free(a);
     rules.explorer_frac = 0.60;
     a = layout_store_auto(l, 2, &rules, 1600, 1000);
-    g_assert_cmpfloat(a->main_frac, ==, LAYOUT_EXPLORER_MAX_FRAC);
+    g_assert_cmpfloat(a->main_frac, ==, SPLIT_SIDE_MAX_SHARE);
     saved_layout_free(a);
     rules.explorer_frac = 0;
     a = layout_store_auto(l, 2, &rules, 1600, 1000);

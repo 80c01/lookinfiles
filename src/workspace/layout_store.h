@@ -88,10 +88,6 @@ GPtrArray* layout_store_presets(GPtrArray* saved);
  * makes to put two editors side by side */
 #define LAYOUT_PREVIEW_MIN_FRAC 0.25
 
-/* Largest share of the window the Auto layout gives the explorer when it
- * fits it to its content */
-#define LAYOUT_EXPLORER_MAX_FRAC 0.40
-
 /* What the Auto layout changes in the panels: show_terminal, show_preview,
  * terminal_below and show_tagbar are 1 (yes), 0 (no) or -1 (as it is) */
 typedef struct {
@@ -99,7 +95,7 @@ typedef struct {
     gint show_preview;
     gint terminal_below;   /* stacked: below the preview (else beside it) */
     gdouble explorer_frac; /* explorer share fitted to its content (at most
-                            * LAYOUT_EXPLORER_MAX_FRAC); 0: as it is */
+                            * SPLIT_SIDE_MAX_SHARE, split_ratio.h); 0: as it is */
     gint show_tagbar;      /* the tagbar of code and Markdown editor tabs */
 } AutoRules;
 

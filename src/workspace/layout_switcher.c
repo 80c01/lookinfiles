@@ -158,24 +158,8 @@ static void on_closed(GtkPopover* popover, gpointer data) {
  * bars (0 when hidden or not laid out yet), rounded up */
 static gdouble explorer_fit_frac(AppData* app) {
     gint total = get_workspace_total_width(app);
-    if (app->left_vbox == NULL || !gtk_widget_get_mapped(app->left_vbox) || total <= 0) {
-        return 0;
-    }
-    GtkScrolledWindow* scroll = NULL;
-    for (GtkWidget* c = gtk_widget_get_first_child(app->left_vbox); c != NULL; c = gtk_widget_get_next_sibling(c)) {
-        scroll = (scroll == NULL && GTK_IS_SCROLLED_WINDOW(c)) ? GTK_SCROLLED_WINDOW(c) : scroll;
-    }
-    /* The scrolled window reports its child's natural width only when asked */
-    gboolean propagate = (scroll != NULL) && gtk_scrolled_window_get_propagate_natural_width(scroll);
-    if (scroll != NULL) {
-        gtk_scrolled_window_set_propagate_natural_width(scroll, TRUE);
-    }
-    gint natural = 0;
-    gtk_widget_measure(app->left_vbox, GTK_ORIENTATION_HORIZONTAL, -1, NULL, &natural, NULL, NULL);
-    if (scroll != NULL) {
-        gtk_scrolled_window_set_propagate_natural_width(scroll, propagate);
-    }
-    return (natural > 0) ? ceil(natural * 1000.0 / total) / 1000.0 : 0;
+    gint natural = panels_explorer_natural_width(app);
+    return (natural > 0 && total > 0) ? ceil(natural * 1000.0 / total) / 1000.0 : 0;
 }
 
 /* A Preferences rule for a panel of the Auto layout, as layout_store_auto() takes it */

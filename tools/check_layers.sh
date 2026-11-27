@@ -290,7 +290,7 @@ lsp_edit:lsp_protocol,code_symbol
 code_lint:file_types,lsp_protocol,preview_doc,json_view,toml_view,yaml_view,xml_view
 lsp_client:lsp_protocol
 lsp_config:code_symbol
-layout_store:app_paths,tab_tree,i18n
+layout_store:app_paths,tab_tree,i18n,split_ratio
 layout_history_stack:layout_store,tab_tree
 text_style:app_types,file_types,app_paths,palette,theme
 theme:palette,fonts,theme_store,file_type_icons,icon_sets

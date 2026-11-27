@@ -47,6 +47,27 @@ static void test_expand(void) {
     g_assert_cmpint(split_ratio_expand(900, 0.05, 150, 0), ==, 150);
 }
 
+static void test_share_sets(void) {
+    const gdouble* even = split_ratio_shares(SPLIT_SHARES_EVEN);
+    const gdouble* side = split_ratio_shares(SPLIT_SHARES_SIDE);
+    g_assert_cmpfloat_with_epsilon(even[1], 0.5, 1e-9);
+    g_assert_cmpfloat_with_epsilon(side[0], 0.2, 1e-9);
+    g_assert_cmpfloat_with_epsilon(side[1], 0.25, 1e-9);
+    g_assert_cmpfloat_with_epsilon(side[2], 1.0 / 3.0, 1e-9);
+    for (gint i = 1; i < SPLIT_RATIO_COUNT; i++) {
+        g_assert_cmpfloat(even[i - 1], <, even[i]);
+        g_assert_cmpfloat(side[i - 1], <, side[i]);
+    }
+}
+
+static void test_fit(void) {
+    g_assert_cmpint(split_ratio_fit(260, 1920, 0.4), ==, 260);
+    /* A very long name: at most 40 % of the window */
+    g_assert_cmpint(split_ratio_fit(1500, 1920, 0.4), ==, 768);
+    g_assert_cmpint(split_ratio_fit(0, 1920, 0.4), ==, -1);
+    g_assert_cmpint(split_ratio_fit(260, 0, 0.4), ==, -1);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/split_ratio/position", test_position_of_shares);
@@ -54,5 +75,7 @@ int main(int argc, char** argv) {
     g_test_add_func("/split_ratio/reachable", test_reachable_and_matches);
     g_test_add_func("/split_ratio/collapsed", test_collapsed_sides);
     g_test_add_func("/split_ratio/expand", test_expand);
+    g_test_add_func("/split_ratio/share_sets", test_share_sets);
+    g_test_add_func("/split_ratio/fit", test_fit);
     return g_test_run();
 }
