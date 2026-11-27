@@ -15,6 +15,7 @@ PowerShell 7 when installed, else Windows PowerShell, else `cmd.exe`.
 | `Ctrl+T` | Open a terminal pane beside the running ones |
 | `Ctrl+Shift+T` | Open a terminal pane below the running ones |
 | `Ctrl+Shift+L` | Put the terminal under the viewer, or back beside it |
+| **+** button (end of a pane's tab bar) | Open a terminal in a new tab of that pane |
 | **Terminal** button (top bar) | Show or hide the terminal panel |
 
 A new shell starts in the explorer's current folder. The right-click menu

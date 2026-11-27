@@ -3151,6 +3151,10 @@ msgstr "Terminal"
 msgid "Needs VTE for GTK 4"
 msgstr "Nécessite VTE pour GTK 4"
 
+#: src/terminal/terminal.c:612
+msgid "New Terminal (Ctrl+T)"
+msgstr "Nouveau terminal (Ctrl+T)"
+
 #: src/chrome/new_tab_menu.c:97 src/preview/browser.c:125
 #: src/preview/browser.c:480
 msgid "New Tab"

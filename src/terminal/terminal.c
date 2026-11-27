@@ -10,6 +10,7 @@
 #endif
 #include "theme/palette.h"
 #include "theme/fonts.h"
+#include "widgets/add_button.h"
 #include "widgets/tab_drop.h"
 #include "editor/editor.h"
 #include "widgets/focus_route.h"
@@ -600,8 +601,19 @@ static gboolean is_term_notebook(GtkNotebook* nb) {
     return g_strcmp0(gtk_notebook_get_group_name(nb), TERM_TABS_GROUP) == 0;
 }
 
+/* The + of a terminal pane: a new terminal tab in that pane, focused */
+static void on_term_plus_clicked(GtkButton* button, gpointer data) {
+    GtkWidget* nb = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_NOTEBOOK);
+    if (nb != NULL) gtk_widget_grab_focus(terminal_add_tab(data, GTK_NOTEBOOK(nb)));
+}
+
 GtkWidget* term_notebook_new(AppData* app) {
     GtkWidget* nb = gtk_notebook_new();
+    GtkWidget* plus = add_button_new(_("New Terminal (Ctrl+T)"));
+    gtk_widget_set_name(plus, "tab-new-btn");
+    gtk_widget_set_focusable(plus, FALSE);
+    g_signal_connect(plus, "clicked", G_CALLBACK(on_term_plus_clicked), app);
+    gtk_notebook_set_action_widget(GTK_NOTEBOOK(nb), plus, GTK_PACK_END);
     gtk_widget_set_name(nb, "term-notebook");
     gtk_widget_set_hexpand(nb, TRUE);
     gtk_widget_set_vexpand(nb, TRUE);

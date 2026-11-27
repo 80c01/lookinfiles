@@ -16,6 +16,7 @@ shell est PowerShell 7 s’il est installé, sinon Windows PowerShell, sinon
 | `Ctrl+T` | Ouvrir un panneau de terminal à côté de ceux qui tournent |
 | `Ctrl+Shift+T` | Ouvrir un panneau de terminal sous ceux qui tournent |
 | `Ctrl+Shift+L` | Mettre le terminal sous l’aperçu, ou de nouveau à côté |
+| Bouton **+** (au bout de la barre d’onglets d’un panneau) | Ouvrir un terminal dans un nouvel onglet de ce panneau |
 | Bouton **Terminal** (barre du haut) | Afficher ou masquer le panneau du terminal |
 
 Un nouveau shell démarre dans le dossier courant de l’explorateur. Le menu
