@@ -855,32 +855,13 @@ void remote_activate_selected(AppData* app) {
 /* Remote Terminal Integration                                               */
 /* ------------------------------------------------------------------------- */
 
+/* A shell on rm in a new terminal tab, connected or not: the workspace stays
+ * on its own machine, so its other terminals stay where they were */
 void remote_open_terminal(AppData* app, RemoteMachine* rm) {
-    if (app == NULL || rm == NULL) {
+    if (app == NULL || rm == NULL || rm->id == NULL) {
         return;
     }
-
-    /* Make sure terminal is visible */
-    if (app->term_scroll != NULL && !gtk_widget_get_visible(app->term_scroll)) {
-        gtk_widget_set_visible(app->term_scroll, TRUE);
-        if (app->right_paned != NULL) {
-            gtk_widget_set_visible(app->right_paned, TRUE);
-        }
-        app_emit(app, APP_EVENT_CHROME_CHANGED);
-    }
-
-#ifdef HAVE_VTE
-    /* If this machine is not currently active, set it temporarily or for this workspace */
-    g_free(app->current_remote_id);
-    app->current_remote_id = g_strdup(rm->id);
-    if (app->current_ws >= 0 && app->current_ws < app->num_workspaces) {
-        VirtualLayout* cur = &app->workspaces[app->current_ws];
-        g_free(cur->remote_id);
-        cur->remote_id = g_strdup(rm->id);
-    }
-    app_emit(app, APP_EVENT_CHROME_CHANGED);
-    term_spawn_pane(app, FALSE);
-#endif
+    terminal_open_remote(app, rm->id);
 }
 
 void remote_open_terminal_selected(AppData* app) {

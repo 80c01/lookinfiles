@@ -50,7 +50,7 @@ connecter** se connecte tout de suite.
 |---|---|
 | `Enter` | Se connecter et parcourir la machine dans la vue des fichiers |
 | `c` | Se connecter sans quitter la vue Machines, ou déconnecter une machine connectée |
-| `t` | Ouvrir un terminal SSH vers la machine |
+| `t` | Ouvrir un terminal SSH vers la machine, sans la connecter |
 | `F2`, `r` ou `e` | Modifier la machine |
 | `d` ou `Delete` | La supprimer de la liste |
 | `F5` | Relire `~/.ssh/config` |

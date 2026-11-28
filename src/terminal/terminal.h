@@ -92,6 +92,12 @@ void terminal_open(AppData* app, gboolean new_row, const gchar* cwd);
  * shell: `wsl.exe -d Ubuntu`. Without VTE, as terminal_open(). */
 void terminal_open_command(AppData* app, const gchar* const* argv, const gchar* cwd);
 
+/* Show the terminal panel with a new terminal tab running a shell on the
+ * machine machine_id (ssh, through its shared connection when it is
+ * connected), in its remote folder. The workspace's machine is left as it
+ * is. Without VTE, as terminal_open(). */
+void terminal_open_remote(AppData* app, const gchar* machine_id);
+
 /* Show the terminal panel with a new terminal tab (its shell as
  * terminal_open(): the explorer's directory, or the workspace's remote
  * machine) and text typed at its prompt, not run (no newline added).

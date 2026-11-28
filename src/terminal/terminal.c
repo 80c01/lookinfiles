@@ -193,6 +193,9 @@ static gchar* remote_shell_dir(const gchar* dir) {
 /* The program terminal_open_command() runs in place of the shell, for the
  * terminal it opens */
 static gchar** pending_argv;
+/* The machine terminal_open_remote() opens a shell on, in place of the
+ * workspace's one, for the terminal it opens */
+static gchar* pending_remote_id;
 
 /* Shell in cwd (NULL: the explorer's directory), or ssh to the active remote */
 static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
@@ -203,7 +206,8 @@ static void spawn_shell(AppData* app, VteTerminal* term, const gchar* cwd) {
         g_strfreev(argv);
         return;
     }
-    RemoteMachine* rm = remote_get_active_machine(app);
+    RemoteMachine* rm = pending_remote_id != NULL ? remote_find_by_id(app, pending_remote_id)
+                                                  : remote_get_active_machine(app);
     if (rm != NULL && rm->host != NULL && rm->host[0] != '\0') {
         /* Never through the OpenSSH master (its blocking writes to a slow tty
          * would stall SFTP and commands); with a libssh link, ssh_session_argv
@@ -1060,6 +1064,21 @@ void terminal_open_command(AppData* app, const gchar* const* argv, const gchar* 
 #else
     (void)argv;
     terminal_open(app, FALSE, cwd);
+#endif
+}
+
+void terminal_open_remote(AppData* app, const gchar* machine_id) {
+#ifdef HAVE_VTE
+    if (machine_id == NULL) {
+        return;
+    }
+    g_free(pending_remote_id);
+    pending_remote_id = g_strdup(machine_id);
+    open_terminal(app, FALSE, NULL);
+    g_clear_pointer(&pending_remote_id, g_free); /* used, unless no terminal was made */
+#else
+    (void)machine_id;
+    terminal_open(app, FALSE, NULL);
 #endif
 }
 
