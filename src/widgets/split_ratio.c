@@ -4,7 +4,7 @@
 #include <math.h>
 
 static const gdouble EVEN[SPLIT_RATIO_COUNT] = {1.0 / 3.0, 0.5, 2.0 / 3.0};
-static const gdouble SIDE[] = {0.5};
+static const gdouble SIDE[] = {0.2, 0.5};
 
 const gdouble* split_ratio_shares(SplitShares set, gint* count) {
     gboolean side = set == SPLIT_SHARES_SIDE;

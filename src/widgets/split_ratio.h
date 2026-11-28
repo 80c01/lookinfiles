@@ -11,7 +11,7 @@
 #define SPLIT_RATIO_COUNT 3
 typedef enum {
     SPLIT_SHARES_EVEN, /* 1/3, 1/2, 2/3: two sides of the same weight */
-    SPLIT_SHARES_SIDE, /* 1/2: a side panel at the start (the explorer), whose
+    SPLIT_SHARES_SIDE, /* 1/5, 1/2: a side panel at the start (the explorer), whose
                         * other widths are absolute (its default width, fitted) */
 } SplitShares;
 

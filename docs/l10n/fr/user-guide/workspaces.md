@@ -23,8 +23,8 @@ la moitié ou aux deux tiers. La séparation de l’explorateur propose plutôt
 les largeurs utiles à un panneau latéral : sa largeur par défaut
 (260 pixels, la même quelle que soit la taille de la fenêtre), un bouton
 qui ajuste l’explorateur à son nom visible le plus long (au plus 40 % de la
-fenêtre ; recliquez-le après avoir ouvert d’autres dossiers), et la moitié
-de la fenêtre. Un double clic sur une séparation la met à la moitié, ou
+fenêtre ; recliquez-le après avoir ouvert d’autres dossiers), un cinquième
+et la moitié de la fenêtre. Un double clic sur une séparation la met à la moitié, ou
 rend à l’explorateur sa largeur par défaut sur sa séparation. L’aperçu, l’explorateur et le panneau du terminal ne se replient
 pas depuis une séparation (ils ont leur propre bouton dans la barre du
 haut) : la séparation entre l’aperçu et le panneau d’édition ne replie que

@@ -20,7 +20,7 @@ at a third, a half or two thirds. The border of the explorer offers the
 widths a side panel needs instead: its default width (260 pixels, the
 same whatever the size of the window), a button that fits the explorer to
 its widest visible name (up to 40% of the window; click it again after
-opening other folders), and half the window. A double click on a border
+opening other folders), a fifth and half of the window. A double click on a border
 splits it in half, or gives the explorer back its default width on its
 border. The preview, the explorer and the terminal panel do not collapse
 from a border (they have their own buttons in the top bar): the border

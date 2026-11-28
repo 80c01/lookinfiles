@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-28 06:30+0000\n"
+"POT-Creation-Date: 2026-11-28 06:36+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -2674,12 +2674,12 @@ msgstr "Double-clic sur une séparation"
 msgid ""
 "Split it in half (the explorer's border: its default width, 260 pixels); "
 "pointing at it shows a bar to collapse either side or put it at 1/3, 1/2, "
-"2/3 (the explorer: default width, fit to the names, 1/2)"
+"2/3 (the explorer: default width, fit to the names, 1/5, 1/2)"
 msgstr ""
 "La mettre à la moitié (la séparation de l’explorateur : sa largeur par "
-"défaut, 260 pixels) ; la pointer affiche une barre pour replier un côté "
-"ou la placer à 1/3, 1/2, 2/3 (l’explorateur : largeur par défaut, ajuster "
-"aux noms, 1/2)"
+"défaut, 260 pixels) ; la pointer affiche une barre pour replier un côté ou "
+"la placer à 1/3, 1/2, 2/3 (l’explorateur : largeur par défaut, ajuster aux "
+"noms, 1/5, 1/2)"
 
 #: src/chrome/help.c:368
 msgctxt "key"
@@ -14299,35 +14299,43 @@ msgstr "Côté du haut un tiers, côté du bas deux tiers"
 msgid "Top Side Two Thirds, Bottom Side a Third"
 msgstr "Côté du haut deux tiers, côté du bas un tiers"
 
-#: src/widgets/split_menu.c:308
+#: src/widgets/split_menu.c:310
+msgid "Top Side a Fifth, Bottom Side Four Fifths"
+msgstr "Côté du haut un cinquième, côté du bas quatre cinquièmes"
+
+#: src/widgets/split_menu.c:311
+msgid "Left Side a Fifth, Right Side Four Fifths"
+msgstr "Côté gauche un cinquième, côté droit quatre cinquièmes"
+
+#: src/widgets/split_menu.c:312 src/widgets/split_menu.c:314
 msgid "Split in Half"
 msgstr "Partager à moitié"
 
-#: src/widgets/split_menu.c:314
+#: src/widgets/split_menu.c:321
 msgid "Default Width (Double-Click the Border)"
 msgstr "Largeur par défaut (double-clic sur la séparation)"
 
-#: src/widgets/split_menu.c:317
+#: src/widgets/split_menu.c:324
 msgid "Fit to the Widest Name"
 msgstr "Ajuster au nom le plus long"
 
-#: src/widgets/split_menu.c:318
+#: src/widgets/split_menu.c:325
 msgid "Fit to the Widest Name (Double-Click the Border)"
 msgstr "Ajuster au nom le plus long (double-clic sur la séparation)"
 
-#: src/widgets/split_menu.c:519
+#: src/widgets/split_menu.c:526
 msgid "Top Side Collapsed: Click to Expand"
 msgstr "Côté haut replié : cliquer pour le déplier"
 
-#: src/widgets/split_menu.c:519
+#: src/widgets/split_menu.c:526
 msgid "Bottom Side Collapsed: Click to Expand"
 msgstr "Côté bas replié : cliquer pour le déplier"
 
-#: src/widgets/split_menu.c:521
+#: src/widgets/split_menu.c:528
 msgid "Left Side Collapsed: Click to Expand"
 msgstr "Côté gauche replié : cliquer pour le déplier"
 
-#: src/widgets/split_menu.c:521
+#: src/widgets/split_menu.c:528
 msgid "Right Side Collapsed: Click to Expand"
 msgstr "Côté droit replié : cliquer pour le déplier"
 
@@ -14602,14 +14610,8 @@ msgstr "Ouvrir l’espace de travail"
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
 
-#~ msgid "Left Side a Fifth, Right Side Four Fifths"
-#~ msgstr "Côté gauche un cinquième, côté droit quatre cinquièmes"
-
 #~ msgid "Left Side a Quarter, Right Side Three Quarters"
 #~ msgstr "Côté gauche un quart, côté droit trois quarts"
-
-#~ msgid "Top Side a Fifth, Bottom Side Four Fifths"
-#~ msgstr "Côté du haut un cinquième, côté du bas quatre cinquièmes"
 
 #~ msgid "Top Side a Quarter, Bottom Side Three Quarters"
 #~ msgstr "Côté du haut un quart, côté du bas trois quarts"

@@ -304,9 +304,16 @@ static void update_buttons(SplitMenu* menu, gint sides) {
         if (i >= menu->n_shares) continue;
         /* The double click puts the default width, or fits, rather than
          * halves where the paned has them */
-        const gchar* tip = (side || (i == 1 && (menu->def >= 0 || menu->fit >= 0)))
-                               ? N_("Split in Half")
-                               : (vertical ? EVEN_TIPS_V : EVEN_TIPS_H)[i];
+        const gchar* tip;
+        if (side) {
+            /* A fifth, then a half */
+            tip = (i + 1 < menu->n_shares) ? (vertical ? N_("Top Side a Fifth, Bottom Side Four Fifths")
+                                                       : N_("Left Side a Fifth, Right Side Four Fifths"))
+                                           : N_("Split in Half");
+        } else {
+            tip = (i == 1 && (menu->def >= 0 || menu->fit >= 0)) ? N_("Split in Half")
+                                                                 : (vertical ? EVEN_TIPS_V : EVEN_TIPS_H)[i];
+        }
         gtk_widget_set_tooltip_text(b, _(tip));
         gtk_widget_set_sensitive(b, split_ratio_reachable(max, shares[i], smin, emin));
     }

@@ -56,9 +56,10 @@ static void test_share_sets(void) {
     for (gint i = 1; i < n_even; i++) {
         g_assert_cmpfloat(even[i - 1], <, even[i]);
     }
-    /* A side panel: only the half, its other widths are absolute */
-    g_assert_cmpint(n_side, ==, 1);
-    g_assert_cmpfloat_with_epsilon(side[0], 0.5, 1e-9);
+    /* A side panel: a fifth and a half, its other widths are absolute */
+    g_assert_cmpint(n_side, ==, 2);
+    g_assert_cmpfloat_with_epsilon(side[0], 0.2, 1e-9);
+    g_assert_cmpfloat_with_epsilon(side[1], 0.5, 1e-9);
     g_assert_nonnull(split_ratio_shares(SPLIT_SHARES_EVEN, NULL));
 }
 
