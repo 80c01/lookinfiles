@@ -17,7 +17,7 @@ the size while you drag. Point at a border and a small bar appears beside
 its middle (for a second once the pointer leaves it): its end buttons collapse the panel on that side (or
 expand it back to its size, once collapsed), the middle ones put the border
 at a third, a half or two thirds. The border of the explorer offers the
-widths a side panel needs instead: its default width (32 characters, the
+widths a side panel needs instead: its default width (260 pixels, the
 same whatever the size of the window), a button that fits the explorer to
 its widest visible name (up to 40% of the window; click it again after
 opening other folders), and half the window. A double click on a border

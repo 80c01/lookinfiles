@@ -21,7 +21,7 @@ seconde après que le pointeur l’a quittée) : ses boutons aux extrémités re
 taille, une fois replié), ceux du milieu placent la séparation au tiers, à
 la moitié ou aux deux tiers. La séparation de l’explorateur propose plutôt
 les largeurs utiles à un panneau latéral : sa largeur par défaut
-(32 caractères, la même quelle que soit la taille de la fenêtre), un bouton
+(260 pixels, la même quelle que soit la taille de la fenêtre), un bouton
 qui ajuste l’explorateur à son nom visible le plus long (au plus 40 % de la
 fenêtre ; recliquez-le après avoir ouvert d’autres dossiers), et la moitié
 de la fenêtre. Un double clic sur une séparation la met à la moitié, ou

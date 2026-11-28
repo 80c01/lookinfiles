@@ -48,9 +48,9 @@ SplitSide split_ratio_collapsed(gint pos, gint max);
  * (before_share, < 0 when unknown), or a half when that was collapsed too */
 gint split_ratio_expand(gint max, gdouble before_share, gint min_start, gint min_end);
 
-/* Default width of a side panel (the explorer), in characters of its font:
- * absolute, so it does not grow with the window */
-#define SPLIT_SIDE_DEFAULT_CHARS 32
+/* Default width of a side panel (the explorer), in pixels: absolute, so it
+ * does not grow with the window */
+#define SPLIT_SIDE_DEFAULT_WIDTH 260
 /* About that width as a share of the window, where a share is needed before
  * the width can be measured */
 #define SPLIT_SIDE_DEFAULT_SHARE 0.25

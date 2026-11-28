@@ -377,7 +377,7 @@ static gint split_menu_fit(GtkWidget* paned, gpointer data) {
                            SPLIT_SIDE_MAX_SHARE);
 }
 
-/* The explorer's default width (SPLIT_SIDE_DEFAULT_CHARS characters) */
+/* The explorer's default width (SPLIT_SIDE_DEFAULT_WIDTH) */
 static gint split_menu_default(GtkWidget* paned, gpointer data) {
     AppData* app = data;
     if (paned != app->main_paned) return -1;
@@ -393,17 +393,7 @@ static GtkScrolledWindow* explorer_scroll(AppData* app) {
 }
 
 gint panels_explorer_default_width(AppData* app) {
-    if (app == NULL || app->left_vbox == NULL || !gtk_widget_get_realized(app->left_vbox)) {
-        return 0;
-    }
-    /* Characters of the rows' font (their CSS font is the widget's) */
-    GtkScrolledWindow* scroll = explorer_scroll(app);
-    GtkWidget* rows = scroll != NULL ? gtk_scrolled_window_get_child(scroll) : NULL;
-    PangoContext* ctx = gtk_widget_get_pango_context(rows != NULL ? rows : app->left_vbox);
-    PangoFontMetrics* metrics = pango_context_get_metrics(ctx, NULL, NULL);
-    gint char_w = pango_font_metrics_get_approximate_char_width(metrics);
-    pango_font_metrics_unref(metrics);
-    return MAX(PANGO_PIXELS(char_w * SPLIT_SIDE_DEFAULT_CHARS), 0);
+    return (app != NULL && app->left_vbox != NULL) ? SPLIT_SIDE_DEFAULT_WIDTH : 0;
 }
 
 gint panels_explorer_natural_width(AppData* app) {

@@ -561,7 +561,7 @@ Layers, from bottom to top
   (`split_ratio_position()`, kept clear of the sides' minimum sizes), the
   share sets (`SPLIT_SHARES_EVEN` 1/3, 1/2, 2/3; `SPLIT_SHARES_SIDE` 1/2
   for the explorer, whose default width is absolute: `split_ratio_width()`,
-  `SPLIT_SIDE_DEFAULT_CHARS` characters), the fit of a side to its natural width
+  `SPLIT_SIDE_DEFAULT_WIDTH` pixels), the fit of a side to its natural width
   (`split_ratio_fit()`, at most `SPLIT_SIDE_MAX_SHARE`, also the Auto
   layout's cap), whether a side is collapsed, and the position that expands
   it back; used by `split_menu`.

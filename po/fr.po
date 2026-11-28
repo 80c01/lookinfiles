@@ -2672,12 +2672,12 @@ msgstr "Double-clic sur une séparation"
 
 #: src/chrome/help.c:367
 msgid ""
-"Split it in half (the explorer's border: its default width, 32 characters); "
+"Split it in half (the explorer's border: its default width, 260 pixels); "
 "pointing at it shows a bar to collapse either side or put it at 1/3, 1/2, "
 "2/3 (the explorer: default width, fit to the names, 1/2)"
 msgstr ""
 "La mettre à la moitié (la séparation de l’explorateur : sa largeur par "
-"défaut, 32 caractères) ; la pointer affiche une barre pour replier un côté "
+"défaut, 260 pixels) ; la pointer affiche une barre pour replier un côté "
 "ou la placer à 1/3, 1/2, 2/3 (l’explorateur : largeur par défaut, ajuster "
 "aux noms, 1/2)"
 
