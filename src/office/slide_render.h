@@ -174,7 +174,7 @@ GBytes* slide_render_pixels(const SlideDeck* deck, const Slide* slide, gint widt
 
 /* Preview of a deck: title and subtitle, then each slide as a picture with
  * its number, title and speaker notes; slides after max_drawn are listed by
- * title only. The pictures are drawn at zoom times their fitted size
+ * title only (PreviewDoc.parts_drawn and parts count them). The pictures are drawn at zoom times their fitted size
  * (PreviewDoc.image_zoom; 0: 1, at most PREVIEW_DOC_IMAGE_ZOOM_MAX). */
 PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const gchar* subtitle, guint max_drawn,
                                gdouble zoom);

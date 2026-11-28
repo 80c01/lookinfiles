@@ -179,6 +179,13 @@ static void test_preview(void) {
     g_assert_nonnull(strstr(doc->text->str, "Slide 1 · Part 1\n" PREVIEW_DOC_IMAGE_CHAR "\nSay hello\n"));
     g_assert_nonnull(strstr(doc->text->str, "The first 2 of 3 slides are drawn"));
     g_assert_true(g_str_has_suffix(doc->text->str, "Slide 3 · Part 3\n"));
+    g_assert_cmpuint(doc->parts_drawn, ==, 2);
+    g_assert_cmpuint(doc->parts, ==, 3);
+    /* Load Whole File: every slide drawn */
+    g_autoptr(PreviewDoc) all = slide_deck_preview(deck, "talk.pptx", "3 slides", G_MAXUINT, 1.0);
+    g_assert_cmpuint(all->images->len, ==, 3);
+    g_assert_cmpuint(all->parts_drawn, ==, all->parts);
+    g_assert_null(strstr(all->text->str, "slides are drawn"));
 
     g_autoptr(SlideDeck) empty = slide_deck_new(720, 540);
     g_autoptr(PreviewDoc) none = slide_deck_preview(empty, "e", NULL, 20, 1.0);

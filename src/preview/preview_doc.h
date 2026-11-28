@@ -108,6 +108,8 @@ typedef struct {
     GPtrArray* font_files;  /* font files the view loads before showing (font samples) */
     guint pages;          /* pages after this view, reached with PgDn (mailbox messages), 0: none */
     gboolean paged;       /* slides or pages drawn to scale in the minimap */
+    guint parts_drawn;    /* slides drawn when the others are only listed (Load Whole File draws them) */
+    guint parts;          /* slides in all (parts_drawn < parts: only listed after parts_drawn) */
     gdouble image_zoom;   /* images shown at this multiple of their fitted width (zoomed slides), 1 */
     GArray* folds;        /* PreviewFoldPoint: blocks Tab folds (JSON), empty for most formats */
     GArray* paths;        /* PreviewPathPoint: path of the value on each line (JSON), by offset */

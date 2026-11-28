@@ -15,7 +15,6 @@
 #define MAX_STREAMS_LISTED 200
 #define SHEETS_SHOWN 3
 #define SHEET_ROWS 300
-#define OFFICE97_MAX_DRAWN 20  /* slides drawn as pictures, like pptx */
 
 Office97Format office97_format(const OleReader* ole) {
     if (ole_reader_has(ole, "WordDocument")) return OFFICE97_WORD;
@@ -95,7 +94,7 @@ PreviewDoc* office97_summary(OleReader* ole, const gchar* name, gint64 size, con
 }
 
 PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, gdouble zoom,
-                             gboolean raw, GError** error) {
+                             guint max_drawn, gboolean raw, GError** error) {
     g_autoptr(OleReader) ole = ole_reader_open(path, error);
     if (ole == NULL) return NULL;
     if (raw && office97_format(ole) != OFFICE97_WORD) return NULL; /* the hex dump */
@@ -204,7 +203,7 @@ PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, 
             subtitle = with_size;
         }
         PreviewDoc* doc = slide_deck_preview(deck, props->title != NULL ? props->title : name, subtitle,
-                                             OFFICE97_MAX_DRAWN, zoom);
+                                             max_drawn, zoom);
         g_free(subtitle);
         return doc;
     }

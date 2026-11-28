@@ -195,7 +195,12 @@ du YAML avec des tabulations dans son indentation ou des clés complexes
 ## Gros fichiers
 
 Les fichiers texte de plus de 512 Ko affichent leurs 64 premiers Ko, et la
-suite se charge en faisant défiler vers le bas (jusqu’à 8 Mo). Les longs
+suite se charge en faisant défiler vers le bas (jusqu’à 8 Mo). Un PDF
+affiche ses 20 premières pages (en mode texte, ses 64 premiers Ko de
+texte) et une présentation dessine ses 20 premières diapositives et liste
+les autres. **Charger tout le fichier**, dans la barre au-dessus d’un tel
+aperçu, affiche tout (en demandant d’abord au-delà de 64 Mo, ou de 100
+pages ou diapositives). Les longs
 documents s’arrêtent après 256 Ko de texte, et l’aperçu le signale quand
 une limite est atteinte. Passer à un autre fichier annule un aperçu encore
 en cours de chargement.

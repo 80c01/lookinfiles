@@ -40,7 +40,8 @@ format.
   grids with column letters, number, date and percent formats; presentations:
   `.pptx` and `.ppt` / `.pps` drawn slide by slide like PowerPoint
   (shapes, fills, pictures, tables, text styles from the layout, master and
-  theme; speaker notes below; the first 20 slides drawn), `.odp` drawn the
+  theme; speaker notes below; the first 20 slides drawn, the others listed:
+  **Load Whole File** draws them all), `.odp` drawn the
   same way like Impress (master page shapes and background, custom shapes,
   paths, opacity, shadows, repeated bitmaps, lists and tables from the
   styles); RTF. Line spacing, columns, floating positions, page number
@@ -139,7 +140,10 @@ format.
   of binary formats). Text files over 512 KB show their first 64 KB, and the
   next parts load as you scroll down (up to 8 MB); the **Load Whole File**
   bar above a partial preview reads the file to the end (asking first above
-  64 MB). The encoding is detected
+  64 MB); it also renders every page of a PDF past its first 20 (or
+  extracts all of its text in text mode) and draws every slide of a
+  presentation past its first 20, asking first above 100 pages or slides
+  (PostScript and DVI keep their first 20 pages). The encoding is detected
   (UTF-8, UTF-16, Windows-1252) and shown in the preview bar.
 - The explorer highlights a new selection before its preview is built (the
   preview starts after the explorer's next frame; rows passed over with a
@@ -271,7 +275,7 @@ every common format to L3 and never leave one below L1.
 | HTML | L3 | `html` |
 | Org | L3 | `orgmode` |
 | Images: zoom, EXIF details and orientation, animated GIF, RAW embedded previews | L3 | `image_preview`, `image_decode`, `image_prefetch`, `jpeg_decode`, `exif`, `animation`, `gif_decoder` |
-| PDF (poppler, optional): progressive pages (3 first, then 3 at a time, on up to 3 threads with a document each, the minimap's copy made by the worker), PgDn / PgUp, zoom; text mode: `PREVIEW_BYTES` of extracted text | L3 | `pdf` |
+| PDF (poppler, optional): progressive pages (3 first, then 3 at a time, on up to 3 threads with a document each, the minimap's copy made by the worker), the first 20 or, with Load Whole File, all, PgDn / PgUp, zoom; text mode: `PREVIEW_BYTES` of extracted text, or all of it | L3 | `pdf`, `preview_full` |
 | PostScript `.ps` / `.eps`, TeX `.dvi`: first 20 pages converted to PDF by Ghostscript (and `dvips`) into the user cache, then shown as a PDF; `m` shows the PostScript source. Without the tools: a message | L3 | `pdf`, `ps_convert` |
 | Video / audio: tags, cover art, codecs, duration | L3 | `video`, `audio`, `media_tags` |
 | Video: audio track and subtitle choice, subtitle files | L3 | `media_player`, `track_menu`, `media_tracks` |

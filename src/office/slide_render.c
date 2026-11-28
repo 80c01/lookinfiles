@@ -818,6 +818,8 @@ PreviewDoc* slide_deck_preview(const SlideDeck* deck, const gchar* title, const 
     gint width = (gint)lround(RENDER_WIDTH * doc->image_zoom);
     preview_doc_title(doc, title, subtitle);
     guint n = deck->slides->len;
+    doc->parts_drawn = MIN(max_drawn, n);
+    doc->parts = n;
     for (guint i = 0; i < n; i++) {
         const Slide* s = g_ptr_array_index(deck->slides, i);
         gchar* label = s->title != NULL && s->title[0] != '\0' ? g_strdup_printf(_("Slide %1$u · %2$s"), i + 1, s->title)

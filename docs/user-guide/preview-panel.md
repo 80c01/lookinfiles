@@ -178,7 +178,11 @@ indentation or complex `?` keys, is shown as text.
 ## Large files
 
 Text files over 512 KB show their first 64 KB, and the next parts load as
-you scroll down (up to 8 MB). Long documents stop after 256 KB of text, and
+you scroll down (up to 8 MB). A PDF shows its first 20 pages (in text
+mode, its first 64 KB of text) and a presentation draws its first 20
+slides, listing the others. **Load Whole File**, in the bar above such a
+preview, shows all of it (asking first above 64 MB, or above 100 pages or
+slides). Long documents stop after 256 KB of text, and
 the preview says so when a limit is reached. Moving to another file cancels
 a preview that is still loading.
 

@@ -7,6 +7,8 @@
 
 /* Above this size, ask first: showing the text can freeze the window a while */
 #define PREVIEW_FULL_CONFIRM_BYTES (64 * 1024 * 1024)
+/* Above this count of pages or slides, ask first: their pictures take memory */
+#define PREVIEW_FULL_CONFIRM_PICTURES 100
 
 typedef struct PreviewFull {
     AppData* app;
@@ -14,7 +16,8 @@ typedef struct PreviewFull {
     GtkWidget* label;
     GtkWidget* button;
     gchar* shown_path;   /* file of the partial preview the bar is about */
-    gint64 total;        /* its size */
+    gint64 total;        /* its size, or its pages or slides */
+    PreviewFullUnit unit;
     gchar* wanted_path;  /* file to read to the end, or NULL */
 } PreviewFull;
 
@@ -32,9 +35,28 @@ static gboolean confirm_large(PreviewFull* pf) {
                                     _("_Load"), APP_RESPONSE_OK,
                                     NULL);
     gchar* size = g_format_size((guint64)pf->total);
-    gchar* message = g_strdup_printf(_("This file is %s. Showing all of it may make the window "
-                                       "unresponsive for a while. Load it anyway?"),
-                                     size);
+    gchar* message;
+    if (pf->unit == PREVIEW_FULL_BYTES) {
+        message = g_strdup_printf(_("This file is %s. Showing all of it may make the window "
+                                    "unresponsive for a while. Load it anyway?"),
+                                  size);
+    } else {
+        gulong n = (gulong)pf->total;
+        message = g_strdup_printf(pf->unit == PREVIEW_FULL_PAGES
+                                      ? ngettext("This document has %lu page. Drawing all of them takes a lot of "
+                                                 "memory and may make the window unresponsive for a while. Load "
+                                                 "them anyway?",
+                                                 "This document has %lu pages. Drawing all of them takes a lot of "
+                                                 "memory and may make the window unresponsive for a while. Load "
+                                                 "them anyway?", n)
+                                      : ngettext("This presentation has %lu slide. Drawing all of them takes a lot "
+                                                 "of memory and may make the window unresponsive for a while. Load "
+                                                 "them anyway?",
+                                                 "This presentation has %lu slides. Drawing all of them takes a lot "
+                                                 "of memory and may make the window unresponsive for a while. Load "
+                                                 "them anyway?", n),
+                                  n);
+    }
     GtkWidget* label = gtk_label_new(message);
     g_free(message);
     g_free(size);
@@ -60,7 +82,8 @@ static void on_load_clicked(GtkButton* button, gpointer data) {
         return;
     }
     gchar* path = g_strdup(pf->shown_path);
-    gboolean go = pf->total <= PREVIEW_FULL_CONFIRM_BYTES || confirm_large(pf);
+    gint64 confirm_above = pf->unit == PREVIEW_FULL_BYTES ? PREVIEW_FULL_CONFIRM_BYTES : PREVIEW_FULL_CONFIRM_PICTURES;
+    gboolean go = pf->total <= confirm_above || confirm_large(pf);
     /* Still the same preview after the dialog */
     go = go && g_strcmp0(pf->shown_path, path) == 0;
     g_free(path);
@@ -103,6 +126,19 @@ GtkWidget* preview_full_wrap(AppData* app, GtkWidget* content) {
 }
 
 void preview_full_update(AppData* app, const gchar* path, gint64 shown, gint64 total) {
+    preview_full_update_count(app, path, shown, total, PREVIEW_FULL_BYTES);
+}
+
+void preview_full_update_shown(AppData* app, const gchar* path, const PreviewDoc* doc, gint64 text_shown,
+                               gint64 total) {
+    if (doc != NULL && doc->parts_drawn < doc->parts) {
+        preview_full_update_count(app, path, doc->parts_drawn, doc->parts, PREVIEW_FULL_SLIDES);
+    } else {
+        preview_full_update_count(app, path, text_shown, total, PREVIEW_FULL_BYTES);
+    }
+}
+
+void preview_full_update_count(AppData* app, const gchar* path, gint64 shown, gint64 total, PreviewFullUnit unit) {
     PreviewFull* pf = app->preview_full;
     if (pf == NULL) {
         return;
@@ -117,13 +153,25 @@ void preview_full_update(AppData* app, const gchar* path, gint64 shown, gint64 t
         pf->shown_path = g_strdup(path);
     }
     pf->total = total;
-    gchar* s = g_format_size((guint64)shown);
-    gchar* t = g_format_size((guint64)total);
-    gchar* text = g_strdup_printf(_("Partial preview: %1$s of %2$s shown"), s, t);
+    pf->unit = unit;
+    gchar* text;
+    if (unit == PREVIEW_FULL_BYTES) {
+        gchar* s = g_format_size((guint64)shown);
+        gchar* t = g_format_size((guint64)total);
+        text = g_strdup_printf(_("Partial preview: %1$s of %2$s shown"), s, t);
+        g_free(t);
+        g_free(s);
+    } else if (unit == PREVIEW_FULL_PAGES) {
+        text = g_strdup_printf(ngettext("Partial preview: %1$ld of %2$ld page shown",
+                                        "Partial preview: %1$ld of %2$ld pages shown", (gulong)total),
+                               (glong)shown, (glong)total);
+    } else {
+        text = g_strdup_printf(ngettext("Partial preview: %1$ld of %2$ld slide drawn",
+                                        "Partial preview: %1$ld of %2$ld slides drawn", (gulong)total),
+                               (glong)shown, (glong)total);
+    }
     gtk_label_set_text(GTK_LABEL(pf->label), text);
     g_free(text);
-    g_free(t);
-    g_free(s);
     gtk_widget_set_sensitive(pf->button, TRUE);
     gtk_widget_set_visible(pf->bar, TRUE);
 }

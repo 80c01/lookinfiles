@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-28 12:42+0000\n"
+"POT-Creation-Date: 2026-11-28 13:28+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -46,7 +46,7 @@ msgstr "_Réinitialiser"
 #: src/jupyter/ipynb_save.c:113 src/jupyter/ipynb_save.c:151
 #: src/jupyter/ipynb_save.c:208 src/notes/notes_dialogs.c:113
 #: src/notes/notes_dialogs.c:294 src/notes/notes_dialogs.c:378
-#: src/preview/preview_full.c:31 src/search/deep_search_bookmark.c:49
+#: src/preview/preview_full.c:34 src/search/deep_search_bookmark.c:49
 #: src/search/project_search.c:440 src/search/quick_open.c:374
 #: src/tasks/task_picker.c:186 src/workspace/layouts.c:56
 #: src/workspace/layouts.c:371 src/workspace/session_bookmark.c:13
@@ -5865,7 +5865,7 @@ msgstr "Exclure du calcul"
 #: src/diskuse/disk_usage_list.c:419 src/explorer/bookmark_dialog.c:213
 #: src/explorer/file_actions.c:258 src/formats/pyc_info.c:578
 #: src/formats/sqlite_view.c:222 src/formats/torrent_info.c:325
-#: src/git/git_repo_view.c:97 src/office/office97.c:73
+#: src/git/git_repo_view.c:97 src/office/office97.c:72
 #: src/preview/preview_formats.c:365 src/preview/preview_formats.c:366
 #: src/preview/preview_summary.c:410 src/search/deep_search_bookmark.c:62
 #: src/search/deep_search_list.c:409 src/search/deep_search_tab.c:901
@@ -5880,9 +5880,9 @@ msgstr "Part"
 #: src/diskuse/disk_usage_list.c:421 src/diskuse/disk_usage_stats.c:133
 #: src/formats/parquet_view.c:154 src/formats/parquet_view.c:192
 #: src/formats/torrent_info.c:371 src/git/git_code_view.c:200
-#: src/mail/mail_store.c:107 src/office/office97.c:73
+#: src/mail/mail_store.c:107 src/office/office97.c:72
 #: src/preview/preview_formats.c:365 src/preview/preview_formats.c:366
-#: src/preview/preview_formats.c:920 src/preview/preview_summary.c:160
+#: src/preview/preview_formats.c:921 src/preview/preview_summary.c:160
 #: src/preview/preview_summary.c:432 src/search/deep_search_list.c:411
 #: src/search/deep_search_tab.c:943 src/widgets/histogram.c:95
 msgid "Size"
@@ -6865,7 +6865,7 @@ msgstr ""
 #: src/explorer/bookmarks.c:956 src/explorer/file_actions.c:383
 #: src/explorer/file_actions.c:423 src/explorer/file_actions.c:434
 #: src/explorer/file_moves.c:158 src/media/image_decode.c:387
-#: src/preview/pdf.c:432 src/search/deep_search_bookmark.c:121
+#: src/preview/pdf.c:441 src/search/deep_search_bookmark.c:121
 #: src/workspace/session_bookmark.c:79 src/workspace/session_bookmark.c:99
 msgid "unknown error"
 msgstr "erreur inconnue"
@@ -8002,7 +8002,7 @@ msgstr[1] "valide, expire dans %d jours"
 
 #: src/formats/cert_view.c:602 src/formats/cert_view.c:665
 #: src/mail/mail_dir.c:212 src/mail/mail_view.c:80 src/office/ole_props.c:224
-#: src/preview/preview_formats.c:920
+#: src/preview/preview_formats.c:921
 msgid "Subject"
 msgstr "Objet"
 
@@ -8032,7 +8032,7 @@ msgstr "Signature"
 msgid "CA"
 msgstr "AC"
 
-#: src/formats/cert_view.c:622 src/preview/preview_formats.c:889
+#: src/formats/cert_view.c:622 src/preview/preview_formats.c:890
 msgid "yes"
 msgstr "oui"
 
@@ -9825,7 +9825,7 @@ msgstr "Auteur"
 
 #: src/git/git_history.c:949 src/mail/mail_dir.c:212 src/mail/mail_view.c:33
 #: src/mail/mail_view.c:34 src/mail/mail_view.c:180
-#: src/preview/preview_formats.c:920
+#: src/preview/preview_formats.c:921
 msgid "Date"
 msgstr "Date"
 
@@ -10844,7 +10844,7 @@ msgstr ""
 "(vide)"
 
 #: src/mail/mail_dir.c:212 src/mail/mail_view.c:29 src/mail/mail_view.c:180
-#: src/preview/preview_formats.c:920
+#: src/preview/preview_formats.c:921
 msgid "From"
 msgstr "De"
 
@@ -10865,7 +10865,7 @@ msgid ", flagged"
 msgstr ", marqué"
 
 #: src/mail/mail_dir.c:220 src/mail/mail_view.c:167 src/mail/mail_view.c:220
-#: src/preview/preview_formats.c:889
+#: src/preview/preview_formats.c:890
 msgid "(no subject)"
 msgstr "(sans objet)"
 
@@ -10998,7 +10998,7 @@ msgid "Attachment"
 msgstr "Pièce jointe"
 
 #: src/mail/mail_view.c:65 src/mail/mail_view.c:199
-#: src/preview/preview_formats.c:920
+#: src/preview/preview_formats.c:921
 msgid "Attachments"
 msgstr "Pièces jointes"
 
@@ -11727,76 +11727,76 @@ msgstr[1] "%u diapositives"
 msgid "OpenDocument text"
 msgstr "Texte OpenDocument"
 
-#: src/office/office97.c:36
+#: src/office/office97.c:35
 msgid "Word 97-2003 document"
 msgstr "Document Word 97-2003"
 
-#: src/office/office97.c:37 src/office/xls_reader.c:510
+#: src/office/office97.c:36 src/office/xls_reader.c:510
 msgid "Excel 97-2003 workbook"
 msgstr "Classeur Excel 97-2003"
 
-#: src/office/office97.c:38 src/office/xls_reader.c:510
+#: src/office/office97.c:37 src/office/xls_reader.c:510
 msgid "Excel 5.0/95 workbook"
 msgstr "Classeur Excel 5.0/95"
 
-#: src/office/office97.c:39
+#: src/office/office97.c:38
 msgid "PowerPoint 97-2003 presentation"
 msgstr "Présentation PowerPoint 97-2003"
 
-#: src/office/office97.c:40
+#: src/office/office97.c:39
 msgid "Outlook message"
 msgstr "Message Outlook"
 
-#: src/office/office97.c:43
+#: src/office/office97.c:42
 msgid "Compound file"
 msgstr "Fichier composé"
 
-#: src/office/office97.c:70
+#: src/office/office97.c:69
 msgid "Streams"
 msgstr "Flux"
 
-#: src/office/office97.c:90
+#: src/office/office97.c:89
 #, c-format
 msgid "The first %1$u of %2$u entries are listed."
 msgstr "Les %1$u premières des %2$u entrées sont listées."
 
-#: src/office/office97.c:104 src/office/office97.c:140
-#: src/office/office97.c:152 src/office/office97.c:187
+#: src/office/office97.c:103 src/office/office97.c:139
+#: src/office/office97.c:151 src/office/office97.c:186
 msgid "Encrypted: the content needs the password."
 msgstr "Chiffré : le contenu demande le mot de passe."
 
-#: src/office/office97.c:111
+#: src/office/office97.c:110
 #, c-format
 msgid "The message cannot be read: %s."
 msgstr "Le message ne peut pas être lu : %s."
 
-#: src/office/office97.c:118
+#: src/office/office97.c:117
 #, c-format
 msgid "Outlook message · %s"
 msgstr "Message Outlook · %s"
 
-#: src/office/office97.c:141
+#: src/office/office97.c:140
 #, c-format
 msgid "The text cannot be read: %s."
 msgstr "Le texte ne peut pas être lu : %s."
 
-#: src/office/office97.c:153
+#: src/office/office97.c:152
 #, c-format
 msgid "The cells cannot be read: %s."
 msgstr "Les cellules ne peuvent pas être lues : %s."
 
-#: src/office/office97.c:164 src/preview/preview_formats.c:717
+#: src/office/office97.c:163 src/preview/preview_formats.c:718
 #, c-format
 msgid "%1$s · %2$u sheet · %3$s"
 msgid_plural "%1$s · %2$u sheets · %3$s"
 msgstr[0] "%1$s · %2$u feuille · %3$s"
 msgstr[1] "%1$s · %2$u feuilles · %3$s"
 
-#: src/office/office97.c:176 src/preview/preview_formats.c:727
+#: src/office/office97.c:175 src/preview/preview_formats.c:728
 msgid "Sheets"
 msgstr "Feuilles"
 
-#: src/office/office97.c:188
+#: src/office/office97.c:187
 #, c-format
 msgid "The slides cannot be read: %s."
 msgstr "Les diapositives ne peuvent pas être lues : %s."
@@ -11813,7 +11813,7 @@ msgstr "Commentaires"
 msgid "Last saved by"
 msgstr "Enregistré par"
 
-#: src/office/ole_props.c:237 src/office/ole_props.c:258 src/preview/pdf.c:682
+#: src/office/ole_props.c:237 src/office/ole_props.c:258 src/preview/pdf.c:708
 #, c-format
 msgid "%d page"
 msgid_plural "%d pages"
@@ -11939,24 +11939,24 @@ msgstr "Présentation PowerPoint"
 msgid "not an RTF document"
 msgstr "pas un document RTF"
 
-#: src/office/slide_render.c:823
+#: src/office/slide_render.c:825
 #, c-format
 msgid "Slide %1$u · %2$s"
 msgstr "Diapositive %1$u · %2$s"
 
-#: src/office/slide_render.c:824
+#: src/office/slide_render.c:826
 #, c-format
 msgid "Slide %u"
 msgstr "Diapositive %u"
 
-#: src/office/slide_render.c:831
+#: src/office/slide_render.c:833
 #, c-format
 msgid "The first %1$u of %2$u slides are drawn; the others are listed."
 msgstr ""
 "Les %1$u premières des %2$u diapositives sont dessinées ; les autres sont "
 "listées."
 
-#: src/office/slide_render.c:860
+#: src/office/slide_render.c:862
 msgid "(no slides)"
 msgstr "(aucune diapositive)"
 
@@ -12285,12 +12285,12 @@ msgstr "hier"
 msgid "%d days ago"
 msgstr "il y a %d jours"
 
-#: src/preview/pdf.c:340
+#: src/preview/pdf.c:348
 #, c-format
 msgid "Page %1$d of %2$d"
 msgstr "Page %1$d sur %2$d"
 
-#: src/preview/pdf.c:377
+#: src/preview/pdf.c:386
 #, c-format
 msgid ""
 "[ Showing first %1$d of %2$d pages • press m for the extracted text ]\n"
@@ -12299,34 +12299,34 @@ msgstr ""
 "[ %1$d premières pages sur %2$d • m pour voir le texte extrait ]\n"
 "\n"
 
-#: src/preview/pdf.c:413
+#: src/preview/pdf.c:422
 #, c-format
 msgid "[ Cannot preview %1$s: %2$s ]"
 msgstr "[ Impossible d’afficher %1$s : %2$s ]"
 
-#: src/preview/pdf.c:414
+#: src/preview/pdf.c:423
 msgid "conversion failed"
 msgstr "échec de la conversion"
 
-#: src/preview/pdf.c:431
+#: src/preview/pdf.c:440
 #, c-format
 msgid "[ Cannot open PDF: %1$s (%2$s) ]"
 msgstr "[ Impossible d’ouvrir le PDF : %1$s (%2$s) ]"
 
-#: src/preview/pdf.c:675
+#: src/preview/pdf.c:701
 msgid "  [text mode, press m for rendered pages]"
 msgstr "  [mode texte, m pour les pages rendues]"
 
-#: src/preview/pdf.c:676
+#: src/preview/pdf.c:702
 msgid "  [rendered pages, press m for text]"
 msgstr "  [pages rendues, m pour le texte]"
 
-#: src/preview/pdf.c:681
+#: src/preview/pdf.c:707
 #, c-format
 msgid "first %d pages"
 msgstr "%d premières pages"
 
-#: src/preview/pdf.c:685
+#: src/preview/pdf.c:711
 #, c-format
 msgid ""
 "By %1$s  •  %2$s  •  %3$s  •  %4$s%5$s\n"
@@ -12335,7 +12335,7 @@ msgstr ""
 "Par %1$s  •  %2$s  •  %3$s  •  %4$s%5$s\n"
 "\n"
 
-#: src/preview/pdf.c:706
+#: src/preview/pdf.c:732
 #, c-format
 msgid ""
 "--- Page %1$u of %2$d ---\n"
@@ -12344,11 +12344,11 @@ msgstr ""
 "--- Page %1$u sur %2$d ---\n"
 "\n"
 
-#: src/preview/pdf.c:715
+#: src/preview/pdf.c:741
 msgid "(no text on this page)\n"
 msgstr "(pas de texte sur cette page)\n"
 
-#: src/preview/pdf.c:720
+#: src/preview/pdf.c:746
 #, c-format
 msgid ""
 "[ Text shown up to page %1$u of %2$d (first %3$d KB) ]\n"
@@ -12357,7 +12357,7 @@ msgstr ""
 "[ Texte affiché jusqu’à la page %1$u sur %2$d (premiers %3$d Ko) ]\n"
 "\n"
 
-#: src/preview/pdf.c:928
+#: src/preview/pdf.c:955
 #, c-format
 msgid ""
 "[ PDF preview disabled for %s:\n"
@@ -12571,46 +12571,46 @@ msgstr "Échantillon"
 msgid "License"
 msgstr "Licence"
 
-#: src/preview/preview_formats.c:750
+#: src/preview/preview_formats.c:751
 #, c-format
 msgid "Jupyter notebook · %1$u cell (%2$u code)"
 msgid_plural "Jupyter notebook · %1$u cells (%2$u code)"
 msgstr[0] "Notebook Jupyter · %1$u cellule (%2$u de code)"
 msgstr[1] "Notebook Jupyter · %1$u cellules (%2$u de code)"
 
-#: src/preview/preview_formats.c:796
+#: src/preview/preview_formats.c:797
 msgid "only gzip-compressed pages can be read"
 msgstr "seules les pages compressées par gzip sont lisibles"
 
-#: src/preview/preview_formats.c:812
+#: src/preview/preview_formats.c:813
 msgid "not a manual page"
 msgstr "pas une page de manuel"
 
-#: src/preview/preview_formats.c:826
+#: src/preview/preview_formats.c:827
 msgid "not a valid ELF file"
 msgstr "pas un fichier ELF valide"
 
 #. TRANSLATORS: %3$s is "+" when the mailbox was not read to the end
-#: src/preview/preview_formats.c:905
+#: src/preview/preview_formats.c:906
 #, c-format
 msgid "Message %1$u of %2$u%3$s · %4$s · PgUp / PgDn"
 msgstr "Message %1$u sur %2$u%3$s · %4$s · PgUp / PgDn"
 
-#: src/preview/preview_formats.c:914
+#: src/preview/preview_formats.c:915
 #, c-format
 msgid "Mailbox · %1$u message · %2$s"
 msgid_plural "Mailbox · %1$u messages · %2$s"
 msgstr[0] "Boîte aux lettres · %1$u message · %2$s"
 msgstr[1] "Boîte aux lettres · %1$u messages · %2$s"
 
-#: src/preview/preview_formats.c:915
+#: src/preview/preview_formats.c:916
 #, c-format
 msgid "Mailbox · %1$s · the first %2$u and last %3$u messages shown"
 msgstr ""
 "Boîte aux lettres · %1$s · les %2$u premiers et %3$u derniers messages "
 "affichés"
 
-#: src/preview/preview_formats.c:933
+#: src/preview/preview_formats.c:934
 msgid ""
 "\n"
 "PgDn opens the messages one by one, PgUp comes back."
@@ -12618,85 +12618,85 @@ msgstr ""
 "\n"
 "PgDn ouvre les messages un par un, PgUp revient."
 
-#: src/preview/preview_formats.c:944
+#: src/preview/preview_formats.c:945
 msgid "no file"
 msgstr "aucun fichier"
 
-#: src/preview/preview_formats.c:967
+#: src/preview/preview_formats.c:968
 #, c-format
 msgid "Thunderbird index of %s"
 msgstr "Index Thunderbird de %s"
 
-#: src/preview/preview_formats.c:980
+#: src/preview/preview_formats.c:981
 msgid "Mail message"
 msgstr "Message électronique"
 
-#: src/preview/preview_formats.c:1024
+#: src/preview/preview_formats.c:1026
 msgid "file too large"
 msgstr "fichier trop grand"
 
-#: src/preview/preview_formats.c:1035
+#: src/preview/preview_formats.c:1037
 msgid "Java class file"
 msgstr "Fichier de classe Java"
 
-#: src/preview/preview_formats.c:1038
+#: src/preview/preview_formats.c:1040
 msgid "WebAssembly binary"
 msgstr "Binaire WebAssembly"
 
-#: src/preview/preview_formats.c:1041
+#: src/preview/preview_formats.c:1043
 msgid "BitTorrent metainfo"
 msgstr "Métadonnées BitTorrent"
 
-#: src/preview/preview_formats.c:1044
+#: src/preview/preview_formats.c:1046
 msgid "Python bytecode"
 msgstr "Bytecode Python"
 
-#: src/preview/preview_formats.c:1047
+#: src/preview/preview_formats.c:1049
 msgid "TeX font metric"
 msgstr "Métriques de police TeX"
 
-#: src/preview/preview_formats.c:1050
+#: src/preview/preview_formats.c:1052
 msgid "Packet capture"
 msgstr "Capture réseau"
 
-#: src/preview/preview_formats.c:1109
+#: src/preview/preview_formats.c:1111
 msgid "no preview for this format yet"
 msgstr "pas encore d’aperçu pour ce format"
 
-#: src/preview/preview_formats.c:1178
+#: src/preview/preview_formats.c:1180
 msgid "[ Binary file ]"
 msgstr "[ Fichier binaire ]"
 
 #. TRANSLATORS: %s is a file kind, e.g. "Archive"
-#: src/preview/preview_formats.c:1181
+#: src/preview/preview_formats.c:1183
 #, c-format
 msgid "[ %s file ]"
 msgstr "[ Fichier : %s ]"
 
-#: src/preview/preview_formats.c:1185
+#: src/preview/preview_formats.c:1187
 #, c-format
 msgid "Cannot show the file: %s.\n"
 msgstr "Impossible d’afficher le fichier : %s.\n"
 
-#: src/preview/preview_formats.c:1186
+#: src/preview/preview_formats.c:1188
 #, c-format
 msgid "Cannot show the content: %s.\n"
 msgstr "Impossible d’afficher le contenu : %s.\n"
 
-#: src/preview/preview_formats.c:1191
+#: src/preview/preview_formats.c:1193
 #, c-format
 msgid "Showing the first %s.\n"
 msgstr "Affichage des premiers %s.\n"
 
-#: src/preview/preview_full.c:30 src/preview/preview_full.c:89
+#: src/preview/preview_full.c:33 src/preview/preview_full.c:112
 msgid "Load Whole File"
 msgstr "Charger tout le fichier"
 
-#: src/preview/preview_full.c:32
+#: src/preview/preview_full.c:35
 msgid "_Load"
 msgstr "_Charger"
 
-#: src/preview/preview_full.c:35
+#: src/preview/preview_full.c:40
 #, c-format
 msgid ""
 "This file is %s. Showing all of it may make the window unresponsive for a "
@@ -12705,18 +12705,62 @@ msgstr ""
 "Ce fichier fait %s. L’afficher en entier peut bloquer la fenêtre un moment. "
 "Le charger quand même ?"
 
-#: src/preview/preview_full.c:72
+#: src/preview/preview_full.c:46
+#, c-format
+msgid ""
+"This document has %lu page. Drawing all of them takes a lot of memory and "
+"may make the window unresponsive for a while. Load them anyway?"
+msgid_plural ""
+"This document has %lu pages. Drawing all of them takes a lot of memory and "
+"may make the window unresponsive for a while. Load them anyway?"
+msgstr[0] ""
+"Ce document a %lu page. Les dessiner toutes prend beaucoup de mémoire et "
+"peut bloquer la fenêtre un moment. Les charger quand même ?"
+msgstr[1] ""
+"Ce document a %lu pages. Les dessiner toutes prend beaucoup de mémoire et "
+"peut bloquer la fenêtre un moment. Les charger quand même ?"
+
+#: src/preview/preview_full.c:52
+#, c-format
+msgid ""
+"This presentation has %lu slide. Drawing all of them takes a lot of memory "
+"and may make the window unresponsive for a while. Load them anyway?"
+msgid_plural ""
+"This presentation has %lu slides. Drawing all of them takes a lot of memory "
+"and may make the window unresponsive for a while. Load them anyway?"
+msgstr[0] ""
+"Cette présentation a %lu diapositive. Les dessiner toutes prend beaucoup de "
+"mémoire et peut bloquer la fenêtre un moment. Les charger quand même ?"
+msgstr[1] ""
+"Cette présentation a %lu diapositives. Les dessiner toutes prend beaucoup de "
+"mémoire et peut bloquer la fenêtre un moment. Les charger quand même ?"
+
+#: src/preview/preview_full.c:95
 msgid "Loading the whole file…"
 msgstr "Chargement de tout le fichier…"
 
-#: src/preview/preview_full.c:91
+#: src/preview/preview_full.c:114
 msgid "Load Whole File into the Preview"
 msgstr "Charger tout le fichier dans l’aperçu"
 
-#: src/preview/preview_full.c:122
+#: src/preview/preview_full.c:161
 #, c-format
 msgid "Partial preview: %1$s of %2$s shown"
 msgstr "Aperçu partiel : %1$s sur %2$s affichés"
+
+#: src/preview/preview_full.c:165
+#, c-format
+msgid "Partial preview: %1$ld of %2$ld page shown"
+msgid_plural "Partial preview: %1$ld of %2$ld pages shown"
+msgstr[0] "Aperçu partiel : %1$ld page sur %2$ld affichée"
+msgstr[1] "Aperçu partiel : %1$ld pages sur %2$ld affichées"
+
+#: src/preview/preview_full.c:169
+#, c-format
+msgid "Partial preview: %1$ld of %2$ld slide drawn"
+msgid_plural "Partial preview: %1$ld of %2$ld slides drawn"
+msgstr[0] "Aperçu partiel : %1$ld diapositive sur %2$ld dessinée"
+msgstr[1] "Aperçu partiel : %1$ld diapositives sur %2$ld dessinées"
 
 #. TRANSLATORS: %s is the path of a JSON value ("$.servers[2].host")
 #: src/preview/preview_location.c:88
@@ -13246,7 +13290,7 @@ msgstr "[ Lecture impossible : %s ]"
 msgid "[ Cannot copy %1$s from the remote machine: %2$s ]"
 msgstr "[ Impossible de copier %1$s depuis la machine distante : %2$s ]"
 
-#: src/preview/viewer.c:742
+#: src/preview/viewer.c:743
 #, c-format
 msgid ""
 "[ PREVIEW ] %1$s (%2$s bytes total)\n"
@@ -13257,7 +13301,7 @@ msgstr ""
 "Gros fichier : %3$u octets affichés, la suite se charge en faisant défiler.\n"
 "\n"
 
-#: src/preview/viewer.c:1116
+#: src/preview/viewer.c:1117
 #, c-format
 msgid ""
 "%s\n"

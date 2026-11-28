@@ -22,6 +22,9 @@ typedef enum {
     OFFICE97_OUTLOOK_MSG   /* __substg1.0_* streams */
 } Office97Format;
 
+/* Slides drawn as pictures at most by default, like pptx (the others are listed) */
+#define OFFICE97_MAX_DRAWN 20
+
 Office97Format office97_format(const OleReader* ole);
 /* "Word 97-2003 document", "Compound file"... */
 const gchar* office97_format_label(Office97Format format);
@@ -29,10 +32,11 @@ const gchar* office97_format_label(Office97Format format);
 /* Preview of the compound file at path (NULL with error set when it is not
  * a readable compound file: the viewer then shows the hex dump); slides
  * and the pages of Word documents are drawn at zoom (slide_deck_preview(),
- * doc_pages.h). raw: the raw view (m), the text of a Word document; NULL
- * without error for the other formats (their raw view is the hex dump). */
+ * doc_pages.h), max_drawn slides at most (OFFICE97_MAX_DRAWN, G_MAXUINT:
+ * all). raw: the raw view (m), the text of a Word document; NULL without
+ * error for the other formats (their raw view is the hex dump). */
 PreviewDoc* office97_preview(const gchar* path, const gchar* name, gint64 size, gsize max_text, gdouble zoom,
-                             gboolean raw, GError** error);
+                             guint max_drawn, gboolean raw, GError** error);
 
 /* The fallback: title, property card, a note (reason, may be NULL) and the
  * stream list */

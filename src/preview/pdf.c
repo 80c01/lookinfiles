@@ -13,6 +13,7 @@
 #include "preview/preview_tagbar.h"
 #include "widgets/minimap.h"
 #include "preview/preview_busy.h"
+#include "preview/preview_full.h"
 #include <sys/stat.h>
 #include <glib/gstdio.h>
 
@@ -20,7 +21,7 @@
 #include <poppler.h>
 #include <cairo.h>
 
-#define MAX_RENDER_PAGES 20
+#define MAX_RENDER_PAGES 20  /* unless the whole file is asked for (Load Whole File) */
 /* Start of the page badges, found again by PgUp / PgDn (not translated) */
 #define PAGE_BADGE_PREFIX "─── "
 /* Pixels per PDF point of a rendered page (gdouble*, on its texture) */
@@ -82,6 +83,7 @@ typedef struct {
     gboolean is_dvi;
     PdfSession* session;   /* the open document (set by the first task) */
     gboolean read_marks;   /* this task reads the bookmarks (after its pages) */
+    gboolean whole;        /* Load Whole File: every page, all the text */
 
     /* Results populated by worker thread */
     gchar* error_msg;
@@ -107,6 +109,12 @@ static void pdf_mark_free(gpointer data) {
     PdfMark* m = data;
     g_free(m->title);
     g_free(m);
+}
+
+/* Pages rendered at most: all of a PDF read whole (a PostScript or DVI
+ * conversion has its first MAX_RENDER_PAGES only) */
+static gint pdf_page_limit(const PdfTaskData* td) {
+    return td->whole && !td->converted ? td->total_pages : MIN(td->total_pages, MAX_RENDER_PAGES);
 }
 
 static void pdf_task_data_free(gpointer data) {
@@ -351,7 +359,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
     }
     outline_publish(app);
     gint shown = td->first_page + (gint)render_count;
-    gint limit = MIN(td->total_pages, MAX_RENDER_PAGES);
+    gint limit = pdf_page_limit(td);
     if (shown < limit && render_count > 0) {
         /* The next pages, in the background (same cancellable: a new selection drops them) */
         PdfTaskData* next = g_new0(PdfTaskData, 1);
@@ -364,6 +372,7 @@ static void append_pdf_pages(AppData* app, PdfTaskData* td) {
         next->page_count = NEXT_RENDER_PAGES;
         next->converted = td->converted;
         next->is_dvi = td->is_dvi;
+        next->whole = td->whole;
         next->session = pdf_session_ref(td->session);
         next->total_pages = td->total_pages;
         next->read_marks = td->first_page == 0 && !td->read_marks;
@@ -516,9 +525,20 @@ static void render_pages(PdfTaskData* td, gint first, gint end, GCancellable* ca
     }
 }
 
-/* The text of the pages, PREVIEW_BYTES in all at most */
+/* The text of the pages, PREVIEW_BYTES in all at most (all of it read whole) */
 static void extract_text(PdfTaskData* td, PopplerDocument* doc, GCancellable* cancellable) {
     td->page_texts = g_ptr_array_new_with_free_func(g_free);
+    if (td->whole) {
+        for (gint i = 0; i < td->total_pages && !g_cancellable_is_cancelled(cancellable); i++) {
+            PopplerPage* page = poppler_document_get_page(doc, i);
+            gchar* text = page != NULL ? poppler_page_get_text(page) : NULL;
+            g_clear_object(&page);
+            gchar* valid = text != NULL ? g_utf8_make_valid(text, -1) : g_strdup("");
+            g_free(text);
+            g_ptr_array_add(td->page_texts, valid);
+        }
+        return;
+    }
     gsize text_bytes = 0;
     for (gint i = 0; i < td->total_pages; i++) {
         if (g_cancellable_is_cancelled(cancellable)) {
@@ -583,11 +603,11 @@ static void pdf_preview_thread_func(GTask* task, gpointer source_object,
         td->doc_author = poppler_document_get_author(doc);
         td->doc_ver = poppler_document_get_pdf_version_string(doc);
         /* The bookmarks wait for the next task, unless there is none */
-        td->read_marks = td->render_raw || MIN(td->total_pages, MAX_RENDER_PAGES) <= td->page_count;
+        td->read_marks = td->render_raw || pdf_page_limit(td) <= td->page_count;
     }
 
     if (!td->render_raw) {
-        gint render_end = MIN(MIN(td->total_pages, MAX_RENDER_PAGES), td->first_page + td->page_count);
+        gint render_end = MIN(pdf_page_limit(td), td->first_page + td->page_count);
         render_pages(td, td->first_page, render_end, cancellable);
     } else {
         extract_text(td, doc, cancellable);
@@ -653,6 +673,12 @@ static void on_pdf_preview_ready(GObject* source_object, GAsyncResult* res,
     }
 
     ensure_pdf_tags(app->buffer);
+    /* Pages not shown (a PDF only, a conversion has no more): offer them all */
+    if (!td->converted) {
+        gint shown = td->render_raw ? (td->text_cut ? (gint)td->page_texts->len : td->total_pages)
+                                    : pdf_page_limit(td);
+        preview_full_update_count(app, td->full, shown, td->total_pages, PREVIEW_FULL_PAGES);
+    }
 
     GtkTextIter iter;
     gtk_text_buffer_get_end_iter(app->buffer, &iter);
@@ -880,6 +906,7 @@ void render_pdf_preview(AppData* app, const gchar* name, const gchar* full) {
     td->name = g_strdup(name);
     td->full = g_strdup(full);
     td->render_raw = preview_state_raw(app);
+    td->whole = preview_full_wanted(app, full);
     /* Zoomed pages are at most 4096 px wide (memory: up to MAX_RENDER_PAGES textures) */
     td->max_w = MIN((gint)(max_w * (preview_state_zoom(app) > 0 ? preview_state_zoom(app) : 1.0)), 4096);
     td->first_page = 0;

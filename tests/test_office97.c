@@ -155,7 +155,7 @@ static void test_unknown_compound_file(void) {
     GBytes* file = ole_builder_finish(ob);
     gchar* path = temp_file(file, "drawing.vsd");
     GError* err = NULL;
-    PreviewDoc* doc = office97_preview(path, "drawing.vsd", (gint64)g_bytes_get_size(file), 65536, 1.0, FALSE, &err);
+    PreviewDoc* doc = office97_preview(path, "drawing.vsd", (gint64)g_bytes_get_size(file), 65536, 1.0, OFFICE97_MAX_DRAWN, FALSE, &err);
     g_assert_no_error(err);
     const gchar* t = doc->text->str;
     g_assert_nonnull(strstr(t, "Compound file"));
@@ -175,7 +175,7 @@ static void test_encrypted(void) {
     ole_builder_add(ob, "EncryptedPackage", "....", 4);
     GBytes* file = ole_builder_finish(ob);
     gchar* path = temp_file(file, "secret.doc");
-    PreviewDoc* doc = office97_preview(path, "secret.doc", 1024, 65536, 1.0, FALSE, NULL);
+    PreviewDoc* doc = office97_preview(path, "secret.doc", 1024, 65536, 1.0, OFFICE97_MAX_DRAWN, FALSE, NULL);
     g_assert_nonnull(strstr(doc->text->str, "Encrypted"));
     preview_doc_free(doc);
     remove_temp(path);
@@ -186,7 +186,7 @@ static void test_not_compound(void) {
     GBytes* junk = g_bytes_new_static("\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1 but truncated", 23);
     gchar* path = temp_file(junk, "broken.doc");
     GError* err = NULL;
-    g_assert_null(office97_preview(path, "broken.doc", 23, 65536, 1.0, FALSE, &err));
+    g_assert_null(office97_preview(path, "broken.doc", 23, 65536, 1.0, OFFICE97_MAX_DRAWN, FALSE, &err));
     g_assert_nonnull(err);
     g_error_free(err);
     remove_temp(path);
@@ -256,7 +256,7 @@ static PreviewDoc* preview_of(GBytes* file, const gchar* name) {
     gchar* path = temp_file(file, name);
     GError* err = NULL;
     /* Word documents: their text (the raw view), which the tests read */
-    PreviewDoc* doc = office97_preview(path, name, (gint64)g_bytes_get_size(file), 65536, 1.0, g_str_has_suffix(name, ".doc"),
+    PreviewDoc* doc = office97_preview(path, name, (gint64)g_bytes_get_size(file), 65536, 1.0, OFFICE97_MAX_DRAWN, g_str_has_suffix(name, ".doc"),
                                        &err);
     g_assert_no_error(err);
     remove_temp(path);

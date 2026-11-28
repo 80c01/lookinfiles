@@ -1415,9 +1415,12 @@ Layers, from bottom to top
 - `text_chunks` — large text files in the preview: scrolling near the end
   of the first `PREVIEW_BYTES` loads the next chunk in a worker thread, up
   to `TEXT_CHUNKS_MAX_BYTES`; any new preview stops it.
-- `preview_full` — the **Load Whole File** bar above a text preview cut
-  before the end of the file: previews it again read to the end (asks
-  first above 64 MB), for that file until another one is selected.
+- `preview_full` — the **Load Whole File** bar above a preview cut
+  before the end of the file (text past `PREVIEW_BYTES`, PDF pages past the
+  first 20, slides only listed: `PreviewDoc.parts_drawn`): previews it again
+  read to the end (asks first above 64 MB or 100 pages or slides; the
+  builders see `PreviewInput.whole`), for that file until another one is
+  selected.
 - `preview_folding` — folding of the previews that record fold points
   (JSON): the fold state of each file for the session, handed to the worker
   (`preview_folding_state()`, part of the cache key), `Tab` / `Shift+Tab`

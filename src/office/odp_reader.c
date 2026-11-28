@@ -822,9 +822,9 @@ SlideDeck* odp_read_deck(const gchar* path, GError** error) {
 }
 
 PreviewDoc* odp_file_preview(const gchar* path, const gchar* name, const gchar* size_text, guint* n_slides,
-                             gdouble zoom, GError** error) {
+                             gdouble zoom, guint max_drawn, GError** error) {
     /* Pictures of the slides drawn only */
-    SlideDeck* deck = read_deck(path, ODP_MAX_DRAWN, error);
+    SlideDeck* deck = read_deck(path, max_drawn, error);
     if (deck == NULL) {
         return NULL;
     }
@@ -838,7 +838,7 @@ PreviewDoc* odp_file_preview(const gchar* path, const gchar* name, const gchar* 
     if (size_text != NULL) {
         g_string_append_printf(subtitle, " · %s", size_text);
     }
-    PreviewDoc* doc = slide_deck_preview(deck, name != NULL ? name : "", subtitle->str, ODP_MAX_DRAWN, zoom);
+    PreviewDoc* doc = slide_deck_preview(deck, name != NULL ? name : "", subtitle->str, max_drawn, zoom);
     g_string_free(subtitle, TRUE);
     slide_deck_free(deck);
     return doc;

@@ -376,7 +376,7 @@ static void text_preview_thread_func(GTask* task, gpointer source_object,
     PreviewInput input = {
         .path = td->full, .name = td->name, .size = td->fsize, .kind = td->kind,
         .head = (const guchar*)contents, .head_len = MIN(len, FILE_SNIFF_BYTES), .page = td->page,
-        .fold = td->fold, .raw = td->render_raw, .zoom = td->zoom,
+        .fold = td->fold, .raw = td->render_raw, .zoom = td->zoom, .whole = td->whole,
     };
 
     if (file_kind_is_media(td->kind)) {
@@ -666,9 +666,10 @@ static gboolean display_cached_preview(gpointer data) {
 static void show_text_preview(TextPreviewTaskData* td) {
     AppData* app = td->app;
     preview_state_set_page(app, preview_state_page(app), td->doc != NULL ? td->doc->pages : 0);
-    /* Text cut at PREVIEW_BYTES: offer the whole file */
+    /* Text cut at PREVIEW_BYTES, slides only listed: offer the whole file */
     gboolean partial = td->preview && td->utf8_text != NULL && td->error_msg == NULL;
-    preview_full_update(app, td->full, partial ? (gint64)td->raw_len : -1, td->fsize);
+    preview_full_update_shown(app, td->full, td->error_msg == NULL ? td->doc : NULL,
+                              partial ? (gint64)td->raw_len : -1, td->fsize);
     preview_state_set_slides(app, td->doc != NULL && td->error_msg == NULL && td->doc->paged);
 
     if (g_strcmp0(td->full, preview_state_path(app)) == 0 &&

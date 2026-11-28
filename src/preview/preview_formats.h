@@ -36,6 +36,8 @@ typedef struct {
     gboolean raw;
     /* Zoom of the slides of presentations (+ / -), 0: 1 */
     gdouble zoom;
+    /* Load Whole File: presentations draw all their slides */
+    gboolean whole;
 } PreviewInput;
 
 /* Largest text a builder converts (documents, notebooks...) */
