@@ -1056,6 +1056,7 @@ static void on_remote_right_click(GtkGestureClick* gesture, gint n_press, gdoubl
     if (rm != NULL) {
         if (!rm->is_connected) {
             add_menu_item(box, popover, app, _("Connect (Browse Files)"), "Enter", 1);
+            add_menu_item(box, popover, app, _("Connect"), "c", 11);
         } else {
             add_menu_item(box, popover, app, _("Open in Explorer"), "Enter", 1);
             add_menu_item(box, popover, app, _("Disconnect"), "c", 2);
