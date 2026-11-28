@@ -23,12 +23,12 @@
 #include "search/deep_search_tab.h"
 
 /* Rows with children the arrow keys and space expand: directories,
- * bookmark folders, notebooks, the notes trash and remote folders */
+ * bookmark folders, notebooks, the notes trash, remote folders and game folders */
 static gboolean is_container_row(ExplorerRow* row) {
     return explorer_row_is(row, "dir") || explorer_row_is(row, "bm_folder") ||
            explorer_row_is(row, "notebook") || explorer_row_is(row, "trash") ||
            explorer_row_is(row, "remote_folder") || archive_tree_row_is_archive(row) ||
-           explorer_row_is(row, "arc_dir");
+           explorer_row_is(row, "arc_dir") || explorer_row_is(row, "game_folder");
 }
 
 /* Files view (not bookmarks / notes / remote) */
