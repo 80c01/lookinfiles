@@ -40,6 +40,13 @@ gchar* ipynb_python_venv_of(const gchar* python);
  * environment to run it with (NULL: this one). Caller frees both. */
 gchar* ipynb_python_local(const gchar* dir, const gchar* chosen, gchar*** envp);
 
+/* The Pythons found for a local notebook in folder dir, to choose from:
+ * the one of its virtual environment (as above), those of pyenv, conda,
+ * mamba and uv under home (newest versions first), then python3,
+ * python3.N and python of path (a PATH value; NULL: none), each once and
+ * only those that are programs. Free with g_ptr_array_unref(). */
+GPtrArray* ipynb_python_found(const gchar* dir, const gchar* home, const gchar* path);
+
 /* The line for a remote POSIX shell (ssh) running the bridge script with
  * chosen (a Python of the machine, ~/ for its home folder), else the Python
  * of the virtual environment of dir (a folder of the machine; NULL: none

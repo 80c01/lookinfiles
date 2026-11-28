@@ -139,6 +139,98 @@ gchar* ipynb_python_local(const gchar* dir, const gchar* chosen, gchar*** envp) 
     return python;
 }
 
+#ifdef G_OS_WIN32
+#define EXE ".exe"
+#else
+#define EXE ""
+#endif
+
+static void add_found(GPtrArray* out, gchar* python) {
+    gboolean ok = g_file_test(python, G_FILE_TEST_IS_EXECUTABLE) && !g_file_test(python, G_FILE_TEST_IS_DIR);
+    for (guint i = 0; ok && i < out->len; i++) ok = strcmp(g_ptr_array_index(out, i), python) != 0;
+    if (ok) {
+        g_ptr_array_add(out, python);
+    } else {
+        g_free(python);
+    }
+}
+
+static gint compare_newest(gconstpointer a, gconstpointer b) {
+    gchar* x = g_utf8_collate_key_for_filename(*(const gchar* const*)a, -1);
+    gchar* y = g_utf8_collate_key_for_filename(*(const gchar* const*)b, -1);
+    gint c = strcmp(y, x);
+    g_free(x);
+    g_free(y);
+    return c;
+}
+
+/* The Python of each folder of parent (sub/bin/name), newest first */
+static void add_each(GPtrArray* out, const gchar* parent, const gchar* name) {
+    GDir* d = g_dir_open(parent, 0, NULL);
+    if (d == NULL) return;
+    GPtrArray* subs = g_ptr_array_new_with_free_func(g_free);
+    const gchar* sub;
+    while ((sub = g_dir_read_name(d)) != NULL) {
+        if (sub[0] != '.') g_ptr_array_add(subs, g_strdup(sub));
+    }
+    g_dir_close(d);
+    g_ptr_array_sort(subs, compare_newest);
+    for (guint i = 0; i < subs->len; i++) {
+        add_found(out, g_build_filename(parent, g_ptr_array_index(subs, i), VENV_BIN, name, NULL));
+    }
+    g_ptr_array_unref(subs);
+}
+
+/* The first program called name in the folders of path */
+static void add_in_path(GPtrArray* out, const gchar* path, const gchar* name) {
+    gchar** dirs = g_strsplit(path, G_SEARCHPATH_SEPARATOR_S, -1);
+    for (gchar** d = dirs; *d != NULL; d++) {
+        if (**d == '\0') continue;
+        gchar* python = g_build_filename(*d, name, NULL);
+        if (g_file_test(python, G_FILE_TEST_IS_EXECUTABLE) && !g_file_test(python, G_FILE_TEST_IS_DIR)) {
+            add_found(out, python);
+            break;
+        }
+        g_free(python);
+    }
+    g_strfreev(dirs);
+}
+
+GPtrArray* ipynb_python_found(const gchar* dir, const gchar* home, const gchar* path) {
+    GPtrArray* out = g_ptr_array_new_with_free_func(g_free);
+    gchar* venv = ipynb_python_find_venv(dir);
+    if (venv != NULL) add_found(out, ipynb_python_venv_python(venv));
+    g_free(venv);
+    if (home != NULL && home[0] != '\0') {
+        gchar* pyenv = g_build_filename(home, ".pyenv", "versions", NULL);
+        add_each(out, pyenv, "python" EXE);
+        g_free(pyenv);
+        static const gchar* const CONDAS[] = { "miniforge3", "miniconda3", "anaconda3", "mambaforge", NULL };
+        for (const gchar* const* c = CONDAS; *c != NULL; c++) {
+            add_found(out, g_build_filename(home, *c, VENV_BIN, "python" EXE, NULL));
+            gchar* envs = g_build_filename(home, *c, "envs", NULL);
+            add_each(out, envs, "python" EXE);
+            g_free(envs);
+        }
+        gchar* envs = g_build_filename(home, ".conda", "envs", NULL);
+        add_each(out, envs, "python" EXE);
+        g_free(envs);
+        gchar* uv = g_build_filename(home, ".local", "share", "uv", "python", NULL);
+        add_each(out, uv, "python3" EXE);
+        g_free(uv);
+    }
+    if (path != NULL) {
+        add_in_path(out, path, "python3" EXE);
+        for (gint minor = 20; minor >= 6; minor--) {
+            gchar* name = g_strdup_printf("python3.%d" EXE, minor);
+            add_in_path(out, path, name);
+            g_free(name);
+        }
+        add_in_path(out, path, "python" EXE);
+    }
+    return out;
+}
+
 /* The shell word for a Python chosen on a remote machine: ~/ is its home */
 static gchar* remote_word(const gchar* chosen) {
     if (chosen == NULL || chosen[0] == '\0') return g_strdup("");

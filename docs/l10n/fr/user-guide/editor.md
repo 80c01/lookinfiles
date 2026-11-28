@@ -95,7 +95,13 @@ cellule Markdown nouvelle ou vide reste en source.
   sous-dossiers (un Python de conda ou de pyenv, un environnement virtuel
   rangé ailleurs ; un chemin de la machine pour un notebook distant, `~/`
   pour son dossier personnel), gardé dans `jupyter.ini` ; laissez-le vide
-  pour le retrouver comme ci-dessus. La barre d’état nomme le Python du
+  pour le retrouver comme ci-dessus. Pour un notebook local, des
+  suggestions s’affichent sous le champ pendant la saisie (ou avec
+  `Ctrl+Space`) : les dossiers et programmes du chemin tapé, les Python
+  d’abord, puis les Python trouvés (l’environnement virtuel du projet,
+  pyenv, conda, uv, le `PATH`) ; `Down` / `Up` en choisissent un, `Tab`
+  complète avec lui (un dossier : liste son contenu), `Enter` le prend,
+  `Escape` les cache. La barre d’état nomme le Python du
   noyau en cours après son état, `Noyau inactif (projet/.venv)` (son
   environnement, sinon son chemin ; le chemin complet dans l’infobulle). Le bouton du noyau dans la barre
   porte le nom du noyau du notebook, la barre d’état sous les cellules son

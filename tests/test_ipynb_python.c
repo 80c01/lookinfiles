@@ -279,6 +279,65 @@ static void test_choices(void) {
     tree_clear(&t);
 }
 
+static void make_program(const gchar* path) {
+    write_file(path, "#!/bin/sh\n", 0755);
+}
+
+static void test_found(void) {
+    Tree t;
+    tree_init(&t);
+    make_venv(t.venv);
+    gchar* home = g_build_filename(t.root, "home", NULL);
+    gchar* bin = g_build_filename(t.root, "bin", NULL);
+    gchar* bin2 = g_build_filename(t.root, "bin2", NULL);
+    gchar* p39 = g_build_filename(home, ".pyenv", "versions", "3.9.1", "bin", "python", NULL);
+    gchar* p312 = g_build_filename(home, ".pyenv", "versions", "3.12.4", "bin", "python", NULL);
+    gchar* conda = g_build_filename(home, "miniconda3", "bin", "python", NULL);
+    gchar* env = g_build_filename(home, "miniconda3", "envs", "ml", "bin", "python", NULL);
+    gchar* python3 = g_build_filename(bin, "python3", NULL);
+    gchar* python312 = g_build_filename(bin2, "python3.12", NULL);
+    gchar* shadowed = g_build_filename(bin2, "python3", NULL);
+    gchar* not_program = g_build_filename(bin, "python", NULL);
+    make_program(p39);
+    make_program(p312);
+    make_program(conda);
+    make_program(env);
+    make_program(python3);
+    make_program(python312);
+    make_program(shadowed);
+    write_file(not_program, "", 0644);
+    gchar* path = g_strjoin(G_SEARCHPATH_SEPARATOR_S, bin, "", bin2, NULL);
+
+    GPtrArray* found = ipynb_python_found(t.sub, home, path);
+    gchar* venv_python = ipynb_python_venv_python(t.venv);
+    const gchar* want[] = { venv_python, p312, p39, conda, env, python3, python312 };
+    g_assert_cmpuint(found->len, ==, G_N_ELEMENTS(want));
+    for (guint i = 0; i < found->len; i++) g_assert_cmpstr(g_ptr_array_index(found, i), ==, want[i]);
+    g_ptr_array_unref(found);
+
+    /* Nothing to look in: nothing found */
+    gchar* empty = g_build_filename(t.root, "empty", NULL);
+    found = ipynb_python_found(empty, NULL, NULL);
+    g_assert_cmpuint(found->len, ==, 0);
+    g_ptr_array_unref(found);
+
+    g_free(empty);
+    g_free(venv_python);
+    g_free(path);
+    g_free(not_program);
+    g_free(shadowed);
+    g_free(python312);
+    g_free(python3);
+    g_free(env);
+    g_free(conda);
+    g_free(p312);
+    g_free(p39);
+    g_free(bin2);
+    g_free(bin);
+    g_free(home);
+    tree_clear(&t);
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/ipynb_python/find", test_find);
@@ -287,5 +346,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/ipynb_python/remote_command", test_remote_command);
     g_test_add_func("/ipynb_python/local_chosen", test_local_chosen);
     g_test_add_func("/ipynb_python/choices", test_choices);
+    g_test_add_func("/ipynb_python/found", test_found);
     return g_test_run();
 }

@@ -2,6 +2,7 @@
  * ipynb_tab_private.h) */
 #include "jupyter/ipynb_tab_private.h"
 #include "core/app_paths.h"
+#include "core/folder_complete.h"
 #include "core/i18n.h"
 #include "core/remote_path.h"
 #include "core/ssh_session.h"
@@ -500,6 +501,43 @@ static gchar* python_problem(IpynbTab* t, const gchar* python) {
     return problem;
 }
 
+/* The Pythons found (ipynb_python_found(), '~' for home): all of them for
+ * no text, those going on from a path typed, else those holding the text */
+static void add_found_pythons(const gchar* text, gboolean is_path, GPtrArray* out, gpointer data) {
+    GPtrArray* found = data;
+    gchar* needle = g_utf8_casefold(text, -1);
+    for (guint i = 0; i < found->len; i++) {
+        const gchar* python = g_ptr_array_index(found, i);
+        gboolean show;
+        if (text[0] == '\0') {
+            show = TRUE;
+        } else if (is_path) {
+            show = g_str_has_prefix(python, text) && strcmp(python, text) != 0;
+        } else {
+            gchar* hay = g_utf8_casefold(python, -1);
+            show = strstr(hay, needle) != NULL;
+            g_free(hay);
+        }
+        if (show) g_ptr_array_add(out, g_strdup(python));
+    }
+    g_free(needle);
+}
+
+/* Suggestions under the Python field of a local notebook: the folders and
+ * programs of the path typed, the Pythons found */
+static void suggest_pythons(IpynbTab* t, GtkWidget* entry) {
+    const gchar* home = g_get_home_dir();
+    GPtrArray* found = ipynb_python_found(t->dir, home, g_getenv("PATH"));
+    for (guint i = 0; i < found->len; i++) {
+        gchar* shown = folder_complete_tilde(g_ptr_array_index(found, i), home);
+        g_free(found->pdata[i]);
+        found->pdata[i] = shown;
+    }
+    g_object_set_data_full(G_OBJECT(entry), "lookin-pythons-found", found, (GDestroyNotify)g_ptr_array_unref);
+    path_suggest_attach(entry, PATH_SUGGEST_PROGRAMS);
+    path_suggest_set_extra(entry, add_found_pythons, found);
+}
+
 /* Ask for the Python of the notebooks of the folder */
 static void choose_python(IpynbTab* t) {
     gchar* file = choices_file();
@@ -521,7 +559,7 @@ static void choose_python(IpynbTab* t) {
         gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
         gtk_widget_set_size_request(entry, 420, -1);
         gtk_box_append(GTK_BOX(box), entry);
-        if (t->kernel_host == NULL) path_suggest_attach(entry, PATH_SUGGEST_PROGRAMS); /* local paths only */
+        if (t->kernel_host == NULL) suggest_pythons(t, entry); /* local paths only */
         gchar* hint = t->kernel_host != NULL
                           ? g_strdup_printf(_("A path on %s (~/ for the home folder there). Empty: the virtual "
                                               "environment of the project (.venv, venv or env), else python3."),

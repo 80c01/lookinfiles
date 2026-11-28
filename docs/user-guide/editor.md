@@ -85,7 +85,12 @@ click edits the source, and running the cell (`Ctrl+Enter`, `Shift+Enter`,
   notebooks of the folder and of its subfolders (a conda or pyenv one, a
   virtual environment kept elsewhere; a path on the machine for a remote
   notebook, `~/` for its home folder), kept in `jupyter.ini`; leave it
-  empty to find it again as above. The status bar names the Python of
+  empty to find it again as above. For a local notebook, suggestions
+  appear under the field as you type (or with `Ctrl+Space`): the folders
+  and programs of the path typed, the Pythons first, then the Pythons
+  found (the project's virtual environment, pyenv, conda, uv, the
+  `PATH`); `Down` / `Up` choose one, `Tab` completes with it (a folder:
+  lists its contents), `Enter` takes it, `Escape` hides them. The status bar names the Python of
   the running kernel after its state, `Kernel idle (project/.venv)` (its
   environment, else its path; the full path in the tooltip).
   The kernel's button in the bar shows the notebook's kernel,
