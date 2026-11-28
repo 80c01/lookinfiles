@@ -38,6 +38,8 @@ static const ExtLang EXTENSIONS[] = {
     {"jl", CODE_LANG_JULIA},
     {"r", CODE_LANG_R},
     {"tcl", CODE_LANG_TCL},
+    {"tex", CODE_LANG_LATEX}, {"ltx", CODE_LANG_LATEX}, {"latex", CODE_LANG_LATEX},
+    {"sty", CODE_LANG_LATEX}, {"cls", CODE_LANG_LATEX}, {"bib", CODE_LANG_LATEX},
 };
 
 static const ExtLang NAMES[] = {
@@ -146,6 +148,7 @@ const gchar* code_lang_name(CodeLang lang) {
         case CODE_LANG_JULIA: return "Julia";
         case CODE_LANG_R: return "R";
         case CODE_LANG_TCL: return "Tcl";
+        case CODE_LANG_LATEX: return "LaTeX";
         case CODE_LANG_NONE: break;
     }
     return "text";

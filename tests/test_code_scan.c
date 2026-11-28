@@ -33,6 +33,9 @@ static void test_lang(void) {
     g_assert_cmpint(code_lang_from_name("a.hpp"), ==, CODE_LANG_CPP);
     g_assert_cmpint(code_lang_from_name("A.C"), ==, CODE_LANG_CPP);
     g_assert_cmpint(code_lang_from_name("x.TS"), ==, CODE_LANG_JS);
+    g_assert_cmpint(code_lang_from_name("thesis/main.tex"), ==, CODE_LANG_LATEX);
+    g_assert_cmpint(code_lang_from_name("refs.bib"), ==, CODE_LANG_LATEX);
+    g_assert_cmpint(code_lang_from_name("mystyle.sty"), ==, CODE_LANG_LATEX);
     g_assert_cmpint(code_lang_from_name("/p/Makefile"), ==, CODE_LANG_MAKE);
     g_assert_cmpint(code_lang_from_name("rules.mk"), ==, CODE_LANG_MAKE);
     g_assert_cmpint(code_lang_from_name("notes.txt"), ==, CODE_LANG_NONE);

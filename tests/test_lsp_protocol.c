@@ -80,6 +80,8 @@ static void test_requests(void) {
     g_assert_cmpstr(lsp_language_id("x.tsx"), ==, "typescriptreact");
     g_assert_cmpstr(lsp_language_id("x.hpp"), ==, "cpp");
     g_assert_cmpstr(lsp_language_id("Makefile"), ==, "makefile");
+    g_assert_cmpstr(lsp_language_id("thesis/main.tex"), ==, "latex");
+    g_assert_cmpstr(lsp_language_id("refs.bib"), ==, "bibtex");
     gchar* path = lsp_uri_to_path("file:///tmp/a%20b.c");
     assert_path(path, "/tmp/a b.c");
     g_free(path);

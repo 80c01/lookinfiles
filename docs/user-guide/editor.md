@@ -337,6 +337,13 @@ place stays where it was in the preview.
   again; it never stops another task (a running `make test`).
 - On a remote machine, the document is compiled there (`latexmk` must be
   installed on the machine).
+- With [texlab](https://github.com/latex-lsp/texlab) installed (the
+  language server of LaTeX, see the
+  [Diagnostics tab](lookinfiles:diagnostics#lsp-latex)), the code features
+  work in `.tex` and `.bib` files: completion of commands, environments,
+  `\ref` and `\cite` keys (from the `.bib` files), go to the `\label` or
+  the bibliography entry (`F12`), the references of a label
+  (`Shift+F12`), renaming a label in every file (`Shift+F2`).
 
 ## Code features
 

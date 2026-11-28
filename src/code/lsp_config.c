@@ -30,6 +30,7 @@ static const ServerDefaults SERVERS[] = {
     {CODE_LANG_HASKELL, "haskell", {"haskell-language-server-wrapper --lsp", NULL}},
     {CODE_LANG_ELIXIR, "elixir", {"elixir-ls", NULL}},
     {CODE_LANG_ERLANG, "erlang", {"erlang_ls", NULL}},
+    {CODE_LANG_LATEX, "latex", {"texlab", NULL}},
 };
 
 static const ServerDefaults* defaults_of(CodeLang lang) {

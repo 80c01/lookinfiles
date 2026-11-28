@@ -82,6 +82,7 @@ static const Packages PACKAGES[] = {
     {"erlang_ls", NULL, NULL, NULL, NULL, NULL, "erlang_ls", NULL},
     {"metals", NULL, NULL, NULL, NULL, NULL, NULL, "cs install metals"},
     {"pls", NULL, NULL, NULL, NULL, NULL, NULL, "cpanm PLS"},
+    {"texlab", NULL, NULL, "texlab", NULL, NULL, "texlab", "cargo install --locked texlab"},
 };
 
 /* What is checked where */

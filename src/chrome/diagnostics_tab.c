@@ -436,7 +436,7 @@ static void job_free(gpointer data) {
 
 /* The language servers of every language (the C family once) */
 static void add_lang_servers(GPtrArray* items, const gchar* ini) {
-    for (gint lang = CODE_LANG_NONE + 1; lang <= CODE_LANG_TCL; lang++) {
+    for (gint lang = CODE_LANG_NONE + 1; lang <= CODE_LANG_LAST; lang++) {
         if (code_lang_family(lang) == CODE_LANG_C && lang != CODE_LANG_C) continue;
         const gchar* key = lsp_config_key(lang);
         if (key == NULL) continue;

@@ -94,7 +94,8 @@ Code navigation starts a language server when one is installed for the
 file's language: `clangd` (C, C++, Objective-C), `pylsp` /
 `pyright-langserver` / `jedi-language-server` (Python), `gopls`,
 `rust-analyzer`, `typescript-language-server`, `bash-language-server`,
-`lua-language-server`, `solargraph`, `jdtls`, `csharp-ls`, `intelephense`...
+`lua-language-server`, `solargraph`, `jdtls`, `csharp-ls`, `intelephense`,
+`texlab` (LaTeX and BibTeX)...
 `lsp.ini` replaces a command or turns a server off (keys are the language ids:
 `c`, `cpp`, `python`, `javascript`, `go`, `rust`...):
 

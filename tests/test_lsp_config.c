@@ -7,6 +7,7 @@
 static void test_keys(void) {
     g_assert_cmpstr(lsp_config_key(CODE_LANG_C), ==, "c");
     g_assert_cmpstr(lsp_config_key(CODE_LANG_JS), ==, "javascript");
+    g_assert_cmpstr(lsp_config_key(CODE_LANG_LATEX), ==, "latex");
     g_assert_null(lsp_config_key(CODE_LANG_MAKE));
     g_assert_null(lsp_config_command(CODE_LANG_MAKE, NULL));
 }

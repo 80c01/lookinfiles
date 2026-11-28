@@ -108,6 +108,7 @@ const gchar* lsp_language_id(const gchar* path) {
         if (strcmp(dot, ".ts") == 0 || strcmp(dot, ".mts") == 0 || strcmp(dot, ".cts") == 0) return "typescript";
         if (strcmp(dot, ".tsx") == 0) return "typescriptreact";
         if (strcmp(dot, ".jsx") == 0) return "javascriptreact";
+        if (g_ascii_strcasecmp(dot, ".bib") == 0) return "bibtex";
     }
     switch (code_lang_from_name(path)) {
         case CODE_LANG_C: return "c";
@@ -135,6 +136,7 @@ const gchar* lsp_language_id(const gchar* path) {
         case CODE_LANG_JULIA: return "julia";
         case CODE_LANG_R: return "r";
         case CODE_LANG_TCL: return "tcl";
+        case CODE_LANG_LATEX: return "latex";
         case CODE_LANG_NONE: break;
     }
     return "plaintext";

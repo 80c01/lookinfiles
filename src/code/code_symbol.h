@@ -34,8 +34,10 @@ typedef enum {
     CODE_LANG_ERLANG,
     CODE_LANG_JULIA,
     CODE_LANG_R,
-    CODE_LANG_TCL
+    CODE_LANG_TCL,
+    CODE_LANG_LATEX     /* LaTeX and BibTeX (.tex, .sty, .cls, .bib...) */
 } CodeLang;
+#define CODE_LANG_LAST CODE_LANG_LATEX
 
 typedef enum {
     CODE_SYM_FUNCTION = 0,

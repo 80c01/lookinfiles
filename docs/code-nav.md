@@ -54,7 +54,8 @@ Emacs, Vim). The modules are described in
   Swift, Scala, Dart, Haskell, Elixir, Erlang, Julia, R, Tcl.
 - **LSP**: `lsp.ini` in `app_config_dir()` maps a language to a command;
   built-in defaults `clangd`, `pylsp`, `rust-analyzer`, `gopls`,
-  `typescript-language-server --stdio`, `bash-language-server start`.
+  `typescript-language-server --stdio`, `bash-language-server start`,
+  `texlab` (LaTeX, BibTeX: language ids `latex` and `bibtex`).
   Full-text sync (edits sent after a 600 ms pause), definition,
   declaration, references, hover, signature help, document symbols,
   diagnostics (underlined, counted in the bar of the editor tab, explained in help

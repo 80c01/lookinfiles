@@ -378,6 +378,14 @@ compilation, l’endroit reste où il était dans l’aperçu.
   relance ; il n’arrête jamais une autre tâche (un `make test` en cours).
 - Sur une machine distante, le document est compilé là-bas (`latexmk` doit
   y être installé).
+- Avec [texlab](https://github.com/latex-lsp/texlab) installé (le serveur
+  de langage de LaTeX, voir l’[onglet
+  Diagnostics](lookinfiles:diagnostics#lsp-latex)), les fonctions pour le
+  code marchent dans les fichiers `.tex` et `.bib` : complétion des
+  commandes, des environnements, des clés de `\ref` et de `\cite` (lues
+  dans les fichiers `.bib`), aller au `\label` ou à l’entrée de la
+  bibliographie (`F12`), les références d’un label (`Shift+F12`), renommer
+  un label dans tous les fichiers (`Shift+F2`).
 
 ## Fonctions pour le code
 
