@@ -4,11 +4,10 @@
 /* The Welcome tab: a page of the preview notebook for new users, opened at
  * the first launch (no configuration folder yet) and at every launch when
  * Preferences → Window → Show the Welcome tab at startup is checked
- * ([Window] welcome of settings.ini). It sets the theme (applied as it is
- * chosen) and the editor keys (Notepad, Vim, Emacs: the global mode and the
- * mode of new editor tabs), lists the essential shortcuts of that mode, and
- * opens the user guide, the Diagnostics tab and the Preferences. Its own
- * check button is the startup setting. Reopened from the + menu of the tab
+ * ([Window] welcome of settings.ini). A passive page: it does nothing
+ * itself but shows how, with pictures of the buttons to click (the mode
+ * pill, the Preferences gear, Help, the + of the tab bars), and lists the
+ * essential shortcuts of the global mode. Reopened from the + menu of the tab
  * bars and the user guide's lookinfiles:welcome links. The close button, a
  * middle click on the tab, Ctrl+W (Vim Ctrl+W c) close it. Not saved with
  * the session; each workspace keeps its own. */

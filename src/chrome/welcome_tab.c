@@ -1,25 +1,20 @@
 /* The Welcome tab: first steps for new users (see welcome_tab.h) */
 #include "chrome/welcome_tab.h"
-#include "chrome/diagnostics_tab.h"
-#include "chrome/help_guide.h"
-#include "chrome/preferences.h"
-#include "chrome/themes.h"
 #include "core/app_events.h"
 #include "core/app_paths.h"
 #include "core/i18n.h"
 #include "git/git_tab.h"
 #include "theme/icons.h"
 #include "theme/theme.h"
-#include "theme/theme_store.h"
+#include "widgets/add_button.h"
 #include "widgets/focus_route.h"
 
 #define PAGE_KEY "lookin-welcome-tab"
-/* The guide page of the Open the User Guide button (a user_guide page name) */
-#define WELCOME_GUIDE_PAGE "user-guide/getting-started.md"
 
-/* Drop-down order of the editor keys */
-static const SettingsEditor MODES[] = {SETTINGS_EDITOR_NOTEPAD, SETTINGS_EDITOR_VIM, SETTINGS_EDITOR_EMACS};
-static const gchar* const MODE_HINTS[] = {
+/* The keys the tab lists: Notepad, Vim, Emacs */
+enum { KEYS_NOTEPAD, KEYS_VIM, KEYS_EMACS, KEYS_N };
+static const gchar* const MODE_NAMES[KEYS_N] = {"Notepad", "Vim", "Emacs"};
+static const gchar* const MODE_HINTS[KEYS_N] = {
     N_("The usual keys: arrows, Ctrl+C / Ctrl+V, Ctrl+F to search, Ctrl+S to save."),
     N_("Vim's keys: hjkl, gg / G, / to search, :w to save; the explorer moves with j / k."),
     N_("Emacs's keys: C-n / C-p, C-s to search, C-x C-s to save; the explorer moves with C-n / C-p."),
@@ -27,7 +22,7 @@ static const gchar* const MODE_HINTS[] = {
 
 /* An essential shortcut: its keys in Notepad, Vim and Emacs (docs/keyboard.md) */
 typedef struct {
-    const gchar* keys[G_N_ELEMENTS(MODES)];
+    const gchar* keys[KEYS_N];
     const gchar* action; /* N_() */
 } WelcomeKey;
 
@@ -41,20 +36,18 @@ static const WelcomeKey KEYS[] = {
     {{"?", "?", "?"}, N_("Every shortcut (cheat sheet)")},
     {{"F1", "F1", "F1"}, N_("User guide")},
     {{"Ctrl+,", "Ctrl+,", "Ctrl+,"}, N_("Preferences")},
+    {{"Alt+T", "Alt+T", "Alt+T"}, N_("Themes and fonts")},
     {{"Ctrl+Q", "Ctrl+Q", "Ctrl+Q"}, N_("Quit")},
 };
 
 typedef struct {
     AppData* app;
-    GtkWidget* page;  /* the notebook page (app->welcome_page) */
-    GtkWidget* label; /* tab label (owned ref: kept while the page is detached) */
-    GtkWidget* theme; /* GtkDropDown of the theme names */
-    GtkStringList* theme_names;
-    GtkWidget* mode;      /* GtkDropDown: Notepad, Vim, Emacs */
-    GtkWidget* mode_hint; /* what the mode chosen is */
-    GtkWidget* keys;      /* GtkGrid of KEYS in the mode chosen */
-    GtkWidget* startup;   /* GtkCheckButton: [Window] welcome */
-    gboolean syncing;     /* the widgets follow the values: no change to apply */
+    GtkWidget* page;      /* the notebook page (app->welcome_page) */
+    GtkWidget* label;     /* tab label (owned ref: kept while the page is detached) */
+    GtkWidget* mode_pill; /* picture of the top-bar mode pill */
+    GtkWidget* keys_title;
+    GtkWidget* mode_hint; /* what the keys of the global mode are */
+    GtkWidget* keys;      /* GtkGrid of KEYS in the global mode */
 } WelcomeTab;
 
 static void ensure_css(void) {
@@ -76,13 +69,13 @@ static WelcomeTab* tab_state(AppData* app) {
                                                     : NULL;
 }
 
-/* Index in MODES of the global mode (Org-mode: Emacs) */
-static guint mode_index(EditorMode mode) {
+/* The keys listed for the global mode (Org-mode: Emacs) */
+static guint keys_index(EditorMode mode) {
     switch (mode) {
-    case EDITOR_MODE_VIM: return 1;
+    case EDITOR_MODE_VIM: return KEYS_VIM;
     case EDITOR_MODE_EMACS:
-    case EDITOR_MODE_ORGMODE: return 2;
-    default: return 0;
+    case EDITOR_MODE_ORGMODE: return KEYS_EMACS;
+    default: return KEYS_NOTEPAD;
     }
 }
 
@@ -92,6 +85,29 @@ static GtkWidget* text_label(const gchar* text, const gchar* css_class) {
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_widget_add_css_class(label, css_class);
     return label;
+}
+
+/* A picture of a button of the window: the same widget and style, which
+ * follows the theme, the icon set and the language, but takes no click */
+static GtkWidget* picture_of(GtkWidget* button) {
+    gtk_widget_set_can_target(button, FALSE);
+    gtk_widget_set_focusable(button, FALSE);
+    gtk_widget_set_halign(button, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(button, GTK_ALIGN_START);
+    return button;
+}
+
+/* A pill of the top bar: icon and label, no frame (as topbar.c draws them) */
+static GtkWidget* pill_picture(const gchar* icon, const gchar* label) {
+    GtkWidget* btn = gtk_button_new();
+    if (label != NULL) {
+        icon_button_set_content(btn, icon, label);
+    } else {
+        gtk_button_set_child(GTK_BUTTON(btn), icon_image_new(icon));
+    }
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+    gtk_widget_add_css_class(btn, "status-pill");
+    return picture_of(btn);
 }
 
 /* --- The values --- */
@@ -110,80 +126,15 @@ static void fill_keys(WelcomeTab* st, guint mode) {
     }
 }
 
-static void fill_themes(WelcomeTab* st) {
-    gchar* dir = theme_store_user_dir();
-    GPtrArray* themes = theme_store_list(dir, NULL);
-    g_free(dir);
-    guint n = g_list_model_get_n_items(G_LIST_MODEL(st->theme_names));
-    const gchar* current = themes_current_name();
-    guint selected = GTK_INVALID_LIST_POSITION;
-    const gchar** names = g_new0(const gchar*, themes->len + 1);
-    for (guint i = 0; i < themes->len; i++) {
-        const Theme* t = g_ptr_array_index(themes, i);
-        names[i] = t->name;
-        if (g_strcmp0(t->name, current) == 0) selected = i;
-    }
-    gtk_string_list_splice(st->theme_names, 0, n, names);
-    g_free(names);
-    g_ptr_array_unref(themes);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(st->theme), selected);
-}
-
-/* The widgets show the current values (also those set elsewhere since) */
+/* The page shows the global mode of now (also when changed since) */
 static void sync_values(WelcomeTab* st) {
-    st->syncing = TRUE;
-    fill_themes(st);
-    guint mode = mode_index(st->app->default_editor_mode);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(st->mode), mode);
+    guint mode = keys_index(st->app->default_editor_mode);
+    icon_button_set_content(st->mode_pill, "input-keyboard", MODE_NAMES[mode]);
+    gchar* title = g_strdup_printf(_("Essential shortcuts (%s)"), MODE_NAMES[mode]);
+    gtk_label_set_text(GTK_LABEL(st->keys_title), title);
+    g_free(title);
     gtk_label_set_text(GTK_LABEL(st->mode_hint), _(MODE_HINTS[mode]));
     fill_keys(st, mode);
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(st->startup), st->app->settings.welcome);
-    st->syncing = FALSE;
-}
-
-static void on_theme_selected(GObject* dropdown, GParamSpec* pspec, gpointer data) {
-    (void)pspec;
-    WelcomeTab* st = data;
-    if (st->syncing) return;
-    const gchar* name = gtk_string_list_get_string(st->theme_names, gtk_drop_down_get_selected(GTK_DROP_DOWN(dropdown)));
-    if (name == NULL || g_strcmp0(name, themes_current_name()) == 0) return;
-    GError* error = NULL;
-    if (!themes_apply(st->app, name, TRUE, &error)) {
-        app_notice(st->app, error != NULL ? error->message : name, FALSE);
-        g_clear_error(&error);
-    }
-}
-
-static void on_mode_selected(GObject* dropdown, GParamSpec* pspec, gpointer data) {
-    (void)pspec;
-    WelcomeTab* st = data;
-    if (st->syncing) return;
-    guint mode = gtk_drop_down_get_selected(GTK_DROP_DOWN(dropdown));
-    if (mode >= G_N_ELEMENTS(MODES)) return;
-    preferences_save_editor(st->app, MODES[mode]);
-    gtk_label_set_text(GTK_LABEL(st->mode_hint), _(MODE_HINTS[mode]));
-    fill_keys(st, mode);
-}
-
-static void on_startup_toggled(GtkCheckButton* check, gpointer data) {
-    WelcomeTab* st = data;
-    if (st->syncing) return;
-    preferences_save_welcome(st->app, gtk_check_button_get_active(check));
-}
-
-static void on_guide_clicked(GtkButton* button, gpointer data) {
-    (void)button;
-    help_guide_show(((WelcomeTab*)data)->app, WELCOME_GUIDE_PAGE);
-}
-
-static void on_diagnostics_clicked(GtkButton* button, gpointer data) {
-    (void)button;
-    diagnostics_tab_show(((WelcomeTab*)data)->app, NULL);
-}
-
-static void on_preferences_clicked(GtkButton* button, gpointer data) {
-    (void)button;
-    preferences_show(((WelcomeTab*)data)->app, NULL);
 }
 
 static void on_page_map(GtkWidget* page, gpointer data) {
@@ -195,7 +146,6 @@ static void on_page_map(GtkWidget* page, gpointer data) {
 
 static void tab_free(gpointer data) {
     WelcomeTab* st = data;
-    g_clear_object(&st->theme_names);
     g_clear_object(&st->label);
     g_free(st);
 }
@@ -253,16 +203,28 @@ static GtkWidget* detach_page(AppData* app) {
     return page;
 }
 
-static void section(GtkWidget* body, const gchar* title) {
-    gtk_box_append(GTK_BOX(body), text_label(title, "welcome-section"));
+static GtkWidget* section(GtkWidget* body, const gchar* title) {
+    GtkWidget* label = text_label(title, "welcome-section");
+    gtk_box_append(GTK_BOX(body), label);
+    return label;
 }
 
-static void link_button(GtkWidget* box, const gchar* label, const gchar* tooltip, GCallback cb,
-                              WelcomeTab* st) {
-    GtkWidget* button = gtk_button_new_with_mnemonic(label);
-    gtk_widget_set_tooltip_text(button, tooltip);
-    g_signal_connect(button, "clicked", cb, st);
-    gtk_box_append(GTK_BOX(box), button);
+/* A grid of how-to rows: a picture of what to click, then what it does */
+static GtkWidget* howto_grid(GtkWidget* body) {
+    GtkWidget* grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 10);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 12);
+    gtk_widget_set_margin_top(grid, 4);
+    gtk_box_append(GTK_BOX(body), grid);
+    return grid;
+}
+
+static void howto_row(GtkWidget* grid, gint row, GtkWidget* picture, const gchar* text) {
+    gtk_grid_attach(GTK_GRID(grid), picture, 0, row, 1, 1);
+    GtkWidget* label = text_label(text, "welcome-text");
+    gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_grid_attach(GTK_GRID(grid), label, 1, row, 1, 1);
 }
 
 static void build_body(WelcomeTab* st, GtkWidget* body) {
@@ -271,59 +233,44 @@ static void build_body(WelcomeTab* st, GtkWidget* body) {
     g_free(title);
     gtk_box_append(GTK_BOX(body),
                    text_label(_("The explorer is on the left, the preview of the selected file on the right, "
-                                "with editor tabs and terminals beside it. Choose how it looks and which keys "
-                                "it uses; both stay in the Preferences."),
+                                "with editor tabs and terminals beside it. The buttons pictured below are in "
+                                "the top bar, at the right, and at the end of the tab bars."),
                               "welcome-text"));
 
-    GtkWidget* grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 12);
-    gtk_widget_set_margin_top(grid, 14);
-    st->theme_names = gtk_string_list_new(NULL);
-    st->theme = gtk_drop_down_new(G_LIST_MODEL(g_object_ref(st->theme_names)), NULL);
-    gtk_widget_set_tooltip_text(st->theme, _("Applied as you choose it"));
-    g_signal_connect(st->theme, "notify::selected", G_CALLBACK(on_theme_selected), st);
-    GtkWidget* theme_label = gtk_label_new_with_mnemonic(_("_Theme"));
-    gtk_label_set_mnemonic_widget(GTK_LABEL(theme_label), st->theme);
-    gtk_label_set_xalign(GTK_LABEL(theme_label), 0.0f);
-    gtk_grid_attach(GTK_GRID(grid), theme_label, 0, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid), st->theme, 1, 0, 1, 1);
+    section(body, _("Make it yours"));
+    GtkWidget* grid = howto_grid(body);
+    st->mode_pill = pill_picture("input-keyboard", MODE_NAMES[KEYS_NOTEPAD]);
+    howto_row(grid, 0, st->mode_pill,
+              _("Editor keys: click the mode in the top bar and choose Notepad, Vim or Emacs. "
+                "Preferences → Editor → Mode keeps the choice for the next launches."));
+    howto_row(grid, 1, pill_picture("applications-system", NULL),
+              _("Preferences (Ctrl+,): the gear of the top bar. Themes and fonts are in Appearance "
+                "(Alt+T opens it there), the window size and this tab at startup in Window."));
 
-    static const char* const mode_names[] = {"Notepad", "Vim", "Emacs", NULL};
-    st->mode = gtk_drop_down_new_from_strings(mode_names);
-    gtk_widget_set_tooltip_text(st->mode, _("Keys of the explorer and of new editor tabs"));
-    g_signal_connect(st->mode, "notify::selected", G_CALLBACK(on_mode_selected), st);
-    GtkWidget* mode_label = gtk_label_new_with_mnemonic(_("_Editor keys"));
-    gtk_label_set_mnemonic_widget(GTK_LABEL(mode_label), st->mode);
-    gtk_label_set_xalign(GTK_LABEL(mode_label), 0.0f);
-    gtk_grid_attach(GTK_GRID(grid), mode_label, 0, 1, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid), st->mode, 1, 1, 1, 1);
+    st->keys_title = section(body, "");
     st->mode_hint = text_label(NULL, "welcome-hint");
-    gtk_grid_attach(GTK_GRID(grid), st->mode_hint, 1, 2, 1, 1);
-    gtk_box_append(GTK_BOX(body), grid);
-
-    section(body, _("Essential shortcuts"));
+    gtk_box_append(GTK_BOX(body), st->mode_hint);
     st->keys = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(st->keys), 4);
     gtk_grid_set_column_spacing(GTK_GRID(st->keys), 12);
+    gtk_widget_set_margin_top(st->keys, 4);
     gtk_box_append(GTK_BOX(body), st->keys);
 
     section(body, _("Next steps"));
-    GtkWidget* links = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    link_button(links, _("Open the _User Guide"), _("Getting started, in a Help tab (F1)"),
-                           G_CALLBACK(on_guide_clicked), st);
-    link_button(links, _("Check the Optional _Libraries"),
-                _("What this computer has of the terminal, syntax highlighting, PDF pages... (Diagnostics tab)"),
-                G_CALLBACK(on_diagnostics_clicked), st);
-    link_button(links, _("_Preferences"), _("Fonts, editor tabs, window size, layouts (Ctrl+,)"),
-                G_CALLBACK(on_preferences_clicked), st);
-    gtk_box_append(GTK_BOX(body), links);
+    grid = howto_grid(body);
+    howto_row(grid, 0, pill_picture("dialog-question", _("Help")),
+              _("The user guide (F1): Help, at the right of the top bar. "
+                "A right click on it lists every shortcut (?)."));
+    howto_row(grid, 1, picture_of(add_button_new(NULL)),
+              _("New tabs: the + at the end of a tab bar opens a terminal, an editor, Diagnostics "
+                "(the optional libraries this computer has: terminal, syntax highlighting, PDF pages...) "
+                "or this Welcome tab again."));
 
-    st->startup = gtk_check_button_new_with_mnemonic(_("_Show this tab at startup"));
-    gtk_widget_set_tooltip_text(st->startup, _("Also in Preferences → Window"));
-    gtk_widget_set_margin_top(st->startup, 14);
-    g_signal_connect(st->startup, "toggled", G_CALLBACK(on_startup_toggled), st);
-    gtk_box_append(GTK_BOX(body), st->startup);
+    gtk_box_append(GTK_BOX(body),
+                   text_label(_("To show this tab at every startup: Preferences → Window → "
+                                "Show the Welcome tab at startup."),
+                              "welcome-hint"));
+    gtk_widget_set_margin_top(gtk_widget_get_last_child(body), 14);
 }
 
 static WelcomeTab* ensure_page(AppData* app) {
@@ -390,7 +337,7 @@ void welcome_tab_show(AppData* app) {
     }
     GtkNotebook* nb = GTK_NOTEBOOK(app->notebook);
     gtk_notebook_set_current_page(nb, gtk_notebook_page_num(nb, st->page));
-    gtk_widget_grab_focus(st->theme);
+    gtk_widget_grab_focus(st->page);
 }
 
 gboolean welcome_tab_close_shown(AppData* app) {

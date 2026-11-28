@@ -274,8 +274,8 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
                                                  _("Fill in the size the window has now")));
     p->welcome = gtk_check_button_new_with_mnemonic(_("Show the _Welcome tab at startup"));
     gtk_check_button_set_active(GTK_CHECK_BUTTON(p->welcome), s->welcome);
-    gtk_widget_set_tooltip_text(p->welcome, _("The tab of the first launch: theme, editor keys and the "
-                                              "essential shortcuts"));
+    gtk_widget_set_tooltip_text(p->welcome, _("The tab of the first launch: where to choose the theme "
+                                              "and the editor keys, and the essential shortcuts"));
     gtk_widget_set_margin_top(p->welcome, 8);
     gtk_box_append(GTK_BOX(box), p->welcome);
     return box;
@@ -503,43 +503,6 @@ static void apply_editor_mode(AppData* app, EditorMode mode) {
     app->nav_recenter_step = 0;
     search_mode_changed(app);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
-}
-
-/* Write s to settings.ini */
-static void store_settings(const Settings* s) {
-    gchar* path = settings_store_path();
-    GError* error = NULL;
-    if (!settings_store_save(path, s, &error)) {
-        g_printerr("[ Preferences not saved: %s ]\n", error->message);
-        g_clear_error(&error);
-    }
-    g_free(path);
-}
-
-/* The values of settings.ini */
-static void load_settings(Settings* s) {
-    gchar* path = settings_store_path();
-    settings_store_load(path, s);
-    g_free(path);
-}
-
-void preferences_save_editor(AppData* app, SettingsEditor editor) {
-    if (app == NULL) return;
-    Settings s;
-    load_settings(&s);
-    s.editor = editor;
-    store_settings(&s);
-    app->settings.editor = editor;
-    apply_editor_mode(app, preferences_editor_mode(editor));
-}
-
-void preferences_save_welcome(AppData* app, gboolean shown) {
-    if (app == NULL) return;
-    Settings s;
-    load_settings(&s);
-    s.welcome = shown;
-    store_settings(&s);
-    app->settings.welcome = shown;
 }
 
 static void save_settings(Preferences* p) {

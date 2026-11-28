@@ -28,11 +28,6 @@ EditorMode preferences_editor_mode(SettingsEditor editor);
 
 /* At startup, once app exists: the editor settings of new tabs */
 void preferences_apply_startup(AppData* app, const Settings* settings);
-/* Keep in settings.ini and apply now: the mode of new editor tabs (also
- * the global mode), the Welcome tab at every startup (welcome_tab.h) */
-void preferences_save_editor(AppData* app, SettingsEditor editor);
-void preferences_save_welcome(AppData* app, gboolean shown);
-
 /* The SSH transport chosen ([Remote] ssh): at startup, before any connection */
 void preferences_apply_ssh(SettingsSsh ssh);
 

@@ -1291,11 +1291,12 @@ Layers, from bottom to top
   opened by `main.c` at the first launch (no `app_config_dir()` yet, which
   it then creates) or when `[Window] welcome` is set, and from the + menu and
   `lookinfiles:welcome` links (`APP_EVENT_SHOW_WELCOME`, which keeps
-  `help_guide` out of an include cycle). A theme drop-down (`themes_apply()`), the
-  editor keys (`preferences_save_editor()`), the essential shortcuts of
-  that mode, buttons to the guide, Diagnostics and Preferences, and the
-  startup check button (`preferences_save_welcome()`); the values are read
-  again each time the page is mapped.
+  `help_guide` out of an include cycle). A passive page: it changes nothing
+  and opens nothing, but tells how, beside pictures of the buttons to
+  click (the same widgets as the top bar's mode pill, gear and Help pill
+  and the + of the tab bars, made untargetable so they follow the theme,
+  the icon set and the language), and lists the essential shortcuts of the
+  global mode, read again each time the page is mapped.
 - `diagnostics_tab` — the Diagnostics tab in the preview notebook (one per
   workspace, kept like the Help tab; opened from the + menu): the
   `diagnostics` checks of this computer, with the language servers of

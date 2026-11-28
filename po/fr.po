@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-28 06:50+0000\n"
+"POT-Creation-Date: 2026-11-28 12:32+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -32,7 +32,7 @@ msgstr "Recadrer l’image"
 msgid "_Reset"
 msgstr "_Réinitialiser"
 
-#: src/canvas/canvas_crop.c:373 src/chrome/preferences.c:658
+#: src/canvas/canvas_crop.c:373 src/chrome/preferences.c:621
 #: src/chrome/themes.c:222 src/chrome/themes.c:237 src/chrome/themes.c:682
 #: src/code/code_rename.c:310 src/code/code_symbols.c:236
 #: src/code/code_workspace_symbols.c:443 src/editor/editor.c:725
@@ -53,7 +53,7 @@ msgstr "_Réinitialiser"
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/canvas/canvas_crop.c:374 src/chrome/preferences.c:658
+#: src/canvas/canvas_crop.c:374 src/chrome/preferences.c:621
 #: src/workspace/layouts.c:574
 msgid "_Apply"
 msgstr "A_ppliquer"
@@ -2976,7 +2976,7 @@ msgstr ""
 msgid "Unlock Game Mode in this workspace"
 msgstr "Déverrouiller le mode Jeu dans cet espace de travail"
 
-#: src/chrome/help.c:413 src/chrome/welcome_tab.c:42
+#: src/chrome/help.c:413 src/chrome/welcome_tab.c:40
 msgid "Quit"
 msgstr "Quitter"
 
@@ -3010,7 +3010,7 @@ msgstr ""
 "N’afficher que les raccourcis qui contiennent tous les mots (la touche de "
 "recherche de votre mode : Ctrl+F, / ou C-s)"
 
-#: src/chrome/help_guide.c:144
+#: src/chrome/help_guide.c:143
 #, c-format
 msgid ""
 "# Page Not Found\n"
@@ -3022,46 +3022,46 @@ msgstr ""
 "Le guide d’utilisation n’a pas de page `%s`.\n"
 
 #. TRANSLATORS: title of the Help tab's search results; %s is what was searched
-#: src/chrome/help_guide.c:155 src/chrome/user_guide_search.c:613
+#: src/chrome/help_guide.c:154 src/chrome/user_guide_search.c:613
 #, c-format
 msgid "Search: %s"
 msgstr "Recherche : %s"
 
-#: src/chrome/help_guide.c:156
+#: src/chrome/help_guide.c:155
 msgid "User Guide"
 msgstr "Guide d’utilisation"
 
-#: src/chrome/help_guide.c:204
+#: src/chrome/help_guide.c:203
 msgid "The searched words are not in this page"
 msgstr "Les mots recherchés ne sont pas dans cette page"
 
-#: src/chrome/help_guide.c:205
+#: src/chrome/help_guide.c:204
 msgid "Search the guide first (the search key of your mode)"
 msgstr ""
 "Recherchez d’abord dans le guide (la touche de recherche de votre mode)"
 
-#: src/chrome/help_guide.c:310
+#: src/chrome/help_guide.c:309
 #, c-format
 msgid "Not in the built-in guide: %s"
 msgstr "Absent du guide intégré : %s"
 
-#: src/chrome/help_guide.c:592
+#: src/chrome/help_guide.c:591
 msgid "Back (Shift+H)"
 msgstr "Précédent (Shift+H)"
 
-#: src/chrome/help_guide.c:593
+#: src/chrome/help_guide.c:592
 msgid "Forward (Shift+L)"
 msgstr "Suivant (Shift+L)"
 
-#: src/chrome/help_guide.c:594
+#: src/chrome/help_guide.c:593
 msgid "Contents of the User Guide"
 msgstr "Sommaire du guide d’utilisation"
 
-#: src/chrome/help_guide.c:601
+#: src/chrome/help_guide.c:600
 msgid "Search the guide"
 msgstr "Rechercher dans le guide"
 
-#: src/chrome/help_guide.c:602
+#: src/chrome/help_guide.c:601
 msgid ""
 "Search every page of the guide (the search key of your mode: Ctrl+F, / or C-"
 "s; Enter lists the sections that hold every word)"
@@ -3070,15 +3070,16 @@ msgstr ""
 "mode : Ctrl+F, / ou C-s ; Entrée liste les sections qui contiennent tous les "
 "mots)"
 
-#: src/chrome/help_guide.c:609
+#: src/chrome/help_guide.c:608
 msgid "Show Keyboard Shortcuts (?)"
 msgstr "Afficher les raccourcis clavier (?)"
 
-#: src/chrome/help_guide.c:610
+#: src/chrome/help_guide.c:609
 msgid "Close Help"
 msgstr "Fermer l’aide"
 
-#: src/chrome/help_guide.c:647 src/chrome/topbar.c:822
+#: src/chrome/help_guide.c:646 src/chrome/topbar.c:822
+#: src/chrome/welcome_tab.c:261
 msgid "Help"
 msgstr "Aide"
 
@@ -3158,7 +3159,7 @@ msgstr "Aucune application ne correspond"
 msgid "Applications"
 msgstr "Applications"
 
-#: src/chrome/new_tab_menu.c:91 src/chrome/preferences.c:676
+#: src/chrome/new_tab_menu.c:91 src/chrome/preferences.c:639
 msgid "Editor"
 msgstr "Éditeur"
 
@@ -3171,8 +3172,8 @@ msgstr "Terminal"
 msgid "Needs VTE for GTK 4"
 msgstr "Nécessite VTE pour GTK 4"
 
-#: src/chrome/new_tab_menu.c:94 src/chrome/welcome_tab.c:342
-#: src/chrome/welcome_tab.c:367
+#: src/chrome/new_tab_menu.c:94 src/chrome/welcome_tab.c:291
+#: src/chrome/welcome_tab.c:316
 msgid "Welcome"
 msgstr "Bienvenue"
 
@@ -3346,10 +3347,11 @@ msgstr "Afficher l’onglet _Bienvenue au démarrage"
 
 #: src/chrome/preferences.c:277
 msgid ""
-"The tab of the first launch: theme, editor keys and the essential shortcuts"
+"The tab of the first launch: where to choose the theme and the editor keys, "
+"and the essential shortcuts"
 msgstr ""
-"L’onglet du premier lancement : thème, touches de l’éditeur et raccourcis "
-"essentiels"
+"L’onglet du premier lancement : où choisir le thème et les touches de "
+"l’éditeur, et les raccourcis essentiels"
 
 #: src/chrome/preferences.c:315
 msgid ""
@@ -3585,31 +3587,31 @@ msgstr ""
 "Ouvrir lsp.ini dans un onglet d’édition (créé avec un exemple s’il n’existe "
 "pas)"
 
-#: src/chrome/preferences.c:658 src/chrome/welcome_tab.c:41
+#: src/chrome/preferences.c:621 src/chrome/welcome_tab.c:38
 msgid "Preferences"
 msgstr "Préférences"
 
-#: src/chrome/preferences.c:675
+#: src/chrome/preferences.c:638
 msgid "Appearance"
 msgstr "Apparence"
 
-#: src/chrome/preferences.c:677
+#: src/chrome/preferences.c:640
 msgid "Window"
 msgstr "Fenêtre"
 
-#: src/chrome/preferences.c:678
+#: src/chrome/preferences.c:641
 msgid "Layouts"
 msgstr "Dispositions"
 
-#: src/chrome/preferences.c:679
+#: src/chrome/preferences.c:642
 msgid "Clock"
 msgstr "Horloge"
 
-#: src/chrome/preferences.c:680
+#: src/chrome/preferences.c:643
 msgid "Code navigation"
 msgstr "Navigation dans le code"
 
-#: src/chrome/preferences.c:681 src/core/diagnostics.c:116
+#: src/chrome/preferences.c:644 src/core/diagnostics.c:116
 msgid "Remote machines"
 msgstr "Machines distantes"
 
@@ -4267,14 +4269,14 @@ msgstr[0] "%u section contient tous les mots recherchés :"
 msgstr[1] ""
 "%u sections contiennent tous les mots recherchés, les meilleures d’abord :"
 
-#: src/chrome/welcome_tab.c:21
+#: src/chrome/welcome_tab.c:18
 msgid ""
 "The usual keys: arrows, Ctrl+C / Ctrl+V, Ctrl+F to search, Ctrl+S to save."
 msgstr ""
 "Les touches habituelles : flèches, Ctrl+C / Ctrl+V, Ctrl+F pour chercher, "
 "Ctrl+S pour enregistrer."
 
-#: src/chrome/welcome_tab.c:22
+#: src/chrome/welcome_tab.c:19
 msgid ""
 "Vim's keys: hjkl, gg / G, / to search, :w to save; the explorer moves with "
 "j / k."
@@ -4282,7 +4284,7 @@ msgstr ""
 "Les touches de Vim : hjkl, gg / G, / pour chercher, :w pour enregistrer ; "
 "l’explorateur se parcourt avec j / k."
 
-#: src/chrome/welcome_tab.c:23
+#: src/chrome/welcome_tab.c:20
 msgid ""
 "Emacs's keys: C-n / C-p, C-s to search, C-x C-s to save; the explorer moves "
 "with C-n / C-p."
@@ -4290,115 +4292,117 @@ msgstr ""
 "Les touches d’Emacs : C-n / C-p, C-s pour chercher, C-x C-s pour "
 "enregistrer ; l’explorateur se parcourt avec C-n / C-p."
 
-#: src/chrome/welcome_tab.c:33
+#: src/chrome/welcome_tab.c:30
 msgid "Move in the explorer"
 msgstr "Se déplacer dans l’explorateur"
 
-#: src/chrome/welcome_tab.c:34
+#: src/chrome/welcome_tab.c:31
 msgid "Open a folder or a file"
 msgstr "Ouvrir un dossier ou un fichier"
 
-#: src/chrome/welcome_tab.c:35
+#: src/chrome/welcome_tab.c:32
 msgid "Go to a file of the project"
 msgstr "Aller à un fichier du projet"
 
-#: src/chrome/welcome_tab.c:36 src/core/diagnostics.c:122
+#: src/chrome/welcome_tab.c:33 src/core/diagnostics.c:122
 msgid "Search in files"
 msgstr "Recherche dans les fichiers"
 
-#: src/chrome/welcome_tab.c:37
+#: src/chrome/welcome_tab.c:34
 msgid "Recent folders and files"
 msgstr "Dossiers et fichiers récents"
 
-#: src/chrome/welcome_tab.c:38
+#: src/chrome/welcome_tab.c:35
 msgid "Switch workspace"
 msgstr "Changer d’espace de travail"
 
-#: src/chrome/welcome_tab.c:39
+#: src/chrome/welcome_tab.c:36
 msgid "Every shortcut (cheat sheet)"
 msgstr "Tous les raccourcis (aide-mémoire)"
 
-#: src/chrome/welcome_tab.c:40
+#: src/chrome/welcome_tab.c:37
 msgid "User guide"
 msgstr "Guide d’utilisation"
 
-#: src/chrome/welcome_tab.c:267
+#: src/chrome/welcome_tab.c:39
+msgid "Themes and fonts"
+msgstr "Thèmes et polices"
+
+#: src/chrome/welcome_tab.c:133
+#, c-format
+msgid "Essential shortcuts (%s)"
+msgstr "Raccourcis essentiels (%s)"
+
+#: src/chrome/welcome_tab.c:231
 #, c-format
 msgid "Welcome to %s"
 msgstr "Bienvenue dans %s"
 
-#: src/chrome/welcome_tab.c:271
+#: src/chrome/welcome_tab.c:235
 msgid ""
 "The explorer is on the left, the preview of the selected file on the right, "
-"with editor tabs and terminals beside it. Choose how it looks and which keys "
-"it uses; both stay in the Preferences."
+"with editor tabs and terminals beside it. The buttons pictured below are in "
+"the top bar, at the right, and at the end of the tab bars."
 msgstr ""
 "L’explorateur est à gauche, l’aperçu du fichier sélectionné à droite, avec "
-"les onglets d’édition et les terminaux à côté. Choisissez son apparence et "
-"ses touches ; les deux restent dans les Préférences."
+"les onglets d’édition et les terminaux à côté. Les boutons montrés ci-dessous "
+"sont dans la barre du haut, à droite, et au bout des barres d’onglets."
 
-#: src/chrome/welcome_tab.c:282
-msgid "Applied as you choose it"
-msgstr "Appliqué dès que vous le choisissez"
+#: src/chrome/welcome_tab.c:240
+msgid "Make it yours"
+msgstr "À votre goût"
 
-#: src/chrome/welcome_tab.c:284
-msgid "_Theme"
-msgstr "_Thème"
+#: src/chrome/welcome_tab.c:244
+msgid ""
+"Editor keys: click the mode in the top bar and choose Notepad, Vim or Emacs. "
+"Preferences → Editor → Mode keeps the choice for the next launches."
+msgstr ""
+"Touches de l’éditeur : cliquez sur le mode dans la barre du haut et "
+"choisissez Notepad, Vim ou Emacs. Préférences → Éditeur → Mode garde ce "
+"choix pour les lancements suivants."
 
-#: src/chrome/welcome_tab.c:292
-msgid "Keys of the explorer and of new editor tabs"
-msgstr "Touches de l’explorateur et des nouveaux onglets d’édition"
+#: src/chrome/welcome_tab.c:247
+msgid ""
+"Preferences (Ctrl+,): the gear of the top bar. Themes and fonts are in "
+"Appearance (Alt+T opens it there), the window size and this tab at startup "
+"in Window."
+msgstr ""
+"Préférences (Ctrl+,) : l’engrenage de la barre du haut. Les thèmes et les "
+"polices sont dans Apparence (Alt+T l’ouvre là), la taille de la fenêtre et "
+"cet onglet au démarrage dans Fenêtre."
 
-#: src/chrome/welcome_tab.c:294
-msgid "_Editor keys"
-msgstr "Touches de l’_éditeur"
-
-#: src/chrome/welcome_tab.c:303
-msgid "Essential shortcuts"
-msgstr "Raccourcis essentiels"
-
-#: src/chrome/welcome_tab.c:309
+#: src/chrome/welcome_tab.c:259
 msgid "Next steps"
 msgstr "Pour aller plus loin"
 
-#: src/chrome/welcome_tab.c:311
-msgid "Open the _User Guide"
-msgstr "Ouvrir le _guide d’utilisation"
-
-#: src/chrome/welcome_tab.c:311
-msgid "Getting started, in a Help tab (F1)"
-msgstr "Prise en main, dans un onglet Aide (F1)"
-
-#: src/chrome/welcome_tab.c:313
-msgid "Check the Optional _Libraries"
-msgstr "Vérifier les _bibliothèques optionnelles"
-
-#: src/chrome/welcome_tab.c:314
+#: src/chrome/welcome_tab.c:262
 msgid ""
-"What this computer has of the terminal, syntax highlighting, PDF pages... "
-"(Diagnostics tab)"
+"The user guide (F1): Help, at the right of the top bar. A right click on it "
+"lists every shortcut (?)."
 msgstr ""
-"Ce que cet ordinateur a du terminal, de la coloration syntaxique, des pages "
-"PDF... (onglet Diagnostics)"
+"Le guide d’utilisation (F1) : Aide, à droite de la barre du haut. Un clic "
+"droit dessus liste tous les raccourcis (?)."
 
-#: src/chrome/welcome_tab.c:316
-msgid "_Preferences"
-msgstr "_Préférences"
-
-#: src/chrome/welcome_tab.c:316
-msgid "Fonts, editor tabs, window size, layouts (Ctrl+,)"
+#: src/chrome/welcome_tab.c:265
+msgid ""
+"New tabs: the + at the end of a tab bar opens a terminal, an editor, "
+"Diagnostics (the optional libraries this computer has: terminal, syntax "
+"highlighting, PDF pages...) or this Welcome tab again."
 msgstr ""
-"Polices, onglets d’édition, taille de la fenêtre, dispositions (Ctrl+,)"
+"Nouveaux onglets : le + au bout d’une barre d’onglets ouvre un terminal, un "
+"éditeur, Diagnostics (les bibliothèques optionnelles de cet ordinateur : "
+"terminal, coloration syntaxique, pages PDF...) ou de nouveau cet onglet "
+"Bienvenue."
 
-#: src/chrome/welcome_tab.c:320
-msgid "_Show this tab at startup"
-msgstr "_Afficher cet onglet au démarrage"
+#: src/chrome/welcome_tab.c:270
+msgid ""
+"To show this tab at every startup: Preferences → Window → Show the Welcome "
+"tab at startup."
+msgstr ""
+"Pour afficher cet onglet à chaque démarrage : Préférences → Fenêtre → "
+"Afficher l’onglet Bienvenue au démarrage."
 
-#: src/chrome/welcome_tab.c:321
-msgid "Also in Preferences → Window"
-msgstr "Aussi dans Préférences → Fenêtre"
-
-#: src/chrome/welcome_tab.c:346
+#: src/chrome/welcome_tab.c:295
 msgid "Close Welcome"
 msgstr "Fermer Bienvenue"
 
@@ -11098,15 +11102,15 @@ msgstr ""
 "Panneau Terminal désactivé :\n"
 "installez libvte-2.91-gtk4-dev puis recompilez (make)."
 
-#: src/main.c:603
+#: src/main.c:604
 msgid "Workspace Layouts (Alt+L)"
 msgstr "Dispositions de l’espace de travail (Alt+L)"
 
-#: src/main.c:607
+#: src/main.c:608
 msgid "Preferences (Ctrl+,)"
 msgstr "Préférences (Ctrl+,)"
 
-#: src/main.c:809
+#: src/main.c:810
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"
@@ -14756,6 +14760,47 @@ msgstr "Ouvrir l’espace de travail"
 #: src/workspace/workspace_menu.c:86
 msgid "Close Workspace"
 msgstr "Fermer l’espace de travail"
+
+#~ msgid "Applied as you choose it"
+#~ msgstr "Appliqué dès que vous le choisissez"
+
+#~ msgid "_Theme"
+#~ msgstr "_Thème"
+
+#~ msgid "Keys of the explorer and of new editor tabs"
+#~ msgstr "Touches de l’explorateur et des nouveaux onglets d’édition"
+
+#~ msgid "_Editor keys"
+#~ msgstr "Touches de l’_éditeur"
+
+#~ msgid "Open the _User Guide"
+#~ msgstr "Ouvrir le _guide d’utilisation"
+
+#~ msgid "Getting started, in a Help tab (F1)"
+#~ msgstr "Prise en main, dans un onglet Aide (F1)"
+
+#~ msgid "Check the Optional _Libraries"
+#~ msgstr "Vérifier les _bibliothèques optionnelles"
+
+#~ msgid ""
+#~ "What this computer has of the terminal, syntax highlighting, PDF pages... "
+#~ "(Diagnostics tab)"
+#~ msgstr ""
+#~ "Ce que cet ordinateur a du terminal, de la coloration syntaxique, des "
+#~ "pages PDF... (onglet Diagnostics)"
+
+#~ msgid "_Preferences"
+#~ msgstr "_Préférences"
+
+#~ msgid "Fonts, editor tabs, window size, layouts (Ctrl+,)"
+#~ msgstr ""
+#~ "Polices, onglets d’édition, taille de la fenêtre, dispositions (Ctrl+,)"
+
+#~ msgid "_Show this tab at startup"
+#~ msgstr "_Afficher cet onglet au démarrage"
+
+#~ msgid "Also in Preferences → Window"
+#~ msgstr "Aussi dans Préférences → Fenêtre"
 
 #~ msgid "Left Side a Quarter, Right Side Three Quarters"
 #~ msgstr "Côté gauche un quart, côté droit trois quarts"

@@ -42,13 +42,15 @@ A folder that no longer exists is skipped. A file given on the command line
 opens in the dedicated editor panel, with the explorer and the preview
 hidden.
 
-The first launch opens the **Welcome** tab in the preview panel: pick a
-theme (applied at once) and the editor keys (Notepad, Vim or Emacs, see
-[the global mode](#the-global-mode-notepad-emacs-or-vim)); it lists the
-essential shortcuts of those keys and opens this guide, the
-[Diagnostics tab](lookinfiles:diagnostics) and the Preferences.
-**Show this tab at startup** (also in Preferences, **Window**) opens it at
-every launch. [Open the Welcome tab](lookinfiles:welcome) again, or from
+The first launch opens the **Welcome** tab in the preview panel. It does
+nothing itself: beside a picture of each button to click, it tells where
+to choose the editor keys (Notepad, Vim or Emacs, see
+[the global mode](#the-global-mode-notepad-emacs-or-vim)), the theme and
+the other Preferences, this guide and the
+[Diagnostics tab](lookinfiles:diagnostics), and it lists the essential
+shortcuts of the global mode. Preferences → **Window** → **Show the
+Welcome tab at startup** opens it at every launch.
+[Open the Welcome tab](lookinfiles:welcome) again, or from
 the **+** menu of the tab bar; `Ctrl+W` closes it.
 
 ## The window
