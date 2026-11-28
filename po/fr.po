@@ -4833,6 +4833,14 @@ msgstr "Modules"
 msgid "Targets"
 msgstr "Cibles"
 
+#: src/code/code_outline_tree.c:268
+msgid "Labels"
+msgstr "Labels"
+
+#: src/code/code_outline_tree.c:269
+msgid "Bibliography"
+msgstr "Bibliographie"
+
 #: src/code/code_outline_tree.c:269 src/formats/elf_info.c:674
 #: src/widgets/outline_pane.c:332 src/widgets/outline_pane.c:942
 msgid "Symbols"
@@ -5096,6 +5104,16 @@ msgstr "module"
 msgctxt "symbol kind"
 msgid "target"
 msgstr "cible"
+
+#: src/code/code_symbol.c:166
+msgctxt "symbol kind"
+msgid "label"
+msgstr "label"
+
+#: src/code/code_symbol.c:167
+msgctxt "symbol kind"
+msgid "bibliography entry"
+msgstr "entrée de bibliographie"
 
 #: src/code/code_symbol.c:167
 msgctxt "symbol kind"

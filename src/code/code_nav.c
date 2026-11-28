@@ -106,7 +106,7 @@ static CodeLang tab_lang(EditorTab* tab) {
 
 const gchar* code_nav_backend_label(EditorTab* tab) {
     if (!code_nav_is_code(tab)) return NULL;
-    return code_tags_program() != NULL ? "ctags" : _("built-in index");
+    return code_tags_program() != NULL && !code_scan_preferred(tab_lang(tab)) ? "ctags" : _("built-in index");
 }
 
 gboolean code_nav_is_code(EditorTab* tab) {
@@ -217,7 +217,8 @@ static void lookup_thread(GTask* task, gpointer source, gpointer data, GCancella
     gboolean files_truncated = FALSE, find_truncated = FALSE;
     GPtrArray* files = code_index_project_files(lk->root, code_lang_family(lk->lang), cancellable,
                                                 &files_truncated);
-    CodeQuery q = {lk->name, lk->lang, lk->declaration, lk->origin, lk->texts, tags_for(lk->nav, lk->root)};
+    CodeQuery q = {lk->name, lk->lang, lk->declaration, lk->origin, lk->texts,
+                   code_scan_preferred(lk->lang) ? NULL : tags_for(lk->nav, lk->root)};
     lk->matches = code_index_find(&q, files, cancellable, &find_truncated);
     lk->truncated = files_truncated || find_truncated;
     if (lk->found != NULL && lk->matches->len > 0) {

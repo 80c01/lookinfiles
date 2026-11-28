@@ -3,6 +3,7 @@
 #include "code/code_index.h"
 #include "code/code_intel.h"
 #include "code/code_kind_drop.h"
+#include "code/code_scan.h"
 #include "code/code_tags.h"
 #include "core/app_paths.h"
 #include "core/i18n.h"
@@ -167,7 +168,7 @@ static void search_worker(GTask* task, gpointer source_obj, gpointer task_data, 
 
     CodeTagsIndex* tags = NULL;
     const gchar* prog = code_tags_program();
-    if (prog != NULL) {
+    if (prog != NULL && !code_scan_preferred(j->lang)) {
         tags = code_tags_index_new(prog, j->cache_path);
     }
     gboolean scan_trunc = FALSE;

@@ -47,7 +47,12 @@ the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes
 tab follows the Preferences, Editor page), and its width is
 shared by the tabs.
 
-In a Markdown file, the symbol list and the tagbar show the headings.
+In a Markdown file, the symbol list and the tagbar show the headings. In a
+LaTeX file they show the parts, chapters, sections... and beamer frames,
+with the labels under their section, the macros and environments the file
+defines (`\newcommand`, `\newenvironment`) and its bibliography entries;
+`F12` on the key of a `\ref` or a `\cite` goes to its `\label` or its
+entry of a `.bib` file, even without a language server.
 
 In Vim mode, as in Vim, the tagbar and the text each have their own status
 line: `Tagbar`, then `Name` (grouped by kind) or `Order` (file order) and

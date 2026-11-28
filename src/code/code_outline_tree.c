@@ -251,6 +251,7 @@ void code_outline_node_free(CodeOutlineNode* node) {
 static const CodeSymbolKind GROUP_ORDER[] = {
     CODE_SYM_MODULE, CODE_SYM_CLASS, CODE_SYM_TYPE,     CODE_SYM_FUNCTION, CODE_SYM_METHOD,
     CODE_SYM_MACRO,  CODE_SYM_CONSTANT, CODE_SYM_VARIABLE, CODE_SYM_FIELD,  CODE_SYM_TARGET,
+    CODE_SYM_LABEL,  CODE_SYM_REFERENCE,
 };
 
 const gchar* code_outline_group_label(CodeSymbolKind kind) {
@@ -265,6 +266,8 @@ const gchar* code_outline_group_label(CodeSymbolKind kind) {
     case CODE_SYM_FIELD: return _("Fields");
     case CODE_SYM_MODULE: return _("Modules");
     case CODE_SYM_TARGET: return _("Targets");
+    case CODE_SYM_LABEL: return _("Labels");
+    case CODE_SYM_REFERENCE: return _("Bibliography");
     }
     return _("Symbols");
 }
@@ -278,6 +281,8 @@ static gint parent_of(const GPtrArray* entries, guint i) {
             if (p->level > 0 && p->level < e->level) return j;
         } else if (e->container != NULL && p->level == 0 && strcmp(p->name, e->container) == 0) {
             return j;
+        } else if (e->container == NULL && p->level > 0) {
+            return j; /* LaTeX: a label under its section */
         }
     }
     return -1;

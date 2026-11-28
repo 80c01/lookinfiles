@@ -166,6 +166,8 @@ const gchar* code_symbol_kind_name(CodeSymbolKind kind) {
         case CODE_SYM_FIELD: return C_("symbol kind", "field");
         case CODE_SYM_MODULE: return C_("symbol kind", "module");
         case CODE_SYM_TARGET: return C_("symbol kind", "target");
+        case CODE_SYM_LABEL: return C_("symbol kind", "label");
+        case CODE_SYM_REFERENCE: return C_("symbol kind", "bibliography entry");
     }
     return C_("symbol kind", "symbol");
 }
@@ -177,7 +179,8 @@ gboolean code_symbol_kind_in(CodeSymbolKind kind, guint kinds) {
 gboolean code_is_word_char(CodeLang lang, gunichar c) {
     if (c == '_' || g_unichar_isalnum(c)) return TRUE;
     if (c == '$') return lang == CODE_LANG_JS;
-    if (c == '-') return lang == CODE_LANG_MAKE;
+    if (c == '-') return lang == CODE_LANG_MAKE || lang == CODE_LANG_LATEX;
+    if (c == ':') return lang == CODE_LANG_LATEX; /* \label{sec:intro} */
     return FALSE;
 }
 

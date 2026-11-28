@@ -4,12 +4,15 @@
 /* Symbol scanners of the built-in code index (docs/code-nav.md): the C
  * family through code_scan_c, the other languages with line-based regular
  * expressions (Python, Shell, JavaScript / TypeScript, Go, Rust, Lua, Ruby,
- * Makefile). Heuristic: no parser, no scopes, local variables are not
- * listed. Pure GLib, unit-tested; safe to call from worker threads. */
+ * Makefile), LaTeX and BibTeX through code_scan_tex. Heuristic: no parser,
+ * no scopes, local variables are not listed. Pure GLib, unit-tested; safe to call from worker threads. */
 #include "code/code_symbol.h"
 
 /* TRUE when lang has a built-in scanner (the others need ctags or LSP) */
 gboolean code_scan_supported(CodeLang lang);
+/* TRUE when the built-in scanner knows lang better than ctags (LaTeX: its
+ * labels, macros and bibliography): lookups do not use ctags for it */
+gboolean code_scan_preferred(CodeLang lang);
 
 /* Symbols of text (CodeSymbol*, freed with the array), in file order: all
  * of them, or only those named only_name when it is not NULL */

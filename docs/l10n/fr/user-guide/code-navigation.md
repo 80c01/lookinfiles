@@ -50,7 +50,12 @@ nouvel onglet suit les Préférences, page Éditeur), et
 sa largeur est partagée par les onglets.
 
 Dans un fichier Markdown, la liste des symboles et la barre de symboles
-affichent les titres.
+affichent les titres. Dans un fichier LaTeX, elles affichent les parties,
+chapitres, sections… et les frames de beamer, avec les labels sous leur
+section, les macros et environnements que le fichier définit
+(`\newcommand`, `\newenvironment`) et ses entrées de bibliographie ;
+`F12` sur la clé d’un `\ref` ou d’un `\cite` va à son `\label` ou à son
+entrée d’un fichier `.bib`, même sans serveur de langage.
 
 En mode Vim, comme dans Vim, la barre de symboles et le texte ont chacun
 leur ligne de statut : `Tagbar`, puis `Name` (groupé par type) ou `Order`

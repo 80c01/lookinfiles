@@ -666,11 +666,12 @@ Layers, from bottom to top
   fences and front matter), headings from the tag names of rendered
   previews (`code_outline_heading_tag_level()`), the tree (nested in
   containers, grouped by kind) and the entry at a line. Tested in `tests/test_code_outline_tree.c`.
-- `code_symbol`, `code_scan_c`, `code_scan`, `code_index` — the built-in
+- `code_symbol`, `code_scan_c`, `code_scan_tex`, `code_scan`, `code_index` — the built-in
   code index of code navigation (code-nav.md): languages and the
   identifier under the cursor (`code_word_at()`), symbol scanners
-  (`code_scan_text()`: a C-family state machine, line regexes for the other
-  languages; no parser, locals not listed), the project's files (`git_list_files()`,
+  (`code_scan_text()`: a C-family state machine, a LaTeX / BibTeX scanner
+  that also gives the LaTeX outline (`code_outline_tex()`), line regexes
+  for the other languages; no parser, locals not listed), the project's files (`git_list_files()`,
   else a bounded walk) and the ranked definition lookup
   (`code_index_find()`, blocking: worker thread only).
 - `code_tags` — ctags backend: finds Universal Ctags (`code_tags_program()`),

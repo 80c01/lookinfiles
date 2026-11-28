@@ -355,10 +355,12 @@ static const gchar* name_class(const OutlineItem* it) {
     case CODE_SYM_TYPE:
     case CODE_SYM_CLASS: return "tagbar-type";
     case CODE_SYM_MACRO:
+    case CODE_SYM_LABEL:
     case CODE_SYM_CONSTANT: return "tagbar-constant";
     case CODE_SYM_VARIABLE:
     case CODE_SYM_FIELD: return "tagbar-variable";
     case CODE_SYM_MODULE:
+    case CODE_SYM_REFERENCE:
     case CODE_SYM_TARGET: return "tagbar-keyword";
     }
     return "tagbar-plain";

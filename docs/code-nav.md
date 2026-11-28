@@ -40,14 +40,20 @@ Emacs, Vim). The modules are described in
 
 | Layer | Modules |
 |---|---|
-| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c` (scanners), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup, workspace symbol search), `code_tags` (ctags), `lsp_protocol`, `lsp_edit` (text edit application, buffer identifier extraction), `code_lint` (built-in JSON/TOML/YAML/XML syntax diagnostics), `lsp_client`, `lsp_config`, `jump_list` |
+| 1 (foundation) | `code_symbol` (languages, word under the cursor), `code_scan`, `code_scan_c`, `code_scan_tex` (scanners; LaTeX outline), `code_outline_tree` (outline entries, Markdown headings, tree), `code_index` (project files, ranked lookup, workspace symbol search), `code_tags` (ctags), `lsp_protocol`, `lsp_edit` (text edit application, buffer identifier extraction), `code_lint` (built-in JSON/TOML/YAML/XML syntax diagnostics), `lsp_client`, `lsp_config`, `jump_list` |
 | 3 (feature) | `code_nav` (lookups, jumps, history), `code_intel` (language servers per project), `code_help` (help cards, signature help, occurrences), `code_refs` (References tab), `code_problems` (Problems tab, diagnostic stepping), `code_outline` (outline of a tab: server, scanner or Markdown, in a worker), `code_symbols` (file symbol picker), `code_workspace_symbols` (project symbol picker), `code_kind_drop` (kind drop-down of both pickers), `code_complete` (autocompletion popover), `code_rename` (multi-file LSP rename), `editor_tagbar` (tagbar) |
 
 ## Backends
 
 - **Built-in index**: C, C++, Java, C# (a state machine over comments,
   strings, preprocessor lines and braces), Python, Shell, JavaScript /
-  TypeScript, Go, Rust, Lua, Ruby, Makefile (line regexes).
+  TypeScript, Go, Rust, Lua, Ruby, Makefile (line regexes), LaTeX and
+  BibTeX (`code_scan_tex`: labels, macros, environments, bibliography
+  entries; `:` and `-` are word characters so `\ref{sec:a-b}` is one key).
+  LaTeX does not use ctags (`code_scan_preferred()`): ctags skips its
+  labels. Its outline without a server is headings (`\part` 1 to
+  `\subparagraph` 7, beamer frames 8) with the symbols under the nearest
+  heading.
 - **ctags**: `ctags --output-format=json` when installed; index cached in
   `app_cache_dir()/tags/`. Each lookup compares the size and date of the
   files and re-tags the changed ones. Adds Objective-C, PHP, Perl, Kotlin,

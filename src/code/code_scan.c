@@ -1,6 +1,7 @@
 /* Symbol scanners of the built-in code index (see code_scan.h) */
 #include "code/code_scan.h"
 #include "code/code_scan_c.h"
+#include "code/code_scan_tex.h"
 #include <string.h>
 
 /* Rule flags */
@@ -110,7 +111,11 @@ static void compile_rules(void) {
 }
 
 gboolean code_scan_supported(CodeLang lang) {
-    return lang != CODE_LANG_NONE && lang <= CODE_LANG_OBJC;
+    return (lang != CODE_LANG_NONE && lang <= CODE_LANG_OBJC) || lang == CODE_LANG_LATEX;
+}
+
+gboolean code_scan_preferred(CodeLang lang) {
+    return lang == CODE_LANG_LATEX;
 }
 
 typedef struct {
@@ -321,6 +326,9 @@ GPtrArray* code_scan_text(const gchar* text, gsize len, CodeLang lang, const gch
         case CODE_LANG_OBJC:
             code_scan_c(text, len, CODE_LANG_C, only_name, out);
             break;
+        case CODE_LANG_LATEX:
+            g_ptr_array_unref(out);
+            return code_scan_tex(text, len, only_name);
         default: {
             Sink sink = {only_name, only_name != NULL ? strlen(only_name) : 0, out};
             scan_lines(text, len, lang, &sink);
@@ -432,6 +440,12 @@ static gchar* trimmed(const gchar* s, gsize n) {
 /* Remove comment markers of one line of a comment block */
 static gchar* strip_marker(gchar* line, CodeLang lang) {
     const gchar* t = line;
+    if (lang == CODE_LANG_LATEX) {
+        while (*t == '%') t++;
+        gchar* out = g_strdup(t);
+        g_free(line);
+        return g_strstrip(out);
+    }
     static const gchar* const PREFIXES[] = {"///", "//!", "//", "/**", "/*!", "/*", "*/", "*", "#", "--", ";"};
     for (gsize i = 0; i < G_N_ELEMENTS(PREFIXES); i++) {
         if (g_str_has_prefix(t, PREFIXES[i])) {
@@ -457,6 +471,7 @@ static gchar* strip_marker(gchar* line, CodeLang lang) {
 }
 
 static gboolean is_comment_line(const gchar* t, CodeLang lang) {
+    if (lang == CODE_LANG_LATEX) return t[0] == '%';
     if (g_str_has_prefix(t, "//") || g_str_has_prefix(t, "/*") || g_str_has_prefix(t, "*") ||
         g_str_has_suffix(t, "*/")) {
         return lang != CODE_LANG_PYTHON && lang != CODE_LANG_SHELL && lang != CODE_LANG_MAKE;

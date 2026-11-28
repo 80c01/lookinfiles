@@ -92,6 +92,8 @@ static const gchar* kind_short(CodeSymbolKind k) {
     case CODE_SYM_FIELD:    return "fld";
     case CODE_SYM_MODULE:   return "mod";
     case CODE_SYM_TARGET:   return "tgt";
+    case CODE_SYM_LABEL:    return "lbl";
+    case CODE_SYM_REFERENCE: return "bib";
     default:                return "sym";
     }
 }

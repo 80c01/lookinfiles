@@ -241,7 +241,8 @@ filler_lines:palette
 explorer_row:
 code_symbol:i18n
 code_scan_c:code_symbol
-code_scan:code_symbol,code_scan_c
+code_scan_tex:code_symbol,code_outline_tree
+code_scan:code_symbol,code_scan_c,code_scan_tex
 code_outline_tree:code_symbol,i18n
 code_tags:code_symbol,json_view
 code_index:code_symbol,code_scan,code_tags,git_utils

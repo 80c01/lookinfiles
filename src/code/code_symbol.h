@@ -49,9 +49,11 @@ typedef enum {
     CODE_SYM_CONSTANT,  /* enum constant, const */
     CODE_SYM_FIELD,     /* struct / class member */
     CODE_SYM_MODULE,    /* namespace, module, package */
-    CODE_SYM_TARGET     /* Makefile target */
+    CODE_SYM_TARGET,    /* Makefile target */
+    CODE_SYM_LABEL,     /* LaTeX \label */
+    CODE_SYM_REFERENCE  /* bibliography entry (BibTeX, \bibitem) */
 } CodeSymbolKind;
-#define CODE_SYM_N_KINDS (CODE_SYM_TARGET + 1)
+#define CODE_SYM_N_KINDS (CODE_SYM_REFERENCE + 1)
 
 typedef struct {
     gchar* name;

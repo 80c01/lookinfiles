@@ -53,7 +53,8 @@ typedef struct {
 
 /* The tree of entries (sorted by code_outline_sort()): each entry goes
  * under the nearest entry before it named as its container, a heading
- * under the nearest heading of a lower level before it; with BY_KIND the
+ * under the nearest heading of a lower level before it, a symbol without
+ * a container under the nearest heading before it (LaTeX); with BY_KIND the
  * symbols left at the top go into one group per kind (headings stay at the
  * top). Returns the top nodes (CodeOutlineNode*, freed with the array). */
 GPtrArray* code_outline_tree(const GPtrArray* entries, CodeOutlineSort sort);

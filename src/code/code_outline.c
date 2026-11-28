@@ -3,6 +3,7 @@
 #include "code/code_intel.h"
 #include "code/code_nav.h"
 #include "code/code_scan.h"
+#include "code/code_scan_tex.h"
 #include "core/file_types.h"
 #include "core/i18n.h"
 #include <string.h>
@@ -78,6 +79,8 @@ static void scan_thread(GTask* task, gpointer source, gpointer data, GCancellabl
     GPtrArray* entries;
     if (r->markdown) {
         entries = code_outline_markdown(r->text, len);
+    } else if (r->lang == CODE_LANG_LATEX) {
+        entries = code_outline_tex(r->text, len);
     } else {
         entries = code_outline_entries_new();
         GPtrArray* syms = code_scan_text(r->text, len, r->lang, NULL);
