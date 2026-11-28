@@ -4,6 +4,7 @@
 #include "jupyter/ipynb_tab.h"
 #include "sysmon/sysmon_tab.h"
 #include "chrome/diagnostics_tab.h"
+#include "chrome/welcome_tab.h"
 #include "diskuse/disk_usage_tab.h"
 #include "chrome/help_guide.h"
 #include "chrome/launcher_tab.h"
@@ -182,7 +183,7 @@ void close_shown_tab(AppData* app) {
     FocusInfo info;
     focus_route_get(app, &info);
     if (!(info.area == FOCUS_AREA_EDITOR && info.tab != NULL)) {
-        if (launcher_tab_close_shown(app) || canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || diagnostics_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app)) {
+        if (launcher_tab_close_shown(app) || canvas_view_close_shown(app) || video_tab_close_shown(app) || ipynb_tab_close_shown(app) || diff_tab_close_shown(app) || help_guide_close_shown(app) || sysmon_tab_close_shown(app) || diagnostics_tab_close_shown(app) || welcome_tab_close_shown(app) || disk_usage_tab_close_shown(app) || deep_search_tab_close_shown(app) || browser_close_shown(app) || games_tab_close_shown(app)) {
             return;
         }
         if (code_problems_close_shown(app) || code_refs_close_shown(app) || task_page_close_shown(app)) {

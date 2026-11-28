@@ -42,6 +42,7 @@ static void test_missing_file(void) {
     g_assert_false(s.clock_12h);
     g_assert_false(s.clock_seconds);
     g_assert_true(s.timers_shown);
+    g_assert_false(s.welcome);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
 }
@@ -79,6 +80,7 @@ static void test_save_load(void) {
     s.timers_shown = FALSE;
     s.width = 1920;
     s.height = 1080;
+    s.welcome = TRUE;
     g_assert_true(settings_store_save(path, &s, NULL));
     gchar* written = NULL;
     g_assert_true(g_file_get_contents(path, &written, NULL, NULL));
@@ -110,6 +112,7 @@ static void test_save_load(void) {
     g_assert_true(r.clock_12h);
     g_assert_true(r.clock_seconds);
     g_assert_false(r.timers_shown);
+    g_assert_true(r.welcome);
     g_assert_cmpint(r.width, ==, 1920);
     g_assert_cmpint(r.height, ==, 1080);
 
@@ -143,7 +146,7 @@ static void test_invalid_values(void) {
     gchar* path = g_build_filename(dir, "settings.ini", NULL);
     g_assert_true(g_file_set_contents(path,
                                       "[Editor]\nmode=nano\nline-numbers=maybe\nwrap=true\ncolor-column=-3\n"
-                                      "[Clock]\ntimer-minutes=5000\ntimer-expiry=never\nclock=yes\nclock-format=13h\n[Remote]\nssh=putty\n[Window]\nwidth=10\nheight=abc\n",
+                                      "[Clock]\ntimer-minutes=5000\ntimer-expiry=never\nclock=yes\nclock-format=13h\n[Remote]\nssh=putty\n[Window]\nwidth=10\nheight=abc\nwelcome=sometimes\n",
                                       -1, NULL));
     Settings s;
     g_assert_true(settings_store_load(path, &s));
@@ -158,6 +161,7 @@ static void test_invalid_values(void) {
     g_assert_false(s.clock_12h);
     g_assert_cmpint(s.width, ==, 1000);
     g_assert_cmpint(s.height, ==, 600);
+    g_assert_false(s.welcome);
     g_remove(path);
     g_rmdir(dir);
     g_free(path);

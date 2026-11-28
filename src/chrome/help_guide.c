@@ -298,8 +298,12 @@ static void on_link(GtkTextView* view, const gchar* url, gpointer data) {
     case USER_GUIDE_LINK_WEB:
         browser_open(hg->app, url); /* a browser tab, or the default browser */
         break;
-    case USER_GUIDE_LINK_APP: /* USER_GUIDE_ACTION_DIAGNOSTICS, the only one */
-        diagnostics_tab_show(hg->app, anchor);
+    case USER_GUIDE_LINK_APP:
+        if (g_strcmp0(page, USER_GUIDE_ACTION_WELCOME) == 0) {
+            app_emit(hg->app, APP_EVENT_SHOW_WELCOME); /* welcome_tab.h includes help_guide.h */
+        } else {
+            diagnostics_tab_show(hg->app, anchor);
+        }
         break;
     default: {
         gchar* msg = g_strdup_printf(_("Not in the built-in guide: %s"), page != NULL ? page : url);

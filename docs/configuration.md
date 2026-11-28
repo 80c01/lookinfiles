@@ -37,7 +37,7 @@ keeps every change, **Cancel** restores them all.
 |---|---|
 | Appearance | Theme and fonts (see [Themes](#themes)) |
 | Editor | Mode of new editor tabs (Notepad, Vim, Emacs; also the global mode of the top bar), line numbers and line wrap of new tabs, the tagbar of the code and Markdown tabs (open ones too) and of the preview, the minimap of the editor tabs, the preview and Help (open tabs too), whether the editor tabs update the preview (open tabs too), a vertical line at a column in every editor tab and in code previews (Vim's `colorcolumn`, colour `editor_ruler`) |
-| Window | Window size at startup (**Use the current size** fills it in) |
+| Window | Window size at startup (**Use the current size** fills it in), **Show the Welcome tab at startup** (the first launch, without a configuration folder, opens it anyway) |
 | Layouts | Terminal, preview and editor tagbar of the **Auto** layout (`Alt+L`): as they are, shown or hidden; the terminal's place: where it is, below or on the right (as `Ctrl+Shift+L` does) |
 | Clock | The time of the top bar: shown or hidden (an icon then opens the timers while none runs), 24-hour or 12-hour, with or without the seconds; duration of top bar timer 1 at launch, in minutes (0: no timer; a new duration restarts it), and what it does when it expires: restart, stop at 0:00 or count on below 0:00 (the timers menu sets up all three until the next launch) |
 | Code navigation | **Edit lsp.ini** opens `lsp.ini` in an editor tab, created with a commented example if missing (see [Language servers](#language-servers)) |
@@ -79,6 +79,7 @@ ssh=auto              # auto (default), libssh or openssh; read at launch
 [Window]
 width=1600
 height=900
+welcome=false         # the Welcome tab at every launch (the first one opens it anyway)
 
 [Layouts]
 auto-terminal=true # Auto shows the terminal (false: hides it; missing: as it is)

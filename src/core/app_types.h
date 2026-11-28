@@ -131,6 +131,7 @@ typedef struct {
     GtkWidget* help_page;          /* its Help tab while another workspace is shown (owned ref, help_guide.c) */
     GtkWidget* sysmon_page;        /* its System Monitor tab while another workspace is shown (owned ref, sysmon_tab.c) */
     GtkWidget* diagnostics_page;   /* its Diagnostics tab while another workspace is shown (owned ref, diagnostics_tab.c) */
+    GtkWidget* welcome_page;       /* its Welcome tab while another workspace is shown (owned ref, welcome_tab.c) */
     GtkWidget* disk_usage_page;    /* its Disk Usage tab while another workspace is shown (owned ref, disk_usage_tab.c) */
     GtkWidget* refs_page;          /* its References tab while another workspace is shown (owned ref, code_refs.c) */
     GtkWidget* build_page;         /* its Build tab while another workspace is shown (owned ref, task_page.c) */
@@ -249,6 +250,7 @@ typedef struct AppData {
     GtkWidget* help_page;           /* Help page (the user guide, help_guide.c), or NULL */
     GtkWidget* sysmon_page;         /* System Monitor page (sysmon_tab.c), or NULL */
     GtkWidget* diagnostics_page;    /* Diagnostics page (diagnostics_tab.c), or NULL */
+    GtkWidget* welcome_page;        /* Welcome page (welcome_tab.c), or NULL */
     GtkWidget* disk_usage_page;     /* Disk Usage page (disk_usage_tab.c), or NULL */
     GtkWidget* deep_search_page;    /* Deep Search page (deep_search_tab.c), or NULL */
 

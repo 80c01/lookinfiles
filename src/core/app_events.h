@@ -32,6 +32,7 @@
  *   APP_EVENT_EDIT_PATH       -> editor_edit_requested()      (editor_request.c)
  *   APP_EVENT_QUIT            -> ui_quit()                    (ui.c)
  *   APP_EVENT_LATEX_SAVED     -> task_run_latex_saved()       (task_run.c)
+ *   APP_EVENT_SHOW_WELCOME    -> welcome_tab_show()           (welcome_tab.c)
  */
 #include "core/app_types.h"
 
@@ -92,6 +93,9 @@ typedef enum {
     /* A .tex file was saved while compiling on save is on:
      * app->latex_saved_path (taken by the handler) */
     APP_EVENT_LATEX_SAVED,
+    /* A lookinfiles:welcome link of the user guide was followed: open the
+     * Welcome tab (which itself opens the guide) */
+    APP_EVENT_SHOW_WELCOME,
     APP_EVENT_COUNT
 } AppEvent;
 

@@ -98,6 +98,7 @@ static void test_resolve_link(void) {
     check_link(from, "lookinfiles:diagnostics", USER_GUIDE_LINK_APP, "diagnostics", NULL);
     check_link(from, "lookinfiles:diagnostics#ctags", USER_GUIDE_LINK_APP, "diagnostics", "ctags");
     check_link(from, "lookinfiles:diagnostics#", USER_GUIDE_LINK_APP, "diagnostics", NULL);
+    check_link(from, "lookinfiles:welcome", USER_GUIDE_LINK_APP, "welcome", NULL);
     check_link(from, "lookinfiles:nothing", USER_GUIDE_LINK_NONE, NULL, NULL);
     check_link(from, "lookinfiles:", USER_GUIDE_LINK_NONE, NULL, NULL);
 }

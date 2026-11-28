@@ -43,6 +43,16 @@ sélection, le tri et les fichiers ouverts. Un dossier qui n’existe plus est
 ignoré. Un fichier donné sur la ligne de commande s’ouvre dans le panneau
 d’édition dédié, l’explorateur et l’aperçu masqués.
 
+Le premier lancement ouvre l’onglet **Bienvenue** dans le panneau d’aperçu :
+choisissez un thème (appliqué aussitôt) et les touches de l’éditeur
+(Notepad, Vim ou Emacs, voir
+[le mode global](#le-mode-global--notepad-emacs-ou-vim)) ; il liste les
+raccourcis essentiels de ces touches et ouvre ce guide,
+l’[onglet Diagnostics](lookinfiles:diagnostics) et les Préférences.
+**Afficher cet onglet au démarrage** (aussi dans Préférences, **Fenêtre**)
+l’ouvre à chaque lancement. [Rouvrez l’onglet Bienvenue](lookinfiles:welcome),
+ou ouvrez-le depuis le menu **+** de la barre d’onglets ; `Ctrl+W` le ferme.
+
 ## La fenêtre
 
 ```

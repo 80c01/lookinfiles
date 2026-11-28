@@ -7,7 +7,7 @@
  *
  *   Appearance       themes and fonts (themes.h), previewed live
  *   Editor           mode, line numbers and wrap of new editor tabs
- *   Window           window size at startup
+ *   Window           window size at startup, the Welcome tab at startup
  *   Layouts          what the Auto layout shows
  *   Clock            duration of timer 1 of the top bar
  *   Code navigation  lsp.ini opened in an editor tab
@@ -28,6 +28,11 @@ EditorMode preferences_editor_mode(SettingsEditor editor);
 
 /* At startup, once app exists: the editor settings of new tabs */
 void preferences_apply_startup(AppData* app, const Settings* settings);
+/* Keep in settings.ini and apply now: the mode of new editor tabs (also
+ * the global mode), the Welcome tab at every startup (welcome_tab.h) */
+void preferences_save_editor(AppData* app, SettingsEditor editor);
+void preferences_save_welcome(AppData* app, gboolean shown);
+
 /* The SSH transport chosen ([Remote] ssh): at startup, before any connection */
 void preferences_apply_ssh(SettingsSsh ssh);
 

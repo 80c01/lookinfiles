@@ -167,7 +167,7 @@ UserGuideLink user_guide_resolve_link(const gchar* from, const gchar* href, gcha
         const gchar* action = href + strlen("lookinfiles:");
         const gchar* hash = strchr(action, '#');
         gchar* name = hash != NULL ? g_strndup(action, (gsize)(hash - action)) : g_strdup(action);
-        if (strcmp(name, USER_GUIDE_ACTION_DIAGNOSTICS) != 0) {
+        if (strcmp(name, USER_GUIDE_ACTION_DIAGNOSTICS) != 0 && strcmp(name, USER_GUIDE_ACTION_WELCOME) != 0) {
             g_free(name);
             return USER_GUIDE_LINK_NONE;
         }

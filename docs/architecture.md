@@ -1286,6 +1286,16 @@ Layers, from bottom to top
   the readings still on their way). `sysmon_indicator` — the
   CPU chart of the top bar (`sysstat_host_cpu()` every 2 s; `LOOKIN_SYSMON_FROZEN`
   stops it for the UI tests), whose click opens or closes the tab.
+- `welcome_tab` — the Welcome tab in the preview notebook (one per
+  workspace, kept like the Diagnostics tab, not saved with the session):
+  opened by `main.c` at the first launch (no `app_config_dir()` yet, which
+  it then creates) or when `[Window] welcome` is set, and from the + menu and
+  `lookinfiles:welcome` links (`APP_EVENT_SHOW_WELCOME`, which keeps
+  `help_guide` out of an include cycle). A theme drop-down (`themes_apply()`), the
+  editor keys (`preferences_save_editor()`), the essential shortcuts of
+  that mode, buttons to the guide, Diagnostics and Preferences, and the
+  startup check button (`preferences_save_welcome()`); the values are read
+  again each time the page is mapped.
 - `diagnostics_tab` — the Diagnostics tab in the preview notebook (one per
   workspace, kept like the Help tab; opened from the + menu): the
   `diagnostics` checks of this computer, with the language servers of
@@ -1981,6 +1991,7 @@ Lower layers never call the chrome or the workspace directly. They emit:
 | `APP_EVENT_ADD_BOOKMARK`         | browser tab: bookmark `app->bookmark_add_target` (name `app->bookmark_add_name`) | `bookmarks_add_requested()` |
 | `APP_EVENT_FOCUS_NEXT_PANEL` / `_PREV_PANEL` | `C-x o`, `Ctrl+W w` / `W`, `F6` / `Shift+F6` | `focus_next_panel()` / `focus_prev_panel()` |
 | `APP_EVENT_QUIT`                 | `Ctrl+Q` in a popover (branches, layout switcher) | `ui_quit()`               |
+| `APP_EVENT_SHOW_WELCOME`         | Help tab: a `lookinfiles:welcome` link | `welcome_tab_show()` |
 
 Handlers run synchronously inside `app_emit()`. `make check` rejects direct
 calls to the first five subscribers outside their module and `main.c`. A new

@@ -41,6 +41,9 @@ typedef enum {
 /* The action of lookinfiles: links that opens the Diagnostics tab
  * (diagnostics_tab.h); its anchor is a check id ("ctags", "lsp-python") */
 #define USER_GUIDE_ACTION_DIAGNOSTICS "diagnostics"
+/* The action of lookinfiles: links that opens the Welcome tab
+ * (welcome_tab.h); no anchor */
+#define USER_GUIDE_ACTION_WELCOME "welcome"
 
 /* What href, a link written in page from, points to. PAGE: *out_page is the
  * page ("#id" alone: from itself) and *out_anchor the anchor or NULL. APP

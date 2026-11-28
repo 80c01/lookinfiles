@@ -32,7 +32,8 @@ done
 
 START=$(date +%s%3N)
 rm -rf "$FIX"
-mkdir -p "$OUT" "$FIX/home/.config/gtk-4.0" "$FIX/work"
+# The configuration folder exists: not a first launch (no Welcome tab)
+mkdir -p "$OUT" "$FIX/home/.config/gtk-4.0" "$FIX/home/.config/lookinfiles" "$FIX/work"
 printf '[Settings]\ngtk-cursor-blink=false\n' > "$FIX/home/.config/gtk-4.0/settings.ini"
 seq -f 'plain line %g' 1 1500 > "$FIX/work/a_long.txt"
 seq -f 'short line %g' 1 5 > "$FIX/work/b_short.txt"

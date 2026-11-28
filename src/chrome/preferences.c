@@ -44,6 +44,7 @@ typedef struct {
     GtkWidget* ruler_column;  /* GtkSpinButton */
     GtkWidget* width;         /* GtkSpinButton */
     GtkWidget* height;
+    GtkWidget* welcome;       /* GtkCheckButton: the Welcome tab at every startup */
     GtkWidget* clock_shown;   /* GtkCheckButton: the top bar shows the time */
     GtkWidget* clock_format;  /* GtkDropDown: 24-hour, 12-hour */
     GtkWidget* clock_seconds; /* GtkCheckButton */
@@ -271,6 +272,12 @@ static GtkWidget* window_page(Preferences* p, const Settings* s) {
     gtk_box_append(GTK_BOX(box), grid);
     gtk_box_append(GTK_BOX(box), response_button(p, _("Use the _current size"), RESPONSE_CURRENT_SIZE,
                                                  _("Fill in the size the window has now")));
+    p->welcome = gtk_check_button_new_with_mnemonic(_("Show the _Welcome tab at startup"));
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(p->welcome), s->welcome);
+    gtk_widget_set_tooltip_text(p->welcome, _("The tab of the first launch: theme, editor keys and the "
+                                              "essential shortcuts"));
+    gtk_widget_set_margin_top(p->welcome, 8);
+    gtk_box_append(GTK_BOX(box), p->welcome);
     return box;
 }
 
@@ -487,6 +494,54 @@ static gchar* ensure_lsp_ini(void) {
     return path;
 }
 
+/* The global mode and the mode of new editor tabs become mode */
+static void apply_editor_mode(AppData* app, EditorMode mode) {
+    if (mode == app->default_editor_mode) return;
+    /* Same as picking the global mode in the top bar */
+    app->default_editor_mode = mode;
+    app->nav_prefix = NAV_PREFIX_NONE;
+    app->nav_recenter_step = 0;
+    search_mode_changed(app);
+    app_emit(app, APP_EVENT_CHROME_CHANGED);
+}
+
+/* Write s to settings.ini */
+static void store_settings(const Settings* s) {
+    gchar* path = settings_store_path();
+    GError* error = NULL;
+    if (!settings_store_save(path, s, &error)) {
+        g_printerr("[ Preferences not saved: %s ]\n", error->message);
+        g_clear_error(&error);
+    }
+    g_free(path);
+}
+
+/* The values of settings.ini */
+static void load_settings(Settings* s) {
+    gchar* path = settings_store_path();
+    settings_store_load(path, s);
+    g_free(path);
+}
+
+void preferences_save_editor(AppData* app, SettingsEditor editor) {
+    if (app == NULL) return;
+    Settings s;
+    load_settings(&s);
+    s.editor = editor;
+    store_settings(&s);
+    app->settings.editor = editor;
+    apply_editor_mode(app, preferences_editor_mode(editor));
+}
+
+void preferences_save_welcome(AppData* app, gboolean shown) {
+    if (app == NULL) return;
+    Settings s;
+    load_settings(&s);
+    s.welcome = shown;
+    store_settings(&s);
+    app->settings.welcome = shown;
+}
+
 static void save_settings(Preferences* p) {
     gchar* path = settings_store_path();
     Settings s;
@@ -506,6 +561,7 @@ static void save_settings(Preferences* p) {
                          : 0;
     s.width = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->width));
     s.height = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->height));
+    s.welcome = gtk_check_button_get_active(GTK_CHECK_BUTTON(p->welcome));
     s.timer_minutes = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(p->timer));
     guint expiry = gtk_drop_down_get_selected(GTK_DROP_DOWN(p->timer_expiry));
     s.timer_expiry = (expiry < G_N_ELEMENTS(EXPIRIES)) ? EXPIRIES[expiry] : SETTINGS_EXPIRY_RESTART;
@@ -558,15 +614,7 @@ static void save_settings(Preferences* p) {
     if (column_changed) {
         apply_color_column(app);
     }
-    EditorMode mode = preferences_editor_mode(s.editor);
-    if (mode != app->default_editor_mode) {
-        /* Same as picking the global mode in the top bar */
-        app->default_editor_mode = mode;
-        app->nav_prefix = NAV_PREFIX_NONE;
-        app->nav_recenter_step = 0;
-        search_mode_changed(app);
-        app_emit(app, APP_EVENT_CHROME_CHANGED);
-    }
+    apply_editor_mode(app, preferences_editor_mode(s.editor));
 }
 
 static void remember_section(Preferences* p) {

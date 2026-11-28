@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-28 06:36+0000\n"
+"POT-Creation-Date: 2026-11-28 06:50+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -32,7 +32,7 @@ msgstr "Recadrer l’image"
 msgid "_Reset"
 msgstr "_Réinitialiser"
 
-#: src/canvas/canvas_crop.c:373 src/chrome/preferences.c:610
+#: src/canvas/canvas_crop.c:373 src/chrome/preferences.c:658
 #: src/chrome/themes.c:222 src/chrome/themes.c:237 src/chrome/themes.c:682
 #: src/code/code_rename.c:310 src/code/code_symbols.c:236
 #: src/code/code_workspace_symbols.c:443 src/editor/editor.c:725
@@ -53,7 +53,7 @@ msgstr "_Réinitialiser"
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: src/canvas/canvas_crop.c:374 src/chrome/preferences.c:610
+#: src/canvas/canvas_crop.c:374 src/chrome/preferences.c:658
 #: src/workspace/layouts.c:574
 msgid "_Apply"
 msgstr "A_ppliquer"
@@ -621,7 +621,7 @@ msgstr ""
 "puis Vérifier à nouveau"
 
 #: src/chrome/diagnostics_tab.c:850 src/chrome/diagnostics_tab.c:886
-#: src/chrome/new_tab_menu.c:88
+#: src/chrome/new_tab_menu.c:93
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -2976,7 +2976,7 @@ msgstr ""
 msgid "Unlock Game Mode in this workspace"
 msgstr "Déverrouiller le mode Jeu dans cet espace de travail"
 
-#: src/chrome/help.c:413
+#: src/chrome/help.c:413 src/chrome/welcome_tab.c:42
 msgid "Quit"
 msgstr "Quitter"
 
@@ -3010,7 +3010,7 @@ msgstr ""
 "N’afficher que les raccourcis qui contiennent tous les mots (la touche de "
 "recherche de votre mode : Ctrl+F, / ou C-s)"
 
-#: src/chrome/help_guide.c:143
+#: src/chrome/help_guide.c:144
 #, c-format
 msgid ""
 "# Page Not Found\n"
@@ -3022,46 +3022,46 @@ msgstr ""
 "Le guide d’utilisation n’a pas de page `%s`.\n"
 
 #. TRANSLATORS: title of the Help tab's search results; %s is what was searched
-#: src/chrome/help_guide.c:154 src/chrome/user_guide_search.c:613
+#: src/chrome/help_guide.c:155 src/chrome/user_guide_search.c:613
 #, c-format
 msgid "Search: %s"
 msgstr "Recherche : %s"
 
-#: src/chrome/help_guide.c:155
+#: src/chrome/help_guide.c:156
 msgid "User Guide"
 msgstr "Guide d’utilisation"
 
-#: src/chrome/help_guide.c:203
+#: src/chrome/help_guide.c:204
 msgid "The searched words are not in this page"
 msgstr "Les mots recherchés ne sont pas dans cette page"
 
-#: src/chrome/help_guide.c:204
+#: src/chrome/help_guide.c:205
 msgid "Search the guide first (the search key of your mode)"
 msgstr ""
 "Recherchez d’abord dans le guide (la touche de recherche de votre mode)"
 
-#: src/chrome/help_guide.c:305
+#: src/chrome/help_guide.c:310
 #, c-format
 msgid "Not in the built-in guide: %s"
 msgstr "Absent du guide intégré : %s"
 
-#: src/chrome/help_guide.c:587
+#: src/chrome/help_guide.c:592
 msgid "Back (Shift+H)"
 msgstr "Précédent (Shift+H)"
 
-#: src/chrome/help_guide.c:588
+#: src/chrome/help_guide.c:593
 msgid "Forward (Shift+L)"
 msgstr "Suivant (Shift+L)"
 
-#: src/chrome/help_guide.c:589
+#: src/chrome/help_guide.c:594
 msgid "Contents of the User Guide"
 msgstr "Sommaire du guide d’utilisation"
 
-#: src/chrome/help_guide.c:596
+#: src/chrome/help_guide.c:601
 msgid "Search the guide"
 msgstr "Rechercher dans le guide"
 
-#: src/chrome/help_guide.c:597
+#: src/chrome/help_guide.c:602
 msgid ""
 "Search every page of the guide (the search key of your mode: Ctrl+F, / or C-"
 "s; Enter lists the sections that hold every word)"
@@ -3070,15 +3070,15 @@ msgstr ""
 "mode : Ctrl+F, / ou C-s ; Entrée liste les sections qui contiennent tous les "
 "mots)"
 
-#: src/chrome/help_guide.c:604
+#: src/chrome/help_guide.c:609
 msgid "Show Keyboard Shortcuts (?)"
 msgstr "Afficher les raccourcis clavier (?)"
 
-#: src/chrome/help_guide.c:605
+#: src/chrome/help_guide.c:610
 msgid "Close Help"
 msgstr "Fermer l’aide"
 
-#: src/chrome/help_guide.c:642 src/chrome/topbar.c:822
+#: src/chrome/help_guide.c:647 src/chrome/topbar.c:822
 msgid "Help"
 msgstr "Aide"
 
@@ -3154,29 +3154,34 @@ msgstr "Chercher dans les applications"
 msgid "No application matches"
 msgstr "Aucune application ne correspond"
 
-#: src/chrome/launcher_tab.c:401 src/chrome/new_tab_menu.c:85
+#: src/chrome/launcher_tab.c:401 src/chrome/new_tab_menu.c:90
 msgid "Applications"
 msgstr "Applications"
 
-#: src/chrome/new_tab_menu.c:86 src/chrome/preferences.c:628
+#: src/chrome/new_tab_menu.c:91 src/chrome/preferences.c:676
 msgid "Editor"
 msgstr "Éditeur"
 
-#: src/chrome/new_tab_menu.c:87 src/chrome/topbar.c:776 src/chrome/topbar.c:820
+#: src/chrome/new_tab_menu.c:92 src/chrome/topbar.c:776 src/chrome/topbar.c:820
 #: src/formats/card_view.c:589 src/workspace/layout_store.c:216
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/chrome/new_tab_menu.c:87
+#: src/chrome/new_tab_menu.c:92
 msgid "Needs VTE for GTK 4"
 msgstr "Nécessite VTE pour GTK 4"
 
-#: src/chrome/new_tab_menu.c:97 src/preview/browser.c:125
+#: src/chrome/new_tab_menu.c:94 src/chrome/welcome_tab.c:342
+#: src/chrome/welcome_tab.c:367
+msgid "Welcome"
+msgstr "Bienvenue"
+
+#: src/chrome/new_tab_menu.c:103 src/preview/browser.c:125
 #: src/preview/browser.c:480
 msgid "New Tab"
 msgstr "Nouvel onglet"
 
-#: src/chrome/preferences.c:138
+#: src/chrome/preferences.c:139
 msgid ""
 "For editor tabs opened from now on; the tabs already open keep theirs, "
 "except for the column line, the tagbar and the minimap. Org files always "
@@ -3186,11 +3191,11 @@ msgstr ""
 "ouverts gardent les leurs, sauf pour la ligne de colonne, la barre de "
 "symboles et la minicarte. Les fichiers Org s’ouvrent toujours en Org-mode."
 
-#: src/chrome/preferences.c:143
+#: src/chrome/preferences.c:144
 msgid "_Mode"
 msgstr "_Mode"
 
-#: src/chrome/preferences.c:149
+#: src/chrome/preferences.c:150
 msgid ""
 "Keys of new editor tabs, and of the explorer and preview (the global mode of "
 "the status bar; -e on the command line)"
@@ -3198,31 +3203,31 @@ msgstr ""
 "Touches des nouveaux onglets d’édition, de l’explorateur et de l’aperçu (le "
 "mode global de la barre d’état ; -e en ligne de commande)"
 
-#: src/chrome/preferences.c:161
+#: src/chrome/preferences.c:162
 msgid "Show _line numbers"
 msgstr "Afficher les numéros de _ligne"
 
-#: src/chrome/preferences.c:163
+#: src/chrome/preferences.c:164
 msgid "A tab can still show or hide them from its right-click menu"
 msgstr ""
 "Chaque onglet peut encore les afficher ou les masquer depuis son menu "
 "contextuel"
 
-#: src/chrome/preferences.c:166
+#: src/chrome/preferences.c:167
 msgid "_Wrap long lines"
 msgstr "_Renvoyer les longues lignes à la ligne"
 
-#: src/chrome/preferences.c:168
+#: src/chrome/preferences.c:169
 msgid "Long lines continue on the next line instead of scrolling sideways"
 msgstr ""
 "Les longues lignes continuent sur la ligne suivante au lieu de défiler "
 "horizontalement"
 
-#: src/chrome/preferences.c:171
+#: src/chrome/preferences.c:172
 msgid "_Update the preview from the editor"
 msgstr "Mettre à jo_ur l’aperçu depuis l’éditeur"
 
-#: src/chrome/preferences.c:173
+#: src/chrome/preferences.c:174
 msgid ""
 "Saving a file, selecting its tab or clicking into it shows it in the "
 "preview, in every tab, the tabs already open too (a tab: Update Preview in "
@@ -3232,11 +3237,11 @@ msgstr ""
 "dans l’aperçu, dans chaque onglet, les onglets déjà ouverts aussi (un "
 "onglet : Mettre à jour l’aperçu dans son menu contextuel)"
 
-#: src/chrome/preferences.c:178
+#: src/chrome/preferences.c:179
 msgid "Save the project's files _before a task (F7)"
 msgstr "Enregistrer les fichiers du projet _avant une tâche (F7)"
 
-#: src/chrome/preferences.c:180
+#: src/chrome/preferences.c:181
 msgid ""
 "F7 and Shift+F7 first save the edited tabs of files under the task's "
 "project, so that it builds what you see"
@@ -3244,11 +3249,11 @@ msgstr ""
 "F7 et Shift+F7 enregistrent d’abord les onglets modifiés des fichiers du "
 "projet de la tâche, pour qu’elle compile ce que vous voyez"
 
-#: src/chrome/preferences.c:184
+#: src/chrome/preferences.c:185
 msgid "Compile LaTeX documents when sa_ved"
 msgstr "Compiler les documents LaTeX à l’_enregistrement"
 
-#: src/chrome/preferences.c:186
+#: src/chrome/preferences.c:187
 msgid ""
 "Saving a .tex file compiles its main document, as F7 does, and shows its PDF "
 "in the preview; the errors go to the Build tab"
@@ -3256,11 +3261,11 @@ msgstr ""
 "Enregistrer un fichier .tex compile son document principal, comme F7, et "
 "affiche son PDF dans l’aperçu ; les erreurs vont dans l’onglet Build"
 
-#: src/chrome/preferences.c:190
+#: src/chrome/preferences.c:191
 msgid "Show the _tagbar"
 msgstr "Afficher la _barre de symboles"
 
-#: src/chrome/preferences.c:192
+#: src/chrome/preferences.c:193
 msgid ""
 "Symbols of code files and headings of Markdown files beside the text, in "
 "every tab, the tabs already open too (Notepad: Ctrl+K Ctrl+O, Emacs: M-x "
@@ -3270,11 +3275,11 @@ msgstr ""
 "texte, dans chaque onglet, y compris ceux déjà ouverts (Notepad : Ctrl+K "
 "Ctrl+O, Emacs : M-x imenu-list, Vim : :TagbarToggle)"
 
-#: src/chrome/preferences.c:197
+#: src/chrome/preferences.c:198
 msgid "Show the tagbar in the _preview"
 msgstr "Afficher la barre de symboles dans l’a_perçu"
 
-#: src/chrome/preferences.c:199
+#: src/chrome/preferences.c:200
 msgid ""
 "Headings of Markdown, HTML, Org, Word, OpenDocument and EPUB previews, PDF "
 "bookmarks, beside the text (in the preview: o or Ctrl+K Ctrl+O)"
@@ -3282,11 +3287,11 @@ msgstr ""
 "Titres des aperçus Markdown, HTML, Org, Word, OpenDocument et EPUB, signets "
 "PDF, à côté du texte (dans l’aperçu : o ou Ctrl+K Ctrl+O)"
 
-#: src/chrome/preferences.c:203
+#: src/chrome/preferences.c:204
 msgid "Show the mi_nimap"
 msgstr "Afficher la mi_nicarte"
 
-#: src/chrome/preferences.c:205
+#: src/chrome/preferences.c:206
 msgid ""
 "Overview of a long text beside it, in every editor tab, the tabs already "
 "open too, in the preview and in Help (hidden: the scrollbar)"
@@ -3295,11 +3300,11 @@ msgstr ""
 "y compris ceux déjà ouverts, dans l’aperçu et dans l’aide (masquée : la "
 "barre de défilement)"
 
-#: src/chrome/preferences.c:211
+#: src/chrome/preferences.c:212
 msgid "Show a vertical line at _column"
 msgstr "Afficher une ligne verticale à la _colonne"
 
-#: src/chrome/preferences.c:213
+#: src/chrome/preferences.c:214
 msgid ""
 "A line before this column in every editor tab, the tabs already open too, "
 "and in code previews (Vim: :set colorcolumn=81)"
@@ -3307,11 +3312,11 @@ msgstr ""
 "Une ligne avant cette colonne dans chaque onglet d’édition, y compris ceux "
 "déjà ouverts, et dans les aperçus de code (Vim : :set colorcolumn=81)"
 
-#: src/chrome/preferences.c:219
+#: src/chrome/preferences.c:220
 msgid "81: the line follows the 80th character"
 msgstr "81 : la ligne suit le 80ᵉ caractère"
 
-#: src/chrome/preferences.c:254
+#: src/chrome/preferences.c:255
 msgid ""
 "Size of the window at the next launch, in pixels (--size on the command line "
 "wins)."
@@ -3319,23 +3324,34 @@ msgstr ""
 "Taille de la fenêtre au prochain lancement, en pixels (--size en ligne de "
 "commande l’emporte)."
 
-#: src/chrome/preferences.c:261
+#: src/chrome/preferences.c:262
 msgid "Wi_dth"
 msgstr "_Largeur"
 
-#: src/chrome/preferences.c:262
+#: src/chrome/preferences.c:263
 msgid "_Height"
 msgstr "_Hauteur"
 
-#: src/chrome/preferences.c:272
+#: src/chrome/preferences.c:273
 msgid "Use the _current size"
 msgstr "Utiliser la taille a_ctuelle"
 
-#: src/chrome/preferences.c:273
+#: src/chrome/preferences.c:274
 msgid "Fill in the size the window has now"
 msgstr "Reprendre la taille actuelle de la fenêtre"
 
-#: src/chrome/preferences.c:308
+#: src/chrome/preferences.c:275
+msgid "Show the _Welcome tab at startup"
+msgstr "Afficher l’onglet _Bienvenue au démarrage"
+
+#: src/chrome/preferences.c:277
+msgid ""
+"The tab of the first launch: theme, editor keys and the essential shortcuts"
+msgstr ""
+"L’onglet du premier lancement : thème, touches de l’éditeur et raccourcis "
+"essentiels"
+
+#: src/chrome/preferences.c:315
 msgid ""
 "How LookinFiles connects to remote machines. A change takes effect at the "
 "next launch."
@@ -3343,23 +3359,23 @@ msgstr ""
 "Comment LookinFiles se connecte aux machines distantes. Un changement prend "
 "effet au prochain lancement."
 
-#: src/chrome/preferences.c:313
+#: src/chrome/preferences.c:320
 msgid "Automatic (libssh on Windows, the ssh program elsewhere)"
 msgstr "Automatique (libssh sous Windows, le programme ssh ailleurs)"
 
-#: src/chrome/preferences.c:314
+#: src/chrome/preferences.c:321
 msgid "Built-in libssh"
 msgstr "libssh intégré"
 
-#: src/chrome/preferences.c:314
+#: src/chrome/preferences.c:321
 msgid "The ssh program (OpenSSH)"
 msgstr "Le programme ssh (OpenSSH)"
 
-#: src/chrome/preferences.c:319
+#: src/chrome/preferences.c:326
 msgid "SSH _connection"
 msgstr "_Connexion SSH"
 
-#: src/chrome/preferences.c:320
+#: src/chrome/preferences.c:327
 msgid ""
 "Built-in libssh: one connection per machine for files, commands, notebooks, "
 "language servers and terminals, one password. The ssh program: OpenSSH, with "
@@ -3370,28 +3386,28 @@ msgstr ""
 "passe. Le programme ssh : OpenSSH, avec une connexion partagée là où il peut "
 "multiplexer (pas sous Windows)."
 
-#: src/chrome/preferences.c:328
+#: src/chrome/preferences.c:335
 msgid "This build has no libssh: the ssh program is used."
 msgstr "Cette version n’a pas libssh : le programme ssh est utilisé."
 
-#: src/chrome/preferences.c:330
+#: src/chrome/preferences.c:337
 msgid "LOOKINFILES_SSH_LIBSSH is set: it wins over this choice."
 msgstr "LOOKINFILES_SSH_LIBSSH est définie : elle l’emporte sur ce choix."
 
-#: src/chrome/preferences.c:333
+#: src/chrome/preferences.c:340
 #, c-format
 msgid "In use now: %s"
 msgstr "Utilisé maintenant : %s"
 
-#: src/chrome/preferences.c:333
+#: src/chrome/preferences.c:340
 msgid "built-in libssh"
 msgstr "libssh intégré"
 
-#: src/chrome/preferences.c:333
+#: src/chrome/preferences.c:340
 msgid "the ssh program"
 msgstr "le programme ssh"
 
-#: src/chrome/preferences.c:341
+#: src/chrome/preferences.c:348
 msgid ""
 "Click the clock or a timer to set up three timers; right-click a timer to "
 "pause it. A timer's last minute is shown in reverse colours and its last ten "
@@ -3402,11 +3418,11 @@ msgstr ""
 "minuteur s’affiche en couleurs inversées et ses dix dernières secondes "
 "clignotent."
 
-#: src/chrome/preferences.c:344
+#: src/chrome/preferences.c:351
 msgid "Sho_w the time"
 msgstr "Afficher l’_heure"
 
-#: src/chrome/preferences.c:347
+#: src/chrome/preferences.c:354
 msgid ""
 "When hidden, an icon opens the timers while none runs (if the timers are "
 "shown)"
@@ -3414,81 +3430,81 @@ msgstr ""
 "Masquée, une icône ouvre les minuteurs tant qu’aucun ne tourne (si les "
 "minuteurs sont affichés)"
 
-#: src/chrome/preferences.c:353
+#: src/chrome/preferences.c:360
 msgid "24-hour (14:05)"
 msgstr "24 heures (14:05)"
 
-#: src/chrome/preferences.c:353
+#: src/chrome/preferences.c:360
 msgid "12-hour (2:05 PM)"
 msgstr "12 heures (2:05 PM)"
 
-#: src/chrome/preferences.c:354
+#: src/chrome/preferences.c:361
 msgid "Time _format"
 msgstr "_Format de l’heure"
 
-#: src/chrome/preferences.c:354
+#: src/chrome/preferences.c:361
 msgid "How the top bar shows the time"
 msgstr "Comment la barre du haut affiche l’heure"
 
-#: src/chrome/preferences.c:358
+#: src/chrome/preferences.c:365
 msgid "Show the _seconds"
 msgstr "Afficher les _secondes"
 
-#: src/chrome/preferences.c:364
+#: src/chrome/preferences.c:371
 msgid "Show the ti_mers"
 msgstr "Afficher les mi_nuteurs"
 
-#: src/chrome/preferences.c:366
+#: src/chrome/preferences.c:373
 msgid ""
 "When off, the top bar shows no timer and a click on the clock does nothing"
 msgstr ""
 "Désactivé, la barre du haut n’affiche aucun minuteur et un clic sur "
 "l’horloge ne fait rien"
 
-#: src/chrome/preferences.c:373
+#: src/chrome/preferences.c:380
 msgid "_Timer 1 duration at launch (minutes)"
 msgstr "Durée du _minuteur 1 au lancement (minutes)"
 
-#: src/chrome/preferences.c:378
+#: src/chrome/preferences.c:385
 msgid "0: no timer. Applying a new duration restarts the timer"
 msgstr ""
 "0 : pas de minuteur. Appliquer une nouvelle durée redémarre le minuteur"
 
-#: src/chrome/preferences.c:382 src/clock/clock_pill.c:515
+#: src/chrome/preferences.c:389 src/clock/clock_pill.c:515
 #: src/explorer/remote.c:1091
 msgid "Restart"
 msgstr "Relancer"
 
-#: src/chrome/preferences.c:382
+#: src/chrome/preferences.c:389
 msgid "Stop at 0:00"
 msgstr "Arrêter à 0:00"
 
-#: src/chrome/preferences.c:382
+#: src/chrome/preferences.c:389
 msgid "Count on below 0:00"
 msgstr "Continuer sous 0:00"
 
-#: src/chrome/preferences.c:387
+#: src/chrome/preferences.c:394
 msgid "When timer 1 _expires"
 msgstr "À l’e_xpiration du minuteur 1"
 
-#: src/chrome/preferences.c:388
+#: src/chrome/preferences.c:395
 msgid "Restart at once, stay at 0:00 or count on below 0:00 (-0:01, -0:02…)"
 msgstr ""
 "Relancer aussitôt, rester à 0:00 ou continuer sous 0:00 (-0:01, -0:02…)"
 
-#: src/chrome/preferences.c:399
+#: src/chrome/preferences.c:406
 msgid "As it is"
 msgstr "Tel quel"
 
-#: src/chrome/preferences.c:399
+#: src/chrome/preferences.c:406
 msgid "Shown"
 msgstr "Affiché"
 
-#: src/chrome/preferences.c:399 src/formats/card_view.c:590
+#: src/chrome/preferences.c:406 src/formats/card_view.c:590
 msgid "Hidden"
 msgstr "Masqué"
 
-#: src/chrome/preferences.c:414
+#: src/chrome/preferences.c:421
 msgid ""
 "The Auto layout (Alt+L) puts the open files in a grid in the editor panel; "
 "it can also show or hide the terminal, the preview and the tagbar, and place "
@@ -3498,39 +3514,39 @@ msgstr ""
 "panneau d’édition ; elle peut aussi afficher ou masquer le terminal, "
 "l’aperçu et la barre de symboles, et placer le terminal."
 
-#: src/chrome/preferences.c:420
+#: src/chrome/preferences.c:427
 msgid "_Terminal"
 msgstr "_Terminal"
 
-#: src/chrome/preferences.c:420
+#: src/chrome/preferences.c:427
 msgid "Terminal panel with the Auto layout"
 msgstr "Panneau du terminal avec la disposition Auto"
 
-#: src/chrome/preferences.c:422
+#: src/chrome/preferences.c:429
 msgid "_Preview"
 msgstr "A_perçu"
 
-#: src/chrome/preferences.c:422
+#: src/chrome/preferences.c:429
 msgid "Preview panel with the Auto layout"
 msgstr "Panneau d’aperçu avec la disposition Auto"
 
-#: src/chrome/preferences.c:424
+#: src/chrome/preferences.c:431
 msgid "Where it is"
 msgstr "Où il est"
 
-#: src/chrome/preferences.c:424
+#: src/chrome/preferences.c:431
 msgid "Below"
 msgstr "En bas"
 
-#: src/chrome/preferences.c:424
+#: src/chrome/preferences.c:431
 msgid "On the right"
 msgstr "À droite"
 
-#: src/chrome/preferences.c:429
+#: src/chrome/preferences.c:436
 msgid "Terminal p_lace"
 msgstr "P_osition du terminal"
 
-#: src/chrome/preferences.c:430
+#: src/chrome/preferences.c:437
 msgid ""
 "Terminal below the preview and the editor panel, or on their right, with the "
 "Auto layout (as Ctrl+Shift+L does)"
@@ -3538,17 +3554,17 @@ msgstr ""
 "Terminal sous l’aperçu et le panneau d’édition, ou à leur droite, avec la "
 "disposition Auto (comme le fait Ctrl+Shift+L)"
 
-#: src/chrome/preferences.c:433
+#: src/chrome/preferences.c:440
 msgid "Tag_bar"
 msgstr "_Barre de symboles"
 
-#: src/chrome/preferences.c:434
+#: src/chrome/preferences.c:441
 msgid "Tagbar of code and Markdown editor tabs with the Auto layout"
 msgstr ""
 "Barre de symboles des onglets d’édition de code et Markdown avec la "
 "disposition Auto"
 
-#: src/chrome/preferences.c:449
+#: src/chrome/preferences.c:456
 #, c-format
 msgid ""
 "Code navigation starts the language server installed for the file's language "
@@ -3559,41 +3575,41 @@ msgstr ""
 "langage du fichier (clangd, pylsp, gopls, rust-analyzer…). %s remplace la "
 "commande d’un serveur ou le désactive ; il est lu au prochain lancement."
 
-#: src/chrome/preferences.c:456
+#: src/chrome/preferences.c:463
 msgid "Edit _lsp.ini"
 msgstr "Modifier _lsp.ini"
 
-#: src/chrome/preferences.c:457
+#: src/chrome/preferences.c:464
 msgid "Open lsp.ini in an editor tab (created with an example if missing)"
 msgstr ""
 "Ouvrir lsp.ini dans un onglet d’édition (créé avec un exemple s’il n’existe "
 "pas)"
 
-#: src/chrome/preferences.c:610
+#: src/chrome/preferences.c:658 src/chrome/welcome_tab.c:41
 msgid "Preferences"
 msgstr "Préférences"
 
-#: src/chrome/preferences.c:627
+#: src/chrome/preferences.c:675
 msgid "Appearance"
 msgstr "Apparence"
 
-#: src/chrome/preferences.c:629
+#: src/chrome/preferences.c:677
 msgid "Window"
 msgstr "Fenêtre"
 
-#: src/chrome/preferences.c:630
+#: src/chrome/preferences.c:678
 msgid "Layouts"
 msgstr "Dispositions"
 
-#: src/chrome/preferences.c:631
+#: src/chrome/preferences.c:679
 msgid "Clock"
 msgstr "Horloge"
 
-#: src/chrome/preferences.c:632
+#: src/chrome/preferences.c:680
 msgid "Code navigation"
 msgstr "Navigation dans le code"
 
-#: src/chrome/preferences.c:633 src/core/diagnostics.c:116
+#: src/chrome/preferences.c:681 src/core/diagnostics.c:116
 msgid "Remote machines"
 msgstr "Machines distantes"
 
@@ -4169,7 +4185,7 @@ msgstr "Principal"
 msgid "Show / Hide Main Panel (Preview and Editor Tabs)"
 msgstr "Afficher / masquer le panneau principal (aperçu et onglets d’édition)"
 
-#: src/chrome/topbar.c:739 src/chrome/topbar.c:818 src/main.c:478
+#: src/chrome/topbar.c:739 src/chrome/topbar.c:818 src/main.c:483
 #: src/workspace/layout_store.c:54
 msgid "Preview"
 msgstr "Aperçu"
@@ -4223,7 +4239,7 @@ msgstr "Guide d’utilisation (F1) — clic droit : raccourcis clavier (?)"
 msgid "Swap Preview and Editor Panels"
 msgstr "Échanger les panneaux Aperçu et Édition"
 
-#: src/chrome/ui.c:287
+#: src/chrome/ui.c:288
 msgid "No task is running"
 msgstr "Aucune tâche ne tourne"
 
@@ -4250,6 +4266,141 @@ msgid_plural "%u sections hold every word searched, best first:"
 msgstr[0] "%u section contient tous les mots recherchés :"
 msgstr[1] ""
 "%u sections contiennent tous les mots recherchés, les meilleures d’abord :"
+
+#: src/chrome/welcome_tab.c:21
+msgid ""
+"The usual keys: arrows, Ctrl+C / Ctrl+V, Ctrl+F to search, Ctrl+S to save."
+msgstr ""
+"Les touches habituelles : flèches, Ctrl+C / Ctrl+V, Ctrl+F pour chercher, "
+"Ctrl+S pour enregistrer."
+
+#: src/chrome/welcome_tab.c:22
+msgid ""
+"Vim's keys: hjkl, gg / G, / to search, :w to save; the explorer moves with "
+"j / k."
+msgstr ""
+"Les touches de Vim : hjkl, gg / G, / pour chercher, :w pour enregistrer ; "
+"l’explorateur se parcourt avec j / k."
+
+#: src/chrome/welcome_tab.c:23
+msgid ""
+"Emacs's keys: C-n / C-p, C-s to search, C-x C-s to save; the explorer moves "
+"with C-n / C-p."
+msgstr ""
+"Les touches d’Emacs : C-n / C-p, C-s pour chercher, C-x C-s pour "
+"enregistrer ; l’explorateur se parcourt avec C-n / C-p."
+
+#: src/chrome/welcome_tab.c:33
+msgid "Move in the explorer"
+msgstr "Se déplacer dans l’explorateur"
+
+#: src/chrome/welcome_tab.c:34
+msgid "Open a folder or a file"
+msgstr "Ouvrir un dossier ou un fichier"
+
+#: src/chrome/welcome_tab.c:35
+msgid "Go to a file of the project"
+msgstr "Aller à un fichier du projet"
+
+#: src/chrome/welcome_tab.c:36 src/core/diagnostics.c:122
+msgid "Search in files"
+msgstr "Recherche dans les fichiers"
+
+#: src/chrome/welcome_tab.c:37
+msgid "Recent folders and files"
+msgstr "Dossiers et fichiers récents"
+
+#: src/chrome/welcome_tab.c:38
+msgid "Switch workspace"
+msgstr "Changer d’espace de travail"
+
+#: src/chrome/welcome_tab.c:39
+msgid "Every shortcut (cheat sheet)"
+msgstr "Tous les raccourcis (aide-mémoire)"
+
+#: src/chrome/welcome_tab.c:40
+msgid "User guide"
+msgstr "Guide d’utilisation"
+
+#: src/chrome/welcome_tab.c:267
+#, c-format
+msgid "Welcome to %s"
+msgstr "Bienvenue dans %s"
+
+#: src/chrome/welcome_tab.c:271
+msgid ""
+"The explorer is on the left, the preview of the selected file on the right, "
+"with editor tabs and terminals beside it. Choose how it looks and which keys "
+"it uses; both stay in the Preferences."
+msgstr ""
+"L’explorateur est à gauche, l’aperçu du fichier sélectionné à droite, avec "
+"les onglets d’édition et les terminaux à côté. Choisissez son apparence et "
+"ses touches ; les deux restent dans les Préférences."
+
+#: src/chrome/welcome_tab.c:282
+msgid "Applied as you choose it"
+msgstr "Appliqué dès que vous le choisissez"
+
+#: src/chrome/welcome_tab.c:284
+msgid "_Theme"
+msgstr "_Thème"
+
+#: src/chrome/welcome_tab.c:292
+msgid "Keys of the explorer and of new editor tabs"
+msgstr "Touches de l’explorateur et des nouveaux onglets d’édition"
+
+#: src/chrome/welcome_tab.c:294
+msgid "_Editor keys"
+msgstr "Touches de l’_éditeur"
+
+#: src/chrome/welcome_tab.c:303
+msgid "Essential shortcuts"
+msgstr "Raccourcis essentiels"
+
+#: src/chrome/welcome_tab.c:309
+msgid "Next steps"
+msgstr "Pour aller plus loin"
+
+#: src/chrome/welcome_tab.c:311
+msgid "Open the _User Guide"
+msgstr "Ouvrir le _guide d’utilisation"
+
+#: src/chrome/welcome_tab.c:311
+msgid "Getting started, in a Help tab (F1)"
+msgstr "Prise en main, dans un onglet Aide (F1)"
+
+#: src/chrome/welcome_tab.c:313
+msgid "Check the Optional _Libraries"
+msgstr "Vérifier les _bibliothèques optionnelles"
+
+#: src/chrome/welcome_tab.c:314
+msgid ""
+"What this computer has of the terminal, syntax highlighting, PDF pages... "
+"(Diagnostics tab)"
+msgstr ""
+"Ce que cet ordinateur a du terminal, de la coloration syntaxique, des pages "
+"PDF... (onglet Diagnostics)"
+
+#: src/chrome/welcome_tab.c:316
+msgid "_Preferences"
+msgstr "_Préférences"
+
+#: src/chrome/welcome_tab.c:316
+msgid "Fonts, editor tabs, window size, layouts (Ctrl+,)"
+msgstr ""
+"Polices, onglets d’édition, taille de la fenêtre, dispositions (Ctrl+,)"
+
+#: src/chrome/welcome_tab.c:320
+msgid "_Show this tab at startup"
+msgstr "_Afficher cet onglet au démarrage"
+
+#: src/chrome/welcome_tab.c:321
+msgid "Also in Preferences → Window"
+msgstr "Aussi dans Préférences → Fenêtre"
+
+#: src/chrome/welcome_tab.c:346
+msgid "Close Welcome"
+msgstr "Fermer Bienvenue"
 
 #. TRANSLATORS: strftime format of the date in the clock tooltip
 #: src/clock/clock_pill.c:96
@@ -5087,10 +5238,6 @@ msgstr "Exécution des cellules des notebooks (jupyter_client, ipykernel)"
 #: src/core/diagnostics.c:121
 msgid "Git tab and Git badges"
 msgstr "Onglet Git et badges Git"
-
-#: src/core/diagnostics.c:122
-msgid "Search in files"
-msgstr "Recherche dans les fichiers"
 
 #: src/core/diagnostics.c:123
 msgid "Deep Search, Disk Usage and the Git tab (GNU find)"
@@ -10860,7 +11007,7 @@ msgstr "Message transféré"
 msgid "Encrypted message: the body needs the recipient's key."
 msgstr "Message chiffré : le corps demande la clé du destinataire."
 
-#: src/main.c:196
+#: src/main.c:197
 #, c-format
 msgid ""
 "Usage: %s [options] [<file>|<folder>]\n"
@@ -10904,22 +11051,22 @@ msgstr ""
 "  -f, --fullscreen                 démarre en plein écran\n"
 "  -s, --size LARGEURxHAUTEUR       taille de la fenêtre (ex. 1920x1080)\n"
 
-#: src/main.c:251
+#: src/main.c:252
 #, c-format
 msgid "%s: option '%s' requires an argument\n"
 msgstr "%s : l’option « %s » attend un argument\n"
 
-#: src/main.c:318
+#: src/main.c:323
 #, c-format
 msgid "%s: only one file or folder can be given\n"
 msgstr "%s : un seul fichier ou dossier peut être donné\n"
 
-#: src/main.c:337
+#: src/main.c:342
 #, c-format
 msgid "%s: unknown editor '%s' (expected emacs, vim or notepad)\n"
 msgstr "%s : éditeur inconnu « %s » (attendu : emacs, vim ou notepad)\n"
 
-#: src/main.c:343
+#: src/main.c:348
 #, c-format
 msgid ""
 "[ Invalid size '%s': expected format WIDTHxHEIGHT (e.g. --size 1920x1080) ]\n"
@@ -10927,23 +11074,23 @@ msgstr ""
 "[ Taille invalide « %s » : format attendu LARGEURxHAUTEUR (ex. --size "
 "1920x1080) ]\n"
 
-#: src/main.c:347
+#: src/main.c:352
 #, c-format
 msgid "%s: unknown option '%s'\n"
 msgstr "%s : option inconnue « %s »\n"
 
-#: src/main.c:354
+#: src/main.c:359
 #, c-format
 msgid "%s: option '-n' needs a note name\n"
 msgstr "%s : l’option « -n » attend un nom de note\n"
 
-#: src/main.c:416
+#: src/main.c:421
 #, c-format
 msgid "[ '%s' is not a file or a directory: showing %s instead ]\n"
 msgstr ""
 "[ « %s » n’est ni un fichier ni un dossier : affichage de %s à la place ]\n"
 
-#: src/main.c:534
+#: src/main.c:539
 msgid ""
 "Terminal panel disabled:\n"
 "install libvte-2.91-gtk4-dev then rebuild (make)."
@@ -10951,15 +11098,15 @@ msgstr ""
 "Panneau Terminal désactivé :\n"
 "installez libvte-2.91-gtk4-dev puis recompilez (make)."
 
-#: src/main.c:598
+#: src/main.c:603
 msgid "Workspace Layouts (Alt+L)"
 msgstr "Dispositions de l’espace de travail (Alt+L)"
 
-#: src/main.c:602
+#: src/main.c:607
 msgid "Preferences (Ctrl+,)"
 msgstr "Préférences (Ctrl+,)"
 
-#: src/main.c:804
+#: src/main.c:809
 #, c-format
 msgid "[ Invalid note name '%s': expected Title or Notebook/Title ]\n"
 msgstr "[ Nom de note invalide « %s » : attendu Titre ou Carnet/Titre ]\n"

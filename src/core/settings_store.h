@@ -39,6 +39,8 @@
  *   [Window]
  *   width=1000           # window size at startup
  *   height=600
+ *   welcome=false        # the Welcome tab opens at every startup (it opens
+ *                        # anyway at the first one: no configuration folder)
  *
  * Command-line options (-e, --size) win over these values. Missing or
  * invalid values keep their defaults. Pure data and file I/O (GKeyFile),
@@ -109,12 +111,14 @@ typedef struct {
     SettingsSsh ssh;       /* how remote machines are reached (at startup) */
     gint width;            /* window size at startup */
     gint height;
+    gboolean welcome;      /* the Welcome tab opens at every startup */
 } Settings;
 
 /* Notepad, no line numbers, no wrap, column line at 81, no tagbars, minimap,
  * editor tabs updating the preview, Auto
  * keeping the panels, a 24-hour clock without seconds, a 60-minute timer
- * restarting when it expires, the automatic SSH transport, 1000 x 600 */
+ * restarting when it expires, the automatic SSH transport, 1000 x 600, no
+ * Welcome tab at startup */
 void settings_defaults(Settings* s);
 
 /* "notepad", "vim", "emacs" (any case): FALSE if name is none of them */

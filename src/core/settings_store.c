@@ -32,6 +32,7 @@ void settings_defaults(Settings* s) {
     s->update_preview = TRUE;
     s->task_save_first = TRUE;
     s->latex_on_save = TRUE;
+    s->welcome = FALSE;
     s->auto_terminal = SETTINGS_PANEL_KEEP;
     s->auto_preview = SETTINGS_PANEL_KEEP;
     s->auto_tagbar = SETTINGS_PANEL_KEEP;
@@ -193,6 +194,7 @@ gboolean settings_store_load(const gchar* path, Settings* s) {
     s->ssh = read_ssh(kf);
     s->width = read_size(kf, "width", SETTINGS_MIN_WIDTH, s->width);
     s->height = read_size(kf, "height", SETTINGS_MIN_HEIGHT, s->height);
+    s->welcome = read_bool(kf, "Window", "welcome", s->welcome);
     g_key_file_free(kf);
     return TRUE;
 }
@@ -230,6 +232,7 @@ gboolean settings_store_save(const gchar* path, const Settings* s, GError** erro
     g_key_file_set_string(kf, "Remote", "ssh", SSH_NAMES[ssh]);
     g_key_file_set_integer(kf, "Window", "width", s->width);
     g_key_file_set_integer(kf, "Window", "height", s->height);
+    g_key_file_set_boolean(kf, "Window", "welcome", s->welcome);
     gchar* dir = g_path_get_dirname(path);
     g_mkdir_with_parents(dir, 0700);
     g_free(dir);

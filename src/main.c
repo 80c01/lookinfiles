@@ -90,6 +90,7 @@
 #include "preview/preview_busy.h"
 #include "core/ui_probe.h"
 #include "chrome/new_tab_menu.h"
+#include "chrome/welcome_tab.h"
 #include <string.h>
 
 /* The window is closed: ask about unsaved changes like Ctrl+Q, then remember
@@ -297,6 +298,10 @@ int main(int argc, char** argv) {
     tune_malloc();
     i18n_init(argc > 0 ? argv[0] : NULL); /* before any message is printed */
     gboolean start_fullscreen = FALSE;
+    /* A new user: no configuration folder yet (before anything writes to it) */
+    gchar* config_dir = app_config_dir();
+    gboolean first_launch = !g_file_test(config_dir, G_FILE_TEST_IS_DIR);
+    g_free(config_dir);
     /* Preferences (settings.ini), then the command line over them */
     Settings prefs;
     gchar* settings_path = settings_store_path();
@@ -575,6 +580,7 @@ int main(int argc, char** argv) {
     app_events_subscribe(app, APP_EVENT_OPEN_WORKSPACE_BOOKMARK, session_bookmark_open);
     app_events_subscribe(app, APP_EVENT_SAVE_SEARCH_BOOKMARK, deep_search_bookmark_save);
     app_events_subscribe(app, APP_EVENT_OPEN_SEARCH_BOOKMARK, deep_search_bookmark_open);
+    app_events_subscribe(app, APP_EVENT_SHOW_WELCOME, welcome_tab_show);
     app_events_subscribe(app, APP_EVENT_RUN_DEEP_SEARCH, deep_search_request_run);
     app_events_subscribe(app, APP_EVENT_ADD_BOOKMARK, bookmarks_add_requested);
     app->window = GTK_WINDOW(window);
@@ -810,6 +816,14 @@ int main(int argc, char** argv) {
     g_free(target_dir);
     g_free(cwd_alloc);
     layout_history_init(app);
+    if (first_launch || prefs.welcome) {
+        welcome_tab_show(app);
+    }
+    if (first_launch) {
+        config_dir = app_config_dir();
+        g_mkdir_with_parents(config_dir, 0700); /* the next launch is not a first one */
+        g_free(config_dir);
+    }
 
     profile_mark("main loop");
     g_main_loop_run(loop);
