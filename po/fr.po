@@ -3653,8 +3653,8 @@ msgid "New Bookmark Folder (Shift+A)"
 msgstr "Nouveau dossier de signets (Shift+A)"
 
 #: src/chrome/sidebar.c:483 src/chrome/sidebar.c:533
-msgid "Edit Selected (F2 / r / e)"
-msgstr "Modifier la sélection (F2 / r / e)"
+msgid "Edit Selected (F2 / r)"
+msgstr "Modifier la sélection (F2 / r)"
 
 #: src/chrome/sidebar.c:491
 msgid "Delete Selected (d / Delete)"
@@ -3681,8 +3681,8 @@ msgid "New Remote Folder (Shift+A)"
 msgstr "Nouveau dossier distant (Shift+A)"
 
 #: src/chrome/sidebar.c:583
-msgid "Edit Remote Machine (F2 / r / e)"
-msgstr "Modifier la machine distante (F2 / r / e)"
+msgid "Edit Remote Machine (F2 / r)"
+msgstr "Modifier la machine distante (F2 / r)"
 
 #: src/chrome/sidebar.c:591
 msgid "Delete Remote Machine (d / Delete)"

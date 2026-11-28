@@ -934,7 +934,6 @@ gboolean remote_handle_key(AppData* app, guint keyval, GdkModifierType state) {
             return TRUE;
         }
         break;
-    case GDK_KEY_e:
     case GDK_KEY_r:
     case GDK_KEY_F2:
         if (!ctrl) {

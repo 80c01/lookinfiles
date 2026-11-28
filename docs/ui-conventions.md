@@ -31,12 +31,12 @@ The explorer views (files, bookmarks, notes, remote) share one vocabulary.
 Check these before adding or changing an action, a tooltip or a dialog:
 
 - **Same action, same key, in every view**: `a` add, `Shift+A` new folder /
-  notebook, `F2 / r / e` edit or rename, `d / Delete` delete (with
+  notebook, `F2 / r` edit or rename, `d / Delete` delete (with
   confirmation, or move to a trash), `Shift+K / Shift+J` move up / down,
   `o` cycle the sort of the current view, `Enter` open. A key that has no
   meaning in a view does nothing there (never acts on another view).
 - **Tooltips**: Title Case action, then the keys in parentheses, primary key
-  first: `Edit Selected (F2 / r / e)`, `Delete Selected (d / Delete)`.
+  first: `Edit Selected (F2 / r)`, `Delete Selected (d / Delete)`.
 - **Context menus**: same labels as tooltips, `…` (single character) when a
   dialog follows, key hint written `Shift+A`, `Delete`, `F2`.
 - **No external windows**: every interaction stays inside the application

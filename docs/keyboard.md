@@ -105,7 +105,8 @@ count) is dropped when the focus moves to another panel or tab.
 | `C-s` / `C-r` (Emacs) | Search forward / backward as you type; again for the next / previous match, `C-g` back to the start |
 | `t` (Vim), `C-o` (Emacs) | Open the selected file in the dedicated editor panel (Vim: the editor gets the focus, like netrw's `t`; Emacs: the explorer keeps it, like dired's `C-o`) |
 | `a` / `Shift+A` | New file / new folder in the selected directory |
-| `F2` / `r` / `e` | Rename the selected file or folder |
+| `F2` / `r` | Rename the selected file or folder |
+| `e` | Open the selected file in the editor (as `Enter` does; also in the preview panel) |
 | `d` / `Delete` | Move the selected file or folder to the trash (asks first) |
 | `u` | Undo the last move to the trash or rename (also the Undo button of the explorer bar message) |
 | `i` / `I` | Toggle hidden files |
@@ -123,7 +124,7 @@ count) is dropped when the focus moves to another panel or tab.
 |---|---|
 | `Enter` / `Right` (Vim: also `l`; Emacs: `C-f`) | Open the bookmark (directory, file or URL: web pages in a browser tab when built with WebKitGTK, or WebView2 on Windows) / expand the folder |
 | `a` / `Shift+A` | Add a bookmark / a folder (inside the selected folder) |
-| `F2` / `r` / `e` | Edit name, location and folder (a folder: name, icon and parent) |
+| `F2` / `r` | Edit name, location and folder (a folder: name, icon and parent) |
 | `d` / `Delete` | Delete the selected bookmark or folder |
 | `Shift+K` / `Shift+J` | Move the selected item up / down |
 | `o` | Cycle the sort: A–Z / Z–A |
@@ -134,7 +135,7 @@ count) is dropped when the focus moves to another panel or tab.
 |---|---|
 | `a` / `Shift+A` | New note (Markdown, Org-mode, Plain Text or Canvas) / new notebook |
 | `Enter` | Edit the note: an editor tab, or the **Canvas** tab for a Canvas note |
-| `F2` / `r` / `e` | Edit the note (title, format and notebook) or notebook (name and icon) |
+| `F2` / `r` | Edit the note (title, format and notebook) or notebook (name and icon) |
 | `m` | Move the note to another notebook (the edit dialog, on its notebook) |
 | `d` / `Delete` | Move the note to the trash, or delete the notebook |
 | `Shift+R` | Restore the note from the trash to its notebook |
@@ -328,7 +329,7 @@ mode move in the list)
 | `Enter` / `c`, `t` on a WSL distribution (Windows) | Browse its files / open a terminal in it |
 | `Enter` / `c` on a disk | Browse the disk (mounted first if needed) / mount, unmount or eject it (a remote machine's disk: browse it) |
 | `a` / `Shift+A` | Add a machine (inside the selected folder) / a folder |
-| `F2` / `r` / `e` | Edit the selected machine (also its folder) or folder (name and icon) |
+| `F2` / `r` | Edit the selected machine (also its folder) or folder (name and icon) |
 | `d` / `Delete` | Delete the selected machine, or folder (its machines move to the top level) |
 | `F5` | Re-scan `~/.ssh/config` |
 

@@ -999,9 +999,7 @@ gboolean bookmarks_handle_key(AppData* app, guint keyval, GdkModifierType state)
         }
         bookmarks_new_folder(app);
         break;
-    case GDK_KEY_e:
     case GDK_KEY_r:
-    case GDK_KEY_R:
     case GDK_KEY_F2:
         bookmarks_edit_selected(app);
         break;

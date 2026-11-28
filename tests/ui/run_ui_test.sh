@@ -473,6 +473,7 @@ key Escape;             shot new_file_dialog_closed
 key r; xdotool type --delay 60 "renamed-entry"; key Return
                         shot rename_notice_undo
 key u;                  shot rename_undone
+key e;                  shot files_open_in_editor
 xdotool mousemove 90 122 click 3;  shot files_context_menu
 key Escape;             shot files_context_menu_closed
 key ctrl+p; xdotool type --delay 60 "plan"

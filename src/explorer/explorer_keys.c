@@ -259,9 +259,9 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_e: /* e: rename selected file or folder (like F2 / r) */
-        if (is_files_view(app) && !ctrl) {
-            rename_selected_in_tree(app);
+    case GDK_KEY_e: /* e: open the selected file in the editor (like the preview's e) */
+        if (is_files_view(app) && !ctrl && explorer_row_is(tree_nav_selected(app), "file")) {
+            activate_selected_entry(app);
             return TRUE;
         }
         return FALSE;
@@ -276,7 +276,7 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_r: /* r in notes view / Ctrl+R / F2: rename selected item */
+    case GDK_KEY_r: /* r / F2: rename the selected file (Ctrl+R / r: edit the note) */
     case GDK_KEY_R:
         if (ctrl || app->sidebar_view == SIDEBAR_VIEW_NOTES) {
             if (app->sidebar_view == SIDEBAR_VIEW_NOTES) {

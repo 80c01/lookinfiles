@@ -76,7 +76,7 @@ GPtrArray* preview_summary_remote_lines(const RemoteMachine* rm) {
     static const SummaryShortcut keys[] = {
         {NC_("key", "Enter / c / Double-click"), N_("Connect and browse remote files in Explorer")},
         {"t", N_("Open SSH terminal to this machine")},
-        {"F2 / r / e", N_("Edit machine configuration")},
+        {"F2 / r", N_("Edit machine configuration")},
         {"d / Delete", N_("Remove machine")},
         {"a", N_("Add new remote machine")},
         {"F5", N_("Re-scan ~/.ssh/config")},
@@ -289,7 +289,7 @@ GPtrArray* preview_summary_canvas_lines(const gchar* name, const gchar* path) {
     }
     static const SummaryShortcut keys[] = {
         {"Enter", N_("Edit the canvas (Canvas tab)")},
-        {"F2 / r / e", N_("Rename the note")},
+        {"F2 / r", N_("Rename the note")},
         {"m", N_("Move the note to another notebook")},
         {"d / Delete", N_("Move the note to the trash")},
     };
@@ -392,7 +392,7 @@ GPtrArray* preview_summary_search_lines(const gchar* name, const SavedDeepSearch
     }
     static const SummaryShortcut keys[] = {
         {"Enter", N_("Run this search in Deep Search")},
-        {"F2 / r / e", N_("Rename or move bookmark")},
+        {"F2 / r", N_("Rename or move bookmark")},
         {"d / Delete", N_("Delete bookmark")},
         {"Shift+K / Shift+J", N_("Move bookmark up / down")},
     };
@@ -584,7 +584,7 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
     if (is_notebook) {
         static const SummaryShortcut keys[] = {
             {"a / Shift+A", N_("New note / new notebook")},
-            {"F2 / r / e", N_("Edit notebook (name and icon)")},
+            {"F2 / r", N_("Edit notebook (name and icon)")},
             {"d / Delete", N_("Delete notebook")},
             {"Shift+K / Shift+J", N_("Move notebook up / down")},
         };
@@ -593,7 +593,7 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", N_("Expand / collapse folder")},
             {"a / Shift+A", N_("Add bookmark / new folder here")},
-            {"F2 / r / e", N_("Edit folder (name and icon)")},
+            {"F2 / r", N_("Edit folder (name and icon)")},
             {"d / Delete", N_("Delete folder")},
             {"Shift+K / Shift+J", N_("Move folder up / down")},
         };
@@ -607,7 +607,7 @@ GPtrArray* preview_summary_container_lines(ExplorerRow* row) {
         static const SummaryShortcut keys[] = {
             {"Enter / l", N_("Expand / collapse folder")},
             {"a / Shift+A", N_("Add machine here / new folder")},
-            {"F2 / r / e", N_("Edit folder (name and icon)")},
+            {"F2 / r", N_("Edit folder (name and icon)")},
             {"d / Delete", N_("Delete folder (its machines move to the top level)")},
         };
         add_shortcuts(lines, keys, G_N_ELEMENTS(keys));

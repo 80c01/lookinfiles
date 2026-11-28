@@ -36,7 +36,7 @@ void cycle_sort_mode(AppData* app);
 gboolean files_any_expanded(AppData* app);
 void toggle_collapse_expand_files(AppData* app);
 
-/* Files view actions (keys a / Shift+A, F2 / r / e, d / Delete and the toolbar) */
+/* Files view actions (keys a / Shift+A, F2 / r, d / Delete and the toolbar) */
 void create_new_file_in_tree(AppData* app);
 void create_new_folder_in_tree(AppData* app);
 void rename_selected_in_tree(AppData* app);

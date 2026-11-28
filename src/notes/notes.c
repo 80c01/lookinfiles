@@ -417,7 +417,6 @@ gboolean notes_handle_key(AppData* app, guint keyval, GdkModifierType state) {
         }
         break;
     case GDK_KEY_F2:
-    case GDK_KEY_e:
         notes_edit_selected(app);
         break;
     case GDK_KEY_m:

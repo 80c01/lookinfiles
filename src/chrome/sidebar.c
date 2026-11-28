@@ -480,7 +480,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(bm_edit_btn), FALSE);
     gtk_widget_set_focusable(bm_edit_btn, FALSE);
     gtk_widget_add_css_class(bm_edit_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(bm_edit_btn, _("Edit Selected (F2 / r / e)"));
+    gtk_widget_set_tooltip_text(bm_edit_btn, _("Edit Selected (F2 / r)"));
     g_signal_connect(bm_edit_btn, "clicked", G_CALLBACK(on_sidebar_bm_edit_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_edit_btn);
 
@@ -530,7 +530,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(edit_note_btn), FALSE);
     gtk_widget_set_focusable(edit_note_btn, FALSE);
     gtk_widget_add_css_class(edit_note_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(edit_note_btn, _("Edit Selected (F2 / r / e)"));
+    gtk_widget_set_tooltip_text(edit_note_btn, _("Edit Selected (F2 / r)"));
     g_signal_connect(edit_note_btn, "clicked", G_CALLBACK(on_sidebar_notes_edit_clicked), app);
     gtk_box_append(GTK_BOX(buf_toolbar), edit_note_btn);
 
@@ -580,7 +580,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     gtk_button_set_has_frame(GTK_BUTTON(remote_edit_btn), FALSE);
     gtk_widget_set_focusable(remote_edit_btn, FALSE);
     gtk_widget_add_css_class(remote_edit_btn, "sidebar-icon-btn");
-    gtk_widget_set_tooltip_text(remote_edit_btn, _("Edit Remote Machine (F2 / r / e)"));
+    gtk_widget_set_tooltip_text(remote_edit_btn, _("Edit Remote Machine (F2 / r)"));
     g_signal_connect(remote_edit_btn, "clicked", G_CALLBACK(on_sidebar_remote_edit_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_edit_btn);
 
