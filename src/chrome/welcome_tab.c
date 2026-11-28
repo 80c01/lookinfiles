@@ -262,9 +262,8 @@ static void build_body(WelcomeTab* st, GtkWidget* body) {
               _("The user guide (F1): Help, at the right of the top bar. "
                 "A right click on it lists every shortcut (?)."));
     howto_row(grid, 1, picture_of(add_button_new(NULL)),
-              _("New tabs: the + at the end of a tab bar opens a terminal, an editor, Diagnostics "
-                "(the optional libraries this computer has: terminal, syntax highlighting, PDF pages...) "
-                "or this Welcome tab again."));
+              _("New tabs: the + at the end of a tab bar opens a terminal, an editor or Diagnostics "
+                "(the optional libraries this computer has: terminal, syntax highlighting, PDF pages...)."));
 
     gtk_box_append(GTK_BOX(body),
                    text_label(_("To show this tab at every startup: Preferences → Window → "

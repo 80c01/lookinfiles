@@ -1289,7 +1289,7 @@ Layers, from bottom to top
 - `welcome_tab` — the Welcome tab in the preview notebook (one per
   workspace, kept like the Diagnostics tab, not saved with the session):
   opened by `main.c` at the first launch (no `app_config_dir()` yet, which
-  it then creates) or when `[Window] welcome` is set, and from the + menu and
+  it then creates) or when `[Window] welcome` is set, and from the
   `lookinfiles:welcome` links (`APP_EVENT_SHOW_WELCOME`, which keeps
   `help_guide` out of an include cycle). A passive page: it changes nothing
   and opens nothing, but tells how, beside pictures of the buttons to

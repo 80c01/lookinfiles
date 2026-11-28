@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-28 12:32+0000\n"
+"POT-Creation-Date: 2026-11-28 12:42+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -621,7 +621,7 @@ msgstr ""
 "puis Vérifier à nouveau"
 
 #: src/chrome/diagnostics_tab.c:850 src/chrome/diagnostics_tab.c:886
-#: src/chrome/new_tab_menu.c:93
+#: src/chrome/new_tab_menu.c:88
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -3155,29 +3155,24 @@ msgstr "Chercher dans les applications"
 msgid "No application matches"
 msgstr "Aucune application ne correspond"
 
-#: src/chrome/launcher_tab.c:401 src/chrome/new_tab_menu.c:90
+#: src/chrome/launcher_tab.c:401 src/chrome/new_tab_menu.c:85
 msgid "Applications"
 msgstr "Applications"
 
-#: src/chrome/new_tab_menu.c:91 src/chrome/preferences.c:639
+#: src/chrome/new_tab_menu.c:86 src/chrome/preferences.c:639
 msgid "Editor"
 msgstr "Éditeur"
 
-#: src/chrome/new_tab_menu.c:92 src/chrome/topbar.c:776 src/chrome/topbar.c:820
+#: src/chrome/new_tab_menu.c:87 src/chrome/topbar.c:776 src/chrome/topbar.c:820
 #: src/formats/card_view.c:589 src/workspace/layout_store.c:216
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/chrome/new_tab_menu.c:92
+#: src/chrome/new_tab_menu.c:87
 msgid "Needs VTE for GTK 4"
 msgstr "Nécessite VTE pour GTK 4"
 
-#: src/chrome/new_tab_menu.c:94 src/chrome/welcome_tab.c:291
-#: src/chrome/welcome_tab.c:316
-msgid "Welcome"
-msgstr "Bienvenue"
-
-#: src/chrome/new_tab_menu.c:103 src/preview/browser.c:125
+#: src/chrome/new_tab_menu.c:97 src/preview/browser.c:125
 #: src/preview/browser.c:480
 msgid "New Tab"
 msgstr "Nouvel onglet"
@@ -4345,8 +4340,9 @@ msgid ""
 "the top bar, at the right, and at the end of the tab bars."
 msgstr ""
 "L’explorateur est à gauche, l’aperçu du fichier sélectionné à droite, avec "
-"les onglets d’édition et les terminaux à côté. Les boutons montrés ci-dessous "
-"sont dans la barre du haut, à droite, et au bout des barres d’onglets."
+"les onglets d’édition et les terminaux à côté. Les boutons montrés ci-"
+"dessous sont dans la barre du haut, à droite, et au bout des barres "
+"d’onglets."
 
 #: src/chrome/welcome_tab.c:240
 msgid "Make it yours"
@@ -4385,16 +4381,15 @@ msgstr ""
 
 #: src/chrome/welcome_tab.c:265
 msgid ""
-"New tabs: the + at the end of a tab bar opens a terminal, an editor, "
+"New tabs: the + at the end of a tab bar opens a terminal, an editor or "
 "Diagnostics (the optional libraries this computer has: terminal, syntax "
-"highlighting, PDF pages...) or this Welcome tab again."
+"highlighting, PDF pages...)."
 msgstr ""
 "Nouveaux onglets : le + au bout d’une barre d’onglets ouvre un terminal, un "
-"éditeur, Diagnostics (les bibliothèques optionnelles de cet ordinateur : "
-"terminal, coloration syntaxique, pages PDF...) ou de nouveau cet onglet "
-"Bienvenue."
+"éditeur ou Diagnostics (les bibliothèques optionnelles de cet ordinateur : "
+"terminal, coloration syntaxique, pages PDF...)."
 
-#: src/chrome/welcome_tab.c:270
+#: src/chrome/welcome_tab.c:269
 msgid ""
 "To show this tab at every startup: Preferences → Window → Show the Welcome "
 "tab at startup."
@@ -4402,7 +4397,11 @@ msgstr ""
 "Pour afficher cet onglet à chaque démarrage : Préférences → Fenêtre → "
 "Afficher l’onglet Bienvenue au démarrage."
 
-#: src/chrome/welcome_tab.c:295
+#: src/chrome/welcome_tab.c:290 src/chrome/welcome_tab.c:315
+msgid "Welcome"
+msgstr "Bienvenue"
+
+#: src/chrome/welcome_tab.c:294
 msgid "Close Welcome"
 msgstr "Fermer Bienvenue"
 

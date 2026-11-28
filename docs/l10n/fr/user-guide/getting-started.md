@@ -50,8 +50,7 @@ indique où choisir les touches de l’éditeur (Notepad, Vim ou Emacs, voir
 autres Préférences, ce guide et l’[onglet Diagnostics](lookinfiles:diagnostics),
 et il liste les raccourcis essentiels du mode global. Préférences →
 **Fenêtre** → **Afficher l’onglet Bienvenue au démarrage** l’ouvre à chaque
-lancement. [Rouvrez l’onglet Bienvenue](lookinfiles:welcome),
-ou ouvrez-le depuis le menu **+** de la barre d’onglets ; `Ctrl+W` le ferme.
+lancement. [Rouvrez l’onglet Bienvenue](lookinfiles:welcome) ; `Ctrl+W` le ferme.
 
 ## La fenêtre
 

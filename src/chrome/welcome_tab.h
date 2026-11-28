@@ -7,8 +7,8 @@
  * ([Window] welcome of settings.ini). A passive page: it does nothing
  * itself but shows how, with pictures of the buttons to click (the mode
  * pill, the Preferences gear, Help, the + of the tab bars), and lists the
- * essential shortcuts of the global mode. Reopened from the + menu of the tab
- * bars and the user guide's lookinfiles:welcome links. The close button, a
+ * essential shortcuts of the global mode. Reopened from the user guide's
+ * lookinfiles:welcome links. The close button, a
  * middle click on the tab, Ctrl+W (Vim Ctrl+W c) close it. Not saved with
  * the session; each workspace keeps its own. */
 #include "core/app_types.h"

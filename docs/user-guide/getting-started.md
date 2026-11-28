@@ -50,8 +50,7 @@ the other Preferences, this guide and the
 [Diagnostics tab](lookinfiles:diagnostics), and it lists the essential
 shortcuts of the global mode. Preferences → **Window** → **Show the
 Welcome tab at startup** opens it at every launch.
-[Open the Welcome tab](lookinfiles:welcome) again, or from
-the **+** menu of the tab bar; `Ctrl+W` closes it.
+[Open the Welcome tab](lookinfiles:welcome) again; `Ctrl+W` closes it.
 
 ## The window
 
