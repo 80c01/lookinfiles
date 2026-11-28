@@ -200,7 +200,7 @@ static gboolean in_remote_repository(AppData* app, const gchar* path) {
 
 static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, ExplorerRow* row) {
     gboolean is_dir = explorer_row_is(row, "dir");
-    menu_item(box, popover, app, _("Open"), "Enter", FM_OPEN);
+    menu_item(box, popover, app, _("Open"), is_dir ? "Enter" : "Enter / e", FM_OPEN);
     if (!is_dir) {
         FileKind kind = (g_strcmp0(row->path, preview_state_path(app)) == 0)
                             ? preview_state_kind(app)
