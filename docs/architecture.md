@@ -604,7 +604,13 @@ Layers, from bottom to top
   pytest; the first one is the default. Reads files: worker threads.
 - `latex_synctex` — SyncTeX: the `.synctex.gz` of a PDF
   (`latex_synctex_file()`), the page and height of the first place in the
-  output of `synctex view` (`latex_synctex_parse_view()`).
+  output of `synctex view` (`latex_synctex_parse_view()`), and back: the
+  source file and line of a point of the PDF from `synctex edit`
+  (`latex_synctex_parse_edit()`, Ctrl+Click in the preview, `latex_sync`).
+- `latex_edit` — the environments of a LaTeX text for `editor_latex`: the
+  `\begin` / `\end` at an offset, its partner (same name, nesting,
+  comments and verbatim skipped), the environment around an offset, the
+  one to close after a new line. Tested in `tests/test_latex_edit.c`.
 - `latex_root` — the main document of a `.tex` file: `% !TEX root` and
   `% !TEX program` magic comments, `\documentclass`, the engine its packages
   need (`latex_root_engine()`), the candidate that `\input`s / `\include`s a
@@ -1614,8 +1620,13 @@ Layers, from bottom to top
   host of `vim_engine`: status line, command line, `VimHost` callbacks), and
   `editor_org` (Emacs Org-mode keys in tabs: maps keys to `org_doc` /
   `org_table` commands, applies only the changed lines as one undo step,
-  folding with an invisible tag). `editor_modes_private.h` (state
-  struct, mode enums) is internal to these 6 files.
+  folding with an invisible tag), and `editor_latex` (the LaTeX keys of
+  every mode, called before the mode's keys: closing `\begin{name}` on
+  `Enter`, the matching `\begin` / `\end`, environments and commands around
+  the selection; the partner of a `\begin` / `\end` name renamed as it is
+  typed, from `insert-text` / `delete-range` handlers run after the edit,
+  left alone while GTK or the Vim engine undo or redo). `editor_modes_private.h` (state
+  struct, mode enums) is internal to these 7 files.
   Mode bar labels whose text can grow (file names, messages) must use
   `editor_bar_label_shrinkable()`, and filler text `editor_bar_clip()`: a bar
   wider than the panel pushes the minimap out of the window.

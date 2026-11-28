@@ -388,6 +388,16 @@ endroit (`synctex edit`), y compris dans un fichier de chapitre.
   dans les fichiers `.bib`), aller au `\label` ou à l’entrée de la
   bibliographie (`F12`), les références d’un label (`Shift+F12`), renommer
   un label dans tous les fichiers (`Shift+F2`).
+- Pour écrire, dans tous les modes : `Enter` après `\begin{itemize}` ajoute
+  la ligne intérieure et `\end{itemize}` ; taper dans le nom d’un `\begin`
+  renomme aussi son `\end` (et inversement) ; `Ctrl+Shift+\` (Emacs
+  `C-M-a` / `C-M-e`, Vim `%`) va au `\begin` / `\end` correspondant.
+  `Ctrl+B` / `Ctrl+I` mettent `\textbf{}` / `\textit{}` autour de la
+  sélection, `Ctrl+K Ctrl+E` un environnement autour des lignes
+  sélectionnées (ou un nouveau) et `Ctrl+K Ctrl+W` n’importe quelle
+  commande ; Emacs a les touches d’AUCTeX (`C-c C-e`, `C-c C-f C-b`,
+  `C-c ]`…), Vim `:Env {nom}`. Voir [les touches](../keyboard.md#latex-editing)
+  (en anglais).
 
 ## Fonctions pour le code
 

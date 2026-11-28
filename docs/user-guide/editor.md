@@ -346,6 +346,15 @@ chapter file too.
   `\ref` and `\cite` keys (from the `.bib` files), go to the `\label` or
   the bibliography entry (`F12`), the references of a label
   (`Shift+F12`), renaming a label in every file (`Shift+F2`).
+- Writing, in every mode: `Enter` after `\begin{itemize}` adds the line
+  inside and `\end{itemize}`; typing in the name of a `\begin` renames its
+  `\end` too (and the other way round); `Ctrl+Shift+\` (Emacs `C-M-a` /
+  `C-M-e`, Vim `%`) goes to the matching `\begin` / `\end`. `Ctrl+B` /
+  `Ctrl+I` put `\textbf{}` / `\textit{}` around the selection,
+  `Ctrl+K Ctrl+E` an environment around the selected lines (or a new one)
+  and `Ctrl+K Ctrl+W` any command; Emacs has the AUCTeX keys (`C-c C-e`,
+  `C-c C-f C-b`, `C-c ]`...), Vim `:Env {name}`. See
+  [the keys](../keyboard.md#latex-editing).
 
 ## Code features
 

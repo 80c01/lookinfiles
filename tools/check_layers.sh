@@ -97,6 +97,7 @@ line_diff:
 latex_log:
 latex_root:
 latex_synctex:
+latex_edit:
 task_parse:
 task_def:
 task_choice:task_def,app_paths
@@ -374,7 +375,7 @@ done
 # editor_modes_private.h is internal to the editor mode files
 for f in $(grep -lE '#include "([a-z]+/)?editor_modes_private.h"' $SRC_CH); do
     case "$(basename "$f")" in
-        editor_modes.c|editor_notepad.c|editor_emacs.c|editor_block_cursor.c|editor_vim.c|editor_org.c) ;;
+        editor_modes.c|editor_notepad.c|editor_emacs.c|editor_block_cursor.c|editor_vim.c|editor_org.c|editor_latex.c) ;;
         *) echo "layering: $f includes editor_modes_private.h (internal to editor mode files)"; status=1 ;;
     esac
 done

@@ -875,6 +875,10 @@ void vim_engine_feed_keys(VimEngine* e, const gchar* keys) {
     vim_e_feed_internal(e, keys);
 }
 
+gboolean vim_engine_undoing(VimEngine* e) {
+    return e != NULL && e->undoing;
+}
+
 gboolean vim_engine_cancel_pending(VimEngine* e) {
     if (e == NULL || e->pending->len == 0) return FALSE;
     g_array_set_size(e->pending, 0);

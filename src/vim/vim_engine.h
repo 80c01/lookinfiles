@@ -70,6 +70,9 @@ typedef struct {
     /* ]d / [d: step to the next / previous diagnostic in the file. TRUE when
      * the host jumped to one. */
     gboolean (*diagnostic_step)(gpointer data, gboolean forward);
+    /* %: the pair the host knows at *pos (LaTeX \begin / \end): TRUE when
+     * it moved *pos there; FALSE: Vim's brackets */
+    gboolean (*match_pair)(gpointer data, GtkTextIter* pos);
 } VimHost;
 
 typedef struct {
@@ -116,6 +119,9 @@ void vim_engine_get_cursor(VimEngine* engine, GtkTextIter* iter);
 /* Drop the keys of a command being typed (count, operator, g, z...), keep
  * the mode; TRUE if there were some */
 gboolean vim_engine_cancel_pending(VimEngine* engine);
+/* TRUE while u, Ctrl-R or U change the buffer (hosts that edit in their
+ * buffer handlers leave those edits alone) */
+gboolean vim_engine_undoing(VimEngine* engine);
 
 /* Leave any mode for Normal (mode switch, tab focus changes) */
 void vim_engine_reset(VimEngine* engine);

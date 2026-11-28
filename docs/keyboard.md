@@ -491,6 +491,22 @@ the text, `q` hides it; `Alt+Right` from the text goes into it, `Alt+Left` comes
 tab follows the last choice, kept for the next start), and its width is
 shared by the tabs.
 
+### LaTeX editing
+
+In `.tex`, `.ltx`, `.sty` and `.cls` files (compiling, SyncTeX and the code
+features: see the [user guide](user-guide/editor.md#latex-documents)):
+
+| Action | Notepad | Emacs (AUCTeX keys) | Vim |
+|---|---|---|---|
+| Close an environment: `Enter` at the end of a line with an open `\begin{name}` (and its arguments) adds the line inside and `\end{name}` | `Enter` | `Enter` | `Enter` (Insert) |
+| Rename an environment: typing in the name of a `\begin` or an `\end` renames the other one too (one undo step) | typing | typing | typing, `ciw`... |
+| Go to the matching `\begin` / `\end` (Notepad: elsewhere, the `\begin` around the cursor; Emacs: of the environment around the cursor, again: the one around it) | `Ctrl+Shift+\` | `C-M-a` / `C-M-e` | `%` (on a `\begin` / `\end`, also with an operator: `d%`) |
+| Environment: around the selected lines (indented), else a new one at the cursor; asks its name (the last one is offered) | `Ctrl+K Ctrl+E` | `C-c C-e` | `:Env {name}` (at the cursor) |
+| `\textbf{}` / `\textit{}` around the selection, else with the cursor inside | `Ctrl+B` / `Ctrl+I` | `C-c C-f C-b` / `C-c C-f C-i` | — |
+| `\emph{}` / `\texttt{}` | — | `C-c C-f C-e` / `C-c C-f C-t` | — |
+| Any command around the selection (asks its name: `underline`, `cite`...) | `Ctrl+K Ctrl+W` | `C-c C-m` | — |
+| Close the environment left open around the cursor (`\end{name}`) | — | `C-c ]` | — |
+
 ### Org-mode editing
 
 Tabs showing an `.org` file open in the **Org-mode** editor mode (Emacs keys)

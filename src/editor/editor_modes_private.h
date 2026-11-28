@@ -2,7 +2,8 @@
 #define EDITOR_MODES_PRIVATE_H
 
 /* Internal header shared by editor_modes.c and the per-mode files
- * (editor_notepad.c, editor_emacs.c, editor_vim.c, editor_org.c). Other modules must
+ * (editor_notepad.c, editor_emacs.c, editor_vim.c, editor_org.c) and their
+ * LaTeX keys (editor_latex.c). Other modules must
  * use editor_modes.h instead. */
 #include "editor/editor_modes.h"
 
@@ -219,6 +220,30 @@ void vim_echo_error(EditorTab* tab, const gchar* msg);
 gboolean vim_autoread_enabled(EditorTab* tab);
 /* TRUE when :set fixendofline is enabled on tab's Vim engine */
 gboolean vim_fixeol_enabled(EditorTab* tab);
+/* LaTeX keys (editor_latex.c) of the editor tabs of .tex, .ltx, .sty and .cls files
+ * (docs/keyboard.md, "LaTeX"), on the environments of latex_edit.h:
+ * - Enter after \begin{name} (in a typing state) closes it with \end{name};
+ * - typing in the name of a \begin or an \end renames its partner too;
+ * - go to the matching \begin / \end (Notepad Ctrl+Shift+\, Emacs C-M-a /
+ *   C-M-e, Vim %);
+ * - wrap the selection in, or insert, an environment (Notepad Ctrl+K
+ *   Ctrl+E, Emacs C-c C-e, Vim :Env) or a command (\textbf: Notepad Ctrl+B,
+ *   Emacs C-c C-f C-b; \textit: Ctrl+I, C-c C-f C-i; any: Ctrl+K Ctrl+W,
+ *   C-c C-m), close the open environment (Emacs C-c ]). */
+/* Rename the partners of \begin / \end names as they are typed in the
+ * tab's view (once per view, from editor_modes_init_tab()) */
+void editor_latex_attach(EditorTab* tab);
+
+/* A key of a LaTeX tab, before the keys of its mode: TRUE when used */
+gboolean editor_latex_handle_key(EditorTab* tab, guint keyval, GdkModifierType state);
+
+/* Vim %: on a \begin / \end, *pos moves to its partner (TRUE) */
+gboolean editor_latex_match_pair(EditorTab* tab, GtkTextIter* pos);
+
+/* Vim :Env {name}: wrap the selection in the environment, or insert it;
+ * FALSE when tab is no LaTeX file (*error set when the name is wrong) */
+gboolean editor_latex_env_command(EditorTab* tab, const gchar* args, gchar** error);
+
 /* Next (1) / previous (-1) tab of the tab's notebook, focus in the new page */
 void editor_modes_step_tab(EditorTab* tab, gint step);
 

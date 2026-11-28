@@ -15047,3 +15047,52 @@ msgstr "Fermer l’espace de travail"
 
 #~ msgid "Hidden: Off"
 #~ msgstr "Cachés : non"
+
+msgid "Editor: LaTeX"
+msgstr "Éditeur : LaTeX"
+
+msgid "At the end of a line with an open \\begin{name}: add the line inside and \\end{name}"
+msgstr "À la fin d’une ligne avec un \\begin{nom} ouvert : ajouter la ligne intérieure et \\end{nom}"
+
+msgctxt "key"
+msgid "Type in a name"
+msgstr "Taper dans un nom"
+
+msgid "Typing in the name of a \\begin or an \\end renames the other one too"
+msgstr "Taper dans le nom d’un \\begin ou d’un \\end renomme aussi l’autre"
+
+msgid "Go to the matching \\begin / \\end (Notepad / Emacs / Vim)"
+msgstr "Aller au \\begin / \\end correspondant (Notepad / Emacs / Vim)"
+
+msgid "Environment around the selected lines, or a new one (asks its name)"
+msgstr "Environnement autour des lignes sélectionnées, ou un nouveau (demande son nom)"
+
+msgid "Notepad: \\textbf{} / \\textit{} around the selection, or with the cursor inside"
+msgstr "Notepad : \\textbf{} / \\textit{} autour de la sélection, ou avec le curseur dedans"
+
+msgid "Emacs: \\textbf / \\textit / \\emph / \\texttt around the region"
+msgstr "Emacs : \\textbf / \\textit / \\emph / \\texttt autour de la région"
+
+msgid "Any command around the selection (asks its name)"
+msgstr "N’importe quelle commande autour de la sélection (demande son nom)"
+
+msgid "Emacs: close the environment left open around the cursor"
+msgstr "Emacs : fermer l’environnement resté ouvert autour du curseur"
+
+msgid "Insert Environment"
+msgstr "Insérer un environnement"
+
+msgid "Wrap in Command"
+msgstr "Entourer d’une commande"
+
+msgid "_Insert"
+msgstr "_Insérer"
+
+msgid "_Wrap"
+msgstr "_Entourer"
+
+msgid "Environment name (itemize, figure, align*...)"
+msgstr "Nom de l’environnement (itemize, figure, align*...)"
+
+msgid "Command name, without the backslash (emph, textbf, underline...)"
+msgstr "Nom de la commande, sans la barre oblique inverse (emph, textbf, underline...)"

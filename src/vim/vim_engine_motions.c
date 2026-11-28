@@ -173,7 +173,9 @@ gboolean vim_e_do_motion(VimEngine* e, const VimCmd* cmd, gboolean for_op, const
                     gint lines = vim_e_last_line(e) + 1;
                     return motion_line_nonblank(e, (cmd->count * lines + 99) / 100 - 1, m);
                 }
-                if (!vim_motion_match_pair(&p)) return FALSE;
+                if ((e->host.match_pair == NULL || !e->host.match_pair(e->hd, &p)) && !vim_motion_match_pair(&p)) {
+                    return FALSE;
+                }
                 m->pos = p;
                 m->inclusive = TRUE;
                 m->numbered = TRUE;

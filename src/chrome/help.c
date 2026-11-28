@@ -359,6 +359,15 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Editor: Vim mode"), "Ctrl+W s / Ctrl+W v / :sp / :vs", N_("Split view: the file in a second view below / to the right (own cursor, shared text and undo)"), 0},
     {N_("Editor: Vim mode"), "Ctrl+W o / :only / Ctrl+W q / :clo", N_("Close the other views of the file / close this view (the other views keep the changes)"), 0},
     {N_("Editor: Vim mode"), "zz zt zb Ctrl+E/Y/D/U/F/B", N_("Scroll the view (cursor line centered, top, bottom; lines, half pages, pages)"), 0},
+    /* LaTeX (editor_latex.c) */
+    {N_("Editor: LaTeX"), "Enter", N_("At the end of a line with an open \\begin{name}: add the line inside and \\end{name}"), 0},
+    {N_("Editor: LaTeX"), NC_("key", "Type in a name"), N_("Typing in the name of a \\begin or an \\end renames the other one too"), 0},
+    {N_("Editor: LaTeX"), "Ctrl+Shift+\\ / C-M-a, C-M-e / %", N_("Go to the matching \\begin / \\end (Notepad / Emacs / Vim)"), 0},
+    {N_("Editor: LaTeX"), "Ctrl+K Ctrl+E / C-c C-e / :Env", N_("Environment around the selected lines, or a new one (asks its name)"), 0},
+    {N_("Editor: LaTeX"), "Ctrl+B / Ctrl+I", N_("Notepad: \\textbf{} / \\textit{} around the selection, or with the cursor inside"), 0},
+    {N_("Editor: LaTeX"), "C-c C-f C-b / C-i / C-e / C-t", N_("Emacs: \\textbf / \\textit / \\emph / \\texttt around the region"), 0},
+    {N_("Editor: LaTeX"), "Ctrl+K Ctrl+W / C-c C-m", N_("Any command around the selection (asks its name)"), 0},
+    {N_("Editor: LaTeX"), "C-c ]", N_("Emacs: close the environment left open around the cursor"), 0},
     /* Global */
     {N_("Global"), "Alt+1 .. Alt+8", N_("Switch between virtual workspaces (or click/scroll top-bar minimap)"), 0},
     {N_("Global"), "Alt++ / Alt+-", N_("Add a virtual workspace with the default layout (+) or close the current workspace (-)"), 0},

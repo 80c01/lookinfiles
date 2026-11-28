@@ -934,7 +934,6 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     notepad_build_ui(tab, st);
     emacs_build_ui(tab, st);
     vim_build_ui(tab, st);
-
     /* Add all 3 boxes to tab container */
     gtk_box_append(GTK_BOX(tab->container), st->np_box);
     gtk_box_append(GTK_BOX(tab->container), st->emacs_box);
@@ -958,6 +957,7 @@ void editor_modes_init_tab(AppData* app, EditorTab* tab) {
     gtk_widget_add_controller(tab->view, GTK_EVENT_CONTROLLER(ctrl_click));
     code_help_attach(app, tab, editor_mode_message);
     code_complete_attach(app, tab, can_auto_complete);
+    editor_latex_attach(tab);
     code_intel_attach(app, tab);
 
     /* Apply initial mode */
@@ -1099,7 +1099,6 @@ static gboolean is_modifier_key(guint keyval) {
 
 static gboolean dispatch_key(AppData* app, EditorTab* tab, EditorModeState* st,
                              guint keyval, GdkModifierType state) {
-
     /* Any other command restarts the C-l cycle (modifier presses do not count) */
     if (!is_modifier_key(keyval) &&
         !((state & GDK_CONTROL_MASK) && (keyval == GDK_KEY_l || keyval == GDK_KEY_L))) {
@@ -1159,7 +1158,7 @@ gboolean editor_modes_handle_key(AppData* app, EditorTab* tab, guint keyval,
     (void)keycode;
     if (tab == NULL || tab->mode_state == NULL) return FALSE;
     EditorModeState* st = tab->mode_state;
-    if (code_complete_handle_key(tab, keyval, state)) return TRUE;
+    if (code_complete_handle_key(tab, keyval, state) || editor_latex_handle_key(tab, keyval, state)) return TRUE;
     code_help_on_key(tab, keyval);
     gboolean was_c_u = st->emacs_universal_arg;
     gboolean handled = dispatch_key(app, tab, st, keyval, state);

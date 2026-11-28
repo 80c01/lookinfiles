@@ -438,6 +438,7 @@ static gboolean on_ex_command(gpointer data, const gchar* name, gboolean bang, c
         code_rename_start(app, tab, editor_mode_message);
         return TRUE;
     }
+    if (strcmp(name, "Env") == 0) return editor_latex_env_command(tab, args, error);
     if (strcmp(name, "tag") == 0) {
         /* :tag {name}: its definition; :tag! {name}: its declaration */
         code_nav_goto_symbol(app, tab, args, bang, editor_mode_message);
@@ -544,6 +545,11 @@ static gboolean on_references(gpointer data) {
 static gboolean on_diagnostic_step(gpointer data, gboolean forward) {
     EditorTab* tab = data;
     return code_problems_step(tab->app, tab, forward, editor_mode_message);
+}
+
+/* %: the \begin / \end of a LaTeX environment */
+static gboolean on_match_pair(gpointer data, GtkTextIter* pos) {
+    return editor_latex_match_pair(data, pos);
 }
 
 /* Ctrl-O / Tab past the buffer's jump list: the history across files */
@@ -1003,6 +1009,7 @@ void vim_activate(EditorTab* tab) {
             .keyword_help = on_keyword_help,
             .references = on_references,
             .diagnostic_step = on_diagnostic_step,
+            .match_pair = on_match_pair,
         };
         st->vim = vim_engine_new(tab->buffer, &host, tab);
         shared = g_new0(SharedEngine, 1);
