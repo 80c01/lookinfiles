@@ -1936,6 +1936,17 @@ msgstr ""
 "PDF : page suivante / précédente ; boîte mail : message suivant / précédent"
 
 #: src/chrome/help.c:257
+msgctxt "key"
+msgid "Ctrl+Click"
+msgstr "Ctrl+clic"
+
+#: src/chrome/help.c:257
+msgid "PDF of a LaTeX document: open the source at the line of that place (SyncTeX)"
+msgstr ""
+"PDF d’un document LaTeX : ouvrir la source à la ligne de cet endroit "
+"(SyncTeX)"
+
+#: src/chrome/help.c:257
 msgid "Play / pause active video or audio preview"
 msgstr "Lecture / pause de l’aperçu vidéo ou audio actif"
 

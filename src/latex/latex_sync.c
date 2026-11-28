@@ -1,5 +1,6 @@
 /* The PDF preview follows the cursor of a LaTeX source (see latex_sync.h) */
 #include "latex/latex_sync.h"
+#include "editor/editor.h"
 #include "latex/latex_synctex.h"
 #include "preview/pdf.h"
 #include "preview/preview_state.h"
@@ -21,6 +22,7 @@ struct LatexSync {
     GtkTextBuffer* tracked; /* buffer of the .tex tab followed (weak), or NULL */
     guint delay_id;         /* SyncTeX asked after a pause */
     GCancellable* running;  /* "synctex view" running, or NULL */
+    GCancellable* editing;  /* "synctex edit" running (Ctrl+Click), or NULL */
     gboolean again;         /* the cursor moved meanwhile */
     gchar* last_key;        /* PDF, source and line last asked for */
     /* The place found, shown again while the preview settles */
@@ -236,6 +238,97 @@ static void on_focus_changed(GObject* window, GParamSpec* pspec, gpointer data) 
     }
 }
 
+/* ------------------------------------------------------------------------- */
+/* Back from the PDF: Ctrl+Click opens the source at the place (synctex edit) */
+/* ------------------------------------------------------------------------- */
+
+typedef struct {
+    gchar* pdf;
+    gint page;
+    gdouble y;
+    gdouble align; /* height of the click in the preview */
+} EditClick;
+
+static void edit_click_free(gpointer data) {
+    EditClick* c = data;
+    g_free(c->pdf);
+    g_free(c);
+}
+
+static void on_edit_done(GObject* source, GAsyncResult* result, gpointer data) {
+    gchar* out = NULL;
+    GError* error = NULL;
+    g_subprocess_communicate_utf8_finish(G_SUBPROCESS(source), result, &out, NULL, &error);
+    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+        g_error_free(error); /* at exit, or a newer click: st may be gone */
+        g_free(out);
+        return;
+    }
+    g_clear_error(&error);
+    struct LatexSync* st = data;
+    g_clear_object(&st->editing);
+    EditClick* c = g_object_get_data(source, "latex-sync-click");
+    gchar* dir = g_path_get_dirname(c->pdf);
+    gchar* input = NULL;
+    gint line = 0;
+    if (latex_synctex_parse_edit(out, dir, &input, &line) && g_file_test(input, G_FILE_TEST_IS_REGULAR)) {
+        /* The PDF stays where it is: the place clicked is the cursor's */
+        g_free(st->place_pdf);
+        st->place_pdf = g_strdup(c->pdf);
+        st->place_page = c->page;
+        st->place_y = c->y;
+        st->keep_align = c->align;
+        g_free(st->last_key);
+        st->last_key = g_strdup_printf("%s\n%s\n%d", c->pdf, input, line + 1);
+        EditorTab* tab = editor_open_at(st->app, input, line, 0);
+        if (tab != NULL) track(st, tab->buffer);
+    }
+    g_free(input);
+    g_free(dir);
+    g_free(out);
+}
+
+static void on_preview_click(GtkGestureClick* gesture, gint n_press, gdouble x, gdouble y, gpointer data) {
+    struct LatexSync* st = data;
+    AppData* app = st->app;
+    GdkModifierType mods = gtk_event_controller_get_current_event_state(GTK_EVENT_CONTROLLER(gesture));
+    if (n_press != 1 || (mods & GDK_CONTROL_MASK) == 0 || (mods & (GDK_SHIFT_MASK | GDK_ALT_MASK)) != 0) return;
+    const gchar* pdf = synced_pdf(app);
+    if (pdf == NULL) return;
+    gint bx = 0, by = 0;
+    gtk_text_view_window_to_buffer_coords(GTK_TEXT_VIEW(app->text_view), GTK_TEXT_WINDOW_WIDGET, (gint)x, (gint)y,
+                                          &bx, &by);
+    gint page = 0;
+    gdouble px = 0.0, py = 0.0;
+    if (!pdf_preview_page_at(app, bx, by, &page, &px, &py)) return;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+
+    gchar* arg = latex_synctex_edit_arg(page, px, py, pdf);
+    const gchar* argv[] = {"synctex", "edit", "-o", arg, NULL};
+    GSubprocessLauncher* launcher =
+        g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
+    gchar* dir = g_path_get_dirname(pdf);
+    g_subprocess_launcher_set_cwd(launcher, dir);
+    g_free(dir);
+    GSubprocess* proc = g_subprocess_launcher_spawnv(launcher, argv, NULL);
+    g_object_unref(launcher);
+    g_free(arg);
+    if (proc == NULL) return; /* synctex is not installed */
+    EditClick* c = g_new0(EditClick, 1);
+    c->pdf = g_strdup(pdf);
+    c->page = page;
+    c->y = py;
+    c->align = pdf_preview_point_align(app, page, py);
+    g_object_set_data_full(G_OBJECT(proc), "latex-sync-click", c, edit_click_free);
+    if (st->editing != NULL) {
+        g_cancellable_cancel(st->editing); /* the newer click wins */
+        g_object_unref(st->editing);
+    }
+    st->editing = g_cancellable_new();
+    g_subprocess_communicate_utf8_async(proc, NULL, st->editing, on_edit_done, st);
+    g_object_unref(proc);
+}
+
 void latex_sync_init(AppData* app) {
     if (app->latex_sync != NULL || app->window == NULL) return;
     struct LatexSync* st = g_new0(struct LatexSync, 1);
@@ -245,6 +338,16 @@ void latex_sync_init(AppData* app) {
     g_object_add_weak_pointer(G_OBJECT(st->window), (gpointer*)&st->window);
     st->focus_handler = g_signal_connect(st->window, "notify::focus-widget", G_CALLBACK(on_focus_changed), st);
     app->latex_sync = st;
+}
+
+void latex_sync_attach_preview(AppData* app) {
+    struct LatexSync* st = app != NULL ? app->latex_sync : NULL;
+    if (st == NULL || app->text_view == NULL) return;
+    GtkGesture* click = gtk_gesture_click_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_PRIMARY);
+    gtk_event_controller_set_propagation_phase(GTK_EVENT_CONTROLLER(click), GTK_PHASE_CAPTURE);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_preview_click), st);
+    gtk_widget_add_controller(app->text_view, GTK_EVENT_CONTROLLER(click));
 }
 
 void latex_sync_after_build(AppData* app) {
@@ -274,6 +377,10 @@ void latex_sync_free(AppData* app) {
     if (st->running != NULL) {
         g_cancellable_cancel(st->running);
         g_object_unref(st->running);
+    }
+    if (st->editing != NULL) {
+        g_cancellable_cancel(st->editing);
+        g_object_unref(st->editing);
     }
     if (st->delay_id != 0) g_source_remove(st->delay_id);
     if (st->settle_id != 0) g_source_remove(st->settle_id);

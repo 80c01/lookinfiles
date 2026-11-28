@@ -350,7 +350,9 @@ arrière-plan, comme Overleaf, sauf si **Préférences → Éditeur → Compiler
 les documents LaTeX à l’enregistrement** est décoché. Le PDF suit ensuite le curseur : se déplacer dans le fichier `.tex` fait
 défiler l’aperçu jusqu’à l’endroit de la ligne (SyncTeX, par la commande
 `synctex` de TeX Live), à la hauteur du curseur dans l’éditeur. Après une
-compilation, l’endroit reste où il était dans l’aperçu.
+compilation, l’endroit reste où il était dans l’aperçu. Et dans l’autre
+sens : `Ctrl+clic` sur une page du PDF ouvre la source à la ligne de cet
+endroit (`synctex edit`), y compris dans un fichier de chapitre.
 
 - La commande est `latexmk` s’il est installé, sinon Tectonic, sinon
   `pdflatex`, `xelatex` ou `lualatex` lancé une fois. Le moteur vient d’une

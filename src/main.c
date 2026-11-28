@@ -630,6 +630,7 @@ int main(int argc, char** argv) {
     app->text_view = text_view;
     g_object_set_data(G_OBJECT(text_view), "app", app);
     code_nav_attach_preview(app, editor_mode_message);   /* Ctrl+Click in source previews */
+    latex_sync_attach_preview(app);                      /* Ctrl+Click in a LaTeX PDF */
     GtkWidget* top_row = topbar_new(app, ws_minimap, layouts_btn, prefs_btn);
     /* Left-aligned action widget inside preview notebook tab header: Split/Dock button */
     gtk_notebook_set_action_widget(GTK_NOTEBOOK(notebook), topbar_split_button_new(app), GTK_PACK_START);

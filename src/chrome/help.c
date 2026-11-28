@@ -254,6 +254,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Preview panel"), "+ / - / 0", N_("Zoom image, PDF or slides in / out / to the fitted size (also Ctrl+wheel)"), 0},
     {N_("Preview panel"), NC_("key", "Right-click"), N_("On an image: Copy Image to the clipboard"), 0},
     {N_("Preview panel"), "PgDn / PgUp", N_("PDF: next / previous page; mailbox: next / previous message"), 0},
+    {N_("Preview panel"), NC_("key", "Ctrl+Click"), N_("PDF of a LaTeX document: open the source at the line of that place (SyncTeX)"), 0},
     {N_("Preview panel"), "Space / p", N_("Play / pause active video or audio preview"), 0},
     {N_("Preview panel"), "Left / Right", N_("Video: seek 5 seconds back / forward (also in the explorer)"), 0},
     {N_("Org-mode"), "Tab / Shift+Tab", N_("In Org view: Fold/unfold heading or cycle global visibility (Overview -> Contents -> Show All)"), 0},

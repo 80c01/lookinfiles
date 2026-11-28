@@ -51,3 +51,40 @@ gboolean latex_synctex_parse_view(const gchar* output, gint* page, gdouble* y) {
     *page = found_page;
     return TRUE;
 }
+
+gchar* latex_synctex_edit_arg(gint page, gdouble x, gdouble y, const gchar* pdf) {
+    gchar xs[G_ASCII_DTOSTR_BUF_SIZE], ys[G_ASCII_DTOSTR_BUF_SIZE];
+    g_ascii_formatd(xs, sizeof(xs), "%.2f", x);
+    g_ascii_formatd(ys, sizeof(ys), "%.2f", y);
+    return g_strdup_printf("%d:%s:%s:%s", page + 1, xs, ys, pdf);
+}
+
+gboolean latex_synctex_parse_edit(const gchar* output, const gchar* dir, gchar** input, gint* line) {
+    if (output == NULL) return FALSE;
+    const gchar* begin = strstr(output, "SyncTeX result begin");
+    if (begin == NULL) return FALSE;
+    gchar* found_input = NULL;
+    gint found_line = -1;
+    gchar** lines = g_strsplit(begin, "\n", -1);
+    for (gchar** l = lines; *l != NULL; l++) {
+        g_strchomp(*l);
+        if (g_str_has_prefix(*l, "SyncTeX result end")) break;
+        /* The first record only */
+        if (g_str_has_prefix(*l, "Output:") && found_input != NULL) break;
+        if (g_str_has_prefix(*l, "Input:") && found_input == NULL && (*l)[6] != '\0') {
+            found_input = g_canonicalize_filename(*l + 6, dir);
+        } else if (g_str_has_prefix(*l, "Line:") && found_input != NULL && found_line < 0) {
+            gchar* end = NULL;
+            gint64 n = g_ascii_strtoll(*l + 5, &end, 10);
+            if (end != *l + 5 && n >= 1 && n <= G_MAXINT) found_line = (gint)n - 1;
+        }
+    }
+    g_strfreev(lines);
+    if (found_input == NULL || found_line < 0) {
+        g_free(found_input);
+        return FALSE;
+    }
+    *input = found_input;
+    *line = found_line;
+    return TRUE;
+}

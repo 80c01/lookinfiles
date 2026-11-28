@@ -834,6 +834,40 @@ gdouble pdf_preview_point_align(AppData* app, gint page, gdouble y) {
     return (top - visible.y) / visible.height;
 }
 
+gboolean pdf_preview_page_at(AppData* app, gint x, gint y, gint* page, gdouble* px, gdouble* py) {
+    if (preview_state_kind(app) != FILE_KIND_PDF || preview_state_raw(app) || app->text_view == NULL) return FALSE;
+    GtkTextView* view = GTK_TEXT_VIEW(app->text_view);
+    GtkTextIter it;
+    if (!gtk_text_view_get_iter_at_location(view, &it, x, y)) return FALSE;
+    GdkPaintable* picture = gtk_text_iter_get_paintable(&it);
+    if (picture == NULL) return FALSE;
+    const gdouble* scale = g_object_get_data(G_OBJECT(picture), PAGE_SCALE_KEY);
+    if (scale == NULL || *scale <= 0.0) return FALSE;
+    GdkRectangle rect;
+    gtk_text_view_get_iter_location(view, &it, &rect);
+    /* As in point_top(): the picture stands on the line's baseline */
+    gdouble top = rect.y + rect.height - gdk_paintable_get_intrinsic_height(picture);
+    gdouble dx = x - rect.x, dy = y - top;
+    if (dx < 0 || dy < 0 || dx > gdk_paintable_get_intrinsic_width(picture) ||
+        dy > gdk_paintable_get_intrinsic_height(picture)) {
+        return FALSE;
+    }
+    /* Its page: the badges before it */
+    gint n = 0;
+    GtkTextIter from, match_start, match_end;
+    gtk_text_buffer_get_start_iter(app->buffer, &from);
+    while (gtk_text_iter_forward_search(&from, PAGE_BADGE_PREFIX, GTK_TEXT_SEARCH_TEXT_ONLY, &match_start, &match_end,
+                                        &it)) {
+        n++;
+        from = match_end;
+    }
+    if (n == 0) return FALSE;
+    *page = n - 1;
+    *px = dx / *scale;
+    *py = dy / *scale;
+    return TRUE;
+}
+
 /* Width the pages are fitted to. Measure the viewport, not the text view: the
  * view can be wider than the scrolled window when the previous file had long
  * unwrapped lines. */
@@ -942,6 +976,16 @@ gdouble pdf_preview_point_align(AppData* app, gint page, gdouble y) {
 gboolean pdf_preview_jump(AppData* app, gint direction) {
     (void)app;
     (void)direction;
+    return FALSE;
+}
+
+gboolean pdf_preview_page_at(AppData* app, gint x, gint y, gint* page, gdouble* px, gdouble* py) {
+    (void)app;
+    (void)x;
+    (void)y;
+    (void)page;
+    (void)px;
+    (void)py;
     return FALSE;
 }
 

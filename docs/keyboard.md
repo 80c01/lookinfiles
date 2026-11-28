@@ -350,6 +350,7 @@ mode move in the list)
 | `+` / `-` / `0`, `Ctrl+wheel` | Zoom an image, PDF or the slides of a presentation in / out / back to the fitted size |
 | Right click on an image | Context menu: **Copy Image** copies the whole image to the clipboard |
 | `PgDn` / `PgUp` | PDF: next / previous page; mailbox: from the list into each message and back |
+| `Ctrl+Click` on a PDF page | PDF of a LaTeX document (with its SyncTeX file): open the source at the line of that place (SyncTeX inverse search) |
 | `Space` / `p` | Play / pause the video or audio |
 | `Left` / `Right` | Video: seek 5 seconds back / forward (also in the explorer, on the video shown; `h` / `l` still navigate) |
 | `Tab` / `Shift+Tab` | Org-mode: fold the heading / cycle the global visibility |
