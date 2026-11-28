@@ -7,15 +7,16 @@
  * GtkPaned. Pure logic, no widgets: unit-tested in tests/. */
 #include <glib.h>
 
-/* The shares the menu offers, from the start side */
+/* The shares the menu offers, from the start side (at most SPLIT_RATIO_COUNT) */
 #define SPLIT_RATIO_COUNT 3
 typedef enum {
     SPLIT_SHARES_EVEN, /* 1/3, 1/2, 2/3: two sides of the same weight */
-    SPLIT_SHARES_SIDE, /* 1/5, 1/4, 1/3: a side panel at the start (the explorer) */
+    SPLIT_SHARES_SIDE, /* 1/2: a side panel at the start (the explorer), whose
+                        * other widths are absolute (its default width, fitted) */
 } SplitShares;
 
-/* The SPLIT_RATIO_COUNT shares of set, smallest first */
-const gdouble* split_ratio_shares(SplitShares set);
+/* The shares of set, smallest first; *count gets their number */
+const gdouble* split_ratio_shares(SplitShares set, gint* count);
 
 /* A side this close to 0 px (or less) is collapsed */
 #define SPLIT_COLLAPSE_SLACK 2
@@ -46,6 +47,18 @@ SplitSide split_ratio_collapsed(gint pos, gint max);
 /* Position that expands a collapsed split back: the share it had before
  * (before_share, < 0 when unknown), or a half when that was collapsed too */
 gint split_ratio_expand(gint max, gdouble before_share, gint min_start, gint min_end);
+
+/* Default width of a side panel (the explorer), in characters of its font:
+ * absolute, so it does not grow with the window */
+#define SPLIT_SIDE_DEFAULT_CHARS 32
+/* About that width as a share of the window, where a share is needed before
+ * the width can be measured */
+#define SPLIT_SIDE_DEFAULT_SHARE 0.25
+
+/* Position giving the start side width px, kept at least min_start from 0 and
+ * min_end from max when the room allows both; -1 when width or max is
+ * unknown (<= 0) */
+gint split_ratio_width(gint width, gint max, gint min_start, gint min_end);
 
 /* Largest share of the window the explorer gets when it is fitted to its
  * content (the fit button of its handle, the Auto layout) */

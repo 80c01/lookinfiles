@@ -4,21 +4,31 @@
 #include <math.h>
 
 static const gdouble EVEN[SPLIT_RATIO_COUNT] = {1.0 / 3.0, 0.5, 2.0 / 3.0};
-static const gdouble SIDE[SPLIT_RATIO_COUNT] = {0.2, 0.25, 1.0 / 3.0};
+static const gdouble SIDE[] = {0.5};
 
-const gdouble* split_ratio_shares(SplitShares set) {
-    return set == SPLIT_SHARES_SIDE ? SIDE : EVEN;
+const gdouble* split_ratio_shares(SplitShares set, gint* count) {
+    gboolean side = set == SPLIT_SHARES_SIDE;
+    if (count != NULL) *count = side ? (gint)G_N_ELEMENTS(SIDE) : SPLIT_RATIO_COUNT;
+    return side ? SIDE : EVEN;
 }
 
-gint split_ratio_position(gint max, gdouble share, gint min_start, gint min_end) {
-    if (max <= 0) return 0;
-    gint pos = (gint)lround(CLAMP(share, 0.0, 1.0) * max);
+static gint keep_minimums(gint pos, gint max, gint min_start, gint min_end) {
     min_start = MAX(min_start, 0);
     min_end = MAX(min_end, 0);
     if (min_start + min_end <= max) {
         pos = CLAMP(pos, min_start, max - min_end);
     }
     return CLAMP(pos, 0, max);
+}
+
+gint split_ratio_position(gint max, gdouble share, gint min_start, gint min_end) {
+    if (max <= 0) return 0;
+    return keep_minimums((gint)lround(CLAMP(share, 0.0, 1.0) * max), max, min_start, min_end);
+}
+
+gint split_ratio_width(gint width, gint max, gint min_start, gint min_end) {
+    if (width <= 0 || max <= 0) return -1;
+    return keep_minimums(width, max, min_start, min_end);
 }
 
 gboolean split_ratio_reachable(gint max, gdouble share, gint min_start, gint min_end) {

@@ -17,10 +17,12 @@ the size while you drag. Point at a border and a small bar appears beside
 its middle (for a second once the pointer leaves it): its end buttons collapse the panel on that side (or
 expand it back to its size, once collapsed), the middle ones put the border
 at a third, a half or two thirds. The border of the explorer offers the
-widths a side panel needs instead: a fifth, a quarter or a third of the
-window, and a button that fits the explorer to its widest visible name (up
-to 40% of the window; click it again after opening other folders). A double
-click on a border splits it in half, or fits the explorer on its border. The preview, the explorer and the terminal panel do not collapse
+widths a side panel needs instead: its default width (32 characters, the
+same whatever the size of the window), a button that fits the explorer to
+its widest visible name (up to 40% of the window; click it again after
+opening other folders), and half the window. A double click on a border
+splits it in half, or gives the explorer back its default width on its
+border. The preview, the explorer and the terminal panel do not collapse
 from a border (they have their own buttons in the top bar): the border
 between the preview and the editor panel only collapses the editor panel.
 The border of a collapsed panel shows as a coloured strip at the edge; a

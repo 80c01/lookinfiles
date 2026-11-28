@@ -24,6 +24,7 @@ static gint split_menu_sides(GtkWidget* paned, gpointer data);
 static void split_menu_apply(GtkWidget* paned, gint pos, gpointer data);
 static SplitShares split_menu_shares(GtkWidget* paned, gpointer data);
 static gint split_menu_fit(GtkWidget* paned, gpointer data);
+static gint split_menu_default(GtkWidget* paned, gpointer data);
 
 static Panels* panels_get(AppData* app) {
     if (app->panels == NULL) {
@@ -32,6 +33,7 @@ static Panels* panels_get(AppData* app) {
             .sides = split_menu_sides,
             .apply = split_menu_apply,
             .shares = split_menu_shares,
+            .default_pos = split_menu_default,
             .fit = split_menu_fit,
             .data = app,
         };
@@ -261,7 +263,7 @@ static void on_paned_pressed(GtkGestureClick* gesture, gint n_press,
     }
     split_menu_hide(d->menu);
     if (n_press == 2 && on_own_sep) {
-        split_menu_reset(d->menu, widget); /* double click: fit the explorer, or a half */
+        split_menu_reset(d->menu, widget); /* double click: the explorer's default width, or a half */
         return;
     }
     d->active = TRUE;
@@ -360,7 +362,7 @@ static gint split_menu_sides(GtkWidget* paned, gpointer data) {
     return SPLIT_SIDE_START | SPLIT_SIDE_END;
 }
 
-/* The explorer is a side panel: its useful widths are a fifth to a third */
+/* The explorer is a side panel: an absolute default width, fitted, or a half */
 static SplitShares split_menu_shares(GtkWidget* paned, gpointer data) {
     AppData* app = data;
     return paned == app->main_paned ? SPLIT_SHARES_SIDE : SPLIT_SHARES_EVEN;
@@ -375,14 +377,40 @@ static gint split_menu_fit(GtkWidget* paned, gpointer data) {
                            SPLIT_SIDE_MAX_SHARE);
 }
 
+/* The explorer's default width (SPLIT_SIDE_DEFAULT_CHARS characters) */
+static gint split_menu_default(GtkWidget* paned, gpointer data) {
+    AppData* app = data;
+    if (paned != app->main_paned) return -1;
+    return panels_explorer_default_width(app);
+}
+
+/* The scrolled window of the explorer's rows, or NULL */
+static GtkScrolledWindow* explorer_scroll(AppData* app) {
+    for (GtkWidget* c = gtk_widget_get_first_child(app->left_vbox); c != NULL; c = gtk_widget_get_next_sibling(c)) {
+        if (GTK_IS_SCROLLED_WINDOW(c)) return GTK_SCROLLED_WINDOW(c);
+    }
+    return NULL;
+}
+
+gint panels_explorer_default_width(AppData* app) {
+    if (app == NULL || app->left_vbox == NULL || !gtk_widget_get_realized(app->left_vbox)) {
+        return 0;
+    }
+    /* Characters of the rows' font (their CSS font is the widget's) */
+    GtkScrolledWindow* scroll = explorer_scroll(app);
+    GtkWidget* rows = scroll != NULL ? gtk_scrolled_window_get_child(scroll) : NULL;
+    PangoContext* ctx = gtk_widget_get_pango_context(rows != NULL ? rows : app->left_vbox);
+    PangoFontMetrics* metrics = pango_context_get_metrics(ctx, NULL, NULL);
+    gint char_w = pango_font_metrics_get_approximate_char_width(metrics);
+    pango_font_metrics_unref(metrics);
+    return MAX(PANGO_PIXELS(char_w * SPLIT_SIDE_DEFAULT_CHARS), 0);
+}
+
 gint panels_explorer_natural_width(AppData* app) {
     if (app == NULL || app->left_vbox == NULL || !gtk_widget_get_mapped(app->left_vbox)) {
         return 0;
     }
-    GtkScrolledWindow* scroll = NULL;
-    for (GtkWidget* c = gtk_widget_get_first_child(app->left_vbox); c != NULL; c = gtk_widget_get_next_sibling(c)) {
-        scroll = (scroll == NULL && GTK_IS_SCROLLED_WINDOW(c)) ? GTK_SCROLLED_WINDOW(c) : scroll;
-    }
+    GtkScrolledWindow* scroll = explorer_scroll(app);
     /* The scrolled window reports its child's natural width only when asked */
     gboolean propagate = (scroll != NULL) && gtk_scrolled_window_get_propagate_natural_width(scroll);
     if (scroll != NULL) {

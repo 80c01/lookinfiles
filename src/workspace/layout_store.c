@@ -14,7 +14,7 @@ SavedLayout* saved_layout_new(const gchar* name) {
     l->name = g_strdup(name != NULL ? name : "");
     l->files_vis = TRUE;
     l->preview_vis = TRUE;
-    l->main_frac = 0.25;
+    l->main_frac = 0.0; /* the explorer's default width */
     l->right_frac = 0.70;
     l->editor_frac = 0.50;
     l->terminals = g_strdup("");
@@ -288,7 +288,7 @@ void layout_store_editor_area(const SavedLayout* l, gint width, gint height, gin
     gdouble w = width;
     gdouble h = height;
     if (l->files_vis) {
-        w *= 1.0 - l->main_frac;
+        w *= 1.0 - (l->main_frac > 0.0 ? l->main_frac : SPLIT_SIDE_DEFAULT_SHARE);
     }
     if (l->term_vis) {
         if (l->stacked) {
@@ -519,7 +519,9 @@ void saved_layout_write(GKeyFile* kf, const gchar* group, const SavedLayout* l, 
     g_key_file_set_boolean(kf, group, "EditorPanel", l->editor_dedicated);
     g_key_file_set_boolean(kf, group, "EditorLeft", l->editor_left);
     g_key_file_set_boolean(kf, group, "TerminalBelow", l->stacked);
-    set_frac(kf, group, "ExplorerWidth", l->main_frac);
+    if (l->main_frac > 0.0) {
+        set_frac(kf, group, "ExplorerWidth", l->main_frac);
+    }
     set_frac(kf, group, "PreviewShare", l->right_frac);
     set_frac(kf, group, "EditorShare", l->editor_frac);
     g_key_file_set_string(kf, group, "TerminalPanes", l->terminals);

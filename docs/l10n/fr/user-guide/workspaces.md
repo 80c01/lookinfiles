@@ -20,11 +20,12 @@ séparation et une petite barre apparaît à côté de son milieu (encore une
 seconde après que le pointeur l’a quittée) : ses boutons aux extrémités replient le panneau de ce côté (ou le déplient à sa
 taille, une fois replié), ceux du milieu placent la séparation au tiers, à
 la moitié ou aux deux tiers. La séparation de l’explorateur propose plutôt
-les largeurs utiles à un panneau latéral : un cinquième, un quart ou un
-tiers de la fenêtre, et un bouton qui ajuste l’explorateur à son nom visible
-le plus long (au plus 40 % de la fenêtre ; recliquez-le après avoir ouvert
-d’autres dossiers). Un double clic sur une séparation la met à la moitié,
-ou ajuste l’explorateur sur sa séparation. L’aperçu, l’explorateur et le panneau du terminal ne se replient
+les largeurs utiles à un panneau latéral : sa largeur par défaut
+(32 caractères, la même quelle que soit la taille de la fenêtre), un bouton
+qui ajuste l’explorateur à son nom visible le plus long (au plus 40 % de la
+fenêtre ; recliquez-le après avoir ouvert d’autres dossiers), et la moitié
+de la fenêtre. Un double clic sur une séparation la met à la moitié, ou
+rend à l’explorateur sa largeur par défaut sur sa séparation. L’aperçu, l’explorateur et le panneau du terminal ne se replient
 pas depuis une séparation (ils ont leur propre bouton dans la barre du
 haut) : la séparation entre l’aperçu et le panneau d’édition ne replie que
 le panneau d’édition. La séparation d’un panneau replié apparaît comme une

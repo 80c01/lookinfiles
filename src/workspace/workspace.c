@@ -21,6 +21,7 @@
 #include "media/video.h"
 #include "workspace/layout_store.h"
 #include "workspace/layout_history.h"
+#include "widgets/split_ratio.h"
 #include "theme/palette.h"
 #include "widgets/add_button.h"
 #include "search/project_search.h"
@@ -122,7 +123,7 @@ static void init_workspace_slot(AppData* app, gint idx, const gchar* dir) {
     ws->preview_vis = TRUE;
     ws->term_vis = FALSE;
     ws->right_orient = GTK_ORIENTATION_HORIZONTAL;
-    ws->main_frac = 0.25;
+    ws->main_frac = 0.0; /* the explorer's default width */
     ws->right_frac = 0.70;
     ws->base_dir = g_strdup(dir != NULL ? dir : app->base_dir);
     ws->expanded_paths = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -274,6 +275,17 @@ static gboolean apply_ws_positions_now(AppData* app) {
     }
 
     gint target_file_w = (gint)(ws->main_frac * total_w + 0.5);
+    if (ws->main_frac <= 0.0) {
+        /* The explorer's default width: absolute, then kept as a share like
+         * a width the user chose */
+        gint def_w = panels_explorer_default_width(app);
+        if (def_w > 0 && total_w > 0) {
+            target_file_w = def_w;
+            ws->main_frac = CLAMP((gdouble)def_w / total_w, 0.05, 0.95);
+        } else {
+            target_file_w = (gint)(SPLIT_SIDE_DEFAULT_SHARE * total_w + 0.5);
+        }
+    }
     if (target_file_w > mw - 40 && mw > 80) {
         target_file_w = mw - 40;
     }
@@ -920,7 +932,8 @@ static void on_ws_minimap_draw(GtkDrawingArea* area, cairo_t* cr,
 
         if (ws->files_vis) {
             gdouble fw = (center_vis || ws->term_vis)
-                             ? (iw * CLAMP(ws->main_frac, 0.22, 0.72) - 0.8)
+                             ? (iw * CLAMP(ws->main_frac > 0.0 ? ws->main_frac : SPLIT_SIDE_DEFAULT_SHARE,
+                                           0.22, 0.72) - 0.8)
                              : iw;
             set_source_role(cr, PAL_ACCENT_FG, alpha); /* Files */
             cairo_rectangle(cr, ix, iy, fw, ih);

@@ -27,7 +27,9 @@ typedef struct {
     gboolean editor_dedicated; /* editor tabs in the dedicated panel */
     gboolean editor_left;      /* the editor panel left of the preview (else right) */
     gboolean stacked;          /* terminal below the preview (else beside it) */
-    gdouble main_frac;         /* explorer width / window width */
+    gdouble main_frac;         /* explorer width / window width; 0: its default
+                                * width (SPLIT_SIDE_DEFAULT_CHARS, split_ratio.h),
+                                * no ExplorerWidth key */
     gdouble right_frac;        /* preview share of the preview/terminal pair */
     gdouble editor_frac;       /* preview share of the preview/editor pair */
     gchar* terminals;          /* terminal pane tree (see below), "" if none */

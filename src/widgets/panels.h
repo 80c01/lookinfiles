@@ -31,6 +31,9 @@ void panels_size_popup_attach(AppData* app, GtkOverlay* overlay);
 /* Width the explorer needs for its widest visible row and its bars, in
  * pixels (0 when hidden or not laid out yet) */
 gint panels_explorer_natural_width(AppData* app);
+/* Default width of the explorer: SPLIT_SIDE_DEFAULT_CHARS characters of its
+ * font, in pixels (0 before it is realized) */
+gint panels_explorer_default_width(AppData* app);
 /* TRUE while the user is dragging a split handle */
 gboolean panels_is_resizing(const AppData* app);
 /* Free the focused-panel and split-handle drag state (at exit) */

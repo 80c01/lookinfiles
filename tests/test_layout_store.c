@@ -67,6 +67,8 @@ static void test_save_load(void) {
     gchar* text = NULL;
     g_assert_true(g_file_get_contents(path, &text, NULL, NULL));
     g_assert_nonnull(strstr(text, "ExplorerWidth=0.200\n"));
+    /* "Reading" keeps the explorer's default width: no share written */
+    g_assert_null(strstr(strstr(text, "Reading"), "ExplorerWidth"));
     g_free(text);
 
     GPtrArray* loaded = layout_store_load(path);
@@ -80,6 +82,7 @@ static void test_save_load(void) {
     g_assert_false(lb->files_vis);
     g_assert_true(lb->editor_dedicated);
     g_assert_cmpstr(lb->terminals, ==, "");
+    g_assert_cmpfloat(lb->main_frac, ==, 0.0);
 
     /* Same name replaces in place; remove */
     SavedLayout* c = saved_layout_copy(lb);

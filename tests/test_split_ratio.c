@@ -48,16 +48,28 @@ static void test_expand(void) {
 }
 
 static void test_share_sets(void) {
-    const gdouble* even = split_ratio_shares(SPLIT_SHARES_EVEN);
-    const gdouble* side = split_ratio_shares(SPLIT_SHARES_SIDE);
+    gint n_even = 0, n_side = 0;
+    const gdouble* even = split_ratio_shares(SPLIT_SHARES_EVEN, &n_even);
+    const gdouble* side = split_ratio_shares(SPLIT_SHARES_SIDE, &n_side);
+    g_assert_cmpint(n_even, ==, SPLIT_RATIO_COUNT);
     g_assert_cmpfloat_with_epsilon(even[1], 0.5, 1e-9);
-    g_assert_cmpfloat_with_epsilon(side[0], 0.2, 1e-9);
-    g_assert_cmpfloat_with_epsilon(side[1], 0.25, 1e-9);
-    g_assert_cmpfloat_with_epsilon(side[2], 1.0 / 3.0, 1e-9);
-    for (gint i = 1; i < SPLIT_RATIO_COUNT; i++) {
+    for (gint i = 1; i < n_even; i++) {
         g_assert_cmpfloat(even[i - 1], <, even[i]);
-        g_assert_cmpfloat(side[i - 1], <, side[i]);
     }
+    /* A side panel: only the half, its other widths are absolute */
+    g_assert_cmpint(n_side, ==, 1);
+    g_assert_cmpfloat_with_epsilon(side[0], 0.5, 1e-9);
+    g_assert_nonnull(split_ratio_shares(SPLIT_SHARES_EVEN, NULL));
+}
+
+static void test_width(void) {
+    g_assert_cmpint(split_ratio_width(260, 1900, 0, 0), ==, 260);
+    /* Kept within the room, and the end side keeps its minimum */
+    g_assert_cmpint(split_ratio_width(2500, 1900, 0, 0), ==, 1900);
+    g_assert_cmpint(split_ratio_width(260, 400, 0, 200), ==, 200);
+    g_assert_cmpint(split_ratio_width(100, 900, 150, 0), ==, 150);
+    g_assert_cmpint(split_ratio_width(0, 1900, 0, 0), ==, -1);
+    g_assert_cmpint(split_ratio_width(260, 0, 0, 0), ==, -1);
 }
 
 static void test_fit(void) {
@@ -77,5 +89,6 @@ int main(int argc, char** argv) {
     g_test_add_func("/split_ratio/expand", test_expand);
     g_test_add_func("/split_ratio/share_sets", test_share_sets);
     g_test_add_func("/split_ratio/fit", test_fit);
+    g_test_add_func("/split_ratio/width", test_width);
     return g_test_run();
 }

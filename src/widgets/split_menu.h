@@ -3,9 +3,9 @@
 
 /* The menu of a split handle: as soon as the pointer is on the handle of a
  * GtkPaned of the layout, a small bar offers to collapse either side (or to
- * expand the collapsed one), to put the handle at one of three shares of the
- * room (split_ratio.h) and, where the start side can tell its natural size,
- * to fit that side to it. The bar is drawn over the window in an
+ * expand the collapsed one), to put the handle at one of the shares of the
+ * room (split_ratio.h) and, where the start side has them, to give that side
+ * its default width or fit it to its natural size. The bar is drawn over the window in an
  * overlay, in the middle of the handle and beside its line (which stays free
  * to drag); it hides on a press on the handle (a drag), after a click on the
  * bar, or a second after the pointer has left both. */
@@ -23,6 +23,9 @@ typedef struct {
     void (*apply)(GtkWidget* paned, gint pos, gpointer data);
     /* The shares offered on the handle of paned (NULL: SPLIT_SHARES_EVEN) */
     SplitShares (*shares)(GtkWidget* paned, gpointer data);
+    /* Default width of the start side of paned, in pixels; <= 0: none
+     * (NULL: no default button on any handle) */
+    gint (*default_pos)(GtkWidget* paned, gpointer data);
     /* Position fitting the start side of paned to its content, -1: none
      * (NULL: no fit button on any handle) */
     gint (*fit)(GtkWidget* paned, gpointer data);
@@ -36,8 +39,9 @@ void split_menu_set_overlay(SplitMenu* menu, GtkOverlay* overlay);
 void split_menu_attach(SplitMenu* menu, GtkWidget* paned);
 /* Hide the bar (and forget a pending show) */
 void split_menu_hide(SplitMenu* menu);
-/* The double click on the handle of paned: fit its start side to its content
- * where the fit hook gives a position, put the handle at a half otherwise */
+/* The double click on the handle of paned: give its start side its default
+ * width where the default hook gives a position, else fit that side to its
+ * content where the fit hook does, else put the handle at a half */
 void split_menu_reset(SplitMenu* menu, GtkWidget* paned);
 void split_menu_free(SplitMenu* menu);
 

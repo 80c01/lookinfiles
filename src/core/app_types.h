@@ -106,7 +106,8 @@ typedef struct {
     gboolean editor_dedicated;
     gboolean editor_first; /* editor panel left of the preview (editor_swap.h) */
     GtkOrientation right_orient;
-    gdouble main_frac;
+    gdouble main_frac; /* explorer width / workspace width; 0: its default width
+                        * (panels_explorer_default_width()), until laid out */
     gdouble right_frac;
     gdouble editor_frac;
     gchar* base_dir;

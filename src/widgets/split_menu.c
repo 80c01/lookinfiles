@@ -10,10 +10,11 @@
 #define KIND_KEY "lookin-split-kind"
 
 typedef enum {
-    BTN_START,  /* collapse (or expand) the start side */
-    BTN_RATIO,  /* + index into the shares of the paned shown */
-    BTN_FIT = BTN_RATIO + SPLIT_RATIO_COUNT, /* fit the start side to its content */
-    BTN_END,
+    BTN_START,   /* collapse (or expand) the start side */
+    BTN_DEFAULT, /* the start side at its default width */
+    BTN_FIT,     /* fit the start side to its content */
+    BTN_RATIO,   /* + index into the shares of the paned shown */
+    BTN_END = BTN_RATIO + SPLIT_RATIO_COUNT,
     BTN_COUNT
 } ButtonKind;
 
@@ -26,6 +27,8 @@ struct SplitMenu {
     GtkWidget* shown;         /* paned the bar is shown for (weak), or NULL */
     gboolean on_bar;          /* the pointer is over the bar */
     SplitShares shares;       /* shares offered for the paned shown */
+    gint n_shares;            /* their number */
+    gint def;                 /* its default position, -1: none */
     gint fit;                 /* its fitted position, -1: no fit */
     guint hide_id;
 };
@@ -149,6 +152,32 @@ static void draw_fit(cairo_t* cr, gboolean lit, gboolean current) {
     cairo_stroke(cr);
 }
 
+/* A narrow start part, and a circular arrow back to it in the end part */
+static void draw_default(cairo_t* cr, gboolean lit, gboolean current) {
+    PaletteRole role = current ? PAL_ACCENT : (lit ? PAL_FG_BRIGHT : PAL_FG_MUTED);
+    const gdouble x = 3.5, y = 5.5, w = 13.0, h = 9.0, cut = 7.5;
+    cairo_rectangle(cr, x, y, cut - x, h);
+    set_source(cr, role, current ? 0.8 : 0.45);
+    cairo_fill(cr);
+    set_source(cr, role, 1.0);
+    cairo_set_line_width(cr, 1.0);
+    rounded_rect(cr, x, y, w, h, 1.5);
+    cairo_stroke(cr);
+    cairo_move_to(cr, cut, y);
+    cairo_line_to(cr, cut, y + h);
+    cairo_stroke(cr);
+    /* Three quarters of a circle, its head pointing up at the start */
+    const gdouble cx = 12.0, cy = 10.0, r = 2.4;
+    cairo_set_line_width(cr, 1.2);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_arc(cr, cx, cy, r, -G_PI * 0.5, G_PI);
+    cairo_stroke(cr);
+    cairo_move_to(cr, cx - r - 1.3, cy + 0.9);
+    cairo_line_to(cr, cx - r, cy - 0.6);
+    cairo_line_to(cr, cx - r + 1.3, cy + 0.9);
+    cairo_stroke(cr);
+}
+
 /* An edge with a chevron: towards it (collapse that side) or away (expand it) */
 static void draw_edge(cairo_t* cr, gboolean at_start, gboolean expand, gboolean lit) {
     set_source(cr, lit ? PAL_FG_BRIGHT : PAL_FG_MUTED, 1.0);
@@ -193,10 +222,13 @@ static void on_draw(GtkDrawingArea* area, cairo_t* cr, int width, int height, gp
         draw_edge(cr, TRUE, collapsed == SPLIT_SIDE_START, lit);
     } else if (kind == BTN_END) {
         draw_edge(cr, FALSE, collapsed == SPLIT_SIDE_END, lit);
+    } else if (kind == BTN_DEFAULT) {
+        draw_default(cr, lit, collapsed == SPLIT_SIDE_NONE && menu->def >= 0 && ABS(pos - menu->def) <= SPLIT_RATIO_SLACK);
     } else if (kind == BTN_FIT) {
         draw_fit(cr, lit, collapsed == SPLIT_SIDE_NONE && menu->fit >= 0 && ABS(pos - menu->fit) <= SPLIT_RATIO_SLACK);
     } else {
-        gdouble share = split_ratio_shares(menu->shares)[kind - BTN_RATIO];
+        if (kind - BTN_RATIO >= menu->n_shares) return;
+        gdouble share = split_ratio_shares(menu->shares, NULL)[kind - BTN_RATIO];
         gboolean current = collapsed == SPLIT_SIDE_NONE &&
                            split_ratio_matches(pos, max, share, start_min(paned), end_min(paned));
         draw_ratio(cr, share, lit, current);
@@ -263,29 +295,27 @@ static void update_buttons(SplitMenu* menu, gint sides) {
         N_("Split in Half (Double-Click the Border)"),
         N_("Top Side Two Thirds, Bottom Side a Third"),
     };
-    static const gchar* const SIDE_TIPS_H[SPLIT_RATIO_COUNT] = {
-        N_("Left Side a Fifth, Right Side Four Fifths"),
-        N_("Left Side a Quarter, Right Side Three Quarters"),
-        N_("Left Side a Third, Right Side Two Thirds"),
-    };
-    static const gchar* const SIDE_TIPS_V[SPLIT_RATIO_COUNT] = {
-        N_("Top Side a Fifth, Bottom Side Four Fifths"),
-        N_("Top Side a Quarter, Bottom Side Three Quarters"),
-        N_("Top Side a Third, Bottom Side Two Thirds"),
-    };
     gboolean vertical = paned_vertical(paned);
     gboolean side = menu->shares == SPLIT_SHARES_SIDE;
-    const gchar* const* tips = side ? (vertical ? SIDE_TIPS_V : SIDE_TIPS_H) : (vertical ? EVEN_TIPS_V : EVEN_TIPS_H);
-    const gdouble* shares = split_ratio_shares(menu->shares);
+    const gdouble* shares = split_ratio_shares(menu->shares, &menu->n_shares);
     for (gint i = 0; i < SPLIT_RATIO_COUNT; i++) {
         GtkWidget* b = menu->buttons[BTN_RATIO + i];
-        /* The double click fits rather than halves where a fit exists */
-        const gchar* tip = (!side && i == 1 && menu->fit >= 0) ? N_("Split in Half") : tips[i];
+        gtk_widget_set_visible(b, i < menu->n_shares);
+        if (i >= menu->n_shares) continue;
+        /* The double click puts the default width, or fits, rather than
+         * halves where the paned has them */
+        const gchar* tip = (side || (i == 1 && (menu->def >= 0 || menu->fit >= 0)))
+                               ? N_("Split in Half")
+                               : (vertical ? EVEN_TIPS_V : EVEN_TIPS_H)[i];
         gtk_widget_set_tooltip_text(b, _(tip));
         gtk_widget_set_sensitive(b, split_ratio_reachable(max, shares[i], smin, emin));
     }
+    gtk_widget_set_visible(menu->buttons[BTN_DEFAULT], menu->def >= 0);
+    gtk_widget_set_tooltip_text(menu->buttons[BTN_DEFAULT], _("Default Width (Double-Click the Border)"));
     gtk_widget_set_visible(menu->buttons[BTN_FIT], menu->fit >= 0);
-    gtk_widget_set_tooltip_text(menu->buttons[BTN_FIT], _("Fit to the Widest Name (Double-Click the Border)"));
+    gtk_widget_set_tooltip_text(menu->buttons[BTN_FIT], menu->def >= 0
+                                                            ? _("Fit to the Widest Name")
+                                                            : _("Fit to the Widest Name (Double-Click the Border)"));
     for (gint i = 0; i < BTN_COUNT; i++) {
         gtk_widget_queue_draw(gtk_button_get_child(GTK_BUTTON(menu->buttons[i])));
     }
@@ -339,12 +369,20 @@ static gint paned_fit(SplitMenu* menu, GtkWidget* paned) {
     return fit >= 0 ? clamp_position(paned, fit) : -1;
 }
 
+/* Default position of the start side of paned, clamped to its range; -1: none */
+static gint paned_default(SplitMenu* menu, GtkWidget* paned) {
+    gint width = menu->hooks.default_pos != NULL ? menu->hooks.default_pos(paned, menu->hooks.data) : -1;
+    gint def = split_ratio_width(width, paned_room(paned), start_min(paned), end_min(paned));
+    return def >= 0 ? clamp_position(paned, def) : -1;
+}
+
 static void show_for(SplitMenu* menu, GtkWidget* paned) {
     if (menu->bar == NULL || !gtk_widget_get_mapped(paned) || !both_sides_shown(paned)) return;
     gint sides = menu->hooks.sides != NULL ? menu->hooks.sides(paned, menu->hooks.data) : 0;
     if (sides < 0) return;
     g_set_weak_pointer(&menu->shown, paned);
     menu->shares = menu->hooks.shares != NULL ? menu->hooks.shares(paned, menu->hooks.data) : SPLIT_SHARES_EVEN;
+    menu->def = paned_default(menu, paned);
     menu->fit = paned_fit(menu, paned);
     update_buttons(menu, sides);
     gtk_widget_set_visible(menu->bar, TRUE);
@@ -446,15 +484,22 @@ static void on_button_clicked(GtkButton* button, gpointer data) {
         target = paned_min(paned);
     } else if (kind == BTN_END) {
         target = max;
-    } else if (kind == BTN_FIT) {
-        target = paned_fit(menu, paned); /* measured again: the rows may have changed */
+    } else if (kind == BTN_DEFAULT || kind == BTN_FIT) {
+        /* Measured again: the font or the rows may have changed */
+        target = kind == BTN_DEFAULT ? paned_default(menu, paned) : paned_fit(menu, paned);
         if (target < 0) {
             g_object_unref(paned);
             return;
         }
     } else {
         SplitShares set = menu->hooks.shares != NULL ? menu->hooks.shares(paned, menu->hooks.data) : SPLIT_SHARES_EVEN;
-        target = split_ratio_position(max, split_ratio_shares(set)[kind - BTN_RATIO], smin, emin);
+        gint count = 0;
+        const gdouble* shares = split_ratio_shares(set, &count);
+        if (kind - BTN_RATIO >= count) {
+            g_object_unref(paned);
+            return;
+        }
+        target = split_ratio_position(max, shares[kind - BTN_RATIO], smin, emin);
     }
     move_handle(menu, paned, target);
     g_object_unref(paned);
@@ -616,9 +661,10 @@ void split_menu_reset(SplitMenu* menu, GtkWidget* paned) {
     gint sides = menu->hooks.sides != NULL ? menu->hooks.sides(paned, menu->hooks.data) : 0;
     if (sides < 0) return;
     split_menu_hide(menu);
-    gint fit = paned_fit(menu, paned);
-    gint max = paned_room(paned);
-    move_handle(menu, paned, fit >= 0 ? fit : split_ratio_position(max, 0.5, start_min(paned), end_min(paned)));
+    gint target = paned_default(menu, paned);
+    if (target < 0) target = paned_fit(menu, paned);
+    if (target < 0) target = split_ratio_position(paned_room(paned), 0.5, start_min(paned), end_min(paned));
+    move_handle(menu, paned, target);
 }
 
 void split_menu_attach(SplitMenu* menu, GtkWidget* paned) {
