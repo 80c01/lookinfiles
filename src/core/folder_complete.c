@@ -50,6 +50,16 @@ gint folder_complete_name_score(const gchar* name, const gchar* prefix) {
     return score;
 }
 
+gboolean folder_complete_is_python(const gchar* name) {
+    const gchar* rest = g_str_has_prefix(name, "python") ? name + 6 : g_str_has_prefix(name, "pypy") ? name + 4 : NULL;
+    if (rest == NULL) return FALSE;
+    while (g_ascii_isdigit(*rest) || *rest == '.') {
+        if (g_ascii_strcasecmp(rest, ".exe") == 0) return TRUE;
+        rest++;
+    }
+    return *rest == '\0' || g_ascii_strcasecmp(rest, ".exe") == 0;
+}
+
 gchar* folder_complete_tilde(const gchar* path, const gchar* home) {
     gsize n = home != NULL ? strlen(home) : 0;
     if (n > 1 && strncmp(path, home, n) == 0 && (path[n] == '\0' || path[n] == '/')) {

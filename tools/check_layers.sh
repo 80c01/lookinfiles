@@ -314,6 +314,7 @@ focus_route:app_types,app_events,nav_keys,panels
 icons:file_type_icons,palette
 icon_sets:app_paths,theme_store
 icon_picker:icons
+path_suggest:folder_complete,icons,palette
 sparkline:palette
 histogram:i18n,palette
 add_button:palette

@@ -690,7 +690,8 @@ Layers, from bottom to top
   starts and consecutive characters first) and the matched positions.
 - `folder_complete` — a folder field's text split for completion (folder
   to list, name started, `~` expanded), how subfolder names match it, and
-  the field text for one (for `folder_suggest`).
+  the field text for one, the names of Python programs (for
+  `path_suggest`).
 - `path_globs` — comma-separated path patterns matched like `.gitignore`
   (name at any depth, anchored, folders only), for the files to include /
   exclude of a search in files.
@@ -907,6 +908,10 @@ Layers, from bottom to top
   `add_button_new()` (a `GtkButton`) for the tab bars (`new_tab_menu`).
 - `icon_picker` — a grid of toggle buttons to choose one theme glyph
   (notebook and bookmark folder dialogs).
+- `path_suggest` — path suggestions in a popover under a local path field:
+  the entries of the folder typed, read with `GFileEnumerator` async
+  (subfolders only, or subfolders and programs with the Pythons first),
+  then the caller's extra suggestions; keys in the field's capture phase.
 - `dialog` — `AppDialog`, the modal dialog drawn inside the main window: a
   card over a dimmed layer (window-level `GtkOverlay` made in `main.c` with
   `app_dialog_window_overlay_new()`). GtkDialog-like API: `app_dialog_new()`,
@@ -1752,10 +1757,10 @@ Layers, from bottom to top
   / `go_history_directory()` in `file_list` walk it), with the entry
   selected in each folder left (selected again on the way back), and the
   recent folders and files (editor tabs opened, quick open choices).
-- `folder_suggest` — folder suggestions in a popover under a folder field
-  (Deep Search folder, bookmark location): the subfolders of the path typed,
-  read with `GFileEnumerator` async, then the recent folders (`nav_history`,
-  ranked by `fuzzy_match` for other text); keys in the field's capture phase.
+- `folder_suggest` — folder suggestions under a folder field (Deep Search
+  folder, bookmark location): `path_suggest` with the subfolders of the path
+  typed, then the recent folders (`nav_history`, ranked by `fuzzy_match` for
+  other text).
 - `quick_open` — Ctrl+P / Emacs `C-x C-f`; Alt+R lists the recent places
   in the same dialog (`quick_open_show_recent()`). Ctrl+P: the project's files
   (`code_index_all_files()` in a worker) in an `AppDialog`, ranked by

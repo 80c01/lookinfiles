@@ -11,6 +11,7 @@
 #include "core/run_time.h"
 #include "theme/icons.h"
 #include "widgets/dialog.h"
+#include "widgets/path_suggest.h"
 
 #include <string.h>
 
@@ -520,6 +521,7 @@ static void choose_python(IpynbTab* t) {
         gtk_entry_set_activates_default(GTK_ENTRY(entry), TRUE);
         gtk_widget_set_size_request(entry, 420, -1);
         gtk_box_append(GTK_BOX(box), entry);
+        if (t->kernel_host == NULL) path_suggest_attach(entry, PATH_SUGGEST_PROGRAMS); /* local paths only */
         gchar* hint = t->kernel_host != NULL
                           ? g_strdup_printf(_("A path on %s (~/ for the home folder there). Empty: the virtual "
                                               "environment of the project (.venv, venv or env), else python3."),

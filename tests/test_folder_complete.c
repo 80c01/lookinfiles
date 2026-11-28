@@ -70,11 +70,25 @@ static void test_tilde(void) {
     g_free(d);
 }
 
+static void test_is_python(void) {
+    g_assert_true(folder_complete_is_python("python"));
+    g_assert_true(folder_complete_is_python("python3"));
+    g_assert_true(folder_complete_is_python("python3.12"));
+    g_assert_true(folder_complete_is_python("pypy3"));
+    g_assert_true(folder_complete_is_python("python.exe"));
+    g_assert_true(folder_complete_is_python("python3.12.exe"));
+    g_assert_false(folder_complete_is_python("python3-config"));
+    g_assert_false(folder_complete_is_python("pythonw"));
+    g_assert_false(folder_complete_is_python("ipython"));
+    g_assert_false(folder_complete_is_python("pip3"));
+}
+
 int main(int argc, char** argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/folder_complete/split", test_split);
     g_test_add_func("/folder_complete/join", test_join);
     g_test_add_func("/folder_complete/name_score", test_name_score);
     g_test_add_func("/folder_complete/tilde", test_tilde);
+    g_test_add_func("/folder_complete/is_python", test_is_python);
     return g_test_run();
 }
