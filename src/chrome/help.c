@@ -221,7 +221,7 @@ static const KeyHelpEntry KEY_HELP[] = {
     {N_("Explorer panel"), "Ctrl+U", N_("Switch between files and notes view in Explorer"), 0},
     {N_("Explorer panel"), "a / Shift+A", N_("New file / new folder in the selected directory"), 0},
     {N_("Explorer panel"), "F2 / r", N_("Rename selected file or folder"), 0},
-    {N_("Explorer panel"), "e", N_("Open the selected file in the editor (as Enter does)"), 0},
+    {N_("Explorer panel"), "e", N_("Open the selected text file in the editor (as Enter does)"), 0},
     {N_("Explorer panel"), "d / Delete", N_("Move selected file or folder to the trash (asks first)"), 0},
     {N_("Explorer panel"), "Shift+H / Shift+L", N_("Back / forward in the folders shown in this workspace (also the mouse's back / forward buttons and the top bar arrows; right-click an arrow: the list)"), 0},
     {N_("Explorer panel"), NC_("key", "Right-click"), N_("Context menu: open, side panel, default app, terminal here, disk usage, rename, trash, copy name or path, bookmark"), 0},

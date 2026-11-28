@@ -17,6 +17,7 @@
 #include "explorer/remote.h"
 #include "explorer/archive_tree.h"
 #include "editor/editor.h"
+#include "core/file_types.h"
 #include "widgets/focus_route.h"
 #include "diskuse/disk_usage_tab.h"
 #include "search/deep_search_tab.h"
@@ -33,6 +34,15 @@ static gboolean is_container_row(ExplorerRow* row) {
 /* Files view (not bookmarks / notes / remote) */
 static gboolean is_files_view(AppData* app) {
     return app->sidebar_view == SIDEBAR_VIEW_FILES;
+}
+
+/* The selected row is a file the editor takes (text, not media or binary) */
+static gboolean selected_is_text_file(AppData* app) {
+    ExplorerRow* row = tree_nav_selected(app);
+    if (!explorer_row_is(row, "file")) return FALSE;
+    FileKind kind = (g_strcmp0(row->path, preview_state_path(app)) == 0) ? preview_state_kind(app)
+                                                                         : file_kind_of_path(row->path, row->name);
+    return file_kind_is_text(kind);
 }
 
 /* The selected folder, the selected file's folder, else the folder shown;
@@ -259,8 +269,8 @@ static gboolean handle_action_key(AppData* app, guint keyval, GdkModifierType st
             return TRUE;
         }
         return FALSE;
-    case GDK_KEY_e: /* e: open the selected file in the editor (like the preview's e) */
-        if (is_files_view(app) && !ctrl && explorer_row_is(tree_nav_selected(app), "file")) {
+    case GDK_KEY_e: /* e: open the selected text file in the editor (like the preview's e) */
+        if (is_files_view(app) && !ctrl && selected_is_text_file(app)) {
             activate_selected_entry(app);
             return TRUE;
         }

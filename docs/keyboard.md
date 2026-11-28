@@ -106,7 +106,7 @@ count) is dropped when the focus moves to another panel or tab.
 | `t` (Vim), `C-o` (Emacs) | Open the selected file in the dedicated editor panel (Vim: the editor gets the focus, like netrw's `t`; Emacs: the explorer keeps it, like dired's `C-o`) |
 | `a` / `Shift+A` | New file / new folder in the selected directory |
 | `F2` / `r` | Rename the selected file or folder |
-| `e` | Open the selected file in the editor (as `Enter` does; also in the preview panel) |
+| `e` | Open the selected text file in the editor (as `Enter` does; also in the preview panel); nothing on media and binary files |
 | `d` / `Delete` | Move the selected file or folder to the trash (asks first) |
 | `u` | Undo the last move to the trash or rename (also the Undo button of the explorer bar message) |
 | `i` / `I` | Toggle hidden files |

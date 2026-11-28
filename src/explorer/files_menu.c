@@ -200,11 +200,14 @@ static gboolean in_remote_repository(AppData* app, const gchar* path) {
 
 static void fill_entry_menu(GtkWidget* box, GtkWidget* popover, AppData* app, ExplorerRow* row) {
     gboolean is_dir = explorer_row_is(row, "dir");
-    menu_item(box, popover, app, _("Open"), is_dir ? "Enter" : "Enter / e", FM_OPEN);
+    FileKind kind = FILE_KIND_BINARY;
     if (!is_dir) {
-        FileKind kind = (g_strcmp0(row->path, preview_state_path(app)) == 0)
-                            ? preview_state_kind(app)
-                            : file_kind_of_path(row->path, row->name);
+        kind = (g_strcmp0(row->path, preview_state_path(app)) == 0) ? preview_state_kind(app)
+                                                                    : file_kind_of_path(row->path, row->name);
+    }
+    /* e opens text files in the editor only: not shown for media or binaries */
+    menu_item(box, popover, app, _("Open"), (!is_dir && file_kind_is_text(kind)) ? "Enter / e" : "Enter", FM_OPEN);
+    if (!is_dir) {
         if (file_kind_is_text(kind)) {
             menu_item(box, popover, app, _("Open in Side Panel"), side_panel_key(app), FM_OPEN_SIDE);
         } else {
