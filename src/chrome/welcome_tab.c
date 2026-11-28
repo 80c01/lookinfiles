@@ -14,6 +14,8 @@
 #include "widgets/focus_route.h"
 
 #define PAGE_KEY "lookin-welcome-tab"
+/* The guide page of the Open the User Guide button (a user_guide page name) */
+#define WELCOME_GUIDE_PAGE "user-guide/getting-started.md"
 
 /* Drop-down order of the editor keys */
 static const SettingsEditor MODES[] = {SETTINGS_EDITOR_NOTEPAD, SETTINGS_EDITOR_VIM, SETTINGS_EDITOR_EMACS};
@@ -171,7 +173,7 @@ static void on_startup_toggled(GtkCheckButton* check, gpointer data) {
 
 static void on_guide_clicked(GtkButton* button, gpointer data) {
     (void)button;
-    help_guide_show(((WelcomeTab*)data)->app, "getting-started.md");
+    help_guide_show(((WelcomeTab*)data)->app, WELCOME_GUIDE_PAGE);
 }
 
 static void on_diagnostics_clicked(GtkButton* button, gpointer data) {
