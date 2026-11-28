@@ -44,8 +44,8 @@ by default). **Save & Connect** connects right away.
 
 | Key | Action |
 |---|---|
-| `Enter` or `c` | Connect and browse the machine in the files view |
-| `c` on a connected machine | Disconnect |
+| `Enter` | Connect and browse the machine in the files view |
+| `c` | Connect without leaving the Machines view, or disconnect a connected machine |
 | `t` | Open an SSH terminal to the machine |
 | `F2`, `r` or `e` | Edit the machine |
 | `d` or `Delete` | Delete it from the list |

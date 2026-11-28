@@ -646,7 +646,8 @@ static void remote_show_message(AppData* app, const gchar* title, const gchar* t
     app_dialog_destroy(APP_DIALOG(dlg));
 }
 
-gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
+/* Connect rm; with open, also browse its files in the explorer */
+static gboolean connect_machine(AppData* app, RemoteMachine* rm, gboolean open) {
     if (app == NULL || rm == NULL) {
         return FALSE;
     }
@@ -713,6 +714,13 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     rm->mount_point = mount_dir;
     remote_session_files_open(rm);
 
+    if (!open) {
+        /* Stay in the Machines view, the machine now shown connected */
+        remote_refresh(app);
+        app_emit(app, APP_EVENT_CHROME_CHANGED);
+        return TRUE;
+    }
+
     g_free(app->current_remote_id);
     app->current_remote_id = g_strdup(rm->id);
 
@@ -727,6 +735,10 @@ gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
     reload_directory(app, rm->mount_point);
     app_emit(app, APP_EVENT_CHROME_CHANGED);
     return TRUE;
+}
+
+gboolean remote_connect_machine(AppData* app, RemoteMachine* rm) {
+    return connect_machine(app, rm, TRUE);
 }
 
 gboolean remote_disconnect_machine(AppData* app, RemoteMachine* rm) {
@@ -798,11 +810,12 @@ void remote_toggle_connect_selected(AppData* app) {
     if (rm == NULL) {
         return;
     }
-    /* c: connect, or disconnect a connected machine (Enter opens it) */
+    /* c: connect (staying here), or disconnect a connected machine;
+     * Enter connects and opens it */
     if (rm->is_connected) {
         remote_disconnect_machine(app, rm);
     } else {
-        remote_connect_machine(app, rm);
+        connect_machine(app, rm, FALSE);
     }
 }
 

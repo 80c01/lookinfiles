@@ -48,8 +48,8 @@ connecter** se connecte tout de suite.
 
 | Touche | Action |
 |---|---|
-| `Enter` ou `c` | Se connecter et parcourir la machine dans la vue des fichiers |
-| `c` sur une machine connectée | Se déconnecter |
+| `Enter` | Se connecter et parcourir la machine dans la vue des fichiers |
+| `c` | Se connecter sans quitter la vue Machines, ou déconnecter une machine connectée |
 | `t` | Ouvrir un terminal SSH vers la machine |
 | `F2`, `r` ou `e` | Modifier la machine |
 | `d` ou `Delete` | La supprimer de la liste |

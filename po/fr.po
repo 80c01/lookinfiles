@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: lookinfiles 0.6.0.24.g3a6778a\n"
 "Report-Msgid-Bugs-To: https://github.com/80c01/lookinfiles/issues\n"
-"POT-Creation-Date: 2026-11-27 20:51+0000\n"
+"POT-Creation-Date: 2026-11-28 05:36+0000\n"
 "PO-Revision-Date: 2026-11-08 08:29+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1707,11 +1707,11 @@ msgstr ""
 
 #: src/chrome/help.c:212
 msgid ""
-"Connect selected machine, or disconnect it when it is connected (this "
-"computer: back to its files)"
+"Connect selected machine without leaving this view, or disconnect it when it "
+"is connected (this computer: back to its files)"
 msgstr ""
-"Connecter la machine sélectionnée, ou la déconnecter si elle est connectée "
-"(cet ordinateur : revenir à ses fichiers)"
+"Connecter la machine sélectionnée sans quitter cette vue, ou la déconnecter "
+"si elle est connectée (cet ordinateur : revenir à ses fichiers)"
 
 #: src/chrome/help.c:213
 msgid ""
@@ -1760,7 +1760,7 @@ msgstr ""
 "Supprimer la machine sélectionnée, ou le dossier (ses machines remontent au "
 "premier niveau)"
 
-#: src/chrome/help.c:220 src/explorer/remote.c:1136
+#: src/chrome/help.c:220 src/explorer/remote.c:1149
 #: src/preview/preview_summary.c:82
 msgid "Re-scan ~/.ssh/config"
 msgstr "Relire ~/.ssh/config"
@@ -3446,7 +3446,7 @@ msgstr ""
 "0 : pas de minuteur. Appliquer une nouvelle durée redémarre le minuteur"
 
 #: src/chrome/preferences.c:382 src/clock/clock_pill.c:515
-#: src/explorer/remote.c:1097
+#: src/explorer/remote.c:1110
 msgid "Restart"
 msgstr "Relancer"
 
@@ -3935,7 +3935,7 @@ msgstr "Modifié le %s"
 
 #: src/chrome/themes.c:212 src/explorer/bookmarks.c:957
 #: src/explorer/file_actions.c:97 src/explorer/remote.c:638
-#: src/explorer/remote.c:690 src/notes/notes_dialogs.c:409
+#: src/explorer/remote.c:691 src/notes/notes_dialogs.c:409
 #: src/search/deep_search_bookmark.c:122 src/search/deep_search_bookmark.c:141
 #: src/workspace/layouts.c:322 src/workspace/layouts.c:573
 #: src/workspace/session_bookmark.c:62 src/workspace/session_bookmark.c:80
@@ -4408,7 +4408,7 @@ msgstr ""
 "Repartir aussitôt avec la même durée (ou pour la même heure le lendemain)"
 
 #: src/clock/clock_pill.c:518 src/diskuse/disk_usage_tab.c:687
-#: src/explorer/remote.c:1095 src/explorer/remote.c:1109
+#: src/explorer/remote.c:1108 src/explorer/remote.c:1122
 #: src/search/deep_search_tab.c:1020
 msgid "Stop"
 msgstr "Arrêter"
@@ -6674,7 +6674,7 @@ msgid "Delete the bookmark “%s”?"
 msgstr "Supprimer le signet « %s » ?"
 
 #: src/explorer/bookmarks.c:594 src/explorer/bookmarks.c:1150
-#: src/explorer/file_actions.c:415 src/explorer/remote.c:1128
+#: src/explorer/file_actions.c:415 src/explorer/remote.c:1141
 msgid "Delete Folder"
 msgstr "Supprimer le dossier"
 
@@ -6778,7 +6778,7 @@ msgid "Add Bookmark…"
 msgstr "Ajouter un signet…"
 
 #: src/explorer/bookmarks.c:1162 src/explorer/bookmarks.c:1166
-#: src/explorer/files_menu.c:256 src/explorer/remote.c:1135
+#: src/explorer/files_menu.c:256 src/explorer/remote.c:1148
 msgid "New Folder…"
 msgstr "Nouveau dossier…"
 
@@ -6790,7 +6790,7 @@ msgstr "Enregistrer l’espace de travail comme signet…"
 msgid "Sort A–Z / Z–A"
 msgstr "Trier A–Z / Z–A"
 
-#: src/explorer/bookmarks.c:1171 src/explorer/remote.c:1137
+#: src/explorer/bookmarks.c:1171 src/explorer/remote.c:1150
 #: src/notes/notes.c:614
 msgid "Collapse / Expand All"
 msgstr "Tout replier / déplier"
@@ -6960,7 +6960,7 @@ msgid "Open in Browser Tab"
 msgstr "Ouvrir dans un onglet navigateur"
 
 #: src/explorer/files_menu.c:217 src/explorer/files_menu.c:258
-#: src/explorer/remote.c:1077
+#: src/explorer/remote.c:1090
 msgid "Open Terminal Here"
 msgstr "Ouvrir un terminal ici"
 
@@ -7258,11 +7258,11 @@ msgstr[1] ""
 msgid "Delete Remote Folder"
 msgstr "Supprimer le dossier distant"
 
-#: src/explorer/remote.c:656 src/explorer/remote.c:689
+#: src/explorer/remote.c:657 src/explorer/remote.c:690
 msgid "Connection Failed"
 msgstr "Échec de la connexion"
 
-#: src/explorer/remote.c:657
+#: src/explorer/remote.c:658
 msgid ""
 "Could not create a private folder for the machine. Check that "
 "$XDG_RUNTIME_DIR (or the temporary folder) is yours and closed to other "
@@ -7272,7 +7272,7 @@ msgstr ""
 "$XDG_RUNTIME_DIR (ou le dossier temporaire) vous appartient et est fermé aux "
 "autres utilisateurs."
 
-#: src/explorer/remote.c:693
+#: src/explorer/remote.c:694
 #, c-format
 msgid ""
 "Could not connect to '%s' (%s):\n"
@@ -7283,74 +7283,74 @@ msgstr ""
 "\n"
 "%s"
 
-#: src/explorer/remote.c:1045
+#: src/explorer/remote.c:1058
 msgid "Connect (Browse Files)"
 msgstr "Connecter (parcourir les fichiers)"
 
-#: src/explorer/remote.c:1047 src/explorer/remote.c:1059
-#: src/explorer/remote.c:1067 src/explorer/remote.c:1085
-#: src/explorer/remote.c:1106
+#: src/explorer/remote.c:1060 src/explorer/remote.c:1072
+#: src/explorer/remote.c:1080 src/explorer/remote.c:1098
+#: src/explorer/remote.c:1119
 msgid "Open in Explorer"
 msgstr "Ouvrir dans l’explorateur"
 
-#: src/explorer/remote.c:1048
+#: src/explorer/remote.c:1061
 msgid "Disconnect"
 msgstr "Déconnecter"
 
-#: src/explorer/remote.c:1050
+#: src/explorer/remote.c:1063
 msgid "Open SSH Terminal"
 msgstr "Ouvrir un terminal SSH"
 
-#: src/explorer/remote.c:1051
+#: src/explorer/remote.c:1064
 msgid "Edit Machine…"
 msgstr "Modifier la machine…"
 
-#: src/explorer/remote.c:1052
+#: src/explorer/remote.c:1065
 msgid "Delete Machine"
 msgstr "Supprimer la machine"
 
-#: src/explorer/remote.c:1060 src/explorer/remote.c:1094
-#: src/explorer/remote.c:1107
+#: src/explorer/remote.c:1073 src/explorer/remote.c:1107
+#: src/explorer/remote.c:1120
 msgid "Open Terminal"
 msgstr "Ouvrir un terminal"
 
-#: src/explorer/remote.c:1067
+#: src/explorer/remote.c:1080
 msgid "Mount and Open"
 msgstr "Monter et ouvrir"
 
-#: src/explorer/remote.c:1070 src/preview/preview_summary.c:257
+#: src/explorer/remote.c:1083 src/preview/preview_summary.c:257
 msgid "Eject"
 msgstr "Éjecter"
 
-#: src/explorer/remote.c:1072
+#: src/explorer/remote.c:1085
 msgid "Unmount"
 msgstr "Démonter"
 
-#: src/explorer/remote.c:1074
+#: src/explorer/remote.c:1087
 msgid "Mount"
 msgstr "Monter"
 
-#: src/explorer/remote.c:1086
+#: src/explorer/remote.c:1099
 msgid "Open SSH Terminal Here"
 msgstr "Ouvrir un terminal SSH ici"
 
-#: src/explorer/remote.c:1095
+#: src/explorer/remote.c:1108
 msgid "Start"
 msgstr "Démarrer"
 
-#: src/explorer/remote.c:1119 src/explorer/remote.c:1126
+#: src/explorer/remote.c:1132 src/explorer/remote.c:1139
 msgid "Expand / Collapse"
 msgstr "Déplier / replier"
 
-#: src/explorer/remote.c:1127
+#: src/explorer/remote.c:1140
 msgid "Edit Folder…"
 msgstr "Modifier le dossier…"
 
-#: src/explorer/remote.c:1134
+#: src/explorer/remote.c:1147
 msgid "Add Machine Here…"
 msgstr "Ajouter une machine ici…"
 
-#: src/explorer/remote.c:1134
+#: src/explorer/remote.c:1147
 msgid "Add Remote Machine…"
 msgstr "Ajouter une machine distante…"
 
