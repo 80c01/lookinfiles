@@ -484,7 +484,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(bm_edit_btn, "clicked", G_CALLBACK(on_sidebar_bm_edit_clicked), app);
     gtk_box_append(GTK_BOX(bm_toolbar), bm_edit_btn);
 
-    GtkWidget* bm_delete_btn = icon_button_new("edit-delete", NULL);
+    GtkWidget* bm_delete_btn = icon_button_new("user-trash", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(bm_delete_btn), FALSE);
     gtk_widget_set_focusable(bm_delete_btn, FALSE);
     gtk_widget_add_css_class(bm_delete_btn, "sidebar-icon-btn");
@@ -584,7 +584,7 @@ GtkWidget* create_sidebar_header(AppData* app) {
     g_signal_connect(remote_edit_btn, "clicked", G_CALLBACK(on_sidebar_remote_edit_clicked), app);
     gtk_box_append(GTK_BOX(remote_toolbar), remote_edit_btn);
 
-    GtkWidget* remote_del_btn = icon_button_new("edit-delete", NULL);
+    GtkWidget* remote_del_btn = icon_button_new("user-trash", NULL);
     gtk_button_set_has_frame(GTK_BUTTON(remote_del_btn), FALSE);
     gtk_widget_set_focusable(remote_del_btn, FALSE);
     gtk_widget_add_css_class(remote_del_btn, "sidebar-icon-btn");
